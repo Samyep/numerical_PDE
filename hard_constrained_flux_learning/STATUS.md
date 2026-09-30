@@ -1,0 +1,91 @@
+# Status: Verified vs Open
+
+This file deliberately separates what has been checked from what is still a research hypothesis.
+
+## Verified in exploratory code
+
+### Burgers: hard entropy projection can repair a poor proposal
+
+For inviscid Burgers with a central-flux proposal, finite Kruzkov hard constraints substantially reduced shock errors and overshoot in several Riemann tests.
+
+Observed exploratory `L1` errors (400 cells):
+
+| case | Central | Hard-Q | Hard-K17 | Hard-K65 | Hard-K257 | Godunov |
+|---|---:|---:|---:|---:|---:|---:|
+| shock 1->0 | 0.1340 | 0.0345 | 0.00863 | 0.00304 | 0.00187 | 0.00152 |
+| rarefaction 0->1 | 0.0320 | 0.00166 | 0.00147 | 0.00191 | 0.00317 | 0.00458 |
+| transonic -1->1 | 0.1250 | 0.00203 | 0.00287 | 0.00382 | 0.00634 | 0.00916 |
+| strong shock 2->-1 | 0.7029 | 0.0476 | 0.0184 | 0.00552 | 0.00250 | 0.00154 |
+
+These numbers are sanity checks, not publication-ready benchmarks.
+
+### Burgers: finite Kruzkov family versus Godunov
+
+For convex scalar Burgers, the full Kruzkov interface constraint family implies the standard minimization/maximization structure behind the Godunov flux. Hence the scalar problem is useful for understanding the hard layer, but is not by itself a strong novelty claim.
+
+### Learned Burgers flux prototype
+
+A small local DNN flux model was trained and rolled out through a conservative update. Exploratory results showed:
+
+- hard Kruzkov projection improved several ID/OOD shock and rarefaction tests;
+- strong constraints reduced nonphysical overshoot;
+- more constraints were not monotonically better in trajectory error, consistent with added numerical dissipation;
+- conservation drift in periodic rollout was at floating-point level because of the shared flux-form update.
+
+Representative `L1` errors:
+
+| case | Plain | Q | K17 | K257 |
+|---|---:|---:|---:|---:|
+| shock ID | 0.00635 | 0.00818 | 0.00528 | 0.00440 |
+| rarefaction ID | 0.00528 | 0.00767 | 0.00442 | 0.00323 |
+| transonic OOD | 0.1412 | 0.1595 | 0.1353 | 0.1335 |
+| strong shock OOD | 0.0476 | 0.1126 | 0.0444 | 0.0746 |
+| smooth periodic OOD | 0.1478 | 0.0740 | 0.1220 | 0.0946 |
+
+The exploratory DNN run used a Godunov-flux teacher for fast mechanism validation; it is **not yet the intended trajectory-only final training regime**.
+
+### Shallow-water Tadmor projection
+
+For 200,000 random states with
+
+- `h in [0.2, 3]`,
+- `u in [-3, 3]`,
+
+we formed a deliberately noisy flux proposal and projected it onto
+
+\[
+(v_R-v_L)^TF\le \psi_R-\psi_L.
+\]
+
+Observed:
+
+- violating before projection: `0.498245`;
+- max residual before: `332.9995`;
+- violation rate after projection above `1e-10`: `0`;
+- max residual after: about `8.53e-14`.
+
+This confirms the algebraic projection implementation, not a full shallow-water solver.
+
+## Theoretical observations that are straightforward but still need formal write-up
+
+1. Fixed-state Tadmor entropy stability is an affine half-space constraint in the numerical flux.
+2. Orthogonal projection onto this half-space is closed-form and minimum norm.
+3. If the proposal is already feasible, the hard layer is the identity.
+4. Shared interface flux gives exact finite-volume conservation via telescoping.
+
+## Not yet verified
+
+- trajectory-only end-to-end shallow-water training;
+- dam-break accuracy versus HLL/Rusanov/Roe and learned baselines;
+- positivity guarantee for water height after a fully discrete update;
+- fully discrete entropy theorem under a specified integrator/CFL;
+- 1D Euler implementation and density/pressure admissibility;
+- 2D systems;
+- publication-level comparison with CFN/ESCFN/NESCFN/related hard-constrained neural Riemann solvers;
+- claim of novelty beyond the precise combination of arbitrary learned proposal + direct hard entropy projection.
+
+## Current paper-level claim candidate
+
+> Learn numerical fluxes freely from trajectory data, preserve conservation through the finite-volume flux form, and minimally project each learned interface flux into a certified entropy-stable set before rollout.
+
+This claim should be narrowed if literature review finds an earlier method with the same direct hard projection and guarantee.
