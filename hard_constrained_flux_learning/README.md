@@ -79,3 +79,23 @@ See:
 - `results/swe_1d_phase2/`
 
 On the near-dry stress test, the 3-seed multi-step HCFL-safe model reaches NRMSE `0.177 +/- 0.026`, versus `0.207 +/- 0.018` for MUSCL-Rusanov, while maintaining `h >= 1e-4` under adaptive CFL substepping.
+
+
+## 1D Euler checkpoint
+
+The project now includes a 1D ideal-gas Euler HCFL checkpoint.
+
+Validated in 3-seed trajectory experiments:
+- five-point learned flux trained only from downsampled high-resolution trajectories;
+- exact Tadmor half-space projection using the standard mathematical entropy;
+- hard model has zero measured interface entropy violations to numerical precision;
+- conservative convex admissibility limiter enforces `rho>0` and `p>0` relative to an admissible Rusanov low-order endpoint;
+- a second line search enforces nonincrease of total mathematical entropy over the fully discrete periodic step;
+- on the original random ID distribution, hard HCFL NRMSE is about `0.0229`, versus `0.0323` for MUSCL-HLLC;
+- broad-distribution fine-tuning reaches about `0.0730` on the widened random test distribution, versus `0.0795` for MUSCL-HLLC.
+
+Important limitation: on canonical severe shock-tube tests (Sod, Lax, opposing-flow collision, strong pressure jump, near-vacuum expansion), MUSCL-HLLC remains substantially more accurate. The full HCFL safety wrapper prevents negative-density/pressure failures that occur for unconstrained or entropy-only learned rollouts.
+
+Files:
+- `notes/euler_1d_findings.md`
+- `euler_1d_phase/euler_1d_phase.zip` (all Euler source code + summary CSVs)
