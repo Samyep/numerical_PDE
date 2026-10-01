@@ -180,3 +180,30 @@ Current guarantee boundaries:
 - the fully-discrete entropy guarantee is global, not a local cellwise entropy-flux inequality;
 - no bathymetry/well-balancing or true wet/dry-front treatment yet;
 - Euler is not yet implemented.
+
+
+## 1D Euler checkpoint
+
+Completed:
+- ideal-gas mathematical entropy `eta=-rho*s/(gamma-1)`, entropy variables, and entropy potential `psi=m`;
+- 5-point trajectory-only learned flux for 1D Euler;
+- direct hard projection onto the Euler Tadmor half-space;
+- 3-seed Plain / Soft / Hard / HLL / Rusanov comparisons;
+- conservative fully discrete admissibility limiter for `rho>0, p>0`;
+- fully discrete global entropy line search;
+- HLLC and MUSCL-HLLC baselines;
+- canonical stress tests and widened-distribution fine-tuning.
+
+Three-seed random trajectory results:
+- ID: Hard HCFL `0.02293 +/- 0.00157`, MUSCL-HLLC `0.03228 +/- 0.00179`;
+- original OOD: Hard HCFL `0.08389 +/- 0.00479`, MUSCL-HLLC `0.07946 +/- 0.00228`;
+- broadened training/test distribution: Hard HCFL `0.07297 +/- 0.00435`.
+
+Plain and soft learned fluxes violate the Euler Tadmor interface condition on roughly 2--3% of rollout interfaces. The hard model has zero measured violations to numerical precision.
+
+Critical limitation:
+- Plain and entropy-only learned fluxes can produce negative pressure on severe OOD shock tubes.
+- The full safety wrapper rescues all tested rollouts.
+- Nevertheless, MUSCL-HLLC is clearly more accurate on the canonical severe stress tests. Current HCFL should be framed as a guaranteed learned coarse surrogate, not a universal replacement for mature high-order shock-capturing solvers.
+
+See `notes/euler_1d_findings.md` for exact numbers and claim boundaries.
