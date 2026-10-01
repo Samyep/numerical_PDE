@@ -1,0 +1,320 @@
+
+import argparse
+from pathlib import Path
+import numpy as np
+import pandas as pd
+import torch
+from torch import nn
+
+torch.set_num_threads(2)
+
+GAMMA = 1.4
+NREF = 48
+NCOARSE = 12
+FACTOR = NREF // NCOARSE
+DT_SNAPSHOT = 5e-4
+LAMBDA = DT_SNAPSHOT / (1.0 / NCOARSE)
+NSNAP = 7
+
+
+# ============================================================
+# NumPy reference solver: periodic 2D Euler
+# ============================================================
+def np_pressure(U):
+    rho = U[...,0]
+    mx = U[...,1]
+    my = U[...,2]
+    E = U[...,3]
+    return (GAMMA-1.0)*(E - 0.5*(mx*mx+my*my)/rho)
+
+
+def prim_to_cons(rho,u,v,p):
+    return np.stack([
+        rho,
+        rho*u,
+        rho*v,
+        p/(GAMMA-1.0) + 0.5*rho*(u*u+v*v),
+    ], axis=-1)
+
+
+def np_flux_x(U):
+    rho,mx,my,E = U[...,0],U[...,1],U[...,2],U[...,3]
+    u,v = mx/rho, my/rho
+    p = np_pressure(U)
+    return np.stack([mx, mx*u+p, my*u, (E+p)*u], axis=-1)
+
+
+def np_flux_y(U):
+    rho,mx,my,E = U[...,0],U[...,1],U[...,2],U[...,3]
+    u,v = mx/rho, my/rho
+    p = np_pressure(U)
+    return np.stack([my, mx*v, my*v+p, (E+p)*v], axis=-1)
+
+
+def np_rusanov_x(UL,UR):
+    fL,fR = np_flux_x(UL),np_flux_x(UR)
+    rhoL,rhoR = UL[...,0],UR[...,0]
+    uL,uR = UL[...,1]/rhoL,UR[...,1]/rhoR
+    pL,pR = np_pressure(UL),np_pressure(UR)
+    cL,cR = np.sqrt(GAMMA*pL/rhoL),np.sqrt(GAMMA*pR/rhoR)
+    a=np.maximum(np.abs(uL)+cL,np.abs(uR)+cR)
+    return 0.5*(fL+fR)-0.5*a[...,None]*(UR-UL)
+
+
+def np_rusanov_y(UL,UR):
+    fL,fR = np_flux_y(UL),np_flux_y(UR)
+    rhoL,rhoR = UL[...,0],UR[...,0]
+    vL,vR = UL[...,2]/rhoL,UR[...,2]/rhoR
+    pL,pR = np_pressure(UL),np_pressure(UR)
+    cL,cR = np.sqrt(GAMMA*pL/rhoL),np.sqrt(GAMMA*pR/rhoR)
+    a=np.maximum(np.abs(vL)+cL,np.abs(vR)+cR)
+    return 0.5*(fL+fR)-0.5*a[...,None]*(UR-UL)
+
+
+def np_rhs(U,dx):
+    Fx=np_rusanov_x(U,np.roll(U,-1,axis=-2))
+    Gy=np_rusanov_y(U,np.roll(U,-1,axis=-3))
+    return -(Fx-np.roll(Fx,1,axis=-2))/dx -(Gy-np.roll(Gy,1,axis=-3))/dx
+
+
+def np_ssprk2(U,dt,dx):
+    U1=U+dt*np_rhs(U,dx)
+    return 0.5*U + 0.5*(U1+dt*np_rhs(U1,dx))
+
+
+def generate_ic(ntraj,N,seed,ood=False):
+    rng=np.random.default_rng(seed)
+    x=(np.arange(N)+0.5)/N
+    X,Y=np.meshgrid(x,x,indexing="xy")
+    out=np.zeros((ntraj,N,N,4),dtype=np.float64)
+
+    for j in range(ntraj):
+        typ=rng.choice(["smooth","quadrants","blob"],p=[0.40,0.40,0.20])
+
+        if typ=="smooth":
+            rho0=rng.uniform(.8,1.4)
+            p0=rng.uniform(.8,1.4)
+            ar=rng.uniform(.05,.30 if ood else .18)
+            ap=rng.uniform(.05,.30 if ood else .18)
+            au=rng.uniform(.05,.7 if ood else .4)
+            av=rng.uniform(.05,.7 if ood else .4)
+            kx,ky=int(rng.integers(1,4)),int(rng.integers(1,4))
+            rho=rho0+ar*np.sin(2*np.pi*kx*X+rng.uniform(0,2*np.pi))*np.cos(2*np.pi*ky*Y+rng.uniform(0,2*np.pi))
+            p=p0+ap*np.cos(2*np.pi*kx*X+rng.uniform(0,2*np.pi))*np.sin(2*np.pi*ky*Y+rng.uniform(0,2*np.pi))
+            u=au*np.sin(2*np.pi*kx*X+rng.uniform(0,2*np.pi))
+            v=av*np.cos(2*np.pi*ky*Y+rng.uniform(0,2*np.pi))
+            rho=np.maximum(rho,.35);p=np.maximum(p,.35)
+
+        elif typ=="quadrants":
+            rlo,rhi=(.45,2.2) if ood else (.7,1.7)
+            plo,phi=(.4,2.5) if ood else (.7,1.7)
+            umax=1.0 if ood else .55
+            vals=[]
+            for _ in range(4):
+                vals.append((rng.uniform(rlo,rhi),rng.uniform(-umax,umax),rng.uniform(-umax,umax),rng.uniform(plo,phi)))
+            rho=np.empty((N,N));u=np.empty((N,N));v=np.empty((N,N));p=np.empty((N,N))
+            masks=[(X<.5)&(Y<.5),(X>=.5)&(Y<.5),(X<.5)&(Y>=.5),(X>=.5)&(Y>=.5)]
+            for mask,val in zip(masks,vals):
+                rho[mask],u[mask],v[mask],p[mask]=val
+
+        else:
+            rho=np.full((N,N),rng.uniform(.8,1.3))
+            p=np.full((N,N),rng.uniform(.8,1.3))
+            u=np.full((N,N),rng.uniform(-.2,.2))
+            v=np.full((N,N),rng.uniform(-.2,.2))
+            cx,cy=rng.uniform(.25,.75,2)
+            r2=(X-cx)**2+(Y-cy)**2
+            mask=r2<rng.uniform(.08,.16)**2
+            rho[mask]*=rng.uniform(1.2,2.3 if ood else 1.7)
+            p[mask]*=rng.uniform(1.3,3.0 if ood else 1.8)
+
+        out[j]=prim_to_cons(rho,u,v,p)
+    return out
+
+
+def generate_trajectory(ntraj,seed,ood=False):
+    U=generate_ic(ntraj,NREF,seed,ood)
+    dx=1.0/NREF
+
+    def restrict(V):
+        return V.reshape(ntraj,NCOARSE,FACTOR,NCOARSE,FACTOR,4).mean(2,4).astype(np.float32)
+
+    snaps=[restrict(U)]
+    for _ in range(NSNAP-1):
+        rem=DT_SNAPSHOT
+        while rem>1e-14:
+            rho=U[...,0];p=np_pressure(U);u,v=U[...,1]/rho,U[...,2]/rho
+            c=np.sqrt(GAMMA*p/rho)
+            rate=np.max( n`.abs(u)+c)/dx+ (np.abs(v)+c)/dx)
+            dt=min(rem,.28/rate)
+            U=np_ssprk2(U,dt,dx)
+            if U[...,0].min()<=0 or np_pressure(U).min()<=0:
+                raise RuntimeError("Reference 2D Euler lost admissibility")
+            rem-=dt
+        snaps.append(restrict(U))
+    return np.stack(snaps,axis=1)
+
+
+# ============================================================
+# Torch Euler physics
+# ============================================================
+def t_pressure(U):
+    rho=U[...,0].clamp_min(1e-8)
+    mx,my,E=U[...,1],U[...,2],U[...,3]
+    return (GAMMA-1.)*(E-.5*(mx*mx+my*my)/rho)
+
+
+def primitive(U):
+    rho=U[...,0].clamp_min(1e-8)
+    return torch.stack([rho,U[...,1]/rho,U[...,2]/rho,t_pressure(U)],dim=-1)
+
+
+def entropy_variables(U):
+    rho=U[...,0].clamp_min(1e-10)
+    u,v=U[...,1]/rho,U[...,2]/rho
+    p=t_presssure(U)
+    p=p.clamp_min(1e-10)
+    s=torch.log(p)-GAMMA*torch.log(rho)
+    v1=(GAMMA-s)/(GAMMA-1.)-rho*(u*u+v*v)/(2*p)
+    return torch.stack([v1,rho*u/p,rho*v/p,-rho/p],dim=-1)
+
+
+def t_flux_x(U):
+    rho=U[...,0].clamp_min(1e-8);mx,my,E=U[...,1],U[...,2],U[...,3]
+    u,v=mx/rho,my/rho;p=t_pressure(U)
+    return torch.stack([mx,mx*u+p,my*u,(E+p)*u],dim=-1)
+
+
+def t_flux_y(U):
+    rho=U[...,0].clamp_min(1e-8);mx,my,E=U[...,1],U[...,2],U[...,3]
+    u,v=mx/rho,my/rho;p=t_pressure(U)
+    return torch.stack([my,mx*v,my*v+p,(E+p)*v],dim=-1)
+
+
+def psi(U,direction):
+    return U[...,1] if direction=="x" else U[...,2]
+
+
+def entropy_residual(F,U,direction):
+    dim=-2 if direction=="x" else -3
+    UR=torch.roll(U,-1,dims=dim)
+    a=entropy_variables(UR)-entropy_variables(U)
+    b=psi(UR,direction)-psi(U,direction)
+    return (a*F).sum(-1)-b
+
+
+def hard_project(F,U,direction):
+    dim=-2 if direction=="x" else -3
+    UR=torch.roll(U,-1,dims=dim)
+    a=entropy_variables(UR)-entropy_variables(U)
+    b=psi(UR,direction)-psi(U,direction)
+    r=(a*F).sum(-1)-b
+    n2=(a*a).sum(-1)
+    alpha=torch.zeros_like(r)
+    mask=(r>0)&(n2>1e-14)
+    alpha[mask]=r[mask]/n2[mask]
+    return F-alpha[...,None]*a
+
+
+# ============================================================
+# Generic oriented HLLC flux
+# ============================================================
+def oriented_flux(U):
+    rho=U[...,0].clamp_min(1e-8);mn,mt,E=U[...,1],U[...,2],U[...,3]
+    un,ut=mn/rho,mt/rho
+    p=(GAMMA-1.)*(E-.5*(mn*mn+mt*mt)/rho)
+    return torch.stack([mn,mn*un+p,mn*ut,(E+p)*un],dim=-1)
+
+
+def oriented_hllc(UL,UR):
+    rhoL,rhoR=UL[...,0].clamp_min(1e-10),UR[...,0].clamp_min(1e-10)
+    mnL,mnR=UL[...,1],UR[...,1]
+    mtL,mtR=UL[...,2],UR[...,2]
+    EL,ER=UL[...,3],UR[...,3]
+    unL,unR=mnL/rhoL,mnR/rhoR
+    utL,utR=mtL/rhoL,mtR/rhoR
+    pL=(GAMMA-1.)*(EL-.5*(mnL*mnL+mtL*mtL)/rhoL)
+    pR=(GAMMA-1.)*(ER-.5*(mnR*mnR+mtR*mtR)/rhoR)
+    pL,pR=pL.clamp_min(1e-10),pR.clamp_min(1e-10)
+    cL,cR=torch.sqrt(GAMMA*pL/rhoL),torch.sqrt(GAMMA*pR/rhoR)
+    SL=torch.minimum(unL-cL,unR-cR)
+    SR=torch.maximum(unL+cL,unR+cR)
+    den=rhoL*(SL-unL)-rhoR*(SR-unR)
+    SM=(pR-pL+rhoL*unL*(SL-unL)-rhoR*unR*(SR-unR))/(den+1e-14)
+
+    rSL=rhoL*(SL-unL)/(SL-SM+1e-14);rSR=rhoR*(SR-unR)/(SR-SM+1e-14)
+    ESL=rSL*(EL/rhoL+(SM-unL)*(SM+pL/(rhoL*(SL-unL)+1e-14)))
+    ESR=rSRH¨ER/rhoR+(SM-unR)*(SM+pR/(rhoR*(SR-unR)1e-14)))
+    USL=torch.stack([rSL,sSL*SM,rSL*utL,ESL],dim=-1)
+    USR=torch.stack([rSR,rSR*SM,rSR*utR,ESR],dim=-1)
+
+    fL,fR=oriented_flux(UL),oriented_flux(UR)
+    FSL=fL+SL[...,None]*(USL-UL);FSR=fR+SR[...,None]*(USR-UR)
+    return torch.where((SL>=0)[...,None],fL,torch.where((SM>=0)[...,None],FSL,torch.where((SR>0)[...,None],FSR,fR)))
+
+
+def orient_state(U,direction):
+    if direction=="x":
+        return U
+    return U.transpose(-3,-2)[...,[0,2,1,3]]
+
+def unorient_flux(F,direction):
+    if direction=="x":
+        return F
+    return F[...,[0,2,1,3]].transpose(-3,-2)
+
+
+def hllc_flux(U,direction):
+    Q=orient_state(U,direction)
+    QR=torch.roll(Q,-1,dims=-2)
+    return unorient_flux(oriented_hllc(Q,QR),direction)
+
+
+def fv_step(U,Fx,Gy):
+    return U-LAMBDA*(lx-torch.roll(Fx,1,dims=-2)+Gy-torch.roll(Gy,1,dims=-3))
+
+
+# ============================================================
+# Shared 3x3 orientation-aware network
+# ============================================================
+class FaceNet(nn.Module):
+    def __init__(self,mean,std,width=72):
+        super().__init__()
+        self.net=nn.Sequential(
+            nn.Linear(36,width),nn.Tanh(),
+            nn.Linear(width,width),nn.Tanh(),
+            nn.Linear(width,4),
+        )
+        nn.init.zeros_(self.net[-1].weight)
+        nn.init.zeros_(self.net[-1].bias)
+        self.register_buffer("mean",torch.tensor(mean,dtype=torch.float32))
+        self.register_buffer("std",torch.tensor(std,dtype=torch.float32))
+        self.register_buffer("scale",torch.tensor([.5,1.2,.8,2.5],dtype=torch.float32))
+
+    def oriented_primitive(self,U,direction):
+        P=primitive(U)
+        if direction=="x":
+            return P
+        return P.transpose(-3,-2)[...,[0,2,1,3]]
+
+    def forward(self,U,direction):
+        Q=self.oriented_primitive(U,direction)
+        feats=[]
+        for dy in [-1,0,1]:
+            for dx in [-1,0,1]:
+                R=torch.roll(Q,(dy,dx),dims=(-3,-2))
+                feats.append((R-self.mean)/self.std)
+        feat=torch.cat(feats,-1)
+        corr=torch.tanh(self.net(feat))
+        QR=torch.roll(Q,-1,dims=-2)
+        jump=torch.sqrt((((QR-Q)/self.std)**2).sum(-1)+1e-12)
+
+        base_oriented=oriented_hllc(
+            orient_state(U,direction),
+            torch.roll(orient_state(U,direction),-1,dims=-2),
+        )
+        For=base_oriented+.15*jump[...,None]*corr*self.scale
+        return unorient_flux(For,direction)
+
+
+# MÄ
