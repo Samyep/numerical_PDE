@@ -239,3 +239,86 @@ Next priority:
 4. only then consider 2D Euler/SWE.
 
 Do not claim universal solver superiority from the current 1D results.
+
+
+## Phase C update: 2D systems and OOD trust
+
+The 1D limiter design is now considered structurally complete for the current paper:
+- use hard face-level Tadmor projection;
+- use local interface-wise admissibility limiting;
+- retain the rare global fully-discrete total-entropy line search;
+- do not force a cell-local fully-discrete entropy condition, because tested local constructions were significantly more restrictive.
+
+### 2D shallow water
+
+Completed a 3-seed 2D proof of concept with a shared orientation-aware 3x3 face network.
+Hard projection removes all measured x/y-face entropy violations while preserving essentially the same rollout accuracy as the unconstrained learned solver.
+
+### 2D Euler
+
+Completed a 3-seed 2D HLLC-based HCFL proof of concept.
+Hard entropy projection again gives zero measured violations with negligible accuracy cost on moderate ID/OOD data.
+
+### Severe OOD and trust fallback
+
+Strong 2D Euler blast tests show that hard physical feasibility is not sufficient for predictive reliability: a learned correction can remain entropy-feasible and admissible while being badly wrong far outside training support.
+
+Current trust design:
+1. compute a training-calibrated state score from standardized primitive variables;
+2. use the 99th-percentile training score as the support threshold;
+3. set
+   [
+   \tau(U)=\operatorname{clip}[(q_{0.99}/z(U))^2,0.05,1];
+   ]
+4. blend between entropy-projected HLLC and entropy-projected learned HCFL.
+
+The trust layer is nearly identity in-distribution, partially active under moderate OOD, and strongly falls back under extreme blast states.
+
+### Current next priorities
+
+1. **Literature re-audit now.**
+   Search specifically for:
+   - learned numerical flux + direct Tadmor projection;
+   - learned Riemann solver + entropy half-space projection;
+   - certified learned hyperbolic solver + invariant-domain/positivity limiting;
+   - neural solver + training-calibrated fallback/trust region to classical flux;
+   - 2025--2026 work combining learned corrections with convex entropy/admissibility limiting.
+
+2. **Paper-level theory package.**
+   Formalize:
+   - face-projection theorem;
+   - conservation theorem in arbitrary dimension;
+   - semi-discrete entropy inequality;
+   - convex preservation of entropy feasibility under local admissibility limiting and trust blending;
+   - admissibility result conditional on safe low-order update/CFL;
+   - global fully-discrete total-entropy guarantee for the final scalar line search;
+   - Burgers two-point identifiability theorem.
+
+3. **Publication-quality baselines.**
+   Add or verify:
+   - high-order classical entropy-stable schemes;
+   - HLLC/MUSCL-HLLC in 1D and appropriate 2D baselines;
+   - CFN/ESCFN/NESCFN where reproducible;
+   - recent hard-constrained neural Riemann solvers.
+
+4. **Reference-resolution checks.**
+   Repeat key results with at least one finer reference grid to verify that gains are not artifacts of the reference solver/resolution.
+
+5. **Runtime/memory profile.**
+   Report both learned inference and safety-layer overhead.
+
+### Paper framing at this stage
+
+Do not claim a universally better PDE solver.
+
+Preferred framing:
+
+> **Hard-Constrained Conservative Flux Learning: learn accurate coarse-grid flux corrections from trajectories, enforce conservation and entropy by construction, locally recover admissibility, and fall back toward a trusted classical flux only when the state leaves the training support.**
+
+The current empirical evidence spans:
+- Burgers theory/identification;
+- 1D shallow water;
+- 1D Euler;
+- 2D shallow water;
+- 2D Euler;
+- severe OOD stress tests with a training-calibrated trust fallback.
