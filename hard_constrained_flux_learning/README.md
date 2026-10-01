@@ -61,3 +61,21 @@ See `STATUS.md` for exact boundaries between verified facts and open work.
 **Hard-constrained conservative flux learning**: learn numerical fluxes from trajectory data, preserve conservation through flux form, and enforce entropy stability with an architecture-level hard projection rather than a soft penalty.
 
 The main target is **systems** (starting with 1D shallow water, then 1D Euler), not scalar Burgers.
+
+
+## 1D SWE Phase 2
+
+The SWE prototype now includes a fully discrete safety wrapper:
+- adaptive CFL substepping;
+- conservative positivity limiting for water height;
+- global periodic-domain entropy non-increase via a cheap convex line search;
+- four-step trajectory fine-tuning;
+- MUSCL-Rusanov and near-dry baselines.
+
+See:
+- `experiments/swe_1d_phase2_safe.py`
+- `experiments/swe_1d_phase2_multistep.py`
+- `notes/swe_1d_phase2_findings.md`
+- `results/swe_1d_phase2/`
+
+On the near-dry stress test, the 3-seed multi-step HCFL-safe model reaches NRMSE `0.177 +/- 0.026`, versus `0.207 +/- 0.018` for MUSCL-Rusanov, while maintaining `h >= 1e-4` under adaptive CFL substepping.

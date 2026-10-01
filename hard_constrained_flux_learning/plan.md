@@ -202,3 +202,18 @@ Next priority order:
 4. add MUSCL/high-order entropy-stable classical baselines and reference-grid
    convergence checks;
 5. only after the SWE method is stable, move to 1D Euler.
+
+
+## Phase A.2 update: fully discrete SWE safety completed
+
+The 1D SWE signal remains positive after strengthening the solver.
+
+Implemented:
+1. adaptive CFL substepping;
+2. an interface-wise conservative flux-correction limiter that guarantees h >= h_floor when the Rusanov low-order endpoint is positive;
+3. preservation of the Tadmor half-space under the positivity blend because the constraint is affine in flux;
+4. a per-trajectory global convex line search that enforces total periodic-domain entropy non-increase;
+5. four-step trajectory fine-tuning;
+6. MUSCL-Rusanov and severe near-dry stress tests.
+
+The next main technical target is now **1D Euler**.  The key question is whether the same safe-baseline + learned-correction + convex-limiting construction can jointly preserve density and pressure/internal-energy admissibility while keeping the entropy guarantee cheap.  Do not move to 2D until this is resolved.

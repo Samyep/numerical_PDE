@@ -153,3 +153,30 @@ Not yet proved or completed:
 - multi-step training as the main protocol;
 - stronger high-order classical baselines and deterministic reference
   convergence tests.
+
+
+## 1D shallow-water Phase 2: fully discrete safety and multi-step training
+
+Completed and checked:
+- conservative positivity limiter built by convexly blending hard-entropy HCFL with Rusanov;
+- adaptive CFL substepping explicitly checks the low-order positivity premise;
+- periodic-domain fully discrete total entropy limiter implemented as a per-trajectory convex line search;
+- 4-step trajectory fine-tuning completed for 3 seeds;
+- MUSCL-Rusanov + SSP-RK2 baseline added;
+- severe near-dry stress test added with reference depths down to 0.05;
+- CPU inference timing recorded.
+
+Key results:
+- 4-step fine-tuning: ID NRMSE 0.04542 +/- 0.00095; OOD 0.11038 +/- 0.00909.
+- Original-distribution HCFL-safe vs MUSCL-Rusanov: 0.04738 vs 0.06663 ID; 0.11443 vs 0.14061 OOD.
+- Near-dry adaptive-CFL stress test: HCFL-safe multi-step 0.17712 +/- 0.02587; MUSCL-Rusanov 0.20718 +/- 0.01813; HLL 0.26825; Rusanov 0.29097.
+- Near-dry HCFL keeps h >= 1e-4. The positivity limiter is active on about 0.17% of interfaces and the global entropy line search on about 2.5% of substeps.
+
+Current guarantee boundaries:
+- conservation is exact from shared interface fluxes;
+- Tadmor interface feasibility is hard-enforced;
+- h >= h_floor is fully discrete under the explicitly checked low-order CFL premise;
+- periodic-domain total physical entropy non-increase is enforced globally by bisection/numerical precision;
+- the fully-discrete entropy guarantee is global, not a local cellwise entropy-flux inequality;
+- no bathymetry/well-balancing or true wet/dry-front treatment yet;
+- Euler is not yet implemented.
