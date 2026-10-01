@@ -207,3 +207,134 @@ Critical limitation:
 - Nevertheless, MUSCL-HLLC is clearly more accurate on the canonical severe stress tests. Current HCFL should be framed as a guaranteed learned coarse surrogate, not a universal replacement for mature high-order shock-capturing solvers.
 
 See `notes/euler_1d_findings.md` for exact numbers and claim boundaries.
+
+
+## 1D Euler Phase 2: HLLC proposal, local admissibility, and entropy-ablation closure
+
+Completed:
+- replaced the Rusanov-centered learned proposal with HLLC + learned correction;
+- derived and tested an interface-wise conservative admissibility limiter for `rho>0, p>0`;
+- retained hard Tadmor projection on every interface;
+- tested 4-step multi-step fine-tuning;
+- compared global versus local fully-discrete entropy safeguards.
+
+Three-seed canonical stress results for HLLC-based HCFL with local admissibility:
+- Sod: `0.0765 +/- 0.0022`;
+- Lax: `0.1958 +/- 0.0057`;
+- collision: `0.0952 +/- 0.0274`;
+- strong pressure: `0.2498 +/- 0.0077`;
+- near vacuum: `0.1791 +/- 0.0209`.
+
+Important comparison:
+- MUSCL-HLLC remains better on Sod, Lax, strong-pressure, and near-vacuum;
+- HCFL is better on the collision test;
+- local limiting is the major structural improvement, especially on collision and near-vacuum.
+
+Fully-discrete entropy localization experiments:
+- strict cell-wise entropy budgets are rigorous but too restrictive;
+- sequential interface spending of global entropy slack is also conservative and fully-discrete entropy safe, but order dependent and less accurate;
+- the current preferred design is therefore:
+  1. hard interface Tadmor projection;
+  2. local interface-wise admissibility limiter;
+  3. a rare trajectory-wise scalar fully-discrete entropy line search.
+
+The global entropy safeguard is minimally invasive:
+- inactive on Sod, Lax, and strong-pressure;
+- collision mean global beta about `0.9984`;
+- near-vacuum mean global beta about `0.9828`.
+
+## 2D shallow-water checkpoint
+
+Completed:
+- periodic 2D flat-bottom SWE;
+- 48x48 fine reference -> 12x12 coarse trajectories;
+- shared orientation-aware 3x3 learned face-flux network;
+- hard Tadmor projection independently on x/y faces;
+- 3-seed Plain / Soft / Hard / coarse Rusanov comparison.
+
+Three-seed rollout NRMSE:
+- ID: Plain `0.06190`, Soft `0.06191`, Hard `0.06200`, Rusanov `0.08747`;
+- OOD: Plain `0.08145`, Soft `0.08122`, Hard `0.08127`, Rusanov `0.10319`.
+
+Entropy violation:
+- Hard: zero measured violations;
+- Plain: about 5.98% ID and 8.48% OOD on average;
+- Soft: about 5.46% ID and 7.77% OOD.
+
+This verifies that the basic HCFL mechanism extends across spatial dimension without an observable rollout-accuracy penalty in this moderate regime.
+
+## 2D Euler checkpoint
+
+Completed:
+- periodic 2D ideal-gas Euler;
+- 48x48 fine reference -> 12x12 coarse trajectories;
+- shared orientation-aware 3x3 face network;
+- HLLC base flux + learned local correction;
+- hard Tadmor projection independently on x/y faces;
+- 3-seed moderate ID/OOD study.
+
+Three-seed rollout NRMSE:
+- ID: Hard `0.006670 +/- 0.000846`, Plain `0.006662`, Soft `0.006661`, coarse HLLC `0.012755`;
+- OOD: Hard `0.018555 +/- 0.003401`, Plain `0.018555`, Soft `0.018556`, coarse HLLC `0.029553`.
+
+Hard face entropy violation is zero to numerical precision.
+
+## 2D Euler strong-OOD finding and trust fallback
+
+Strong periodic tests exposed a distinct failure mode:
+- blast: untrusted HCFL can be physically admissible and entropy-feasible but very inaccurate;
+- safety/admissibility limiting does not trigger because the state remains legal.
+
+This motivated a training-calibrated state-level trust layer.
+
+Let `z(U)` be the maximum standardized primitive-state norm over the grid, and let `q99` be its 99th percentile on training snapshots only. Define
+
+[
+\tau(U)=\operatorname{clip}\left[(q_{0.99}/z(U))^2,,0.05,,1\right].
+]
+
+Both learned HCFL and HLLC are first projected into the same Tadmor half-space, then convexly blended:
+
+[
+F^{trust}=F_{HLLC}^H+\tau(U)(F_\theta^H-F_{HLLC}^H).
+]
+
+Because the feasible set is convex, this preserves the hard entropy guarantee.
+
+Three-seed results with no strong-test calibration:
+- moderate ID: `0.006664 +/- 0.000853`, mean tau `0.998`;
+- moderate OOD: `0.022053 +/- 0.005942`, mean tau `0.776`;
+- blast: `0.378327 +/- 0.001946`, tau `0.05`;
+- collision: `0.157578 +/- 0.000232`, mean tau `0.247`;
+- quadrant: `0.077788 +/- 0.001986`, mean tau `0.327`.
+
+Coarse HLLC on the same strong tests is approximately:
+- blast `0.3905`;
+- collision `0.1636`;
+- quadrant `0.0873`.
+
+Thus the current strongest empirical framework is:
+
+1. learned local correction for in-support accuracy;
+2. hard entropy projection;
+3. local admissibility limiting if positivity is threatened;
+4. training-calibrated trust fallback toward entropy-projected HLLC under severe distribution shift;
+5. rare global fully-discrete total-entropy safeguard.
+
+## Current claim boundary
+
+Supported:
+- exact conservative flux form;
+- exact face-level Tadmor feasibility;
+- local admissibility rescue under the checked low-order/CFL premise;
+- global periodic fully-discrete total entropy non-increase via the final line search;
+- trajectory-only learned coarse solver advantage on several 1D/2D distributions;
+- training-calibrated fallback that protects extreme 2D Euler OOD accuracy.
+
+Not yet supported:
+- universal superiority over mature high-order classical schemes;
+- a fully local fully-discrete entropy theorem with no global scalar;
+- well-balanced / bathymetric SWE;
+- true wet/dry fronts;
+- unstructured grids;
+- publication-level novelty claim before the final literature review.
