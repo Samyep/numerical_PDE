@@ -217,3 +217,25 @@ Implemented:
 6. MUSCL-Rusanov and severe near-dry stress tests.
 
 The next main technical target is now **1D Euler**.  The key question is whether the same safe-baseline + learned-correction + convex-limiting construction can jointly preserve density and pressure/internal-energy admissibility while keeping the entropy guarantee cheap.  Do not move to 2D until this is resolved.
+
+
+## Phase B update: 1D Euler checkpoint
+
+The basic 1D Euler mechanism works and exposes the next bottleneck.
+
+Positive findings:
+1. the Euler entropy condition is again an affine half-space in the 3-vector numerical flux;
+2. trajectory-only hard HCFL is markedly better than coarse HLL/Rusanov on random training-like trajectories;
+3. exact entropy projection does not materially damage accuracy there;
+4. conservative admissibility and fully discrete entropy limiters prevent catastrophic density/pressure failure.
+
+Negative/limiting finding:
+- MUSCL-HLLC is substantially stronger on canonical severe shock tubes. Broad random fine-tuning improves some stress cases but does not close this gap.
+
+Next priority:
+1. replace the Rusanov-centered proposal with a stronger entropy-stable / HLLC-like learned proposal;
+2. use multi-step training with broader wave-pattern coverage while keeping benchmark instances held out;
+3. derive a local cell/interface admissibility limiter rather than a single per-trajectory convex coefficient;
+4. only then consider 2D Euler/SWE.
+
+Do not claim universal solver superiority from the current 1D results.
