@@ -179,3 +179,26 @@ Continue aggressively if, on shallow water:
 - training from trajectory data remains stable over multi-step rollout.
 
 Reframe or stop if the hard layer collapses almost all learned proposals to a standard classical flux, or if positivity/fully-discrete stability requires an optimization problem expensive enough to remove the learned-solver advantage.
+
+
+## Phase A update: 1D shallow water pilot completed
+
+The first system-level pilot is positive enough to continue.
+
+Current empirical tradeoff:
+- Plain has the best raw accuracy but 2--3% entropy-violating interfaces.
+- A soft penalty reduces but does not remove violations.
+- HCFL-P removes measured violations to float32 precision while retaining a
+  large accuracy advantage over coarse HLL/Rusanov.
+- The projection changes only about 5--6% of interface fluxes, supporting the
+  intended sparse-safety-filter interpretation.
+
+Next priority order:
+1. add/derive a positivity or invariant-domain mechanism and a fully discrete
+   guarantee compatible with the entropy half-space;
+2. implement a direct vector HCFL-F parameterization and compare it against
+   projection;
+3. move training to stable multi-step rollout and add longer-horizon tests;
+4. add MUSCL/high-order entropy-stable classical baselines and reference-grid
+   convergence checks;
+5. only after the SWE method is stable, move to 1D Euler.

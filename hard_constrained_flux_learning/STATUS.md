@@ -118,3 +118,38 @@ F(b,c)-F(a,b)=G(b,c)-G(a,b).
 Writing `H=F-G` gives `H(b,c)=H(a,b)` for all triplets, which forces `H` to be a global additive constant on a connected state domain. Consistency `F(u,u)=G(u,u)=f(u)` fixes that constant to zero. Thus exact trajectory-map matching on a sufficiently rich state set identifies the teacher flux itself, not merely the trajectory.
 
 This is a controlled theorem/sanity result, not yet the final high-resolution-to-coarse trajectory experiment.
+
+
+## 1D shallow-water system pilot (3 seeds)
+
+A five-point learned numerical flux has now been tested on the flat-bottom 1D
+shallow-water system using fine-grid trajectory supervision.
+
+Verified:
+- fine reference: 1024-cell Rusanov finite volume + SSP-RK2, restricted by cell
+  averaging to 64 cells;
+- learned proposal: five-cell stencil over primitive variables, trained only
+  from one-step coarse trajectory targets;
+- hard layer: exact projection onto the Tadmor entropy half-space;
+- 3 independent seeds, 500 training / 100 ID / 100 OOD trajectories per seed;
+- hard entropy violation rate is zero at tolerance 1e-5; maximum positive
+  residual is about 2e-6 in float32;
+- hard projection is active on only about 5--6% of rollout interfaces;
+- HCFL-P rollout NRMSE is 0.0474 +/- 0.0013 ID and 0.1146 +/- 0.0099 OOD;
+- coarse HLL/Rusanov are around 0.094--0.097 ID and 0.196--0.204 OOD;
+- Plain is more accurate (0.0383 ID, 0.1027 OOD) but violates the entropy
+  condition on about 2.6% of interfaces; the soft penalty still violates it
+  on about 2.0%.
+
+Important implementation correction:
+the differentiable projection must divide by ||a||^2 only on the active mask.
+Using torch.where around a precomputed residual/||a||^2 can create unstable
+near-0/0 backward gradients even when the forward branch is inactive.
+
+Not yet proved or completed:
+- fully discrete entropy theorem;
+- positivity/invariant-domain guarantee;
+- HCFL-F direct feasible parameterization for vector fluxes;
+- multi-step training as the main protocol;
+- stronger high-order classical baselines and deterministic reference
+  convergence tests.
