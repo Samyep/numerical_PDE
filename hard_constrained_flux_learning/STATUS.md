@@ -360,3 +360,29 @@ Decision: this exact wave-balanced replacement strategy failed the seed-0
 screen and should not receive multi-seed confirmation. It is a useful negative
 result: coarse regime labels alone do not explain the remaining severe-test
 gap. See `experiments/euler_1d_wave_coverage_ablation/`.
+
+## 1D Euler reference-precision screening (seed 0)
+
+A controlled reference-resolution ablation kept the 580-trajectory data
+distribution, direct-vector HLLC-HCFL model, initialization, normalization,
+optimizer, 1,100-step budget, safety stack, and evaluation protocol fixed.
+Only the Rusanov + SSP-RK2 training teacher changed from 512 to 2048 cells;
+both arms were evaluated against the same 2048-cell references. Paired nested
+initial conditions gave exactly identical 64-cell initial snapshots.
+
+Result:
+- the paired reference targets differ by normalized RMSE `0.01449` over all
+  snapshots and `0.02276` at the final training snapshot;
+- ordinary-ID NRMSE worsened 0.43%, while moderate high-frequency OOD improved
+  1.46%;
+- collision improved 3.39% and near-vacuum improved 4.51%;
+- Sod worsened 3.53%, Lax 0.23%, and strong-pressure 0.27%;
+- mean canonical NRMSE improved only 1.56%, below the pre-specified 5% bar;
+- all rollouts remained admissible and had zero measured Tadmor violations.
+
+Decision: fourfold Rusanov reference-grid refinement alone failed the seed-0
+screen and should not receive multi-seed confirmation. The 512-cell teacher is
+still not a publication-quality reference, so converged high-order references
+remain required for final benchmarking; however, reference resolution alone
+is not the dominant learned-solver accuracy bottleneck. See
+`experiments/euler_1d_reference_precision_ablation/`.

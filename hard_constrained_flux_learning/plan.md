@@ -336,3 +336,22 @@ coarse wave-regime balancing as a stopped direction. If data coverage is
 revisited after the higher-priority publication work above, change the design
 (for example additive coverage or interface-level sampling) and retain random
 extreme coverage rather than replacing it.
+
+### 1D reference-precision decision update
+
+A seed-0 paired ablation increased only the 1D Euler Rusanov + SSP-RK2 teacher
+grid from 512 to 2048 cells. Both arms retained the same 580 initial conditions,
+64-cell learning grid, model, training schedule, safety stack, and common
+2048-cell evaluation references.
+
+The finer teacher improved moderate OOD by 1.46%, collision by 3.39%, and
+near-vacuum expansion by 4.51%, but worsened Sod by 3.53% and improved the
+five-case canonical mean by only 1.56%. Do not run multi-seed confirmation of
+this exact resolution-only intervention.
+
+Reference quality remains a publication requirement, not a demonstrated
+standalone accuracy lever. For final results, replace or verify the exploratory
+Rusanov teacher with converged high-order references. Do not assume that simply
+increasing the Rusanov grid again will materially improve the learned solver;
+pair any future sharper teacher with an explicit target-fit/learning-capacity
+diagnostic.

@@ -1,0 +1,45 @@
+{
+  "seed": 0,
+  "single_scientific_factor": "training_reference_grid_resolution",
+  "training_composition_per_arm": {
+    "ordinary": 220,
+    "broad_random": 260,
+    "random_extreme": 100
+  },
+  "reference_512": "512-cell Rusanov + SSP-RK2, strict/no repair",
+  "reference_2048": "2048-cell Rusanov + SSP-RK2, strict/no repair",
+  "paired_initial_condition_method": "generate at 2048 cells; conservatively average to 512 cells; identical 64-cell initial states",
+  "evaluation_reference_cells": 2048,
+  "model": "direct-vector HLLC-HCFL",
+  "iterations": 1100,
+  "width": 72,
+  "batch_size": 56,
+  "learning_rate": 0.0003,
+  "ordinary_and_moderate_nsnap": 16,
+  "canonical_nsnap": 64,
+  "entropy_residual_tolerance": 1e-05,
+  "fully_discrete_entropy_tolerance": 1e-08,
+  "stored_dtype": "float32",
+  "solver_compute_dtype": "float64",
+  "pyclaw_available": false,
+  "data_generation_seconds": 111.16371789993718,
+  "total_wall_seconds": 126.3530216999352,
+  "screening_decision": {
+    "passed": false,
+    "recommendation": "stop_or_modify",
+    "ordinary_id_relative_change": 0.004315391773351607,
+    "moderate_ood_relative_change": -0.01461647619251838,
+    "canonical_relative_changes": {
+      "sod": 0.035314038357357136,
+      "lax": 0.0023495835101998708,
+      "collision": -0.033947404571595396,
+      "strong_pressure": 0.002707191728568148,
+      "near_vacuum_expansion": -0.045097094337919974
+    },
+    "canonical_improved_count": 2,
+    "reference_512_canonical_mean_nrmse": 0.10312650032389359,
+    "reference_2048_canonical_mean_nrmse": 0.10151356606113364,
+    "canonical_mean_relative_change": -0.015640347124106224,
+    "all_rollouts_safe": true
+  }
+}
