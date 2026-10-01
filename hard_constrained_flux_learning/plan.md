@@ -322,3 +322,17 @@ The current empirical evidence spans:
 - 2D shallow water;
 - 2D Euler;
 - severe OOD stress tests with a training-calibrated trust fallback.
+
+### 1D training-coverage decision update
+
+A seed-0 controlled screen replaced only the 100 random-extreme trajectories
+in the 580-trajectory direct-vector HLLC-HCFL training set with balanced wave
+regimes. It improved collision by 5.29% and near-vacuum by 3.02%, but degraded
+Sod by 21.08%, left moderate OOD unchanged, and improved the five-case
+canonical mean by only 1.35%.
+
+Do not run multi-seed confirmation of this exact replacement. Treat simple
+coarse wave-regime balancing as a stopped direction. If data coverage is
+revisited after the higher-priority publication work above, change the design
+(for example additive coverage or interface-level sampling) and retain random
+extreme coverage rather than replacing it.

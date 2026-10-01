@@ -1,0 +1,45 @@
+{
+  "seed": 0,
+  "single_scientific_factor": "training_data_distribution",
+  "baseline_training_composition": {
+    "ordinary": 220,
+    "broad_random": 260,
+    "random_extreme": 100
+  },
+  "wave_coverage_training_composition": {
+    "ordinary": 220,
+    "broad_random": 260,
+    "balanced_wave_regimes": 100
+  },
+  "model": "direct-vector HLLC-HCFL",
+  "iterations": 1100,
+  "width": 72,
+  "batch_size": 56,
+  "learning_rate": 0.0003,
+  "reference": "512-cell Rusanov + SSP-RK2, strict/no repair",
+  "ordinary_and_moderate_nsnap": 16,
+  "canonical_nsnap": 64,
+  "entropy_residual_tolerance": 1e-05,
+  "fully_discrete_entropy_tolerance": 1e-08,
+  "pyclaw_available": false,
+  "data_generation_seconds": 6.043559100013226,
+  "total_wall_seconds": 20.28521649981849,
+  "screening_decision": {
+    "passed": false,
+    "recommendation": "stop_or_modify",
+    "ordinary_id_relative_change": -0.012904290561856935,
+    "moderate_ood_relative_change": 0.005760424079322313,
+    "canonical_relative_changes": {
+      "sod": 0.21077093832091953,
+      "lax": 0.0012361545483747793,
+      "collision": -0.05294418853261762,
+      "strong_pressure": -0.008563909976064488,
+      "near_vacuum_expansion": -0.030156026407712644
+    },
+    "canonical_improved_count": 3,
+    "baseline_canonical_mean_nrmse": 0.07817449877872817,
+    "wave_coverage_canonical_mean_nrmse": 0.0771222954753201,
+    "canonical_mean_relative_change": -0.013459674444300851,
+    "all_rollouts_safe": true
+  }
+}

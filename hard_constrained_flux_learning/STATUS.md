@@ -338,3 +338,25 @@ Not yet supported:
 - true wet/dry fronts;
 - unstructured grids;
 - publication-level novelty claim before the final literature review.
+
+## 1D Euler wave-coverage screening (seed 0)
+
+A controlled training-distribution ablation kept the direct-vector HLLC-HCFL
+model, optimizer, 1,100-step budget, normalization, safety stack, and evaluation
+fixed. Only the final 100 of 580 training trajectories changed, from random
+extremes to balanced contact/compression/expansion/pressure-jump/collision
+regimes.
+
+Result:
+- ordinary-ID NRMSE improved 1.29%;
+- moderate high-frequency OOD NRMSE worsened 0.58%;
+- collision improved 5.29%, near-vacuum 3.02%, and strong-pressure 0.86%;
+- Sod worsened 21.08% and Lax worsened 0.12%;
+- mean canonical NRMSE improved only 1.35%, below the pre-specified 5% bar;
+- all rollouts remained admissible and had zero measured Tadmor violations at
+  tolerance `1e-5`.
+
+Decision: this exact wave-balanced replacement strategy failed the seed-0
+screen and should not receive multi-seed confirmation. It is a useful negative
+result: coarse regime labels alone do not explain the remaining severe-test
+gap. See `experiments/euler_1d_wave_coverage_ablation/`.
