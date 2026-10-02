@@ -104,11 +104,13 @@ checkpoints, and figure are stored in [`results/`](results/).
 The validation-selected winner, `dissipation_broad`, was rolled out on the five
 canonical initial conditions without retraining or selecting on them. Its
 64-cell predictions were compared with strict periodic 2048-cell Rusanov +
-SSP-RK2 FVM trajectories. The profile figure shows four distinct series: the
-original 2048-cell curve, that same solution conservatively averaged 32-to-1
-onto 64 cells, a Rusanov + SSP-RK2 solution evolved directly on 64 cells, and
-HCFL-64. Quantitative errors use the averaged FVM-2048 series so both coarse
-solvers are compared on identical cells.
+SSP-RK2 FVM trajectories. The profile figure is intentionally restricted to
+two series: the original 2048-cell solution and a Rusanov + SSP-RK2 solution
+evolved directly on 64 cells. Both are drawn as ordinary lines through their
+native cell-center values, without step rendering. HCFL and the conservative
+64-cell projection are omitted from this diagnostic profile. Quantitative
+errors elsewhere still use the averaged FVM-2048 series so both coarse solvers
+are compared on identical cells.
 
 | case | HCFL-64 NRMSE | FVM-64 NRMSE | HCFL reduction |
 |---|---:|---:|---:|
@@ -119,15 +121,12 @@ solvers are compared on identical cells.
 | near-vacuum expansion | **0.10755** | 0.23829 | 54.87% |
 | five-case mean | **0.09121** | 0.17179 | **46.91%** |
 
-The corrected profiles distinguish true solution structure from plotting
-resolution: FVM-2048 is drawn on all 2048 native cells, its conservative
-64-cell projection is shown explicitly, and FVM-64 and HCFL-64 are drawn as
-coarse cell averages. The dense staircase in the earlier
-version was a display artifact caused by plotting the restricted 64-cell
-reference as if it were the native FVM-2048 curve. The native reference does
-not show broad high-frequency oscillation. HCFL is consistently less diffusive
-than direct FVM-64, although it still underpredicts the narrow peaks in the
-strong-pressure and near-vacuum cases.
+The simplified profile isolates the reference-resolution question. The dense
+staircase in the earlier version was a display artifact caused by plotting the
+restricted 64-cell reference as if it were the native FVM-2048 curve. The
+native reference does not show broad high-frequency oscillation. Learned-model
+accuracy is reported numerically below and in the separate error-map figure;
+it is deliberately not overlaid here.
 
 The same checkpoint scored a canonical mean of `0.06257` against the 512-cell
 FVM reference used by the convergence audit, but `0.09121` against FVM-2048, a

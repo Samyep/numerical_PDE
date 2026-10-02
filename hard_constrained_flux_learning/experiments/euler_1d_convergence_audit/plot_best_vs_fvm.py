@@ -62,9 +62,7 @@ DISPLAY = {
 }
 
 FVM_COLOR = "#202A35"
-PROJECTED_FVM_COLOR = "#009E73"
 COARSE_FVM_COLOR = "#0072B2"
-HCFL_COLOR = "#D55E00"
 GRID_COLOR = "#D8DEE9"
 SPINE_COLOR = "#9AA5B1"
 TEXT_COLOR = "#1F2933"
@@ -210,11 +208,7 @@ def style_axis(axis: plt.Axes) -> None:
 
 def plot_final_profiles(
     native_references: dict[str, torch.Tensor],
-    references: dict[str, torch.Tensor],
     coarse_fvm: dict[str, torch.Tensor],
-    predictions: dict[str, torch.Tensor],
-    summary: dict[str, dict[str, object]],
-    coarse_summary: dict[str, dict[str, object]],
     output: Path,
 ) -> None:
     x_fine = (
@@ -240,59 +234,30 @@ def plot_final_profiles(
 
     for column, name in enumerate(CASES):
         native_reference = base.primitive(native_references[name]).numpy()[0, -1]
-        projected_reference = base.primitive(references[name]).numpy()[0, -1]
         coarse_baseline = base.primitive(coarse_fvm[name]).numpy()[0, -1]
-        prediction = base.primitive(predictions[name]).numpy()[0, -1]
         axes[0, column].set_title(
-            f"{DISPLAY[name]}\n"
-            f"NRMSE: HCFL {summary[name]['rollout_nrmse']:.4f} | "
-            f"FVM-64 {coarse_summary[name]['rollout_nrmse']:.4f}",
+            DISPLAY[name],
             fontsize=10.5,
             fontweight="semibold",
         )
         for row in range(3):
             axis = axes[row, column]
-            axis.step(
+            axis.plot(
                 x_fine,
                 native_reference[:, row],
-                where="mid",
                 color=FVM_COLOR,
-                linewidth=1.55,
+                linewidth=1.7,
                 label="FVM-2048 (native grid)",
                 zorder=2,
             )
-            axis.step(
+            axis.plot(
                 x_coarse,
                 coarse_baseline[:, row],
-                where="mid",
                 color=COARSE_FVM_COLOR,
-                linewidth=1.35,
-                linestyle=":",
-                label="FVM-64 (coarse baseline)",
-                zorder=3,
-            )
-            axis.step(
-                x_coarse,
-                projected_reference[:, row],
-                where="mid",
-                color=PROJECTED_FVM_COLOR,
-                linewidth=1.35,
-                linestyle="-.",
-                marker="o",
-                markersize=2.0,
-                markevery=4,
-                label="FVM-2048 -> 64 averages",
-                zorder=5,
-            )
-            axis.step(
-                x_coarse,
-                prediction[:, row],
-                where="mid",
-                color=HCFL_COLOR,
-                linewidth=1.5,
+                linewidth=1.55,
                 linestyle="--",
-                label="HCFL-64 (dissipation)",
-                zorder=4,
+                label="FVM-64 (native grid)",
+                zorder=3,
             )
             style_axis(axis)
             axis.set_xlim(0.0, 1.0)
@@ -302,7 +267,7 @@ def plot_final_profiles(
                 axis.set_xlabel("x", fontsize=9)
 
     figure.suptitle(
-        "Native and averaged FVM-2048 versus FVM-64 and HCFL-64 at t = 0.0252",
+        "FVM-64 versus FVM-2048 at t = 0.0252",
         y=0.975,
         fontsize=17,
         fontweight="bold",
@@ -314,15 +279,15 @@ def plot_final_profiles(
         labels,
         loc="upper center",
         bbox_to_anchor=(0.53, 0.895),
-        ncol=4,
+        ncol=2,
         frameon=False,
-        fontsize=9.2,
+        fontsize=10,
     )
     figure.text(
         0.99,
         0.018,
-        "Black: native FVM-2048. Green: the same solution averaged 32-to-1 "
-        "onto 64 cells. Blue and orange are independently evolved on 64 cells.",
+        "Both curves show their native cell-center values connected by ordinary lines; "
+        "no step rendering and no resolution averaging are shown.",
         ha="right",
         fontsize=8.5,
         color=MUTED_COLOR,
@@ -477,9 +442,9 @@ def main() -> None:
         "profile_reference": (
             "2048-cell periodic Rusanov + SSP-RK2 shown on its native grid"
         ),
-        "profile_projected_reference": (
-            "the same FVM-2048 trajectory conservatively averaged 32-to-1 "
-            "onto 64 cells"
+        "profile_comparison": (
+            "native FVM-2048 and native FVM-64 cell-center values connected "
+            "by ordinary lines; no averaged or HCFL profile series"
         ),
         "metric_reference": (
             "conservative 64-cell averages of the 2048-cell periodic "
@@ -567,11 +532,7 @@ def main() -> None:
     error_maps_path = results_dir / f"best_vs_fvm_error_maps_seed{args.seed}.png"
     plot_final_profiles(
         native_references,
-        references,
         coarse_fvm,
-        predictions,
-        case_summary,
-        coarse_diagnostics,
         profiles_path,
     )
     plot_error_maps(references, predictions, state_std, error_maps_path)
