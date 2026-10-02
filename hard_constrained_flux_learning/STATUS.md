@@ -386,6 +386,12 @@ Result:
 - validation convergence worsened the canonical mean for direct, invariant,
   CNN, and wave, while improving it for characteristic and dissipation. Severe
   OOD performance therefore remains a separate generalization question;
+- on a common strict FVM-2048 canonical reference, dissipation remains the
+  best converged arm (`0.09121` mean), followed by characteristic (`0.10083`)
+  and CNN (`0.10569`), versus direct at `0.11435`;
+- the dissipation checkpoint's canonical mean rises 45.76% when the comparison
+  reference changes from FVM-512 to FVM-2048. Its visible error is principally
+  localized diffusion and sharp-peak underprediction, not broad oscillation;
 - every rollout remained admissible with zero measured Tadmor violations.
 
 Decision: retire all architecture and wave-coverage rankings based only on the

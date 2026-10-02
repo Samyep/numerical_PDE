@@ -1,0 +1,74 @@
+{
+  "seed": 0,
+  "selected_model": "dissipation_broad_converged_best",
+  "selection_metric": "independent validation rollout NRMSE",
+  "fvm_reference": "2048-cell periodic Rusanov + SSP-RK2, strict/no repair, conservatively restricted to 64 cells",
+  "final_time": 0.0252,
+  "cases": {
+    "sod": {
+      "rollout_nrmse": 0.018980463966727257,
+      "final_snapshot_nrmse": 0.02668129652738571,
+      "peak_snapshot_nrmse": 0.02668129652738571,
+      "peak_snapshot_index": 63,
+      "max_final_primitive_absolute_error": {
+        "density": 0.07679885625839233,
+        "velocity": 0.3836464583873749,
+        "pressure": 0.1067567765712738
+      }
+    },
+    "lax": {
+      "rollout_nrmse": 0.08220545947551727,
+      "final_snapshot_nrmse": 0.13721002638339996,
+      "peak_snapshot_nrmse": 0.13721002638339996,
+      "peak_snapshot_index": 63,
+      "max_final_primitive_absolute_error": {
+        "density": 0.39647746086120605,
+        "velocity": 0.6908438205718994,
+        "pressure": 0.6218456625938416
+      }
+    },
+    "collision": {
+      "rollout_nrmse": 0.10935710370540619,
+      "final_snapshot_nrmse": 0.09294044226408005,
+      "peak_snapshot_nrmse": 0.1868312656879425,
+      "peak_snapshot_index": 44,
+      "max_final_primitive_absolute_error": {
+        "density": 0.29552221298217773,
+        "velocity": 0.5126699209213257,
+        "pressure": 0.38946032524108887
+      }
+    },
+    "strong_pressure": {
+      "rollout_nrmse": 0.13795776665210724,
+      "final_snapshot_nrmse": 0.2718740999698639,
+      "peak_snapshot_nrmse": 0.2718740999698639,
+      "peak_snapshot_index": 63,
+      "max_final_primitive_absolute_error": {
+        "density": 1.0839399099349976,
+        "velocity": 0.6054393649101257,
+        "pressure": 0.5231384634971619
+      }
+    },
+    "near_vacuum_expansion": {
+      "rollout_nrmse": 0.10754644870758057,
+      "final_snapshot_nrmse": 0.22672238945960999,
+      "peak_snapshot_nrmse": 0.22672238945960999,
+      "peak_snapshot_index": 63,
+      "max_final_primitive_absolute_error": {
+        "density": 0.8912338018417358,
+        "velocity": 0.9466946721076965,
+        "pressure": 1.2458513975143433
+      }
+    }
+  },
+  "canonical_mean_rollout_nrmse": 0.0912094485014677,
+  "all_converged_arm_canonical_means": {
+    "direct_broad": 0.11434530727565288,
+    "invariant_broad": 0.1159733235836029,
+    "characteristic_broad": 0.1008325457572937,
+    "dissipation_broad": 0.0912094485014677,
+    "conv_broad": 0.10569238178431987,
+    "direct_wave": 0.11535911858081818
+  },
+  "post_hoc_best_arm_on_fvm_2048": "dissipation_broad"
+}

@@ -86,6 +86,7 @@ this run.
 ```powershell
 python run_convergence_audit.py --seed 0
 python plot_results.py --seed 0
+python plot_best_vs_fvm.py --seed 0
 ```
 
 ## Result

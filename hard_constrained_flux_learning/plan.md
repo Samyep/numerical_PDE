@@ -348,8 +348,11 @@ canonical mean by 9.98%, so it remains a valid control rather than a rejected
 architecture.
 
 Next, run multi-seed confirmation for direct, characteristic, dissipation, and
-CNN under the same convergence rule. Keep the named canonical problems as
-final tests; add an independently parameterized stress-validation family so
+CNN under the same convergence rule, and report every seed against the common
+FVM-2048 reference. The seed-0 FVM-2048 re-evaluation preserves the ranking
+(dissipation, characteristic, CNN, direct) but raises the best model's absolute
+canonical mean by 45.76% relative to FVM-512. Keep the named canonical problems
+as final tests; add an independently parameterized stress-validation family so
 ordinary validation convergence is not confused with severe-OOD optimality.
 
 ### 1D reference-precision decision update

@@ -98,3 +98,52 @@ canonical tests must remain final tests.
 
 The convergence trace, per-split metrics, pairwise comparisons, metadata,
 checkpoints, and figure are stored in [`results/`](results/).
+
+## Best checkpoint versus high-resolution FVM
+
+The validation-selected winner, `dissipation_broad`, was rolled out on the five
+canonical initial conditions without retraining or selecting on them. Its
+64-cell predictions were compared with strict periodic 2048-cell Rusanov +
+SSP-RK2 FVM trajectories conservatively restricted to 64 cell averages.
+
+| case | rollout NRMSE | final-snapshot NRMSE | peak snapshot |
+|---|---:|---:|---:|
+| Sod | **0.01898** | 0.02668 | 63 |
+| Lax | 0.08221 | 0.13721 | 63 |
+| collision | 0.10936 | 0.09294 | 44 |
+| strong pressure | 0.13796 | 0.27187 | 63 |
+| near-vacuum expansion | 0.10755 | 0.22672 | 63 |
+| five-case mean | **0.09121** | -- | -- |
+
+The profiles do not show broad high-frequency oscillation. The dominant error
+is localized diffusion and peak underprediction at moving shocks, contacts,
+and the periodic interface. Sod is tracked closely. Strong pressure is the
+largest-error case; near-vacuum expansion has the next-largest final-time
+error, especially in pressure and velocity. Collision reaches its largest
+error before the final snapshot.
+
+The same checkpoint scored a canonical mean of `0.06257` against the 512-cell
+FVM reference used by the convergence audit, but `0.09121` against FVM-2048, a
+45.76% increase. Thus the absolute error assessment is still sensitive to
+reference resolution.
+
+Every converged arm was therefore evaluated on the same FVM-2048 trajectories:
+
+| converged arm | FVM-2048 canonical mean | change from direct/broad |
+|---|---:|---:|
+| dissipation / broad | **0.09121** | **-20.23%** |
+| characteristic / broad | 0.10083 | -11.82% |
+| CNN / broad | 0.10569 | -7.57% |
+| direct / broad | 0.11435 | reference |
+| direct / wave | 0.11536 | +0.89% |
+| invariant / broad | 0.11597 | +1.42% |
+
+Dissipation remains the best arm on the FVM-2048 five-case mean and on four of
+five individual cases; invariant is narrowly best on Sod. This strengthens the
+seed-0 architecture result, but it is a held-out post-hoc evaluation rather
+than a new checkpoint-selection rule.
+
+See `results/best_vs_fvm_profiles_seed0.png`,
+`results/best_vs_fvm_error_maps_seed0.png`, and
+`results/best_vs_fvm_summary_seed0.json`. The all-arm comparison is in
+`results/all_arms_vs_fvm_seed0.csv`.
