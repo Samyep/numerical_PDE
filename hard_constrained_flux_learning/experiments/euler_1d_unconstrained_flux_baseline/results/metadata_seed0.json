@@ -1,0 +1,31 @@
+{
+  "seed": 0,
+  "hypothesis": "Removing hard output post-processing may slightly improve ordinary validation error, but will increase entropy violations and can lose admissibility on severe shock tubes.",
+  "single_scientific_factor": "hard_flux_output_safety_stack",
+  "candidate": "same DirectFlux proposal emitted without Tadmor projection, local admissibility limiting, or fully-discrete entropy limiting",
+  "controlled_comparator": "direct_broad_converged_best",
+  "conservation": "retained through one shared interface flux",
+  "training_trajectories": 580,
+  "validation_trajectories": 136,
+  "fixed_budget_updates": 1100,
+  "max_updates": 20000,
+  "validation_interval": 100,
+  "plateau_patience": 10,
+  "minimum_relative_improvement": 0.001,
+  "initial_learning_rate": 0.0003,
+  "learning_rate_factor": 0.3,
+  "minimum_learning_rate": 3e-06,
+  "width": 72,
+  "batch_size": 56,
+  "reference": "512-cell Rusanov + SSP-RK2, strict/no repair",
+  "boundary_condition": "periodic",
+  "raw_rollout_failure_definition": {
+    "density_floor": 1e-05,
+    "pressure_floor": 1e-05,
+    "nonfinite_is_failure": true,
+    "repair_or_fallback": false
+  },
+  "selection_rule": "fully completed validation rollouts outrank any checkpoint with a failed validation trajectory; then minimize rollout NRMSE",
+  "data_generation_seconds": 7.338342000031844,
+  "total_wall_seconds": 98.82248640013859
+}
