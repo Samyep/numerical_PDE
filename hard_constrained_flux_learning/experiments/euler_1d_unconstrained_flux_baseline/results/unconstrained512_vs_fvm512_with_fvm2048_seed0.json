@@ -1,0 +1,85 @@
+{
+  "seed": 0,
+  "checkpoint": "unconstrained_direct_broad_converged_best_seed0.pt",
+  "training_cells": 64,
+  "deployment_cells": 512,
+  "updates_per_saved_interval": 8,
+  "saved_interval": 0.0004,
+  "final_time": 0.0252,
+  "comparison": "native FVM-512 versus raw unconstrained DNN on the same 512 cell centers; native FVM-2048 is a visual background only",
+  "data_reduction": "none; no averaging or stride sampling",
+  "raw_rollout_policy": "stop at first nonfinite state, density below 1e-5, or pressure below 1e-5; no constraint, repair, or fallback",
+  "completed_cases": 1,
+  "total_cases": 5,
+  "completed_case_mean_final_snapshot_nrmse": 0.03276125341653824,
+  "cases": {
+    "sod": {
+      "completed": false,
+      "failure_reason": "pressure_below_floor",
+      "failure_saved_interval": 13,
+      "failure_substep_within_interval": 5,
+      "failure_attempted_update": 101,
+      "failure_time": 0.005050000000000001,
+      "last_admissible_time": 0.005,
+      "candidate_min_density": 0.12270422279834747,
+      "candidate_min_pressure": -0.003383004805073142,
+      "minimum_accepted_density": 0.12092502415180206,
+      "minimum_accepted_pressure": 0.005272996611893177
+    },
+    "lax": {
+      "completed": true,
+      "completed_updates": 504,
+      "final_time": 0.0252,
+      "minimum_accepted_density": 0.155963733792305,
+      "minimum_accepted_pressure": 0.5710000395774841,
+      "rollout_nrmse": 0.029582610353827477,
+      "final_snapshot_nrmse": 0.03276125341653824,
+      "peak_snapshot_nrmse": 0.03276125341653824,
+      "peak_snapshot_index": 63,
+      "max_final_primitive_absolute_error": {
+        "density": 0.11470615863800049,
+        "velocity": 0.23526063561439514,
+        "pressure": 0.20324325561523438
+      }
+    },
+    "collision": {
+      "completed": false,
+      "failure_reason": "pressure_below_floor",
+      "failure_saved_interval": 4,
+      "failure_substep_within_interval": 8,
+      "failure_attempted_update": 32,
+      "failure_time": 0.0016,
+      "last_admissible_time": 0.0015500000000000002,
+      "candidate_min_density": 0.17659373581409454,
+      "candidate_min_pressure": -0.010320449247956276,
+      "minimum_accepted_density": 0.19087064266204834,
+      "minimum_accepted_pressure": 0.015403592959046364
+    },
+    "strong_pressure": {
+      "completed": false,
+      "failure_reason": "pressure_below_floor",
+      "failure_saved_interval": 47,
+      "failure_substep_within_interval": 7,
+      "failure_attempted_update": 375,
+      "failure_time": 0.01875,
+      "last_admissible_time": 0.0187,
+      "candidate_min_density": 0.5651392340660095,
+      "candidate_min_pressure": -0.0004998731310479343,
+      "minimum_accepted_density": 0.5053942799568176,
+      "minimum_accepted_pressure": 5.9958500060020015e-05
+    },
+    "near_vacuum_expansion": {
+      "completed": false,
+      "failure_reason": "pressure_below_floor",
+      "failure_saved_interval": 2,
+      "failure_substep_within_interval": 6,
+      "failure_attempted_update": 14,
+      "failure_time": 0.0007,
+      "last_admissible_time": 0.0006500000000000001,
+      "candidate_min_density": 0.4124041497707367,
+      "candidate_min_pressure": -0.009223652072250843,
+      "minimum_accepted_density": 0.44021081924438477,
+      "minimum_accepted_pressure": 0.015178680419921875
+    }
+  }
+}

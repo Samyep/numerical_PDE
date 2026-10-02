@@ -50,4 +50,12 @@ validation trajectory, then minimizes rollout NRMSE.
 ```powershell
 python run_unconstrained_baseline.py --seed 0
 python plot_results.py --seed 0
+python plot_unconstrained512_vs_fvm.py --seed 0
 ```
+
+The 512-cell comparison deploys the validation-selected 64-cell checkpoint
+with eight raw learned updates per saved interval, matching the training
+`dt/dx`. It plots native FVM-512 on the same cell centers and keeps native
+FVM-2048 as a light background reference. No curve is averaged or sampled,
+and a learned curve is omitted if its raw rollout becomes inadmissible before
+the final time.

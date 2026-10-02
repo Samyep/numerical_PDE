@@ -46,6 +46,27 @@ training longer did not repair the severe-rollout reliability problem. During
 convergence, many later checkpoints also lost one of 136 validation
 trajectories even while their one-step and partial-rollout losses decreased.
 
+## Native 512-cell deployment
+
+The same converged checkpoint was also deployed on 512 cells with eight raw
+updates per saved interval, exactly matching the `dt/dx` used on the 64-cell
+training grid. Native FVM-512 is the metric reference; native FVM-2048 is shown
+only as a light visual background. No averaging, stride sampling, constraint,
+repair, or fallback is used.
+
+| canonical case | raw 512-cell outcome | final NRMSE vs FVM-512 |
+|---|---:|---:|
+| Sod | failed: negative pressure at `t=0.00505` | n/a |
+| Lax | completed to `t=0.0252` | `0.03276` |
+| collision | failed: negative pressure at `t=0.00160` | n/a |
+| strong pressure | failed: negative pressure at `t=0.01875` | n/a |
+| near-vacuum expansion | failed: negative pressure at `t=0.00070` | n/a |
+
+Only one of five canonical cases therefore has a physically admissible final
+state whose accuracy can be reported. The figure deliberately omits an orange
+final curve in the four failed columns instead of repairing or plotting an
+invalid state.
+
 ## Decision
 
 Stop this direction as a candidate production solver and retain it as the
@@ -56,5 +77,7 @@ is not justified unless the question changes to quantifying failure
 probability rather than selecting a solver.
 
 See `results/unconstrained_flux_baseline_seed0.png`,
+`results/unconstrained512_vs_fvm512_with_fvm2048_seed0.png`,
+`results/unconstrained512_vs_fvm512_with_fvm2048_seed0.json`,
 `results/metrics_seed0.csv`, and
 `results/comparison_vs_constrained_direct_seed0.csv`.
