@@ -1,12 +1,19 @@
 # Seed-0 result: 512-cell versus 2048-cell training references
 
-## Conclusion
+> **Historical fixed-budget result.** Both arms used 1,100 updates. The later
+> validation-convergence audit shows that this budget is insufficient for every
+> tested 1D Euler architecture/data arm. The target-discrepancy measurements
+> below remain valid, but the trained-performance decision is provisional until
+> both reference arms are trained to a shared validation-convergence rule. See
+> [`../euler_1d_convergence_audit/RESULTS.md`](../euler_1d_convergence_audit/RESULTS.md).
 
-The pre-registered screen is **negative**. A fourfold finer Rusanov + SSP-RK2
-teacher changes the training targets materially, especially for random-extreme
-trajectories, but produces only a small and inconsistent accuracy change in the
-trained 64-cell HCFL solver. Do not spend compute on multi-seed confirmation of
-this exact resolution-only change.
+## Historical fixed-budget conclusion
+
+At 1,100 updates, the pre-registered screen was **negative**. A fourfold finer
+Rusanov + SSP-RK2 teacher changes the training targets materially, especially
+for random-extreme trajectories, but produces only a small and inconsistent
+accuracy change in the trained 64-cell HCFL solver. The later convergence audit
+supersedes the old optimization-dependent stopping decision.
 
 ## Hypothesis and controlled change
 
@@ -93,7 +100,7 @@ suite took 111.16 seconds on CPU. Total wall time was 126.35 seconds. Once the
 data were restricted to 64 cells, training cost was unchanged: 5.59 seconds
 for the 512 arm and 5.68 seconds for the 2048 arm.
 
-## Interpretation and decision
+## Historical interpretation and decision
 
 This result rules out a simple explanation in which the current 512-cell
 teacher resolution is the dominant cause of the remaining 1D Euler accuracy
@@ -104,14 +111,12 @@ loss for the 2048 arm is consistent with the sharper targets being harder to
 fit, but a single stochastic loss sample is not sufficient to make a capacity
 claim.
 
-**Decision: stop the exact strategy of increasing only the Rusanov reference
-grid from 512 to 2048; do not run more seeds.** This does not establish that
-the 512-cell reference is publication quality. Converged high-order references
-remain necessary for final benchmarking, but they should be treated as
-evaluation/data-quality infrastructure rather than an expected standalone
-accuracy fix. If reference quality is revisited as a learning intervention, a
-higher-order teacher and/or training formulation capable of fitting sharper
-targets is more informative than further Rusanov grid refinement alone.
+**Historical decision at 1,100 updates:** stop the exact strategy of increasing
+only the Rusanov reference grid from 512 to 2048. This decision must now be
+retested with validation-converged training. It does not establish that the
+512-cell reference is publication quality. Converged high-order references
+remain necessary for final benchmarking. If reference quality is revisited as
+a learning intervention, train both arms to convergence and pair a sharper
+teacher with an explicit target-fit/capacity diagnostic.
 
 Machine-readable outputs and both checkpoints are in [`results/`](results/).
-

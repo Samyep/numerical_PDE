@@ -1,0 +1,52 @@
+{
+  "seed": 0,
+  "purpose": "re-audit fixed-budget architecture and wave-coverage conclusions after validation convergence",
+  "arms": {
+    "direct_broad": [
+      "direct",
+      "broad"
+    ],
+    "invariant_broad": [
+      "invariant",
+      "broad"
+    ],
+    "characteristic_broad": [
+      "characteristic",
+      "broad"
+    ],
+    "dissipation_broad": [
+      "dissipation",
+      "broad"
+    ],
+    "conv_broad": [
+      "conv",
+      "broad"
+    ],
+    "direct_wave": [
+      "direct",
+      "wave"
+    ]
+  },
+  "training_trajectories_per_arm": 580,
+  "validation_composition": {
+    "ordinary": 44,
+    "broad_random": 52,
+    "random_extreme": 20,
+    "structured_wave": 20
+  },
+  "validation_used_canonical_cases": false,
+  "fixed_budget_updates": 1100,
+  "max_updates": 20000,
+  "validation_interval": 100,
+  "plateau_patience": 10,
+  "minimum_relative_improvement": 0.001,
+  "initial_learning_rate": 0.0003,
+  "learning_rate_factor": 0.3,
+  "minimum_learning_rate": 3e-06,
+  "width": 72,
+  "batch_size": 56,
+  "reference": "512-cell Rusanov + SSP-RK2, strict/no repair",
+  "boundary_condition": "periodic",
+  "data_generation_seconds": 7.9823171000462025,
+  "total_wall_seconds": 843.5474753999151
+}

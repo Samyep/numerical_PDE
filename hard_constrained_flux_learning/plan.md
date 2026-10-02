@@ -323,19 +323,34 @@ The current empirical evidence spans:
 - 2D Euler;
 - severe OOD stress tests with a training-calibrated trust fallback.
 
-### 1D training-coverage decision update
+### 1D training-coverage decision update (revised after convergence audit)
 
-A seed-0 controlled screen replaced only the 100 random-extreme trajectories
-in the 580-trajectory direct-vector HLLC-HCFL training set with balanced wave
-regimes. It improved collision by 5.29% and near-vacuum by 3.02%, but degraded
-Sod by 21.08%, left moderate OOD unchanged, and improved the five-case
-canonical mean by only 1.35%.
+A validation-converged seed-0 audit reproduces the earlier 1,100-update
+checkpoints exactly and shows that neither broad nor wave training was then
+converged. At their validation-selected optima, wave and broad training are
+effectively tied: wave is 0.12% worse on validation, 0.52% better on ordinary
+ID, 0.42% better on broad-random ID, 0.58% worse on moderate OOD, and 0.98%
+worse on the five-case canonical mean.
 
-Do not run multi-seed confirmation of this exact replacement. Treat simple
-coarse wave-regime balancing as a stopped direction. If data coverage is
-revisited after the higher-priority publication work above, change the design
-(for example additive coverage or interface-level sampling) and retain random
-extreme coverage rather than replacing it.
+Do not describe wave learning as a failed direction. The narrower conclusion
+is that replacing random extremes with this coarse balanced-wave slice offers
+no material overall gain. If coverage is revisited, use additive coverage or
+interface-level sampling while retaining random extremes.
+
+### 1D architecture decision update (validation-converged seed 0)
+
+The shared 1,100-update architecture ranking is retired. Best checkpoints now
+occur at 6,100--12,500 updates. Learned dissipation leads seed 0, improving
+validation by 36.16% and the canonical mean by 28.94% relative to converged
+direct correction. Characteristic correction improves them by 23.49% and
+14.18%. CNN is effectively tied on validation (+0.34%) and improves the
+canonical mean by 9.98%, so it remains a valid control rather than a rejected
+architecture.
+
+Next, run multi-seed confirmation for direct, characteristic, dissipation, and
+CNN under the same convergence rule. Keep the named canonical problems as
+final tests; add an independently parameterized stress-validation family so
+ordinary validation convergence is not confused with severe-OOD optimality.
 
 ### 1D reference-precision decision update
 
@@ -346,12 +361,12 @@ grid from 512 to 2048 cells. Both arms retained the same 580 initial conditions,
 
 The finer teacher improved moderate OOD by 1.46%, collision by 3.39%, and
 near-vacuum expansion by 4.51%, but worsened Sod by 3.53% and improved the
-five-case canonical mean by only 1.56%. Do not run multi-seed confirmation of
-this exact resolution-only intervention.
+five-case canonical mean by only 1.56% at the historical 1,100-update budget.
+The new audit shows that this budget is insufficient, so these predictive
+differences are provisional rather than a reason to stop the direction.
 
-Reference quality remains a publication requirement, not a demonstrated
-standalone accuracy lever. For final results, replace or verify the exploratory
-Rusanov teacher with converged high-order references. Do not assume that simply
-increasing the Rusanov grid again will materially improve the learned solver;
-pair any future sharper teacher with an explicit target-fit/learning-capacity
-diagnostic.
+Reference quality remains a publication requirement. For final results,
+replace or verify the exploratory Rusanov teacher with converged high-order
+references. Any future 512-versus-2048 or sharper-teacher comparison must train
+both arms to the same validation-convergence rule and include an explicit
+target-fit/learning-capacity diagnostic.

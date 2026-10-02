@@ -85,5 +85,11 @@ this run.
 
 ```powershell
 python run_convergence_audit.py --seed 0
+python plot_results.py --seed 0
 ```
 
+## Result
+
+The seed-0 run completed with all six arms satisfying the validation-plateau
+criterion before the update cap. See [`RESULTS.md`](RESULTS.md) for the revised
+architecture and wave-coverage conclusions.

@@ -339,7 +339,7 @@ Not yet supported:
 - unstructured grids;
 - publication-level novelty claim before the final literature review.
 
-## 1D Euler wave-coverage screening (seed 0)
+## 1D Euler wave-coverage screening (seed 0; historical fixed budget)
 
 A controlled training-distribution ablation kept the direct-vector HLLC-HCFL
 model, optimizer, 1,100-step budget, normalization, safety stack, and evaluation
@@ -356,12 +356,46 @@ Result:
 - all rollouts remained admissible and had zero measured Tadmor violations at
   tolerance `1e-5`.
 
-Decision: this exact wave-balanced replacement strategy failed the seed-0
-screen and should not receive multi-seed confirmation. It is a useful negative
-result: coarse regime labels alone do not explain the remaining severe-test
-gap. See `experiments/euler_1d_wave_coverage_ablation/`.
+Historical decision: this exact wave-balanced replacement strategy failed the
+1,100-update seed-0 screen. The convergence audit below shows that 1,100
+updates was insufficient for every tested arm, so this is retained only as a
+fixed-budget result and no longer supports the claim that learning wave data is
+intrinsically worse. See `experiments/euler_1d_wave_coverage_ablation/`.
 
-## 1D Euler reference-precision screening (seed 0)
+## 1D Euler validation-convergence audit (seed 0)
+
+Five architecture arms on the same broad-random data and the direct model on
+the wave-balanced replacement data were trained with a shared independent
+validation set. Validation rollout NRMSE selected checkpoints and controlled a
+three-stage learning-rate reduction. All arms reached the registered plateau
+criterion before the 20,000-update cap; best checkpoints occurred at
+6,100--12,500 updates, far beyond the old 1,100-update budget.
+
+Result:
+- converged validation NRMSE was `0.049430` direct, `0.047696` invariant,
+  `0.037819` characteristic, `0.031557` dissipation, `0.049599` CNN, and
+  `0.049490` direct/wave;
+- learned dissipation beat converged direct by 36.16% on validation and 28.94%
+  on the five-case canonical mean; characteristic improved them by 23.49% and
+  14.18%;
+- CNN was only 0.34% worse than direct on validation and 9.98% better on the
+  canonical mean, so the old “CNN is worse” interpretation is unsupported;
+- direct/wave and direct/broad were effectively tied: wave was 0.12% worse on
+  validation and 0.98% worse on the canonical mean. This replacement design
+  has no material advantage, but it is not evidence against learning waves;
+- validation convergence worsened the canonical mean for direct, invariant,
+  CNN, and wave, while improving it for characteristic and dissipation. Severe
+  OOD performance therefore remains a separate generalization question;
+- every rollout remained admissible with zero measured Tadmor violations.
+
+Decision: retire all architecture and wave-coverage rankings based only on the
+1,100-update budget. Promote dissipation and characteristic corrections to
+multi-seed confirmation; retain CNN as a competitive control. If wave coverage
+is revisited, test additive or interface-targeted coverage rather than claiming
+that wave learning itself failed. Boundaries remain periodic and unlearned in
+this audit. See `experiments/euler_1d_convergence_audit/`.
+
+## 1D Euler reference-precision screening (seed 0; historical fixed budget)
 
 A controlled reference-resolution ablation kept the 580-trajectory data
 distribution, direct-vector HLLC-HCFL model, initialization, normalization,
@@ -380,9 +414,11 @@ Result:
 - mean canonical NRMSE improved only 1.56%, below the pre-specified 5% bar;
 - all rollouts remained admissible and had zero measured Tadmor violations.
 
-Decision: fourfold Rusanov reference-grid refinement alone failed the seed-0
-screen and should not receive multi-seed confirmation. The 512-cell teacher is
-still not a publication-quality reference, so converged high-order references
-remain required for final benchmarking; however, reference resolution alone
-is not the dominant learned-solver accuracy bottleneck. See
+Historical decision: fourfold Rusanov reference-grid refinement alone failed
+the 1,100-update seed-0 screen. Because the convergence audit established that
+this budget is generally insufficient, the measured target discrepancy remains
+valid but the learned-performance conclusion is provisional. A future
+resolution comparison must train both teacher arms to validation convergence.
+The 512-cell teacher is still not a publication-quality reference, and
+converged high-order references remain required for final benchmarking. See
 `experiments/euler_1d_reference_precision_ablation/`.

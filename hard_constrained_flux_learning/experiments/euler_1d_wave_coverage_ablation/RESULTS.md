@@ -1,12 +1,21 @@
 # Seed-0 result: balanced wave coverage
 
-## Conclusion
+> **Historical fixed-budget result.** This screen used 1,100 updates and did
+> not establish convergence. The validation-converged audit reproduces both
+> checkpoints bit-for-bit and supersedes the causal decision below: at
+> convergence, wave and broad training are effectively tied on validation
+> (+0.12% for wave), while wave is 0.98% worse on the canonical mean. This
+> supports “no material advantage for this replacement design,” not
+> “wave-coverage learning is intrinsically bad.” See
+> [`../euler_1d_convergence_audit/RESULTS.md`](../euler_1d_convergence_audit/RESULTS.md).
 
-The pre-registered screen is **negative**. Replacing the 100 random-extreme
-training trajectories with 100 balanced contact/compression/expansion/
-pressure-jump/collision trajectories does not produce a sufficiently large or
-consistent gain. Do not spend compute on multi-seed confirmation of this exact
-formulation.
+## Historical fixed-budget conclusion
+
+At 1,100 updates, the pre-registered screen was **negative**. Replacing the 100
+random-extreme training trajectories with 100 balanced contact/compression/
+expansion/pressure-jump/collision trajectories did not produce a sufficiently
+large or consistent gain. The convergence-controlled report above supersedes
+the old optimization-dependent decision.
 
 ## What was inspected
 
@@ -93,7 +102,7 @@ Both models have 6,627 trainable parameters. CPU training took 5.32 seconds for
 the baseline and 5.19 seconds for wave coverage; full evaluation took 1.51 and
 1.55 seconds, respectively. The experiment does not change model compute.
 
-## Interpretation and decision
+## Historical interpretation and decision
 
 This result rules out the simple claim that swapping a small random-extreme
 slice for uniformly balanced wave templates is enough to solve the remaining
@@ -103,10 +112,11 @@ OOD gain. Hard feasibility and admissibility remain intact, but they do not
 imply predictive accuracy; zero measured Tadmor violations also do not establish
 entropy-solution uniqueness.
 
-**Decision: stop this exact replacement strategy; do not run more seeds.** If
-training coverage is revisited later, it should be modified rather than merely
-confirmed—for example, test additive coverage or interface-level regime
-balancing without removing random extremes. No such second experiment was run
-here.
+**Historical decision at 1,100 updates:** stop this exact replacement strategy.
+The convergence audit narrows that decision to “no material advantage at seed
+0” and removes the broader negative interpretation of wave learning. If
+training coverage is revisited later, test additive coverage or interface-level
+regime balancing without removing random extremes. No such second experiment
+was run here.
 
 Machine-readable results are in [`results/`](results/).
