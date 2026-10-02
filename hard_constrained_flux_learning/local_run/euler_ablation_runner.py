@@ -394,6 +394,48 @@ class FullFlux(nn.Module):
         return self.net(feats)
 
 
+class CentralConsistentFlux(nn.Module):
+    """Central physical flux plus an exactly jump-gated learned correction.
+
+    The correction is identically zero whenever the two interface states are
+    equal, even if the outer stencil is not constant.  Consequently the raw
+    proposal satisfies F_hat(U, U) = F(U) by construction.
+    """
+
+    def __init__(self, mean, std, width=72):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(15, width), nn.Tanh(),
+            nn.Linear(width, width), nn.Tanh(),
+            nn.Linear(width, 3),
+        )
+        nn.init.zeros_(self.net[-1].weight)
+        nn.init.zeros_(self.net[-1].bias)
+        self.register_buffer("mean", torch.tensor(mean, dtype=torch.float32))
+        self.register_buffer("std", torch.tensor(std, dtype=torch.float32))
+        self.register_buffer(
+            "scale", torch.tensor([0.6, 1.2, 2.5], dtype=torch.float32)
+        )
+
+    def forward(self, U):
+        P = primitive(U)
+        feats = torch.cat([
+            (torch.roll(P, s, dims=-2) - self.mean) / self.std
+            for s in [2, 1, 0, -1, -2]
+        ], dim=-1)
+        correction = torch.tanh(self.net(feats))
+        right_state = torch.roll(U, -1, dims=-2)
+        right_primitive = torch.roll(P, -1, dims=-2)
+        jump = torch.linalg.vector_norm(
+            (right_primitive - P) / self.std, dim=-1
+        )
+        central_flux = 0.5 * (t_flux(U) + t_flux(right_state))
+        return (
+            central_flux
+            + 0.18 * jump[..., None] * correction * self.scale
+        )
+
+
 class DirectFlux(nn.Module):
     def __init__(self, mean, std, width=72):
         super().__init__()
@@ -572,6 +614,8 @@ class Solver(nn.Module):
         super().__init__()
         if model_name == "full":
             self.flux_net = FullFlux(mean, std, width)
+        elif model_name == "central_consistent":
+            self.flux_net = CentralConsistentFlux(mean, std, width)
         elif model_name == "direct":
             self.flux_net = DirectFlux(mean, std, width)
         elif model_name == "invariant":
@@ -670,7 +714,7 @@ def train(args):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("--model", choices=["full","direct","invariant","characteristic","dissipation","conv"], required=True)
+    p.add_argument("--model", choices=["full","central_consistent","direct","invariant","characteristic","dissipation","conv"], required=True)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--iters", type=int, default=1100)
     p.add_argument("--width", type=int, default=72)
