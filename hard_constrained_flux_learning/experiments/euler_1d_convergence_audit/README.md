@@ -94,7 +94,7 @@ python plot_best_vs_fvm.py --seed 0
 The seed-0 run completed with all six arms satisfying the validation-plateau
 criterion before the update cap. See [`RESULTS.md`](RESULTS.md) for the revised
 architecture and wave-coverage conclusions. The FVM comparison plot shows the
-native FVM-2048 and directly evolved FVM-64 solutions only. Both use ordinary
-lines through native cell-center values; the figure omits the averaged and
-HCFL curves. Like-for-like numerical error metrics still use the conservatively
-averaged reference.
+HCFL-64 and an unaveraged 64-point subsample of FVM-2048 only. The fine-grid
+series takes the near-center cell (`16 + 32*i`) from each consecutive block of
+32 and connects those values with an ordinary line. Like-for-like numerical
+error metrics still use the conservatively averaged reference.

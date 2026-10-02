@@ -105,12 +105,12 @@ The validation-selected winner, `dissipation_broad`, was rolled out on the five
 canonical initial conditions without retraining or selecting on them. Its
 64-cell predictions were compared with strict periodic 2048-cell Rusanov +
 SSP-RK2 FVM trajectories. The profile figure is intentionally restricted to
-two series: the original 2048-cell solution and a Rusanov + SSP-RK2 solution
-evolved directly on 64 cells. Both are drawn as ordinary lines through their
-native cell-center values, without step rendering. HCFL and the conservative
-64-cell projection are omitted from this diagnostic profile. Quantitative
-errors elsewhere still use the averaged FVM-2048 series so both coarse solvers
-are compared on identical cells.
+two series: HCFL-64 and 64 point samples taken from the original 2048-cell
+solution. Each group of 32 consecutive fine cells contributes its near-center
+cell (`16 + 32*i`, zero-based), with no averaging, and the resulting values are
+connected by ordinary lines. Quantitative errors elsewhere still use the
+conservatively averaged FVM-2048 series so the reported coarse-cell metric
+retains its finite-volume meaning.
 
 | case | HCFL-64 NRMSE | FVM-64 NRMSE | HCFL reduction |
 |---|---:|---:|---:|
@@ -121,12 +121,10 @@ are compared on identical cells.
 | near-vacuum expansion | **0.10755** | 0.23829 | 54.87% |
 | five-case mean | **0.09121** | 0.17179 | **46.91%** |
 
-The simplified profile isolates the reference-resolution question. The dense
-staircase in the earlier version was a display artifact caused by plotting the
-restricted 64-cell reference as if it were the native FVM-2048 curve. The
-native reference does not show broad high-frequency oscillation. Learned-model
-accuracy is reported numerically below and in the separate error-map figure;
-it is deliberately not overlaid here.
+The simplified profile directly compares the learned 64-cell values with an
+unaveraged, stride-sampled view of the fine solution. It is a visual diagnostic,
+not the conservative finite-volume error definition used by the tables and
+error map.
 
 The same checkpoint scored a canonical mean of `0.06257` against the 512-cell
 FVM reference used by the convergence audit, but `0.09121` against FVM-2048, a

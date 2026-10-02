@@ -62,7 +62,7 @@ DISPLAY = {
 }
 
 FVM_COLOR = "#202A35"
-COARSE_FVM_COLOR = "#0072B2"
+HCFL_COLOR = "#D55E00"
 GRID_COLOR = "#D8DEE9"
 SPINE_COLOR = "#9AA5B1"
 TEXT_COLOR = "#1F2933"
@@ -208,12 +208,16 @@ def style_axis(axis: plt.Axes) -> None:
 
 def plot_final_profiles(
     native_references: dict[str, torch.Tensor],
-    coarse_fvm: dict[str, torch.Tensor],
+    predictions: dict[str, torch.Tensor],
     output: Path,
 ) -> None:
-    x_fine = (
-        np.arange(precision.HIGH_REFERENCE_CELLS) + 0.5
-    ) / precision.HIGH_REFERENCE_CELLS
+    sampling_stride = precision.HIGH_REFERENCE_CELLS // base.NCOARSE
+    if sampling_stride * base.NCOARSE != precision.HIGH_REFERENCE_CELLS:
+        raise ValueError("Fine and coarse grids must be nested")
+    sampling_offset = sampling_stride // 2
+    sample_indices = (
+        np.arange(base.NCOARSE) * sampling_stride + sampling_offset
+    )
     x_coarse = (np.arange(base.NCOARSE) + 0.5) / base.NCOARSE
     row_labels = [r"Density $\rho$", r"Velocity $u$", r"Pressure $p$"]
     figure, axes = plt.subplots(
@@ -234,7 +238,8 @@ def plot_final_profiles(
 
     for column, name in enumerate(CASES):
         native_reference = base.primitive(native_references[name]).numpy()[0, -1]
-        coarse_baseline = base.primitive(coarse_fvm[name]).numpy()[0, -1]
+        sampled_reference = native_reference[sample_indices]
+        prediction = base.primitive(predictions[name]).numpy()[0, -1]
         axes[0, column].set_title(
             DISPLAY[name],
             fontsize=10.5,
@@ -243,20 +248,22 @@ def plot_final_profiles(
         for row in range(3):
             axis = axes[row, column]
             axis.plot(
-                x_fine,
-                native_reference[:, row],
+                x_coarse,
+                sampled_reference[:, row],
                 color=FVM_COLOR,
                 linewidth=1.7,
-                label="FVM-2048 (native grid)",
+                marker="o",
+                markersize=2.2,
+                label="FVM-2048 (one central sample per 32 cells)",
                 zorder=2,
             )
             axis.plot(
                 x_coarse,
-                coarse_baseline[:, row],
-                color=COARSE_FVM_COLOR,
+                prediction[:, row],
+                color=HCFL_COLOR,
                 linewidth=1.55,
                 linestyle="--",
-                label="FVM-64 (native grid)",
+                label="HCFL-64 (dissipation)",
                 zorder=3,
             )
             style_axis(axis)
@@ -267,7 +274,7 @@ def plot_final_profiles(
                 axis.set_xlabel("x", fontsize=9)
 
     figure.suptitle(
-        "FVM-64 versus FVM-2048 at t = 0.0252",
+        "HCFL-64 versus stride-sampled FVM-2048 at t = 0.0252",
         y=0.975,
         fontsize=17,
         fontweight="bold",
@@ -286,8 +293,8 @@ def plot_final_profiles(
     figure.text(
         0.99,
         0.018,
-        "Both curves show their native cell-center values connected by ordinary lines; "
-        "no step rendering and no resolution averaging are shown.",
+        "FVM-2048 is not averaged: one near-center fine cell is selected from "
+        "each consecutive block of 32 and the resulting 64 values are connected.",
         ha="right",
         fontsize=8.5,
         color=MUTED_COLOR,
@@ -443,8 +450,8 @@ def main() -> None:
             "2048-cell periodic Rusanov + SSP-RK2 shown on its native grid"
         ),
         "profile_comparison": (
-            "native FVM-2048 and native FVM-64 cell-center values connected "
-            "by ordinary lines; no averaged or HCFL profile series"
+            "HCFL-64 and 64 point samples from native FVM-2048; sample index "
+            "16 + 32*i in each fine-grid trajectory; no averaging"
         ),
         "metric_reference": (
             "conservative 64-cell averages of the 2048-cell periodic "
@@ -532,7 +539,7 @@ def main() -> None:
     error_maps_path = results_dir / f"best_vs_fvm_error_maps_seed{args.seed}.png"
     plot_final_profiles(
         native_references,
-        coarse_fvm,
+        predictions,
         profiles_path,
     )
     plot_error_maps(references, predictions, state_std, error_maps_path)
