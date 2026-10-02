@@ -104,10 +104,11 @@ checkpoints, and figure are stored in [`results/`](results/).
 The validation-selected winner, `dissipation_broad`, was rolled out on the five
 canonical initial conditions without retraining or selecting on them. Its
 64-cell predictions were compared with strict periodic 2048-cell Rusanov +
-SSP-RK2 FVM trajectories. The profile figure retains the original 2048-cell
-curve and separately shows a Rusanov + SSP-RK2 solution evolved directly on
-64 cells. For quantitative errors, the 2048-cell solution is conservatively
-averaged to the same 64 cells used by both coarse solvers.
+SSP-RK2 FVM trajectories. The profile figure shows four distinct series: the
+original 2048-cell curve, that same solution conservatively averaged 32-to-1
+onto 64 cells, a Rusanov + SSP-RK2 solution evolved directly on 64 cells, and
+HCFL-64. Quantitative errors use the averaged FVM-2048 series so both coarse
+solvers are compared on identical cells.
 
 | case | HCFL-64 NRMSE | FVM-64 NRMSE | HCFL reduction |
 |---|---:|---:|---:|
@@ -119,8 +120,9 @@ averaged to the same 64 cells used by both coarse solvers.
 | five-case mean | **0.09121** | 0.17179 | **46.91%** |
 
 The corrected profiles distinguish true solution structure from plotting
-resolution: FVM-2048 is drawn on all 2048 native cells, while FVM-64 and
-HCFL-64 are drawn as coarse cell averages. The dense staircase in the earlier
+resolution: FVM-2048 is drawn on all 2048 native cells, its conservative
+64-cell projection is shown explicitly, and FVM-64 and HCFL-64 are drawn as
+coarse cell averages. The dense staircase in the earlier
 version was a display artifact caused by plotting the restricted 64-cell
 reference as if it were the native FVM-2048 curve. The native reference does
 not show broad high-frequency oscillation. HCFL is consistently less diffusive

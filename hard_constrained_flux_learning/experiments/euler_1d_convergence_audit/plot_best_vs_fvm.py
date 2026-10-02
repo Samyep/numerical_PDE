@@ -62,6 +62,7 @@ DISPLAY = {
 }
 
 FVM_COLOR = "#202A35"
+PROJECTED_FVM_COLOR = "#009E73"
 COARSE_FVM_COLOR = "#0072B2"
 HCFL_COLOR = "#D55E00"
 GRID_COLOR = "#D8DEE9"
@@ -209,6 +210,7 @@ def style_axis(axis: plt.Axes) -> None:
 
 def plot_final_profiles(
     native_references: dict[str, torch.Tensor],
+    references: dict[str, torch.Tensor],
     coarse_fvm: dict[str, torch.Tensor],
     predictions: dict[str, torch.Tensor],
     summary: dict[str, dict[str, object]],
@@ -238,6 +240,7 @@ def plot_final_profiles(
 
     for column, name in enumerate(CASES):
         native_reference = base.primitive(native_references[name]).numpy()[0, -1]
+        projected_reference = base.primitive(references[name]).numpy()[0, -1]
         coarse_baseline = base.primitive(coarse_fvm[name]).numpy()[0, -1]
         prediction = base.primitive(predictions[name]).numpy()[0, -1]
         axes[0, column].set_title(
@@ -270,6 +273,19 @@ def plot_final_profiles(
             )
             axis.step(
                 x_coarse,
+                projected_reference[:, row],
+                where="mid",
+                color=PROJECTED_FVM_COLOR,
+                linewidth=1.35,
+                linestyle="-.",
+                marker="o",
+                markersize=2.0,
+                markevery=4,
+                label="FVM-2048 -> 64 averages",
+                zorder=5,
+            )
+            axis.step(
+                x_coarse,
                 prediction[:, row],
                 where="mid",
                 color=HCFL_COLOR,
@@ -286,7 +302,7 @@ def plot_final_profiles(
                 axis.set_xlabel("x", fontsize=9)
 
     figure.suptitle(
-        "Native FVM-2048 versus coarse FVM-64 and HCFL-64 at t = 0.0252",
+        "Native and averaged FVM-2048 versus FVM-64 and HCFL-64 at t = 0.0252",
         y=0.975,
         fontsize=17,
         fontweight="bold",
@@ -298,15 +314,15 @@ def plot_final_profiles(
         labels,
         loc="upper center",
         bbox_to_anchor=(0.53, 0.895),
-        ncol=3,
+        ncol=4,
         frameon=False,
-        fontsize=10,
+        fontsize=9.2,
     )
     figure.text(
         0.99,
         0.018,
-        "FVM-2048 is shown on its native grid. Metrics use its conservative "
-        "64-cell averages so both coarse solvers are compared on the same cells.",
+        "Black: native FVM-2048. Green: the same solution averaged 32-to-1 "
+        "onto 64 cells. Blue and orange are independently evolved on 64 cells.",
         ha="right",
         fontsize=8.5,
         color=MUTED_COLOR,
@@ -461,6 +477,10 @@ def main() -> None:
         "profile_reference": (
             "2048-cell periodic Rusanov + SSP-RK2 shown on its native grid"
         ),
+        "profile_projected_reference": (
+            "the same FVM-2048 trajectory conservatively averaged 32-to-1 "
+            "onto 64 cells"
+        ),
         "metric_reference": (
             "conservative 64-cell averages of the 2048-cell periodic "
             "Rusanov + SSP-RK2 trajectory"
@@ -547,6 +567,7 @@ def main() -> None:
     error_maps_path = results_dir / f"best_vs_fvm_error_maps_seed{args.seed}.png"
     plot_final_profiles(
         native_references,
+        references,
         coarse_fvm,
         predictions,
         case_summary,
