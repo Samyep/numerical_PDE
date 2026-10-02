@@ -1,5 +1,10 @@
 # 1D Euler reference-precision ablation
 
+> Historical fixed-budget screen: the 1,100-update models were not shown to
+> converge. Their metrics remain as an audit trail, but their weights are not
+> retained; this comparison must be rerun with validation convergence before
+> drawing a model conclusion.
+
 ## Pre-run hypothesis
 
 > The remaining 1D Euler accuracy gap is partly caused by numerical diffusion
@@ -70,4 +75,3 @@ Only a passing seed-0 result should receive multi-seed confirmation.
 ```powershell
 python run_precision_ablation.py --seed 0
 ```
-

@@ -335,10 +335,6 @@ def train_to_convergence(
 
         if update == fixed_budget_updates:
             fixed_state = clone_state_dict(model)
-            torch.save(
-                fixed_state,
-                output / f"{ARM}_fixed1100_seed{seed}.pt",
-            )
 
         if update % validation_interval != 0 and update != max_updates:
             continue
@@ -389,7 +385,7 @@ def train_to_convergence(
         )
 
     if fixed_state is None:
-        raise RuntimeError("The fixed 1,100-update checkpoint was not created")
+        raise RuntimeError("The fixed 1,100-update state was not captured")
     if best_state is None:
         raise RuntimeError("No validation checkpoint was created")
 

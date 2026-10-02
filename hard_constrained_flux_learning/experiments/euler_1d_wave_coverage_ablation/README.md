@@ -1,5 +1,9 @@
 # 1D Euler wave-coverage ablation
 
+> Historical fixed-budget screen: the 1,100-update models were not shown to
+> converge. Their metrics remain as an audit trail, but their weights are not
+> retained; use the validation-converged audit for model conclusions.
+
 ## Pre-run hypothesis
 
 > The remaining severe held-out failures of direct-vector HLLC-HCFL are

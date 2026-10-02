@@ -61,8 +61,8 @@ used for optimization, scheduling, checkpoint selection, or stopping.
 - declare convergence after another ten non-improving checks at the minimum
   learning rate;
 - cap at 20,000 updates and report explicitly if the cap is reached;
-- retain both the exact 1,100-update checkpoint and the best validation
-  checkpoint for every arm.
+- evaluate the exact 1,100-update state in memory for the historical audit,
+  but retain weights only for the best validation checkpoint of every arm.
 
 The deterministic full-training one-step loss, validation one-step loss, and
 safe validation rollout NRMSE are recorded at every validation check.
@@ -89,6 +89,7 @@ python plot_results.py --seed 0
 python plot_best_vs_fvm.py --seed 0
 python plot_hcfl2048_vs_fvm2048.py --seed 0
 python plot_hllc512_vs_hcfl512.py --seed 0
+python audit_scientific_integrity.py --seed 0
 ```
 
 ## Result
@@ -120,3 +121,10 @@ native HLLC + SSP-RK2 on 512 cells and an exact matched zero-neural-correction
 control that retains the HCFL safety stack and update schedule. All numerical
 errors use conservative HLLC-2048 to 512 restriction, so the learned increment
 is isolated from the HLLC base flux and from the safety/integration protocol.
+
+The executable integrity audit checks dataset separation, validation-only
+checkpoint selection, convergence, a nonzero learned correction, the matched
+HLLC comparison, admissibility/conservation, and the absence of retained
+fixed-budget weight files. Its machine-readable result is
+`results/scientific_integrity_audit_seed0.json`; the interpretation and limits
+of the evidence are documented in [`SCIENTIFIC_INTEGRITY.md`](SCIENTIFIC_INTEGRITY.md).

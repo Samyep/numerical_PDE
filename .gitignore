@@ -1,2 +1,8 @@
 __pycache__/
 *.py[cod]
+
+# Historical fixed-budget weights were not validation-converged. Keep their
+# CSV audit trails, but do not reintroduce the transient checkpoints.
+**/*_fixed1100_seed*.pt
+hard_constrained_flux_learning/experiments/euler_1d_reference_precision_ablation/results/*.pt
+hard_constrained_flux_learning/experiments/euler_1d_wave_coverage_ablation/results/*.pt

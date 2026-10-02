@@ -45,6 +45,9 @@ silently replaced by a classical step. Checkpoint selection gives every fully
 admissible validation rollout priority over a checkpoint with any failed
 validation trajectory, then minimizes rollout NRMSE.
 
+The historical 1,100-update state is evaluated in memory and recorded in the
+CSV audit trail, but only the validation-selected converged weights are kept.
+
 ## Run
 
 ```powershell

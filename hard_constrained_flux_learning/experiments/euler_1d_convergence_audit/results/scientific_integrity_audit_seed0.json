@@ -1,0 +1,173 @@
+{
+  "seed": 0,
+  "verdict": "PASS for the recorded seed-0 controlled experiment; this is evidence of utility without detected leakage, not a universal or multi-seed superiority claim",
+  "checks": {
+    "exact_split_overlap": "pass",
+    "validation_only_checkpoint_selection": "pass",
+    "all_retained_training_checkpoints_converged": "pass",
+    "learned_correction_nonzero": "pass",
+    "constant_state_consistency": "pass",
+    "matched_zero_nn_control": "pass",
+    "admissibility_and_conservation": "pass"
+  },
+  "dataset_separation": {
+    "training_tensor_shape": [
+      580,
+      16,
+      64,
+      3
+    ],
+    "wave_training_tensor_shape": [
+      580,
+      16,
+      64,
+      3
+    ],
+    "validation_tensor_shape": [
+      136,
+      16,
+      64,
+      3
+    ],
+    "training_cells_seen_by_network": 64,
+    "fine_cells_used_to_generate_training_targets": 512,
+    "restriction_factor": 8,
+    "training_generator_seeds": {
+      "ordinary": 6000,
+      "broad_random": 7000,
+      "random_extreme": 8000,
+      "structured_wave": 9000
+    },
+    "validation_generator_seeds": {
+      "ordinary": 14000,
+      "broad_random": 15000,
+      "random_extreme": 16000,
+      "structured_wave": 17000
+    },
+    "exact_initial_state_overlap_counts": {
+      "training_validation": 0,
+      "training_canonical": 0,
+      "validation_canonical": 0
+    },
+    "canonical_initial_state_sha256": {
+      "sod": "036f5d742cc00c85d71e71ea9970be5dc6b88a112837540dd05ba476a43279e2",
+      "lax": "500ae81cc8eb7ac3b5c85e270cf26a448560951ed2020f6f62b08491b488faad",
+      "collision": "cc3241c58ba99b428547d9604f51028fd95eaf8e444928a26ce7c2f22126d607",
+      "strong_pressure": "987dcc0283fe77a057b7a0d60390a11eb105edff2bcbf8e65d5d8d9a460847de",
+      "near_vacuum_expansion": "2284687f3d2248c2c13991827ef16890e55e509a45b8b603fe0dd206c6beec63"
+    }
+  },
+  "checkpoint_selection": {
+    "selection_signal": "independent validation rollout NRMSE only",
+    "canonical_cases_used_for_selection": false,
+    "selected_arm": "dissipation_broad",
+    "all_arms_met_declared_convergence_rule": true,
+    "retained_nonconverged_checkpoints": [],
+    "retained_converged_checkpoint_count": 7,
+    "arms": {
+      "direct_broad": {
+        "selected_update": 8300,
+        "validation_rollout_nrmse": 0.04943032797036211,
+        "stop_update": 10000,
+        "stop_reason": "validation_plateau_at_minimum_learning_rate",
+        "checkpoint_sha256": "78dc9d81d3e6bd25003e814183f3be988569e645a9e79e200fa32d80f50dc4f6"
+      },
+      "invariant_broad": {
+        "selected_update": 8300,
+        "validation_rollout_nrmse": 0.04769644357824685,
+        "stop_update": 11500,
+        "stop_reason": "validation_plateau_at_minimum_learning_rate",
+        "checkpoint_sha256": "ffb142fd28683e456d6fbb35c59df7bfd0c4f508f53377f5e264121a26c89c6e"
+      },
+      "characteristic_broad": {
+        "selected_update": 10400,
+        "validation_rollout_nrmse": 0.03781889962345086,
+        "stop_update": 13900,
+        "stop_reason": "validation_plateau_at_minimum_learning_rate",
+        "checkpoint_sha256": "314e8153c8d52a993ea983801a0fbd3c7aeb5f4f999c5c9e81d729608e6def74"
+      },
+      "dissipation_broad": {
+        "selected_update": 12500,
+        "validation_rollout_nrmse": 0.031556808975426086,
+        "stop_update": 16500,
+        "stop_reason": "validation_plateau_at_minimum_learning_rate",
+        "checkpoint_sha256": "9c2fb64c1b4eec4bee974ca70251c90bb81d1d371d729d4d17ca26074e8512a4"
+      },
+      "conv_broad": {
+        "selected_update": 6100,
+        "validation_rollout_nrmse": 0.04959933585120272,
+        "stop_update": 11100,
+        "stop_reason": "validation_plateau_at_minimum_learning_rate",
+        "checkpoint_sha256": "1d4690d2753f58c4c833b4393062aab896ede30ce3af39c9e6b2ce42f2bbfaa8"
+      },
+      "direct_wave": {
+        "selected_update": 12200,
+        "validation_rollout_nrmse": 0.0494898258811279,
+        "stop_update": 15200,
+        "stop_reason": "validation_plateau_at_minimum_learning_rate",
+        "checkpoint_sha256": "0d4792e9227c1be60054f99cefee556a58a5dab818afdaa355e453b783937af1"
+      }
+    }
+  },
+  "learned_correction": {
+    "final_layer_parameter_l2": 2.9301882017247842,
+    "maximum_initial_flux_correction": 1.9976720809936523,
+    "initial_flux_correction_relative_rms": 0.01148113401119585,
+    "initial_update_correction_relative_rms": 0.14327973287455784,
+    "maximum_constant_state_correction": 0.0
+  },
+  "matched_hllc_512_control": {
+    "reference": "strict native HLLC + SSP-RK2 on 2048 cells, conservatively restricted to 512 cells for every metric",
+    "training_cells": 64,
+    "deployment_cells": 512,
+    "matched_zero_nn_mean_rollout_nrmse": 0.07191143352538347,
+    "learned_mean_rollout_nrmse": 0.05626891329884529,
+    "learned_reduction_vs_matched_zero_nn_percent": 21.752480043408735,
+    "learned_better_on_every_canonical_case": true,
+    "positivity_or_fully_discrete_entropy_fallback_used": false,
+    "maximum_conservation_drift": 9.5367431640625e-07,
+    "per_case": {
+      "sod": {
+        "matched_zero_nn_rollout_nrmse": 0.010533560998737812,
+        "learned_rollout_nrmse": 0.0068195536732673645,
+        "learned_reduction_percent": 35.25880113966663
+      },
+      "lax": {
+        "matched_zero_nn_rollout_nrmse": 0.04830339178442955,
+        "learned_rollout_nrmse": 0.030756700783967972,
+        "learned_reduction_percent": 36.32600186498229
+      },
+      "collision": {
+        "matched_zero_nn_rollout_nrmse": 0.06620276719331741,
+        "learned_rollout_nrmse": 0.05115491896867752,
+        "learned_reduction_percent": 22.729938433991684
+      },
+      "strong_pressure": {
+        "matched_zero_nn_rollout_nrmse": 0.16591429710388184,
+        "learned_rollout_nrmse": 0.1297285109758377,
+        "learned_reduction_percent": 21.809926425682036
+      },
+      "near_vacuum_expansion": {
+        "matched_zero_nn_rollout_nrmse": 0.06860315054655075,
+        "learned_rollout_nrmse": 0.06288488209247589,
+        "learned_reduction_percent": 8.335285491290552
+      }
+    }
+  },
+  "artifact_sha256": {
+    "run_convergence_audit.py": "ceffc29dad88afdada6fdd58578e8cfbbdd250454e8bece1fa5c0ba49605bdad",
+    "plot_hllc512_vs_hcfl512.py": "e9503f5fb6fcf8c52356727892dd44b4cf2d2dde1ac8b652f252b1ac36e3bae4",
+    "results/training_curve_seed0.csv": "351f85599737094347d2e8dc11b9949bd56e55a0a72507e8b77d0749bc8bd20d",
+    "results/convergence_seed0.csv": "0d73c385a06e0df9b2861d1b43441243bb1accad275bac64aa9e16b5a2c2db50",
+    "results/dissipation_broad_converged_best_seed0.pt": "9c2fb64c1b4eec4bee974ca70251c90bb81d1d371d729d4d17ca26074e8512a4",
+    "results/hllc512_vs_hcfl512_with_hllc2048_seed0.json": "bb0279644e243326563072378aef426d18898a532f83b1ac6e89af0bace4de64",
+    "results/hllc512_vs_hcfl512_with_hllc2048_seed0.csv": "8d6c45bd03d947c4436a35891ac16d40521f7752bc485b47d58c2ddf252611fc"
+  },
+  "limitations": [
+    "one training seed",
+    "five named canonical problems",
+    "HLLC-2048 is a finite-resolution reference rather than an exact solution",
+    "the 512-cell result is zero-shot resolution transfer from 64-cell states",
+    "MUSCL-HLLC and WENO baselines have not yet been tested"
+  ]
+}

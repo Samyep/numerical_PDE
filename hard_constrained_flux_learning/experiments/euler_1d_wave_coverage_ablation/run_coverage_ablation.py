@@ -751,8 +751,6 @@ def run(args: argparse.Namespace) -> None:
         )
         curves.extend(curve)
         parameter_count = sum(parameter.numel() for parameter in model.parameters())
-        checkpoint = output / f"{arm}_seed{args.seed}.pt"
-        torch.save(model.state_dict(), checkpoint)
 
         eval_started = time.perf_counter()
         for split, data in evaluation_suite.items():
