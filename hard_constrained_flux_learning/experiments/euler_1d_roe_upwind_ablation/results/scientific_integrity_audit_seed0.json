@@ -1,0 +1,147 @@
+{
+  "seed": 0,
+  "verdict": "PASS for checkpoint selection, metric reproduction, exact central-Roe consistency, automatic-upwind nonnegativity, and completed admissible conservative 512-cell rollouts",
+  "checks": {
+    "validation_only_checkpoint_selection": "pass",
+    "all_retained_new_checkpoints_converged": "pass",
+    "checkpoint_metrics_exactly_reproduced": "pass",
+    "central_roe_equal_interface_consistency": "pass",
+    "automatic_upwind_multiplier_nonnegative": "pass",
+    "signed_negative_branch_exercised": "pass",
+    "all_new_512_rollouts_completed": "pass",
+    "512_admissibility_and_conservation": "pass"
+  },
+  "training_tensor_shape": [
+    580,
+    16,
+    64,
+    3
+  ],
+  "validation_tensor_shape": [
+    136,
+    16,
+    64,
+    3
+  ],
+  "canonical_cases_used_for_selection": false,
+  "arms": {
+    "roe_complete_broad": {
+      "model": "roe_complete",
+      "parameter_count": 6627,
+      "selected_update": 8000,
+      "stop_update": 13000,
+      "recorded_validation_rollout_nrmse": 0.030531342767883288,
+      "recomputed_validation_rollout_nrmse": 0.030531342767883288,
+      "absolute_metric_difference": 0.0,
+      "checkpoint_sha256": "9198cb7791e87d9a8b571a8851910551f64b0fe5101eb4731d046f78d270c0f4",
+      "equal_interface_consistency": {
+        "sample_count": 256,
+        "outer_stencil_was_held_constant": false,
+        "maximum_raw_absolute_error": 4.7477707862854,
+        "maximum_projected_absolute_error": 4.7477707862854,
+        "raw_relative_consistency_nrmse": 0.09914404247842593,
+        "projected_relative_consistency_nrmse": 0.09914404247842593
+      },
+      "wave_multiplier_diagnostics": null
+    },
+    "central_roe_signed_broad": {
+      "model": "central_roe_signed",
+      "parameter_count": 6627,
+      "selected_update": 8800,
+      "stop_update": 13800,
+      "recorded_validation_rollout_nrmse": 0.024512604004480954,
+      "recomputed_validation_rollout_nrmse": 0.024512604004480954,
+      "absolute_metric_difference": 0.0,
+      "checkpoint_sha256": "fad9a5a0fd62e4d49a21a239f24665b0441baaa4ba5d1e88e7efc48da643add6",
+      "equal_interface_consistency": {
+        "sample_count": 256,
+        "outer_stencil_was_held_constant": false,
+        "maximum_raw_absolute_error": 0.0,
+        "maximum_projected_absolute_error": 0.0,
+        "raw_relative_consistency_nrmse": 0.0,
+        "projected_relative_consistency_nrmse": 0.0
+      },
+      "wave_multiplier_diagnostics": {
+        "minimum_multiplier": -0.885919451713562,
+        "maximum_multiplier": 2.562396287918091,
+        "mean_multiplier": 0.23414482266754003,
+        "standard_deviation": 0.3430055177630265,
+        "negative_multiplier_fraction": 0.25325999540441174,
+        "near_zero_fraction": 0.3505715762867647,
+        "near_upper_nominal_bound_fraction": 0.0021302466299019606,
+        "mean_by_wave": {
+          "left_acoustic": 0.1619475448212196,
+          "contact": 0.46180322181873423,
+          "right_acoustic": 0.0786837013626663
+        }
+      }
+    },
+    "central_roe_upwind_broad": {
+      "model": "central_roe_upwind",
+      "parameter_count": 6627,
+      "selected_update": 14800,
+      "stop_update": 16300,
+      "recorded_validation_rollout_nrmse": 0.029099848489295067,
+      "recomputed_validation_rollout_nrmse": 0.029099848489295067,
+      "absolute_metric_difference": 0.0,
+      "checkpoint_sha256": "3329e1b257f893afb5f161974a227a1f6d40258868bc3b640ccdd4f0315b68ef",
+      "equal_interface_consistency": {
+        "sample_count": 256,
+        "outer_stencil_was_held_constant": false,
+        "maximum_raw_absolute_error": 0.0,
+        "maximum_projected_absolute_error": 0.0,
+        "raw_relative_consistency_nrmse": 0.0,
+        "projected_relative_consistency_nrmse": 0.0
+      },
+      "wave_multiplier_diagnostics": {
+        "minimum_multiplier": 6.622076034545898e-05,
+        "maximum_multiplier": 1.9971164464950562,
+        "mean_multiplier": 0.5086125832051894,
+        "standard_deviation": 0.3583795497907333,
+        "negative_multiplier_fraction": 0.0,
+        "near_zero_fraction": 0.01605822993259804,
+        "near_upper_nominal_bound_fraction": 0.0017807904411764705,
+        "mean_by_wave": {
+          "left_acoustic": 0.3860896376761101,
+          "contact": 0.6814445694334983,
+          "right_acoustic": 0.45830354250596
+        }
+      }
+    }
+  },
+  "cell512": {
+    "all_new_methods_completed_all_five_cases": true,
+    "minimum_density": 1.0002971066569444e-05,
+    "minimum_pressure": 1.0002614544646349e-05,
+    "maximum_conservation_drift": 1.9073486328125e-06,
+    "mean_metrics": {
+      "roe_complete_hcfl_512": {
+        "completed_cases": 5,
+        "failed_cases": [],
+        "mean_rollout_nrmse": 0.2114106509834528,
+        "mean_final_snapshot_nrmse": 0.3477074660360813,
+        "all_five_case_mean_is_valid": true
+      },
+      "central_roe_signed_hcfl_512": {
+        "completed_cases": 5,
+        "failed_cases": [],
+        "mean_rollout_nrmse": 0.04933954514563084,
+        "mean_final_snapshot_nrmse": 0.06419273503124714,
+        "all_five_case_mean_is_valid": true
+      },
+      "central_roe_upwind_hcfl_512": {
+        "completed_cases": 5,
+        "failed_cases": [],
+        "mean_rollout_nrmse": 0.04979701954871416,
+        "mean_final_snapshot_nrmse": 0.06190616451203823,
+        "all_five_case_mean_is_valid": true
+      }
+    }
+  },
+  "limitations": [
+    "one training seed",
+    "five named canonical Riemann problems",
+    "HLLC-2048 is a finite-resolution rather than exact reference",
+    "512-cell evaluation is zero-shot transfer from 64-cell training"
+  ]
+}

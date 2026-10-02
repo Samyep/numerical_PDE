@@ -526,6 +526,130 @@ def roe_basis(U):
     return R, u, c
 
 
+def entropy_fixed_roe_waves(U):
+    """Return Roe eigenvectors, jumps, and sonic-fixed wave speeds."""
+    R, u, c = roe_basis(U)
+    dU = torch.roll(U, -1, dims=-2) - U
+    alpha = torch.linalg.solve(R, dU.unsqueeze(-1)).squeeze(-1)
+    acoustic_delta = (0.1 * c).clamp_min(1e-6)
+
+    def acoustic_abs(lam):
+        magnitude = torch.abs(lam)
+        return torch.where(
+            magnitude >= acoustic_delta,
+            magnitude,
+            0.5 * (lam * lam / acoustic_delta + acoustic_delta),
+        )
+
+    speeds = torch.stack([
+        acoustic_abs(u - c),
+        torch.abs(u),
+        acoustic_abs(u + c),
+    ], dim=-1)
+    return R, alpha, speeds
+
+
+class RoeCompleteFlux(nn.Module):
+    """Predict the complete flux in a local normalized Roe eigenbasis."""
+
+    def __init__(self, mean, std, width=72):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(15, width), nn.Tanh(),
+            nn.Linear(width, width), nn.Tanh(),
+            nn.Linear(width, 3),
+        )
+        nn.init.zeros_(self.net[-1].weight)
+        nn.init.zeros_(self.net[-1].bias)
+        self.register_buffer("mean", torch.tensor(mean, dtype=torch.float32))
+        self.register_buffer("std", torch.tensor(std, dtype=torch.float32))
+
+    def forward(self, U):
+        P = primitive(U)
+        feats = torch.cat([
+            (torch.roll(P, s, dims=-2) - self.mean) / self.std
+            for s in [2, 1, 0, -1, -2]
+        ], dim=-1)
+        coefficients = self.net(feats)
+        R, _, _ = roe_basis(U)
+        normalized_R = R / torch.linalg.vector_norm(
+            R, dim=-2
+        ).clamp_min(1e-8)[..., None, :]
+        right_state = torch.roll(U, -1, dims=-2)
+        left_flux = t_flux(U)
+        right_flux = t_flux(right_state)
+        flux_scale = torch.sqrt(
+            0.5 * (left_flux.square() + right_flux.square()).sum(dim=-1)
+        ).clamp_min(1e-4)
+        return torch.einsum(
+            "...ij,...j->...i",
+            normalized_R,
+            flux_scale[..., None] * coefficients,
+        )
+
+
+class CentralRoeSignedFlux(nn.Module):
+    """Central flux with learned Roe multipliers that may reverse a wave."""
+
+    def __init__(self, mean, std, width=72):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(15, width), nn.Tanh(),
+            nn.Linear(width, width), nn.Tanh(),
+            nn.Linear(width, 3),
+        )
+        nn.init.zeros_(self.net[-1].weight)
+        nn.init.zeros_(self.net[-1].bias)
+        self.register_buffer("mean", torch.tensor(mean, dtype=torch.float32))
+        self.register_buffer("std", torch.tensor(std, dtype=torch.float32))
+
+    def forward(self, U):
+        P = primitive(U)
+        feats = torch.cat([
+            (torch.roll(P, s, dims=-2) - self.mean) / self.std
+            for s in [2, 1, 0, -1, -2]
+        ], dim=-1)
+        multipliers = 1.0 + 2.0 * torch.tanh(self.net(feats))
+        R, alpha, speeds = entropy_fixed_roe_waves(U)
+        dissipation = torch.einsum(
+            "...ij,...j->...i", R, multipliers * speeds * alpha
+        )
+        right_state = torch.roll(U, -1, dims=-2)
+        central_flux = 0.5 * (t_flux(U) + t_flux(right_state))
+        return central_flux - 0.5 * dissipation
+
+
+class CentralRoeUpwindFlux(nn.Module):
+    """Central flux with bounded nonnegative automatic-upwind multipliers."""
+
+    def __init__(self, mean, std, width=72):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(15, width), nn.Tanh(),
+            nn.Linear(width, width), nn.Tanh(),
+            nn.Linear(width, 3),
+        )
+        nn.init.zeros_(self.net[-1].weight)
+        nn.init.zeros_(self.net[-1].bias)
+        self.register_buffer("mean", torch.tensor(mean, dtype=torch.float32))
+        self.register_buffer("std", torch.tensor(std, dtype=torch.float32))
+
+    def forward(self, U):
+        P = primitive(U)
+        feats = torch.cat([
+            (torch.roll(P, s, dims=-2) - self.mean) / self.std
+            for s in [2, 1, 0, -1, -2]
+        ], dim=-1)
+        multipliers = 1.0 + torch.tanh(self.net(feats))
+        R, alpha, speeds = entropy_fixed_roe_waves(U)
+        dissipation = torch.einsum(
+            "...ij,...j->...i", R, multipliers * speeds * alpha
+        )
+        right_state = torch.roll(U, -1, dims=-2)
+        central_flux = 0.5 * (t_flux(U) + t_flux(right_state))
+        return central_flux - 0.5 * dissipation
+
+
 class CharacteristicFlux(nn.Module):
     def __init__(self, mean, std, width=72):
         super().__init__()
@@ -614,8 +738,14 @@ class Solver(nn.Module):
         super().__init__()
         if model_name == "full":
             self.flux_net = FullFlux(mean, std, width)
+        elif model_name == "roe_complete":
+            self.flux_net = RoeCompleteFlux(mean, std, width)
         elif model_name == "central_consistent":
             self.flux_net = CentralConsistentFlux(mean, std, width)
+        elif model_name == "central_roe_signed":
+            self.flux_net = CentralRoeSignedFlux(mean, std, width)
+        elif model_name == "central_roe_upwind":
+            self.flux_net = CentralRoeUpwindFlux(mean, std, width)
         elif model_name == "direct":
             self.flux_net = DirectFlux(mean, std, width)
         elif model_name == "invariant":
@@ -714,7 +844,7 @@ def train(args):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("--model", choices=["full","central_consistent","direct","invariant","characteristic","dissipation","conv"], required=True)
+    p.add_argument("--model", choices=["full","roe_complete","central_consistent","central_roe_signed","central_roe_upwind","direct","invariant","characteristic","dissipation","conv"], required=True)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--iters", type=int, default=1100)
     p.add_argument("--width", type=int, default=72)

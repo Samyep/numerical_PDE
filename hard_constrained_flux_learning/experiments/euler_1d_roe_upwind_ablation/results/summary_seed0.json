@@ -1,0 +1,128 @@
+{
+  "seed": 0,
+  "validation_best_rollout_nrmse": {
+    "full_flux_broad": 0.028046926162405422,
+    "roe_complete_broad": 0.030531342767883288,
+    "central_consistent_broad": 0.045760336310044634,
+    "central_roe_signed_broad": 0.024512604004480954,
+    "central_roe_upwind_broad": 0.029099848489295067,
+    "dissipation_broad": 0.031556808975426086
+  },
+  "cell64": {
+    "full_flux_broad": {
+      "random_mean_rollout_nrmse": 0.011329202503056595,
+      "canonical_mean_rollout_nrmse": 0.09750634450331593
+    },
+    "roe_complete_broad": {
+      "random_mean_rollout_nrmse": 0.013385386102717714,
+      "canonical_mean_rollout_nrmse": 0.1087450069970283
+    },
+    "central_consistent_broad": {
+      "random_mean_rollout_nrmse": 0.014464165477452773,
+      "canonical_mean_rollout_nrmse": 0.11024259794633892
+    },
+    "central_roe_signed_broad": {
+      "random_mean_rollout_nrmse": 0.011833766466326043,
+      "canonical_mean_rollout_nrmse": 0.041728348746954594
+    },
+    "central_roe_upwind_broad": {
+      "random_mean_rollout_nrmse": 0.012925960353808856,
+      "canonical_mean_rollout_nrmse": 0.04709292711002809
+    },
+    "dissipation_broad": {
+      "random_mean_rollout_nrmse": 0.01298858527726327,
+      "canonical_mean_rollout_nrmse": 0.06257498635792874
+    }
+  },
+  "cell512": {
+    "roe_complete_broad": {
+      "completed_cases": 5,
+      "failed_cases": [],
+      "mean_rollout_nrmse": 0.2114106509834528,
+      "mean_final_snapshot_nrmse": 0.3477074660360813,
+      "all_five_case_mean_is_valid": true
+    },
+    "central_roe_signed_broad": {
+      "completed_cases": 5,
+      "failed_cases": [],
+      "mean_rollout_nrmse": 0.04933954514563084,
+      "mean_final_snapshot_nrmse": 0.06419273503124714,
+      "all_five_case_mean_is_valid": true
+    },
+    "central_roe_upwind_broad": {
+      "completed_cases": 5,
+      "failed_cases": [],
+      "mean_rollout_nrmse": 0.04979701954871416,
+      "mean_final_snapshot_nrmse": 0.06190616451203823,
+      "all_five_case_mean_is_valid": true
+    },
+    "dissipation_broad": {
+      "completed_cases": 5,
+      "failed_cases": [],
+      "mean_rollout_nrmse": 0.05626891329884529,
+      "mean_final_snapshot_nrmse": 0.06899025747552515,
+      "all_five_case_mean_is_valid": true
+    },
+    "native_hllc_512": {
+      "completed_cases": 5,
+      "failed_cases": [],
+      "mean_rollout_nrmse": 0.07423693537712098,
+      "mean_final_snapshot_nrmse": 0.0913161652162671,
+      "all_five_case_mean_is_valid": true
+    },
+    "central_consistent_broad": {
+      "completed_cases": 5,
+      "failed_cases": [],
+      "mean_rollout_nrmse": 0.09386766348034144,
+      "mean_final_snapshot_nrmse": 0.1149307768791914,
+      "all_five_case_mean_is_valid": true
+    }
+  },
+  "diagnostics": {
+    "central_roe_signed_broad": {
+      "multiplier": {
+        "minimum_multiplier": -0.885919451713562,
+        "maximum_multiplier": 2.562396287918091,
+        "mean_multiplier": 0.23414482266754003,
+        "standard_deviation": 0.3430055177630265,
+        "negative_multiplier_fraction": 0.25325999540441174,
+        "near_zero_fraction": 0.3505715762867647,
+        "near_upper_nominal_bound_fraction": 0.0021302466299019606,
+        "mean_by_wave": {
+          "left_acoustic": 0.1619475448212196,
+          "contact": 0.46180322181873423,
+          "right_acoustic": 0.0786837013626663
+        }
+      },
+      "hard_projection_intervention_rate": 0.09511431525735294
+    },
+    "central_roe_upwind_broad": {
+      "multiplier": {
+        "minimum_multiplier": 6.622076034545898e-05,
+        "maximum_multiplier": 1.9971164464950562,
+        "mean_multiplier": 0.5086125832051894,
+        "standard_deviation": 0.3583795497907333,
+        "negative_multiplier_fraction": 0.0,
+        "near_zero_fraction": 0.01605822993259804,
+        "near_upper_nominal_bound_fraction": 0.0017807904411764705,
+        "mean_by_wave": {
+          "left_acoustic": 0.3860896376761101,
+          "contact": 0.6814445694334983,
+          "right_acoustic": 0.45830354250596
+        }
+      },
+      "hard_projection_intervention_rate": 0.03855267693014706
+    },
+    "roe_complete_broad": {
+      "maximum_equal_interface_raw_error": 4.7477707862854,
+      "hard_projection_intervention_rate": 0.10445628446691177
+    }
+  },
+  "interpretation": {
+    "roe_coordinates_alone_repair_complete_flux": false,
+    "both_structured_central_roe_arms_beat_old_roe_mean_at_512": true,
+    "signed_has_lower_mean_rollout_nrmse": true,
+    "upwind_has_lower_mean_final_snapshot_nrmse": true,
+    "single_seed_only": true
+  }
+}
