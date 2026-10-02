@@ -87,6 +87,7 @@ this run.
 python run_convergence_audit.py --seed 0
 python plot_results.py --seed 0
 python plot_best_vs_fvm.py --seed 0
+python plot_hcfl2048_vs_fvm2048.py --seed 0
 ```
 
 ## Result
@@ -105,3 +106,9 @@ The same command also writes
 FVM-2048 remains as a light background curve. HCFL uses eight CFL-matched
 substeps per saved interval. This is a resolution-transfer visualization, not
 a separately trained 512-cell checkpoint.
+
+`results/hcfl2048_vs_fvm2048_seed0.png` is the corresponding same-grid
+2048-cell diagnostic. It compares the native FVM-2048 and HCFL values at the
+same cell centers, with no averaging or point subsampling. The HCFL flux is
+still the checkpoint trained on 64-cell states; it is deployed with 32
+CFL-matched updates per saved interval, not retrained at 2048 cells.

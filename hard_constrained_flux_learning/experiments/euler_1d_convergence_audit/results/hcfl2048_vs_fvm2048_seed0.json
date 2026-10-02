@@ -1,0 +1,144 @@
+{
+  "seed": 0,
+  "selected_model": "dissipation_broad_converged_best",
+  "training_cells": 64,
+  "deployment_cells": 2048,
+  "fvm_reference_cells": 2048,
+  "cfl_matched_updates_per_saved_interval": 32,
+  "final_time": 0.0252,
+  "comparison": "same-grid cell-centered values; no averaging or subsampling",
+  "mean_final_snapshot_nrmse": 0.05789448190480471,
+  "worst_case_by_final_snapshot_nrmse": "strong_pressure",
+  "cases": {
+    "sod": {
+      "rollout_nrmse": 0.007280029356479645,
+      "final_snapshot_nrmse": 0.008492403663694859,
+      "peak_snapshot_nrmse": 0.008492403663694859,
+      "peak_snapshot_index": 63,
+      "max_final_primitive_absolute_error": {
+        "density": 0.042249858379364014,
+        "velocity": 0.2885863184928894,
+        "pressure": 0.050053611397743225
+      },
+      "final_primitive_mae": {
+        "density": 0.0024381540715694427,
+        "velocity": 0.0038377821911126375,
+        "pressure": 0.0020897681824862957
+      },
+      "final_primitive_rmse": {
+        "density": 0.007354585453867912,
+        "velocity": 0.01651410013437271,
+        "pressure": 0.007482502143830061
+      },
+      "worst_final_cell": {
+        "index": 1115,
+        "x": 0.544677734375,
+        "normalized_rmse": 0.05469580739736557
+      }
+    },
+    "lax": {
+      "rollout_nrmse": 0.03285244107246399,
+      "final_snapshot_nrmse": 0.03922955319285393,
+      "peak_snapshot_nrmse": 0.03922955319285393,
+      "peak_snapshot_index": 63,
+      "max_final_primitive_absolute_error": {
+        "density": 0.2492850422859192,
+        "velocity": 0.5259771943092346,
+        "pressure": 0.5348455309867859
+      },
+      "final_primitive_mae": {
+        "density": 0.007079317234456539,
+        "velocity": 0.00801894161850214,
+        "pressure": 0.009125413373112679
+      },
+      "final_primitive_rmse": {
+        "density": 0.02924950048327446,
+        "velocity": 0.02758975140750408,
+        "pressure": 0.02951931580901146
+      },
+      "worst_final_cell": {
+        "index": 1153,
+        "x": 0.563232421875,
+        "normalized_rmse": 0.5023835301399231
+      }
+    },
+    "collision": {
+      "rollout_nrmse": 0.045216549187898636,
+      "final_snapshot_nrmse": 0.045303165912628174,
+      "peak_snapshot_nrmse": 0.04670993238687515,
+      "peak_snapshot_index": 40,
+      "max_final_primitive_absolute_error": {
+        "density": 0.6043398976325989,
+        "velocity": 0.7362877130508423,
+        "pressure": 1.1692922115325928
+      },
+      "final_primitive_mae": {
+        "density": 0.005431309342384338,
+        "velocity": 0.007375522516667843,
+        "pressure": 0.00805785320699215
+      },
+      "final_primitive_rmse": {
+        "density": 0.02973206713795662,
+        "velocity": 0.031767044216394424,
+        "pressure": 0.06399814039468765
+      },
+      "worst_final_cell": {
+        "index": 1071,
+        "x": 0.523193359375,
+        "normalized_rmse": 0.7723896503448486
+      }
+    },
+    "strong_pressure": {
+      "rollout_nrmse": 0.10917285084724426,
+      "final_snapshot_nrmse": 0.14526093006134033,
+      "peak_snapshot_nrmse": 0.14526093006134033,
+      "peak_snapshot_index": 63,
+      "max_final_primitive_absolute_error": {
+        "density": 1.6161174774169922,
+        "velocity": 0.6416096091270447,
+        "pressure": 0.8109455704689026
+      },
+      "final_primitive_mae": {
+        "density": 0.023495089262723923,
+        "velocity": 0.0069797709584236145,
+        "pressure": 0.012162508442997932
+      },
+      "final_primitive_rmse": {
+        "density": 0.122237928211689,
+        "velocity": 0.028104068711400032,
+        "pressure": 0.040051624178886414
+      },
+      "worst_final_cell": {
+        "index": 1112,
+        "x": 0.543212890625,
+        "normalized_rmse": 2.0194551944732666
+      }
+    },
+    "near_vacuum_expansion": {
+      "rollout_nrmse": 0.05186060816049576,
+      "final_snapshot_nrmse": 0.05118635669350624,
+      "peak_snapshot_nrmse": 0.054099034518003464,
+      "peak_snapshot_index": 14,
+      "max_final_primitive_absolute_error": {
+        "density": 0.9901630878448486,
+        "velocity": 0.7465981245040894,
+        "pressure": 1.3538000583648682
+      },
+      "final_primitive_mae": {
+        "density": 0.006012109573930502,
+        "velocity": 0.0067838323302567005,
+        "pressure": 0.005006680730730295
+      },
+      "final_primitive_rmse": {
+        "density": 0.0425056591629982,
+        "velocity": 0.033037662506103516,
+        "pressure": 0.05580984055995941
+      },
+      "worst_final_cell": {
+        "index": 32,
+        "x": 0.015869140625,
+        "normalized_rmse": 1.1161730289459229
+      }
+    }
+  }
+}

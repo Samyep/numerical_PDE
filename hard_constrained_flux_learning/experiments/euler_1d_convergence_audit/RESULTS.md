@@ -134,6 +134,29 @@ FVM-2048 is retained as a light background reference. This is a visual transfer
 diagnostic, not a trained-HCFL-512 result; see
 `results/fvm512_vs_hcfl512_with_fvm2048_seed0.png`.
 
+### Same-grid HCFL-2048 transfer diagnostic
+
+The same 64-cell-trained checkpoint was also deployed on 2048 cells with 32
+CFL-matched updates per saved interval and compared directly with native
+FVM-2048 values at the same cell centers. There is no averaging or point
+subsampling in this comparison.
+
+| case | final snapshot NRMSE |
+|---|---:|
+| Sod | 0.00849 |
+| Lax | 0.03923 |
+| collision | 0.04530 |
+| strong pressure | 0.14526 |
+| near-vacuum expansion | 0.05119 |
+| five-case mean | **0.05789** |
+
+The curves are close over smooth and constant regions, while the error remains
+localized near discontinuities. Strong pressure is the clear worst case: HCFL
+overshoots the sharp density peaks and reaches a maximum final density error of
+`1.61612`. This is a resolution-transfer result, not a separately trained
+HCFL-2048 checkpoint. See `results/hcfl2048_vs_fvm2048_seed0.png` and
+`results/hcfl2048_vs_fvm2048_seed0.json`.
+
 The same checkpoint scored a canonical mean of `0.06257` against the 512-cell
 FVM reference used by the convergence audit, but `0.09121` against FVM-2048, a
 45.76% increase. Thus the absolute error assessment is still sensitive to
