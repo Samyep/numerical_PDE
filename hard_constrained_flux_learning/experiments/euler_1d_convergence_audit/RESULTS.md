@@ -162,6 +162,43 @@ FVM reference used by the convergence audit, but `0.09121` against FVM-2048, a
 45.76% increase. Thus the absolute error assessment is still sensitive to
 reference resolution.
 
+### Matched HLLC-512 control
+
+Because the original 512-cell comparison used a diffusive Rusanov baseline,
+the learned checkpoint was re-evaluated against stronger HLLC controls. The
+common metric reference is now a strict native HLLC + SSP-RK2 trajectory on
+2048 cells, conservatively restricted to 512 cells. The matched zero-NN arm
+uses an identically zero learned correction while retaining the same HLLC
+proposal, hard safety stack, 512-cell state, and update schedule as HCFL.
+
+| case | classical HLLC-512 | matched safe HLLC-512, zero NN | learned HCFL-512 | learned reduction vs matched |
+|---|---:|---:|---:|---:|
+| Sod | 0.01081 | 0.01053 | **0.00682** | 35.26% |
+| Lax | 0.05105 | 0.04830 | **0.03076** | 36.33% |
+| collision | 0.06802 | 0.06620 | **0.05115** | 22.73% |
+| strong pressure | 0.17141 | 0.16591 | **0.12973** | 21.81% |
+| near-vacuum expansion | 0.06989 | 0.06860 | **0.06288** | 8.34% |
+| five-case mean | 0.07424 | 0.07191 | **0.05627** | **21.75%** |
+
+The learned checkpoint is also 24.20% better than classical HLLC-512 on the
+five-case mean. This confirms that the apparent gain over Rusanov was not only
+the result of starting from a stronger HLLC flux: the learned correction adds
+a measurable improvement over an exactly matched zero-correction control.
+
+All learned rollouts remained admissible and conserved each component to less
+than `1e-6` absolute drift. The local positivity and fully-discrete entropy
+limiters never intervened on these five 512-cell trajectories. The Tadmor
+projection was locally active near difficult interfaces, but its total RMS
+change was at most 0.128% of the raw flux RMS across a case. Thus the reported
+gain is not a fallback-to-low-order artifact, although the projection remains
+part of the deployed HCFL method.
+
+This is still a seed-0 resolution-transfer result from a checkpoint trained on
+64-cell states. MUSCL-HLLC, WENO, native 512-cell training, and multiple seeds
+remain necessary before claiming superiority over strong classical methods in
+general. See `results/hllc512_vs_hcfl512_with_hllc2048_seed0.png`, `.json`,
+and `.csv`.
+
 Every converged arm was therefore evaluated on the same FVM-2048 trajectories:
 
 | converged arm | FVM-2048 canonical mean | change from direct/broad |

@@ -88,6 +88,7 @@ python run_convergence_audit.py --seed 0
 python plot_results.py --seed 0
 python plot_best_vs_fvm.py --seed 0
 python plot_hcfl2048_vs_fvm2048.py --seed 0
+python plot_hllc512_vs_hcfl512.py --seed 0
 ```
 
 ## Result
@@ -112,3 +113,10 @@ a separately trained 512-cell checkpoint.
 same cell centers, with no averaging or point subsampling. The HCFL flux is
 still the checkpoint trained on 64-cell states; it is deployed with 32
 CFL-matched updates per saved interval, not retrained at 2048 cells.
+
+`results/hllc512_vs_hcfl512_with_hllc2048_seed0.png` replaces the diffusive
+Rusanov comparator with stronger HLLC controls. It contains both classical
+native HLLC + SSP-RK2 on 512 cells and an exact matched zero-neural-correction
+control that retains the HCFL safety stack and update schedule. All numerical
+errors use conservative HLLC-2048 to 512 restriction, so the learned increment
+is isolated from the HLLC base flux and from the safety/integration protocol.

@@ -1,0 +1,508 @@
+{
+  "seed": 0,
+  "checkpoint": "dissipation_broad_converged_best_seed0.pt",
+  "checkpoint_training_cells": 64,
+  "deployment_cells": 512,
+  "reference": "strict native HLLC + SSP-RK2 on 2048 cells, conservatively restricted to 512 cells for every metric",
+  "final_time": 0.0252,
+  "metric": "RMSE of conserved variables standardized by the 64-cell training-set component standard deviations",
+  "matched_control": "zero neural correction with identical HLLC proposal, hard safety stack, 512-cell state, and update schedule",
+  "mean_metrics": {
+    "classical_hllc_512": {
+      "mean_rollout_nrmse": 0.07423693537712098,
+      "mean_final_snapshot_nrmse": 0.0913161652162671
+    },
+    "matched_safe_hllc_512_zero_nn": {
+      "mean_rollout_nrmse": 0.07191143352538347,
+      "mean_final_snapshot_nrmse": 0.08831489589065314
+    },
+    "learned_hcfl_512": {
+      "mean_rollout_nrmse": 0.05626891329884529,
+      "mean_final_snapshot_nrmse": 0.06899025747552515,
+      "reduction_vs_classical_hllc_percent": 24.2036150697746,
+      "reduction_vs_matched_zero_nn_percent": 21.752480043408735
+    }
+  },
+  "cases": {
+    "sod": {
+      "reference_hllc_2048": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 491,
+        "flux_evaluations": 982
+      },
+      "classical_hllc_512": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 125,
+        "flux_evaluations": 250,
+        "rollout_nrmse": 0.010811347514390945,
+        "final_snapshot_nrmse": 0.012714155949652195,
+        "peak_snapshot_nrmse": 0.012714155949652195,
+        "peak_snapshot_index": 63,
+        "max_final_primitive_absolute_error": {
+          "density": 0.04249794781208038,
+          "velocity": 0.3481263220310211,
+          "pressure": 0.059097737073898315
+        },
+        "minimum_density": 0.125,
+        "minimum_pressure": 0.10000000149011612,
+        "max_conservation_drift": {
+          "density": 0.0,
+          "momentum": 1.1641532182693481e-09,
+          "energy": 1.1920928955078125e-07
+        }
+      },
+      "matched_safe_hllc_512_zero_nn": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.00010075644841269841,
+        "hard_projection_relative_flux_rms": 4.1530976164907245e-09,
+        "hard_projection_max_absolute_change": 4.172325134277344e-07,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 3.1650410719325314e-15,
+        "max_total_entropy_change": -0.003120660079666493,
+        "rollout_nrmse": 0.010533560998737812,
+        "final_snapshot_nrmse": 0.012391834519803524,
+        "peak_snapshot_nrmse": 0.012391834519803524,
+        "peak_snapshot_index": 63,
+        "max_final_primitive_absolute_error": {
+          "density": 0.041488587856292725,
+          "velocity": 0.33478599786758423,
+          "pressure": 0.05755358934402466
+        },
+        "minimum_density": 0.125,
+        "minimum_pressure": 0.10000000149011612,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 2.0954757928848267e-09,
+          "energy": 2.384185791015625e-07
+        }
+      },
+      "learned_hcfl_512": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.00021701388888888888,
+        "hard_projection_relative_flux_rms": 8.185687319121139e-07,
+        "hard_projection_max_absolute_change": 0.00018808245658874512,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 4.541470180321031e-15,
+        "max_total_entropy_change": -0.0021967478642608285,
+        "rollout_nrmse": 0.0068195536732673645,
+        "final_snapshot_nrmse": 0.007109828758984804,
+        "peak_snapshot_nrmse": 0.007540029473602772,
+        "peak_snapshot_index": 27,
+        "max_final_primitive_absolute_error": {
+          "density": 0.04333515465259552,
+          "velocity": 0.312461256980896,
+          "pressure": 0.060014426708221436
+        },
+        "minimum_density": 0.125,
+        "minimum_pressure": 0.10000000149011612,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 1.2223608791828156e-09,
+          "energy": 2.384185791015625e-07
+        }
+      },
+      "learned_reduction_vs_classical_hllc_rollout_percent": 36.92226002179764,
+      "learned_reduction_vs_matched_hllc_rollout_percent": 35.25880113966663
+    },
+    "lax": {
+      "reference_hllc_2048": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 1007,
+        "flux_evaluations": 2014
+      },
+      "classical_hllc_512": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 252,
+        "flux_evaluations": 504,
+        "rollout_nrmse": 0.051048148423433304,
+        "final_snapshot_nrmse": 0.05998900532722473,
+        "peak_snapshot_nrmse": 0.060040101408958435,
+        "peak_snapshot_index": 62,
+        "max_final_primitive_absolute_error": {
+          "density": 0.3199233412742615,
+          "velocity": 0.7604299783706665,
+          "pressure": 0.6834163069725037
+        },
+        "minimum_density": 0.24970562756061554,
+        "minimum_pressure": 0.5710000395774841,
+        "max_conservation_drift": {
+          "density": 2.9802322387695312e-08,
+          "momentum": 1.4901161193847656e-08,
+          "energy": 9.5367431640625e-07
+        }
+      },
+      "matched_safe_hllc_512_zero_nn": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.08898732018849206,
+        "hard_projection_relative_flux_rms": 0.00024211539495670191,
+        "hard_projection_max_absolute_change": 0.31060990691185,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 4.928859309084356e-16,
+        "max_total_entropy_change": -0.02251396621841195,
+        "rollout_nrmse": 0.04830339178442955,
+        "final_snapshot_nrmse": 0.05676156282424927,
+        "peak_snapshot_nrmse": 0.05682513117790222,
+        "peak_snapshot_index": 62,
+        "max_final_primitive_absolute_error": {
+          "density": 0.30663132667541504,
+          "velocity": 0.7345190048217773,
+          "pressure": 0.6511574387550354
+        },
+        "minimum_density": 0.24994893372058868,
+        "minimum_pressure": 0.5710000395774841,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 2.9802322387695312e-08,
+          "energy": 9.5367431640625e-07
+        }
+      },
+      "learned_hcfl_512": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.08563135540674603,
+        "hard_projection_relative_flux_rms": 0.00028416147271283215,
+        "hard_projection_max_absolute_change": 0.36035609245300293,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 7.603019880020415e-15,
+        "max_total_entropy_change": -0.01598107275935945,
+        "rollout_nrmse": 0.030756700783967972,
+        "final_snapshot_nrmse": 0.03277136757969856,
+        "peak_snapshot_nrmse": 0.03306929022073746,
+        "peak_snapshot_index": 47,
+        "max_final_primitive_absolute_error": {
+          "density": 0.16452240943908691,
+          "velocity": 0.38924193382263184,
+          "pressure": 0.3530229330062866
+        },
+        "minimum_density": 0.2220984399318695,
+        "minimum_pressure": 0.5710000395774841,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 1.4901161193847656e-08,
+          "energy": 9.5367431640625e-07
+        }
+      },
+      "learned_reduction_vs_classical_hllc_rollout_percent": 39.7496251404697,
+      "learned_reduction_vs_matched_hllc_rollout_percent": 36.32600186498229
+    },
+    "collision": {
+      "reference_hllc_2048": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 693,
+        "flux_evaluations": 1386
+      },
+      "classical_hllc_512": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 189,
+        "flux_evaluations": 378,
+        "rollout_nrmse": 0.06802190840244293,
+        "final_snapshot_nrmse": 0.060315243899822235,
+        "peak_snapshot_nrmse": 0.0801277831196785,
+        "peak_snapshot_index": 55,
+        "max_final_primitive_absolute_error": {
+          "density": 0.4053528308868408,
+          "velocity": 0.6285675764083862,
+          "pressure": 0.8559637069702148
+        },
+        "minimum_density": 0.08217018097639084,
+        "minimum_pressure": 0.06716174632310867,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 3.725290298461914e-08,
+          "energy": 4.76837158203125e-07
+        }
+      },
+      "matched_safe_hllc_512_zero_nn": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.21926153273809523,
+        "hard_projection_relative_flux_rms": 0.0006507178957094862,
+        "hard_projection_max_absolute_change": 0.39999985694885254,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 3.6700369140745502e-09,
+        "max_total_entropy_change": -0.0951870167528952,
+        "rollout_nrmse": 0.06620276719331741,
+        "final_snapshot_nrmse": 0.05793770030140877,
+        "peak_snapshot_nrmse": 0.07828298211097717,
+        "peak_snapshot_index": 33,
+        "max_final_primitive_absolute_error": {
+          "density": 0.387653112411499,
+          "velocity": 0.6095501184463501,
+          "pressure": 0.818603515625
+        },
+        "minimum_density": 0.0825241282582283,
+        "minimum_pressure": 0.06699173897504807,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 7.078051567077637e-08,
+          "energy": 0.0
+        }
+      },
+      "learned_hcfl_512": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.18214828249007936,
+        "hard_projection_relative_flux_rms": 0.000854590569720342,
+        "hard_projection_max_absolute_change": 1.2000012397766113,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 5.526509078927072e-10,
+        "max_total_entropy_change": -0.08556455787166328,
+        "rollout_nrmse": 0.05115491896867752,
+        "final_snapshot_nrmse": 0.04664769396185875,
+        "peak_snapshot_nrmse": 0.0637001022696495,
+        "peak_snapshot_index": 44,
+        "max_final_primitive_absolute_error": {
+          "density": 0.3644833564758301,
+          "velocity": 0.6078803539276123,
+          "pressure": 0.8087185621261597
+        },
+        "minimum_density": 0.0742735043168068,
+        "minimum_pressure": 0.06437119841575623,
+        "max_conservation_drift": {
+          "density": 1.1920928955078125e-07,
+          "momentum": 1.993030309677124e-07,
+          "energy": 4.76837158203125e-07
+        }
+      },
+      "learned_reduction_vs_classical_hllc_rollout_percent": 24.79640726039914,
+      "learned_reduction_vs_matched_hllc_rollout_percent": 22.729938433991684
+    },
+    "strong_pressure": {
+      "reference_hllc_2048": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 814,
+        "flux_evaluations": 1628
+      },
+      "classical_hllc_512": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 240,
+        "flux_evaluations": 480,
+        "rollout_nrmse": 0.17141221463680267,
+        "final_snapshot_nrmse": 0.24039193987846375,
+        "peak_snapshot_nrmse": 0.24039193987846375,
+        "peak_snapshot_index": 63,
+        "max_final_primitive_absolute_error": {
+          "density": 1.4844694137573242,
+          "velocity": 0.7727404236793518,
+          "pressure": 0.7354981303215027
+        },
+        "minimum_density": 0.5615903735160828,
+        "minimum_pressure": 0.05000000074505806,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 1.1175870895385742e-08,
+          "energy": 4.76837158203125e-07
+        }
+      },
+      "matched_safe_hllc_512_zero_nn": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.0005967881944444445,
+        "hard_projection_relative_flux_rms": 1.8460302420925182e-06,
+        "hard_projection_max_absolute_change": 0.0013995170593261719,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 2.3822801641527197e-22,
+        "max_total_entropy_change": -0.4124283358428329,
+        "rollout_nrmse": 0.16591429710388184,
+        "final_snapshot_nrmse": 0.23268868029117584,
+        "peak_snapshot_nrmse": 0.23268868029117584,
+        "peak_snapshot_index": 63,
+        "max_final_primitive_absolute_error": {
+          "density": 1.4374103546142578,
+          "velocity": 0.7532556653022766,
+          "pressure": 0.7234105467796326
+        },
+        "minimum_density": 0.5618643164634705,
+        "minimum_pressure": 0.05000000074505806,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 1.1175870895385742e-08,
+          "energy": 4.76837158203125e-07
+        }
+      },
+      "learned_hcfl_512": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.0017826140873015873,
+        "hard_projection_relative_flux_rms": 7.218690829589531e-05,
+        "hard_projection_max_absolute_change": 0.04772472381591797,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 1.5182875208878438e-14,
+        "max_total_entropy_change": -0.3598226602664454,
+        "rollout_nrmse": 0.1297285109758377,
+        "final_snapshot_nrmse": 0.1770087331533432,
+        "peak_snapshot_nrmse": 0.1770087331533432,
+        "peak_snapshot_index": 63,
+        "max_final_primitive_absolute_error": {
+          "density": 1.5120134353637695,
+          "velocity": 0.798043966293335,
+          "pressure": 0.751223087310791
+        },
+        "minimum_density": 0.5011986494064331,
+        "minimum_pressure": 0.05000000074505806,
+        "max_conservation_drift": {
+          "density": 1.1920928955078125e-07,
+          "momentum": 2.60770320892334e-08,
+          "energy": 9.5367431640625e-07
+        }
+      },
+      "learned_reduction_vs_classical_hllc_rollout_percent": 24.317814077186167,
+      "learned_reduction_vs_matched_hllc_rollout_percent": 21.809926425682036
+    },
+    "near_vacuum_expansion": {
+      "reference_hllc_2048": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 630,
+        "flux_evaluations": 1260
+      },
+      "classical_hllc_512": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 189,
+        "flux_evaluations": 378,
+        "rollout_nrmse": 0.069891057908535,
+        "final_snapshot_nrmse": 0.08317048102617264,
+        "peak_snapshot_nrmse": 0.08713588118553162,
+        "peak_snapshot_index": 16,
+        "max_final_primitive_absolute_error": {
+          "density": 0.9662529230117798,
+          "velocity": 0.7997658848762512,
+          "pressure": 1.2819513082504272
+        },
+        "minimum_density": 0.02066754177212715,
+        "minimum_pressure": 0.008250758051872253,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 4.0978193283081055e-08,
+          "energy": 2.384185791015625e-07
+        }
+      },
+      "matched_safe_hllc_512_zero_nn": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.2068297371031746,
+        "hard_projection_relative_flux_rms": 0.000319327137335022,
+        "hard_projection_max_absolute_change": 0.23084402084350586,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 0.0,
+        "max_total_entropy_change": -0.18937892639632992,
+        "rollout_nrmse": 0.06860315054655075,
+        "final_snapshot_nrmse": 0.08179470151662827,
+        "peak_snapshot_nrmse": 0.08595737814903259,
+        "peak_snapshot_index": 16,
+        "max_final_primitive_absolute_error": {
+          "density": 0.9537879228591919,
+          "velocity": 0.7935941815376282,
+          "pressure": 1.2628735303878784
+        },
+        "minimum_density": 0.020832626149058342,
+        "minimum_pressure": 0.00826486386358738,
+        "max_conservation_drift": {
+          "density": 1.1920928955078125e-07,
+          "momentum": 7.82310962677002e-08,
+          "energy": 2.384185791015625e-07
+        }
+      },
+      "learned_hcfl_512": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.15609111483134921,
+        "hard_projection_relative_flux_rms": 0.0012805140867956936,
+        "hard_projection_max_absolute_change": 1.0095233917236328,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 0.0,
+        "max_total_entropy_change": -0.15392117675060035,
+        "rollout_nrmse": 0.06288488209247589,
+        "final_snapshot_nrmse": 0.08141366392374039,
+        "peak_snapshot_nrmse": 0.0842885747551918,
+        "peak_snapshot_index": 32,
+        "max_final_primitive_absolute_error": {
+          "density": 1.343169093132019,
+          "velocity": 0.9938797950744629,
+          "pressure": 1.8762264251708984
+        },
+        "minimum_density": 0.017533134669065475,
+        "minimum_pressure": 0.009008700959384441,
+        "max_conservation_drift": {
+          "density": 1.1920928955078125e-07,
+          "momentum": 9.685754776000977e-08,
+          "energy": 2.384185791015625e-07
+        }
+      },
+      "learned_reduction_vs_classical_hllc_rollout_percent": 10.024423761374383,
+      "learned_reduction_vs_matched_hllc_rollout_percent": 8.335285491290552
+    }
+  }
+}
