@@ -4,6 +4,7 @@
   "selection_metric": "independent validation rollout NRMSE",
   "profile_reference": "2048-cell periodic Rusanov + SSP-RK2 shown on its native grid",
   "profile_comparison": "HCFL-64 and 64 point samples from native FVM-2048; sample index 16 + 32*i in each fine-grid trajectory; no averaging",
+  "fvm512_hcfl512_profile": "native FVM-512 versus the 64-grid-trained dissipation checkpoint deployed on 512 cells with 8 CFL-matched substeps per snapshot; native FVM-2048 retained as a light background reference",
   "metric_reference": "conservative 64-cell averages of the 2048-cell periodic Rusanov + SSP-RK2 trajectory",
   "coarse_fvm_baseline": "64-cell periodic Rusanov + SSP-RK2 evolved directly on the coarse grid",
   "final_time": 0.0252,

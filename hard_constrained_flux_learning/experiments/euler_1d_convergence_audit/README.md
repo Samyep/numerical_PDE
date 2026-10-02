@@ -98,3 +98,10 @@ HCFL-64 and an unaveraged 64-point subsample of FVM-2048 only. The fine-grid
 series takes the near-center cell (`16 + 32*i`) from each consecutive block of
 32 and connects those values with an ordinary line. Like-for-like numerical
 error metrics still use the conservatively averaged reference.
+
+The same command also writes
+`results/fvm512_vs_hcfl512_with_fvm2048_seed0.png`: native FVM-512 and the
+64-grid-trained HCFL flux deployed on 512 cells are emphasized, while native
+FVM-2048 remains as a light background curve. HCFL uses eight CFL-matched
+substeps per saved interval. This is a resolution-transfer visualization, not
+a separately trained 512-cell checkpoint.

@@ -126,6 +126,14 @@ unaveraged, stride-sampled view of the fine solution. It is a visual diagnostic,
 not the conservative finite-volume error definition used by the tables and
 error map.
 
+An additional resolution-transfer profile compares native FVM-512 with the
+same validation-selected dissipation checkpoint deployed on 512 cells. The
+checkpoint is not retrained: it remains the model learned on 64-cell states,
+and eight CFL-matched HCFL substeps are used per saved interval. Native
+FVM-2048 is retained as a light background reference. This is a visual transfer
+diagnostic, not a trained-HCFL-512 result; see
+`results/fvm512_vs_hcfl512_with_fvm2048_seed0.png`.
+
 The same checkpoint scored a canonical mean of `0.06257` against the 512-cell
 FVM reference used by the convergence audit, but `0.09121` against FVM-2048, a
 45.76% increase. Thus the absolute error assessment is still sensitive to

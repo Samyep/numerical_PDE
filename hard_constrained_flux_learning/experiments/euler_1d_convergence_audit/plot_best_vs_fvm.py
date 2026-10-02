@@ -62,11 +62,14 @@ DISPLAY = {
 }
 
 FVM_COLOR = "#202A35"
+FVM_512_COLOR = "#0072B2"
+BACKGROUND_REFERENCE_COLOR = "#B8C0CA"
 HCFL_COLOR = "#D55E00"
 GRID_COLOR = "#D8DEE9"
 SPINE_COLOR = "#9AA5B1"
 TEXT_COLOR = "#1F2933"
 MUTED_COLOR = "#66788A"
+COMPARISON_CELLS = 512
 
 
 def load_model(
@@ -170,6 +173,28 @@ def hcfl_rollout(model: base.Solver, reference: torch.Tensor) -> torch.Tensor:
     snapshots = [state.clone()]
     for _ in range(1, reference.shape[1]):
         state, _ = shared.advance_safe_snapshot(model, state)
+        snapshots.append(state.clone())
+    return torch.stack(snapshots, dim=1)
+
+
+@torch.no_grad()
+def hcfl_rollout_on_grid(
+    model: base.Solver,
+    name: str,
+    cells: int,
+) -> torch.Tensor:
+    """Deploy the 64-cell-trained flux on a finer grid at the same CFL."""
+    if cells % base.NCOARSE:
+        raise ValueError(
+            f"Target grid ({cells}) must be a multiple of the training grid "
+            f"({base.NCOARSE})"
+        )
+    substeps_per_snapshot = cells // base.NCOARSE
+    state = torch.from_numpy(initial_condition(name, cells)).float()
+    snapshots = [state.clone()]
+    for _ in range(1, shared.CANONICAL_NSNAP):
+        for _ in range(substeps_per_snapshot):
+            state, _ = shared.advance_safe_snapshot(model, state)
         snapshots.append(state.clone())
     return torch.stack(snapshots, dim=1)
 
@@ -295,6 +320,108 @@ def plot_final_profiles(
         0.018,
         "FVM-2048 is not averaged: one near-center fine cell is selected from "
         "each consecutive block of 32 and the resulting 64 values are connected.",
+        ha="right",
+        fontsize=8.5,
+        color=MUTED_COLOR,
+    )
+    figure.savefig(output, dpi=210, facecolor="white")
+    plt.close(figure)
+
+
+def plot_fvm512_vs_hcfl512(
+    native_references: dict[str, torch.Tensor],
+    fvm_512: dict[str, torch.Tensor],
+    hcfl_512: dict[str, torch.Tensor],
+    output: Path,
+) -> None:
+    x_2048 = (
+        np.arange(precision.HIGH_REFERENCE_CELLS) + 0.5
+    ) / precision.HIGH_REFERENCE_CELLS
+    x_512 = (np.arange(COMPARISON_CELLS) + 0.5) / COMPARISON_CELLS
+    row_labels = [r"Density $\rho$", r"Velocity $u$", r"Pressure $p$"]
+    figure, axes = plt.subplots(
+        3,
+        len(CASES),
+        figsize=(18, 8.8),
+        sharex=True,
+        constrained_layout=False,
+    )
+    figure.subplots_adjust(
+        left=0.065,
+        right=0.99,
+        bottom=0.09,
+        top=0.80,
+        wspace=0.22,
+        hspace=0.14,
+    )
+
+    for column, name in enumerate(CASES):
+        reference_2048 = base.primitive(native_references[name]).numpy()[0, -1]
+        native_512 = base.primitive(fvm_512[name]).numpy()[0, -1]
+        learned_512 = base.primitive(hcfl_512[name]).numpy()[0, -1]
+        axes[0, column].set_title(
+            DISPLAY[name],
+            fontsize=10.5,
+            fontweight="semibold",
+        )
+        for row in range(3):
+            axis = axes[row, column]
+            axis.plot(
+                x_2048,
+                reference_2048[:, row],
+                color=BACKGROUND_REFERENCE_COLOR,
+                linewidth=1.7,
+                alpha=0.72,
+                label="FVM-2048 (background reference)",
+                zorder=1,
+            )
+            axis.plot(
+                x_512,
+                native_512[:, row],
+                color=FVM_512_COLOR,
+                linewidth=1.45,
+                label="FVM-512",
+                zorder=3,
+            )
+            axis.plot(
+                x_512,
+                learned_512[:, row],
+                color=HCFL_COLOR,
+                linewidth=1.45,
+                linestyle="--",
+                label="HCFL-512 (64-grid-trained checkpoint)",
+                zorder=4,
+            )
+            style_axis(axis)
+            axis.set_xlim(0.0, 1.0)
+            if column == 0:
+                axis.set_ylabel(row_labels[row], fontsize=10)
+            if row == 2:
+                axis.set_xlabel("x", fontsize=9)
+
+    figure.suptitle(
+        "FVM-512 versus HCFL-512 at t = 0.0252",
+        y=0.975,
+        fontsize=17,
+        fontweight="bold",
+        color=TEXT_COLOR,
+    )
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    figure.legend(
+        handles,
+        labels,
+        loc="upper center",
+        bbox_to_anchor=(0.53, 0.895),
+        ncol=3,
+        frameon=False,
+        fontsize=10,
+    )
+    figure.text(
+        0.99,
+        0.018,
+        "FVM-2048 is the light background. HCFL uses the validation-selected "
+        "64-grid-trained checkpoint on 512 cells with 8 CFL-matched substeps "
+        "per snapshot.",
         ha="right",
         fontsize=8.5,
         color=MUTED_COLOR,
@@ -441,6 +568,23 @@ def main() -> None:
     predictions = all_predictions[selected_arm]
     case_summary = all_diagnostics[selected_arm]
     post_hoc_best_arm = min(canonical_means, key=canonical_means.get)
+    fvm_512 = {
+        name: torch.from_numpy(
+            strict_native_rollout(
+                initial_condition(name, COMPARISON_CELLS),
+                COMPARISON_CELLS,
+            ).astype(np.float32)
+        )
+        for name in CASES
+    }
+    hcfl_512 = {
+        name: hcfl_rollout_on_grid(
+            models[selected_arm],
+            name,
+            COMPARISON_CELLS,
+        )
+        for name in CASES
+    }
 
     summary = {
         "seed": args.seed,
@@ -452,6 +596,11 @@ def main() -> None:
         "profile_comparison": (
             "HCFL-64 and 64 point samples from native FVM-2048; sample index "
             "16 + 32*i in each fine-grid trajectory; no averaging"
+        ),
+        "fvm512_hcfl512_profile": (
+            "native FVM-512 versus the 64-grid-trained dissipation checkpoint "
+            "deployed on 512 cells with 8 CFL-matched substeps per snapshot; "
+            "native FVM-2048 retained as a light background reference"
         ),
         "metric_reference": (
             "conservative 64-cell averages of the 2048-cell periodic "
@@ -536,17 +685,28 @@ def main() -> None:
         writer.writerows(comparison_rows)
 
     profiles_path = results_dir / f"best_vs_fvm_profiles_seed{args.seed}.png"
+    fvm512_profiles_path = (
+        results_dir
+        / f"fvm512_vs_hcfl512_with_fvm2048_seed{args.seed}.png"
+    )
     error_maps_path = results_dir / f"best_vs_fvm_error_maps_seed{args.seed}.png"
     plot_final_profiles(
         native_references,
         predictions,
         profiles_path,
     )
+    plot_fvm512_vs_hcfl512(
+        native_references,
+        fvm_512,
+        hcfl_512,
+        fvm512_profiles_path,
+    )
     plot_error_maps(references, predictions, state_std, error_maps_path)
 
     print(summary_path)
     print(comparison_path)
     print(profiles_path)
+    print(fvm512_profiles_path)
     print(error_maps_path)
     print(json.dumps(summary, indent=2))
 
