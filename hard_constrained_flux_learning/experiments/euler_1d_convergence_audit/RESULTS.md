@@ -104,23 +104,28 @@ checkpoints, and figure are stored in [`results/`](results/).
 The validation-selected winner, `dissipation_broad`, was rolled out on the five
 canonical initial conditions without retraining or selecting on them. Its
 64-cell predictions were compared with strict periodic 2048-cell Rusanov +
-SSP-RK2 FVM trajectories conservatively restricted to 64 cell averages.
+SSP-RK2 FVM trajectories. The profile figure retains the original 2048-cell
+curve and separately shows a Rusanov + SSP-RK2 solution evolved directly on
+64 cells. For quantitative errors, the 2048-cell solution is conservatively
+averaged to the same 64 cells used by both coarse solvers.
 
-| case | rollout NRMSE | final-snapshot NRMSE | peak snapshot |
+| case | HCFL-64 NRMSE | FVM-64 NRMSE | HCFL reduction |
 |---|---:|---:|---:|
-| Sod | **0.01898** | 0.02668 | 63 |
-| Lax | 0.08221 | 0.13721 | 63 |
-| collision | 0.10936 | 0.09294 | 44 |
-| strong pressure | 0.13796 | 0.27187 | 63 |
-| near-vacuum expansion | 0.10755 | 0.22672 | 63 |
-| five-case mean | **0.09121** | -- | -- |
+| Sod | **0.01898** | 0.02746 | 30.88% |
+| Lax | **0.08221** | 0.12329 | 33.33% |
+| collision | **0.10936** | 0.25047 | 56.34% |
+| strong pressure | **0.13796** | 0.21944 | 37.13% |
+| near-vacuum expansion | **0.10755** | 0.23829 | 54.87% |
+| five-case mean | **0.09121** | 0.17179 | **46.91%** |
 
-The profiles do not show broad high-frequency oscillation. The dominant error
-is localized diffusion and peak underprediction at moving shocks, contacts,
-and the periodic interface. Sod is tracked closely. Strong pressure is the
-largest-error case; near-vacuum expansion has the next-largest final-time
-error, especially in pressure and velocity. Collision reaches its largest
-error before the final snapshot.
+The corrected profiles distinguish true solution structure from plotting
+resolution: FVM-2048 is drawn on all 2048 native cells, while FVM-64 and
+HCFL-64 are drawn as coarse cell averages. The dense staircase in the earlier
+version was a display artifact caused by plotting the restricted 64-cell
+reference as if it were the native FVM-2048 curve. The native reference does
+not show broad high-frequency oscillation. HCFL is consistently less diffusive
+than direct FVM-64, although it still underpredicts the narrow peaks in the
+strong-pressure and near-vacuum cases.
 
 The same checkpoint scored a canonical mean of `0.06257` against the 512-cell
 FVM reference used by the convergence audit, but `0.09121` against FVM-2048, a

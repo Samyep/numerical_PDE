@@ -1,8 +1,10 @@
 """Compare the validation-selected best HCFL checkpoint with FVM references.
 
 The checkpoint is selected by the convergence audit, not by these canonical
-tests.  The comparison reference is a strict 2048-cell periodic Rusanov +
-SSP-RK2 finite-volume rollout, conservatively restricted to the 64-cell grid.
+tests.  Profiles show the strict 2048-cell periodic Rusanov + SSP-RK2 rollout
+on its native grid, a separately evolved 64-cell FVM baseline, and HCFL-64.
+Metrics compare both coarse solvers with conservative 64-cell averages of the
+2048-cell reference.
 """
 
 from __future__ import annotations
@@ -60,6 +62,7 @@ DISPLAY = {
 }
 
 FVM_COLOR = "#202A35"
+COARSE_FVM_COLOR = "#0072B2"
 HCFL_COLOR = "#D55E00"
 GRID_COLOR = "#D8DEE9"
 SPINE_COLOR = "#9AA5B1"
@@ -88,22 +91,78 @@ def training_state_std(seed: int) -> torch.Tensor:
     return training_data.std(dim=(0, 1, 2))
 
 
-def fvm_reference(name: str) -> torch.Tensor:
+def initial_condition(name: str, cells: int) -> np.ndarray:
     left, right = CASES[name]
-    initial = shared._two_state_periodic(
-        precision.HIGH_REFERENCE_CELLS,
-        precision.HIGH_REFERENCE_CELLS // 2,
+    return shared._two_state_periodic(
+        cells,
+        cells // 2,
         left,
         right,
         0,
     )[None, ...]
-    return torch.from_numpy(
-        precision.strict_rollout_reference(
-            initial,
-            precision.HIGH_REFERENCE_CELLS,
-            nsnap=shared.CANONICAL_NSNAP,
-        )
+
+
+def strict_native_rollout(initial: np.ndarray, cells: int) -> np.ndarray:
+    """Return every snapshot on the solver's native finite-volume grid."""
+    if initial.shape[-2:] != (cells, 3):
+        raise ValueError(f"Expected initial shape (..., {cells}, 3), got {initial.shape}")
+
+    state = np.asarray(initial, dtype=np.float64).copy()
+    cell_width = 1.0 / cells
+    snapshots = [state.copy()]
+    for _ in range(1, shared.CANONICAL_NSNAP):
+        remaining = base.DT_SNAPSHOT
+        while remaining > 1.0e-14:
+            rho = state[..., 0]
+            pressure = base.np_pressure(state)
+            velocity = state[..., 1] / rho
+            sound_speed = np.sqrt(base.GAMMA * pressure / rho)
+            max_speed = float(np.max(np.abs(velocity) + sound_speed))
+            dt = min(remaining, 0.25 * cell_width / max(max_speed, 1.0e-12))
+            state = base.np_ssprk2(state, dt, cell_width)
+            if (
+                not np.isfinite(state).all()
+                or (state[..., 0] <= 0).any()
+                or (base.np_pressure(state) <= 0).any()
+            ):
+                raise RuntimeError(
+                    f"Strict {cells}-cell FVM rollout lost admissibility; "
+                    "no state repair was applied."
+                )
+            remaining -= dt
+        snapshots.append(state.copy())
+    return np.stack(snapshots, axis=1)
+
+
+def fvm_trajectories(
+    name: str,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Return native FVM-2048, its 64-cell averages, and native FVM-64."""
+    native_high_values = strict_native_rollout(
+        initial_condition(name, precision.HIGH_REFERENCE_CELLS),
+        precision.HIGH_REFERENCE_CELLS,
     )
+    projected_high = torch.from_numpy(
+        precision.conservative_restrict(
+            native_high_values, base.NCOARSE
+        ).astype(np.float32)
+    )
+    native_high = torch.from_numpy(native_high_values.astype(np.float32))
+    native_coarse = torch.from_numpy(
+        strict_native_rollout(
+            initial_condition(name, base.NCOARSE),
+            base.NCOARSE,
+        ).astype(np.float32)
+    )
+    initial_mismatch = float(
+        torch.max(torch.abs(projected_high[:, 0] - native_coarse[:, 0]))
+    )
+    if initial_mismatch > 2.0e-6:
+        raise RuntimeError(
+            f"Projected and native 64-cell initial states differ by "
+            f"{initial_mismatch:.3e}"
+        )
+    return native_high, projected_high, native_coarse
 
 
 @torch.no_grad()
@@ -149,12 +208,17 @@ def style_axis(axis: plt.Axes) -> None:
 
 
 def plot_final_profiles(
-    references: dict[str, torch.Tensor],
+    native_references: dict[str, torch.Tensor],
+    coarse_fvm: dict[str, torch.Tensor],
     predictions: dict[str, torch.Tensor],
     summary: dict[str, dict[str, object]],
+    coarse_summary: dict[str, dict[str, object]],
     output: Path,
 ) -> None:
-    x = (np.arange(base.NCOARSE) + 0.5) / base.NCOARSE
+    x_fine = (
+        np.arange(precision.HIGH_REFERENCE_CELLS) + 0.5
+    ) / precision.HIGH_REFERENCE_CELLS
+    x_coarse = (np.arange(base.NCOARSE) + 0.5) / base.NCOARSE
     row_labels = [r"Density $\rho$", r"Velocity $u$", r"Pressure $p$"]
     figure, axes = plt.subplots(
         3,
@@ -173,33 +237,46 @@ def plot_final_profiles(
     )
 
     for column, name in enumerate(CASES):
-        reference = base.primitive(references[name]).numpy()[0, -1]
+        native_reference = base.primitive(native_references[name]).numpy()[0, -1]
+        coarse_baseline = base.primitive(coarse_fvm[name]).numpy()[0, -1]
         prediction = base.primitive(predictions[name]).numpy()[0, -1]
         axes[0, column].set_title(
-            f"{DISPLAY[name]}\nrollout NRMSE {summary[name]['rollout_nrmse']:.4f}",
+            f"{DISPLAY[name]}\n"
+            f"NRMSE: HCFL {summary[name]['rollout_nrmse']:.4f} | "
+            f"FVM-64 {coarse_summary[name]['rollout_nrmse']:.4f}",
             fontsize=10.5,
             fontweight="semibold",
         )
         for row in range(3):
             axis = axes[row, column]
             axis.step(
-                x,
-                reference[:, row],
+                x_fine,
+                native_reference[:, row],
                 where="mid",
                 color=FVM_COLOR,
-                linewidth=2.1,
-                label="FVM-2048 reference",
-            )
-            axis.plot(
-                x,
-                prediction[:, row],
-                color=HCFL_COLOR,
                 linewidth=1.55,
+                label="FVM-2048 (native grid)",
+                zorder=2,
+            )
+            axis.step(
+                x_coarse,
+                coarse_baseline[:, row],
+                where="mid",
+                color=COARSE_FVM_COLOR,
+                linewidth=1.35,
+                linestyle=":",
+                label="FVM-64 (coarse baseline)",
+                zorder=3,
+            )
+            axis.step(
+                x_coarse,
+                prediction[:, row],
+                where="mid",
+                color=HCFL_COLOR,
+                linewidth=1.5,
                 linestyle="--",
-                marker="o",
-                markersize=2.0,
-                markevery=4,
-                label="best HCFL (dissipation)",
+                label="HCFL-64 (dissipation)",
+                zorder=4,
             )
             style_axis(axis)
             axis.set_xlim(0.0, 1.0)
@@ -209,7 +286,7 @@ def plot_final_profiles(
                 axis.set_xlabel("x", fontsize=9)
 
     figure.suptitle(
-        "Validation-selected HCFL versus high-resolution FVM at t = 0.0252",
+        "Native FVM-2048 versus coarse FVM-64 and HCFL-64 at t = 0.0252",
         y=0.975,
         fontsize=17,
         fontweight="bold",
@@ -221,14 +298,15 @@ def plot_final_profiles(
         labels,
         loc="upper center",
         bbox_to_anchor=(0.53, 0.895),
-        ncol=2,
+        ncol=3,
         frameon=False,
         fontsize=10,
     )
     figure.text(
         0.99,
         0.018,
-        "Periodic domain; FVM uses 2048 cells and is conservatively restricted to 64 cell averages.",
+        "FVM-2048 is shown on its native grid. Metrics use its conservative "
+        "64-cell averages so both coarse solvers are compared on the same cells.",
         ha="right",
         fontsize=8.5,
         color=MUTED_COLOR,
@@ -327,7 +405,14 @@ def main() -> None:
     results_dir = args.results_dir.resolve()
     results_dir.mkdir(parents=True, exist_ok=True)
     state_std = training_state_std(args.seed)
-    references = {name: fvm_reference(name) for name in CASES}
+    native_references: dict[str, torch.Tensor] = {}
+    references: dict[str, torch.Tensor] = {}
+    coarse_fvm: dict[str, torch.Tensor] = {}
+    for name in CASES:
+        native, projected, coarse = fvm_trajectories(name)
+        native_references[name] = native
+        references[name] = projected
+        coarse_fvm[name] = coarse
     models = {
         arm: load_model(results_dir, arm, args.seed, args.width)
         for arm in ARM_MODELS
@@ -354,6 +439,15 @@ def main() -> None:
         )
         for arm, case_summary in all_diagnostics.items()
     }
+    coarse_diagnostics = {
+        name: diagnostics(references[name], coarse_fvm[name], state_std)
+        for name in CASES
+    }
+    coarse_canonical_mean = float(
+        np.mean(
+            [row["rollout_nrmse"] for row in coarse_diagnostics.values()]
+        )
+    )
 
     selected_arm = "dissipation_broad"
     predictions = all_predictions[selected_arm]
@@ -364,13 +458,27 @@ def main() -> None:
         "seed": args.seed,
         "selected_model": f"{selected_arm}_converged_best",
         "selection_metric": "independent validation rollout NRMSE",
-        "fvm_reference": (
-            "2048-cell periodic Rusanov + SSP-RK2, strict/no repair, "
-            "conservatively restricted to 64 cells"
+        "profile_reference": (
+            "2048-cell periodic Rusanov + SSP-RK2 shown on its native grid"
+        ),
+        "metric_reference": (
+            "conservative 64-cell averages of the 2048-cell periodic "
+            "Rusanov + SSP-RK2 trajectory"
+        ),
+        "coarse_fvm_baseline": (
+            "64-cell periodic Rusanov + SSP-RK2 evolved directly on the "
+            "coarse grid"
         ),
         "final_time": (shared.CANONICAL_NSNAP - 1) * base.DT_SNAPSHOT,
         "cases": case_summary,
+        "fvm_64_cases": coarse_diagnostics,
         "canonical_mean_rollout_nrmse": canonical_means[selected_arm],
+        "fvm_64_canonical_mean_rollout_nrmse": coarse_canonical_mean,
+        "hcfl_improvement_over_fvm_64_percent": (
+            100.0
+            * (coarse_canonical_mean - canonical_means[selected_arm])
+            / coarse_canonical_mean
+        ),
         "all_converged_arm_canonical_means": canonical_means,
         "post_hoc_best_arm_on_fvm_2048": post_hoc_best_arm,
     }
@@ -404,6 +512,31 @@ def main() -> None:
                 "peak_snapshot_index": "",
             }
         )
+    for name, row in coarse_diagnostics.items():
+        comparison_rows.append(
+            {
+                "seed": args.seed,
+                "arm": "fvm_64",
+                "model": "Rusanov + SSP-RK2",
+                "split": name,
+                "rollout_nrmse": row["rollout_nrmse"],
+                "final_snapshot_nrmse": row["final_snapshot_nrmse"],
+                "peak_snapshot_nrmse": row["peak_snapshot_nrmse"],
+                "peak_snapshot_index": row["peak_snapshot_index"],
+            }
+        )
+    comparison_rows.append(
+        {
+            "seed": args.seed,
+            "arm": "fvm_64",
+            "model": "Rusanov + SSP-RK2",
+            "split": "canonical_mean",
+            "rollout_nrmse": coarse_canonical_mean,
+            "final_snapshot_nrmse": "",
+            "peak_snapshot_nrmse": "",
+            "peak_snapshot_index": "",
+        }
+    )
     comparison_path = results_dir / f"all_arms_vs_fvm_seed{args.seed}.csv"
     with comparison_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(comparison_rows[0]))
@@ -412,7 +545,14 @@ def main() -> None:
 
     profiles_path = results_dir / f"best_vs_fvm_profiles_seed{args.seed}.png"
     error_maps_path = results_dir / f"best_vs_fvm_error_maps_seed{args.seed}.png"
-    plot_final_profiles(references, predictions, case_summary, profiles_path)
+    plot_final_profiles(
+        native_references,
+        coarse_fvm,
+        predictions,
+        case_summary,
+        coarse_diagnostics,
+        profiles_path,
+    )
     plot_error_maps(references, predictions, state_std, error_maps_path)
 
     print(summary_path)

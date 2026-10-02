@@ -2,7 +2,9 @@
   "seed": 0,
   "selected_model": "dissipation_broad_converged_best",
   "selection_metric": "independent validation rollout NRMSE",
-  "fvm_reference": "2048-cell periodic Rusanov + SSP-RK2, strict/no repair, conservatively restricted to 64 cells",
+  "profile_reference": "2048-cell periodic Rusanov + SSP-RK2 shown on its native grid",
+  "metric_reference": "conservative 64-cell averages of the 2048-cell periodic Rusanov + SSP-RK2 trajectory",
+  "coarse_fvm_baseline": "64-cell periodic Rusanov + SSP-RK2 evolved directly on the coarse grid",
   "final_time": 0.0252,
   "cases": {
     "sod": {
@@ -61,7 +63,66 @@
       }
     }
   },
+  "fvm_64_cases": {
+    "sod": {
+      "rollout_nrmse": 0.02746201679110527,
+      "final_snapshot_nrmse": 0.03882986679673195,
+      "peak_snapshot_nrmse": 0.03882986679673195,
+      "peak_snapshot_index": 63,
+      "max_final_primitive_absolute_error": {
+        "density": 0.10153120756149292,
+        "velocity": 0.4353872537612915,
+        "pressure": 0.1291612684726715
+      }
+    },
+    "lax": {
+      "rollout_nrmse": 0.12329387664794922,
+      "final_snapshot_nrmse": 0.18564406037330627,
+      "peak_snapshot_nrmse": 0.18564406037330627,
+      "peak_snapshot_index": 63,
+      "max_final_primitive_absolute_error": {
+        "density": 0.5767436623573303,
+        "velocity": 0.6837855577468872,
+        "pressure": 0.7045006155967712
+      }
+    },
+    "collision": {
+      "rollout_nrmse": 0.25047221779823303,
+      "final_snapshot_nrmse": 0.29069411754608154,
+      "peak_snapshot_nrmse": 0.3635556995868683,
+      "peak_snapshot_index": 45,
+      "max_final_primitive_absolute_error": {
+        "density": 0.87302565574646,
+        "velocity": 0.8201918601989746,
+        "pressure": 1.6259078979492188
+      }
+    },
+    "strong_pressure": {
+      "rollout_nrmse": 0.21944105625152588,
+      "final_snapshot_nrmse": 0.3922940194606781,
+      "peak_snapshot_nrmse": 0.3922940194606781,
+      "peak_snapshot_index": 63,
+      "max_final_primitive_absolute_error": {
+        "density": 1.5723903179168701,
+        "velocity": 0.6416510343551636,
+        "pressure": 0.7573965191841125
+      }
+    },
+    "near_vacuum_expansion": {
+      "rollout_nrmse": 0.2382882982492447,
+      "final_snapshot_nrmse": 0.4132217466831207,
+      "peak_snapshot_nrmse": 0.4132217466831207,
+      "peak_snapshot_index": 63,
+      "max_final_primitive_absolute_error": {
+        "density": 1.605302333831787,
+        "velocity": 1.0471978187561035,
+        "pressure": 1.958036184310913
+      }
+    }
+  },
   "canonical_mean_rollout_nrmse": 0.0912094485014677,
+  "fvm_64_canonical_mean_rollout_nrmse": 0.1717914931476116,
+  "hcfl_improvement_over_fvm_64_percent": 46.906888792743594,
   "all_converged_arm_canonical_means": {
     "direct_broad": 0.11434530727565288,
     "invariant_broad": 0.1159733235836029,

@@ -392,6 +392,10 @@ Result:
 - the dissipation checkpoint's canonical mean rises 45.76% when the comparison
   reference changes from FVM-512 to FVM-2048. Its visible error is principally
   localized diffusion and sharp-peak underprediction, not broad oscillation;
+- against a directly evolved 64-cell Rusanov + SSP-RK2 baseline on the same
+  five cases, dissipation HCFL lowers mean NRMSE from `0.17179` to `0.09121`
+  (`46.91%`). The comparison profile now displays the native 2048-cell curve,
+  rather than visually relabeling its 64-cell projection as high resolution;
 - every rollout remained admissible with zero measured Tadmor violations.
 
 Decision: retire all architecture and wave-coverage rankings based only on the

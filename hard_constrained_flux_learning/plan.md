@@ -354,6 +354,10 @@ FVM-2048 reference. The seed-0 FVM-2048 re-evaluation preserves the ranking
 canonical mean by 45.76% relative to FVM-512. Keep the named canonical problems
 as final tests; add an independently parameterized stress-validation family so
 ordinary validation convergence is not confused with severe-OOD optimality.
+For coarse-grid value, always report HCFL-64 beside a classical solver evolved
+directly on 64 cells, while retaining the native high-resolution reference in
+profile figures. On seed 0, dissipation HCFL reduces the five-case mean from
+`0.17179` for Rusanov-64 to `0.09121`, a `46.91%` reduction.
 
 ### 1D reference-precision decision update
 
