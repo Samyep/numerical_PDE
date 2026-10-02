@@ -365,6 +365,35 @@ def t_hllc(U):
 # ---------------------------------------------------------------------
 # Model variants
 # ---------------------------------------------------------------------
+class FullFlux(nn.Module):
+    """Predict the complete interface flux from a five-cell primitive stencil.
+
+    Unlike the correction architectures below, this model has no HLLC base,
+    jump gate, or analytic output scale.  The shared ``Solver`` still applies
+    the same hard Tadmor half-space projection to the network output.
+    """
+
+    def __init__(self, mean, std, width=72):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(15, width), nn.Tanh(),
+            nn.Linear(width, width), nn.Tanh(),
+            nn.Linear(width, 3),
+        )
+        nn.init.zeros_(self.net[-1].weight)
+        nn.init.zeros_(self.net[-1].bias)
+        self.register_buffer("mean", torch.tensor(mean, dtype=torch.float32))
+        self.register_buffer("std", torch.tensor(std, dtype=torch.float32))
+
+    def forward(self, U):
+        P = primitive(U)
+        feats = torch.cat([
+            (torch.roll(P, s, dims=-2) - self.mean) / self.std
+            for s in [2, 1, 0, -1, -2]
+        ], dim=-1)
+        return self.net(feats)
+
+
 class DirectFlux(nn.Module):
     def __init__(self, mean, std, width=72):
         super().__init__()
@@ -541,7 +570,9 @@ class ConvFlux(nn.Module):
 class Solver(nn.Module):
     def __init__(self, model_name, mean, std, width=72):
         super().__init__()
-        if model_name == "direct":
+        if model_name == "full":
+            self.flux_net = FullFlux(mean, std, width)
+        elif model_name == "direct":
             self.flux_net = DirectFlux(mean, std, width)
         elif model_name == "invariant":
             self.flux_net = InvariantFlux(width)
@@ -639,7 +670,7 @@ def train(args):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("--model", choices=["direct","invariant","characteristic","dissipation","conv"], required=True)
+    p.add_argument("--model", choices=["full","direct","invariant","characteristic","dissipation","conv"], required=True)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--iters", type=int, default=1100)
     p.add_argument("--width", type=int, default=72)

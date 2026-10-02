@@ -1,0 +1,498 @@
+{
+  "seed": 0,
+  "full_flux_checkpoint": "full_flux_broad_converged_best_seed0.pt",
+  "roe_dissipation_checkpoint": "dissipation_broad_converged_best_seed0.pt",
+  "checkpoint_training_cells": 64,
+  "deployment_cells": 512,
+  "safe_step_cost_failure_rule": "fail a nominal safe update if it needs more than 64 internal substeps; the matched expected count is one",
+  "reference": "strict native HLLC + SSP-RK2 on 2048 cells, conservatively restricted to 512 cells only for metrics",
+  "mean_metrics": {
+    "native_hllc_512": {
+      "mean_rollout_nrmse": 0.07423693537712098,
+      "mean_final_snapshot_nrmse": 0.0913161652162671
+    },
+    "roe_dissipation_hcfl_512": {
+      "mean_rollout_nrmse": 0.05626891329884529,
+      "mean_final_snapshot_nrmse": 0.06899025747552515
+    },
+    "direct_full_flux_512": {
+      "completed_cases": 4,
+      "failed_cases": [
+        "near_vacuum_expansion"
+      ],
+      "mean_rollout_nrmse_over_completed_cases_only": 0.12467633141204715,
+      "all_five_case_mean_is_valid": false
+    }
+  },
+  "cases": {
+    "sod": {
+      "reference_hllc_2048": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 491,
+        "flux_evaluations": 982
+      },
+      "native_hllc_512": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 125,
+        "flux_evaluations": 250,
+        "rollout_nrmse": 0.010811347514390945,
+        "final_snapshot_nrmse": 0.012714155949652195,
+        "peak_snapshot_nrmse": 0.012714155949652195,
+        "peak_snapshot_index": 63,
+        "max_final_primitive_absolute_error": {
+          "density": 0.04249794781208038,
+          "velocity": 0.3481263220310211,
+          "pressure": 0.059097737073898315
+        },
+        "minimum_density": 0.125,
+        "minimum_pressure": 0.10000000149011612,
+        "max_conservation_drift": {
+          "density": 0.0,
+          "momentum": 1.1641532182693481e-09,
+          "energy": 1.1920928955078125e-07
+        }
+      },
+      "roe_dissipation_hcfl_512": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.00021701388888888888,
+        "hard_projection_relative_flux_rms": 8.185687319121139e-07,
+        "hard_projection_max_absolute_change": 0.00018808245658874512,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 4.541470180321031e-15,
+        "max_total_entropy_change": -0.0021967478642608285,
+        "rollout_nrmse": 0.0068195536732673645,
+        "final_snapshot_nrmse": 0.007109828758984804,
+        "peak_snapshot_nrmse": 0.007540029473602772,
+        "peak_snapshot_index": 27,
+        "max_final_primitive_absolute_error": {
+          "density": 0.04333515465259552,
+          "velocity": 0.312461256980896,
+          "pressure": 0.060014426708221436
+        },
+        "minimum_density": 0.125,
+        "minimum_pressure": 0.10000000149011612,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 1.2223608791828156e-09,
+          "energy": 2.384185791015625e-07
+        }
+      },
+      "direct_full_flux_512": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "maximum_characteristic_speed": 2.4207611083984375,
+        "minimum_internal_dt": 0.0004,
+        "low_order_dt_halvings": 0,
+        "wall_seconds": 1.7992380999494344,
+        "hard_projection_intervention_rate": 0.5152801029265873,
+        "hard_projection_relative_flux_rms": 0.06996889508295388,
+        "hard_projection_max_absolute_change": 0.6174372434616089,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.02976190476190476,
+        "mean_fd_beta": 0.9976159819061794,
+        "min_fd_beta": 0.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 1.0731862327086824e-09,
+        "max_total_entropy_change": -6.185189249663381e-09,
+        "rollout_nrmse": 0.026412738487124443,
+        "final_snapshot_nrmse": 0.03806448355317116,
+        "peak_snapshot_nrmse": 0.03806448355317116,
+        "peak_snapshot_index": 63,
+        "max_final_primitive_absolute_error": {
+          "density": 0.14827203750610352,
+          "velocity": 1.0432778596878052,
+          "pressure": 0.25730574131011963
+        },
+        "minimum_density": 0.11677895486354828,
+        "minimum_pressure": 0.08448542654514313,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 1.979060471057892e-09,
+          "energy": 2.384185791015625e-07
+        }
+      }
+    },
+    "lax": {
+      "reference_hllc_2048": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 1007,
+        "flux_evaluations": 2014
+      },
+      "native_hllc_512": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 252,
+        "flux_evaluations": 504,
+        "rollout_nrmse": 0.051048148423433304,
+        "final_snapshot_nrmse": 0.05998900532722473,
+        "peak_snapshot_nrmse": 0.060040101408958435,
+        "peak_snapshot_index": 62,
+        "max_final_primitive_absolute_error": {
+          "density": 0.3199233412742615,
+          "velocity": 0.7604299783706665,
+          "pressure": 0.6834163069725037
+        },
+        "minimum_density": 0.24970562756061554,
+        "minimum_pressure": 0.5710000395774841,
+        "max_conservation_drift": {
+          "density": 2.9802322387695312e-08,
+          "momentum": 1.4901161193847656e-08,
+          "energy": 9.5367431640625e-07
+        }
+      },
+      "roe_dissipation_hcfl_512": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.08563135540674603,
+        "hard_projection_relative_flux_rms": 0.00028416147271283215,
+        "hard_projection_max_absolute_change": 0.36035609245300293,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 7.603019880020415e-15,
+        "max_total_entropy_change": -0.01598107275935945,
+        "rollout_nrmse": 0.030756700783967972,
+        "final_snapshot_nrmse": 0.03277136757969856,
+        "peak_snapshot_nrmse": 0.03306929022073746,
+        "peak_snapshot_index": 47,
+        "max_final_primitive_absolute_error": {
+          "density": 0.16452240943908691,
+          "velocity": 0.38924193382263184,
+          "pressure": 0.3530229330062866
+        },
+        "minimum_density": 0.2220984399318695,
+        "minimum_pressure": 0.5710000395774841,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 1.4901161193847656e-08,
+          "energy": 9.5367431640625e-07
+        }
+      },
+      "direct_full_flux_512": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "maximum_characteristic_speed": 4.803101539611816,
+        "minimum_internal_dt": 0.0004,
+        "low_order_dt_halvings": 0,
+        "wall_seconds": 1.7160167000256479,
+        "hard_projection_intervention_rate": 0.46347191220238093,
+        "hard_projection_relative_flux_rms": 0.00635525565681217,
+        "hard_projection_max_absolute_change": 1.4073762893676758,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 7.969969044943017e-09,
+        "max_total_entropy_change": -0.025527178434913367,
+        "rollout_nrmse": 0.06751921772956848,
+        "final_snapshot_nrmse": 0.10231684893369675,
+        "peak_snapshot_nrmse": 0.10231684893369675,
+        "peak_snapshot_index": 63,
+        "max_final_primitive_absolute_error": {
+          "density": 0.65983647108078,
+          "velocity": 0.9125192165374756,
+          "pressure": 1.3627376556396484
+        },
+        "minimum_density": 0.23869681358337402,
+        "minimum_pressure": 0.5175949931144714,
+        "max_conservation_drift": {
+          "density": 8.940696716308594e-08,
+          "momentum": 1.4901161193847656e-08,
+          "energy": 1.9073486328125e-06
+        }
+      }
+    },
+    "collision": {
+      "reference_hllc_2048": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 693,
+        "flux_evaluations": 1386
+      },
+      "native_hllc_512": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 189,
+        "flux_evaluations": 378,
+        "rollout_nrmse": 0.06802190840244293,
+        "final_snapshot_nrmse": 0.060315243899822235,
+        "peak_snapshot_nrmse": 0.0801277831196785,
+        "peak_snapshot_index": 55,
+        "max_final_primitive_absolute_error": {
+          "density": 0.4053528308868408,
+          "velocity": 0.6285675764083862,
+          "pressure": 0.8559637069702148
+        },
+        "minimum_density": 0.08217018097639084,
+        "minimum_pressure": 0.06716174632310867,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 3.725290298461914e-08,
+          "energy": 4.76837158203125e-07
+        }
+      },
+      "roe_dissipation_hcfl_512": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.18214828249007936,
+        "hard_projection_relative_flux_rms": 0.000854590569720342,
+        "hard_projection_max_absolute_change": 1.2000012397766113,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 5.526509078927072e-10,
+        "max_total_entropy_change": -0.08556455787166328,
+        "rollout_nrmse": 0.05115491896867752,
+        "final_snapshot_nrmse": 0.04664769396185875,
+        "peak_snapshot_nrmse": 0.0637001022696495,
+        "peak_snapshot_index": 44,
+        "max_final_primitive_absolute_error": {
+          "density": 0.3644833564758301,
+          "velocity": 0.6078803539276123,
+          "pressure": 0.8087185621261597
+        },
+        "minimum_density": 0.0742735043168068,
+        "minimum_pressure": 0.06437119841575623,
+        "max_conservation_drift": {
+          "density": 1.1920928955078125e-07,
+          "momentum": 1.993030309677124e-07,
+          "energy": 4.76837158203125e-07
+        }
+      },
+      "direct_full_flux_512": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "maximum_characteristic_speed": 3.478909730911255,
+        "minimum_internal_dt": 0.0004,
+        "low_order_dt_halvings": 0,
+        "wall_seconds": 1.7639659000560641,
+        "hard_projection_intervention_rate": 0.48998635912698413,
+        "hard_projection_relative_flux_rms": 0.019410916091523463,
+        "hard_projection_max_absolute_change": 3.8384833335876465,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 0.0,
+        "max_total_entropy_change": -0.03353601270742246,
+        "rollout_nrmse": 0.16274215281009674,
+        "final_snapshot_nrmse": 0.2565981149673462,
+        "peak_snapshot_nrmse": 0.2565981149673462,
+        "peak_snapshot_index": 63,
+        "max_final_primitive_absolute_error": {
+          "density": 1.58504319190979,
+          "velocity": 1.878551959991455,
+          "pressure": 4.336532115936279
+        },
+        "minimum_density": 0.10431120544672012,
+        "minimum_pressure": 0.041902486234903336,
+        "max_conservation_drift": {
+          "density": 1.1920928955078125e-07,
+          "momentum": 1.0058283805847168e-07,
+          "energy": 4.76837158203125e-07
+        }
+      }
+    },
+    "strong_pressure": {
+      "reference_hllc_2048": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 814,
+        "flux_evaluations": 1628
+      },
+      "native_hllc_512": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 240,
+        "flux_evaluations": 480,
+        "rollout_nrmse": 0.17141221463680267,
+        "final_snapshot_nrmse": 0.24039193987846375,
+        "peak_snapshot_nrmse": 0.24039193987846375,
+        "peak_snapshot_index": 63,
+        "max_final_primitive_absolute_error": {
+          "density": 1.4844694137573242,
+          "velocity": 0.7727404236793518,
+          "pressure": 0.7354981303215027
+        },
+        "minimum_density": 0.5615903735160828,
+        "minimum_pressure": 0.05000000074505806,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 1.1175870895385742e-08,
+          "energy": 4.76837158203125e-07
+        }
+      },
+      "roe_dissipation_hcfl_512": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.0017826140873015873,
+        "hard_projection_relative_flux_rms": 7.218690829589531e-05,
+        "hard_projection_max_absolute_change": 0.04772472381591797,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 1.5182875208878438e-14,
+        "max_total_entropy_change": -0.3598226602664454,
+        "rollout_nrmse": 0.1297285109758377,
+        "final_snapshot_nrmse": 0.1770087331533432,
+        "peak_snapshot_nrmse": 0.1770087331533432,
+        "peak_snapshot_index": 63,
+        "max_final_primitive_absolute_error": {
+          "density": 1.5120134353637695,
+          "velocity": 0.798043966293335,
+          "pressure": 0.751223087310791
+        },
+        "minimum_density": 0.5011986494064331,
+        "minimum_pressure": 0.05000000074505806,
+        "max_conservation_drift": {
+          "density": 1.1920928955078125e-07,
+          "momentum": 2.60770320892334e-08,
+          "energy": 9.5367431640625e-07
+        }
+      },
+      "direct_full_flux_512": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "maximum_characteristic_speed": 3.780853748321533,
+        "minimum_internal_dt": 0.0004,
+        "low_order_dt_halvings": 0,
+        "wall_seconds": 1.729213499929756,
+        "hard_projection_intervention_rate": 0.4386354476686508,
+        "hard_projection_relative_flux_rms": 0.03151001675080837,
+        "hard_projection_max_absolute_change": 3.2352023124694824,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 6.108787877323607e-06,
+        "max_total_entropy_change": -0.05253280067859123,
+        "rollout_nrmse": 0.24203121662139893,
+        "final_snapshot_nrmse": 0.40738144516944885,
+        "peak_snapshot_nrmse": 0.40808096528053284,
+        "peak_snapshot_index": 62,
+        "max_final_primitive_absolute_error": {
+          "density": 3.9223475456237793,
+          "velocity": 1.8835647106170654,
+          "pressure": 1.8620525598526
+        },
+        "minimum_density": 0.3843618333339691,
+        "minimum_pressure": 0.0041593583300709724,
+        "max_conservation_drift": {
+          "density": 1.1324882507324219e-06,
+          "momentum": 2.7008354663848877e-08,
+          "energy": 9.5367431640625e-07
+        }
+      }
+    },
+    "near_vacuum_expansion": {
+      "reference_hllc_2048": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 630,
+        "flux_evaluations": 1260
+      },
+      "native_hllc_512": {
+        "completed": true,
+        "cfl": 0.25,
+        "ssprk2_substeps": 189,
+        "flux_evaluations": 378,
+        "rollout_nrmse": 0.069891057908535,
+        "final_snapshot_nrmse": 0.08317048102617264,
+        "peak_snapshot_nrmse": 0.08713588118553162,
+        "peak_snapshot_index": 16,
+        "max_final_primitive_absolute_error": {
+          "density": 0.9662529230117798,
+          "velocity": 0.7997658848762512,
+          "pressure": 1.2819513082504272
+        },
+        "minimum_density": 0.02066754177212715,
+        "minimum_pressure": 0.008250758051872253,
+        "max_conservation_drift": {
+          "density": 5.960464477539063e-08,
+          "momentum": 4.0978193283081055e-08,
+          "energy": 2.384185791015625e-07
+        }
+      },
+      "roe_dissipation_hcfl_512": {
+        "completed": true,
+        "effective_physical_dt_per_call": 5e-05,
+        "safe_update_calls": 504,
+        "internal_substeps": 504,
+        "hard_projection_intervention_rate": 0.15609111483134921,
+        "hard_projection_relative_flux_rms": 0.0012805140867956936,
+        "hard_projection_max_absolute_change": 1.0095233917236328,
+        "local_limiter_intervention_rate": 0.0,
+        "fd_entropy_intervention_rate": 0.0,
+        "mean_fd_beta": 1.0,
+        "min_fd_beta": 1.0,
+        "entropy_violation_rate": 0.0,
+        "max_entropy_residual": 0.0,
+        "max_total_entropy_change": -0.15392117675060035,
+        "rollout_nrmse": 0.06288488209247589,
+        "final_snapshot_nrmse": 0.08141366392374039,
+        "peak_snapshot_nrmse": 0.0842885747551918,
+        "peak_snapshot_index": 32,
+        "max_final_primitive_absolute_error": {
+          "density": 1.343169093132019,
+          "velocity": 0.9938797950744629,
+          "pressure": 1.8762264251708984
+        },
+        "minimum_density": 0.017533134669065475,
+        "minimum_pressure": 0.009008700959384441,
+        "max_conservation_drift": {
+          "density": 1.1920928955078125e-07,
+          "momentum": 9.685754776000977e-08,
+          "energy": 2.384185791015625e-07
+        }
+      },
+      "direct_full_flux_512": {
+        "completed": false,
+        "failure_reason": "safe_internal_substep_limit_exceeded",
+        "internal_substep_limit_per_safe_call": 64,
+        "failed_saved_snapshot": 26,
+        "completed_saved_snapshots": 26,
+        "safe_update_calls_before_failure": 204,
+        "internal_substeps_before_failure": 268,
+        "maximum_characteristic_speed_before_failure": 2.9398772716522217,
+        "minimum_dt_before_failure": 7.147374225151085e-10,
+        "low_order_dt_halvings_before_failure": 1188,
+        "minimum_density_before_failure": 0.0004369112430140376,
+        "minimum_pressure_before_failure": 1.0000000656873453e-05,
+        "wall_seconds_before_failure": 2.04515720019117
+      }
+    }
+  }
+}

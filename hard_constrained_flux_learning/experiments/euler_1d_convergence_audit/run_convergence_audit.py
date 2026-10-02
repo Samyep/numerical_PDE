@@ -377,7 +377,7 @@ def self_test() -> None:
     mean = primitive.mean(dim=(0, 1, 2)).numpy()
     std = primitive.std(dim=(0, 1, 2)).numpy()
     state_std = data.std(dim=(0, 1, 2))
-    for model_name in ("direct", "invariant", "characteristic", "dissipation", "conv"):
+    for model_name in ("full", "direct", "invariant", "characteristic", "dissipation", "conv"):
         model = base.Solver(model_name, mean, std, width=16)
         value = deterministic_one_step_loss(model, data, state_std, batch_size=8)
         if not np.isfinite(value):

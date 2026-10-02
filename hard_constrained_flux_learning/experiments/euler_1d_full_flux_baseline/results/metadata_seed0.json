@@ -1,0 +1,45 @@
+{
+  "seed": 0,
+  "pre_run_question": "Can the same five-cell MLP learn the complete shared Euler interface flux without an HLLC base or correction parameterization?",
+  "single_scientific_factor": "complete_flux_vs_hllc_plus_correction",
+  "candidate": "five-point normalized primitive stencil mapped directly to the complete three-component interface flux",
+  "removed_from_candidate": [
+    "HLLC base flux",
+    "jump gate",
+    "Roe characteristic basis",
+    "analytic output scale"
+  ],
+  "held_fixed": [
+    "MLP dimensions and trainable parameter count",
+    "broad training and independent validation tensors",
+    "initialization and minibatch seeds",
+    "optimizer, learning-rate schedule, and convergence rule",
+    "hard Tadmor projection",
+    "local positivity limiter",
+    "fully-discrete entropy limiter"
+  ],
+  "controlled_comparators": [
+    "direct_broad",
+    "dissipation_broad"
+  ],
+  "parameter_count": 6627,
+  "training_trajectories": 580,
+  "validation_trajectories": 136,
+  "fixed_budget_updates": 1100,
+  "max_updates": 50000,
+  "validation_interval": 100,
+  "plateau_patience": 10,
+  "minimum_relative_improvement": 0.001,
+  "initial_learning_rate": 0.0003,
+  "learning_rate_factor": 0.3,
+  "minimum_learning_rate": 3e-06,
+  "width": 72,
+  "batch_size": 56,
+  "reference": "512-cell Rusanov + SSP-RK2, strict/no repair",
+  "training_and_deployment_cells_for_reported_metrics": 64,
+  "boundary_condition": "periodic",
+  "checkpoint_selection": "minimum independent validation rollout NRMSE",
+  "constant_state_consistency_used_for_selection": false,
+  "data_generation_seconds": 5.763454500120133,
+  "total_wall_seconds": 188.40244890004396
+}
