@@ -881,16 +881,19 @@ def plot_combined_profiles(
                 row = row_offset + local_row
                 axis = axes[row, column]
                 first = row == 0 and column == 0
+                reference_values = values["reference"][:, component]
+                roe_values = values["classical_roe"][:, component]
+                hcfl_values = values["trained512"][:, component]
                 axis.plot(
                     fine_x,
-                    values["reference"][:, component],
+                    reference_values,
                     color="#111111",
                     linewidth=1.1,
                     label="HLL-2048" if first else None,
                 )
                 axis.plot(
                     coarse_x,
-                    values["classical_roe"][:, component],
+                    roe_values,
                     color="#D55E00",
                     linestyle=(0, (8, 3)),
                     linewidth=1.05,
@@ -898,11 +901,92 @@ def plot_combined_profiles(
                 )
                 axis.plot(
                     coarse_x,
-                    values["trained512"][:, component],
+                    hcfl_values,
                     color="#0072B2",
                     linestyle="--",
                     linewidth=1.15,
                     label="HCFL trained at 512" if first else None,
+                )
+                reference_on_coarse = np.interp(
+                    coarse_x,
+                    fine_x,
+                    reference_values,
+                )
+                gradient = np.abs(np.gradient(reference_on_coarse, coarse_x))
+                local_advantage = (
+                    np.abs(roe_values - reference_on_coarse)
+                    - np.abs(hcfl_values - reference_on_coarse)
+                )
+                window_cells = 24
+                kernel = np.ones(window_cells, dtype=np.float64)
+                window_gradient = np.convolve(gradient, kernel, mode="same")
+                window_advantage = np.convolve(
+                    local_advantage,
+                    kernel,
+                    mode="same",
+                )
+                fast_threshold = np.quantile(window_gradient, 0.85)
+                candidates = np.flatnonzero(window_gradient >= fast_threshold)
+                improved = candidates[window_advantage[candidates] > 0.0]
+                if improved.size:
+                    center = int(improved[np.argmax(window_advantage[improved])])
+                else:
+                    center = int(np.argmax(window_gradient))
+                start = int(
+                    np.clip(
+                        center - window_cells // 2,
+                        0,
+                        coarse_x.size - window_cells,
+                    )
+                )
+                stop = start + window_cells
+                dx = coarse_x[1] - coarse_x[0]
+                x_left = max(0.0, float(coarse_x[start] - 0.5 * dx))
+                x_right = min(1.0, float(coarse_x[stop - 1] + 0.5 * dx))
+                inset_left = 0.54 if 0.5 * (x_left + x_right) < 0.5 else 0.04
+                inset = axis.inset_axes([inset_left, 0.08, 0.42, 0.42])
+                inset.plot(
+                    fine_x,
+                    reference_values,
+                    color="#111111",
+                    linewidth=0.85,
+                )
+                inset.plot(
+                    coarse_x,
+                    roe_values,
+                    color="#D55E00",
+                    linestyle=(0, (8, 3)),
+                    linewidth=0.95,
+                )
+                inset.plot(
+                    coarse_x,
+                    hcfl_values,
+                    color="#0072B2",
+                    linestyle="--",
+                    linewidth=1.0,
+                )
+                inset.set_xlim(x_left, x_right)
+                fine_mask = (fine_x >= x_left) & (fine_x <= x_right)
+                coarse_mask = (coarse_x >= x_left) & (coarse_x <= x_right)
+                zoom_values = np.concatenate(
+                    (
+                        reference_values[fine_mask],
+                        roe_values[coarse_mask],
+                        hcfl_values[coarse_mask],
+                    )
+                )
+                y_low = float(np.min(zoom_values))
+                y_high = float(np.max(zoom_values))
+                global_span = max(float(np.ptp(reference_values)), 1.0e-8)
+                padding = max(0.08 * (y_high - y_low), 0.005 * global_span)
+                inset.set_ylim(y_low - padding, y_high + padding)
+                inset.grid(alpha=0.15, linewidth=0.4)
+                inset.tick_params(axis="both", labelsize=5.5, length=1.8, pad=1.0)
+                axis.indicate_inset_zoom(
+                    inset,
+                    edgecolor="#555555",
+                    alpha=0.55,
+                    linewidth=0.6,
                 )
                 axis.grid(alpha=0.18)
                 axis.set_xlim(0.0, 1.0)
@@ -918,8 +1002,23 @@ def plot_combined_profiles(
         fontsize=13,
     )
     handles, labels = axes[0, 0].get_legend_handles_labels()
-    figure.legend(handles, labels, loc="lower center", ncol=3, frameon=False)
-    figure.tight_layout(rect=(0.0, 0.045, 1.0, 0.965))
+    figure.legend(
+        handles,
+        labels,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.038),
+        ncol=3,
+        frameon=False,
+    )
+    figure.text(
+        0.5,
+        0.012,
+        "Insets: high-gradient windows with the largest local HCFL error reduction versus Roe.",
+        ha="center",
+        fontsize=7.5,
+        color="#555555",
+    )
+    figure.tight_layout(rect=(0.0, 0.09, 1.0, 0.965))
     figure.savefig(output, dpi=180)
     plt.close(figure)
 
