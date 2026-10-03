@@ -1,0 +1,22 @@
+{
+  "seed": 0,
+  "source": "nonperiodic_transmissive512_seed0.json",
+  "checks": {
+    "periodic_training_to_nonperiodic_zero_shot": "pass",
+    "no_learned_boundary_flux": "pass",
+    "no_circular_stencil_leakage": "pass",
+    "constant_state_and_flux_consistency": "pass",
+    "flux_form_boundary_conservation": "pass",
+    "all_learned_rollouts_completed": "pass",
+    "density_and_pressure_admissibility": "pass",
+    "interior_tadmor_constraints": "pass",
+    "boundary_aware_fully_discrete_entropy": "pass",
+    "both_retained_methods_beat_hllc512_in_all_groups": "pass"
+  },
+  "limitations": [
+    "one checkpoint seed",
+    "transmissive boundaries only",
+    "final time 0.0252",
+    "HLLC-2048 is a finite-resolution rather than exact reference"
+  ]
+}
