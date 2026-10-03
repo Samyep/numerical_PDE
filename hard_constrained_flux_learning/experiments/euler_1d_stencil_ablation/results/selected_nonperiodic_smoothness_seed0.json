@@ -1,0 +1,671 @@
+{
+  "seed": 0,
+  "training": "no training; inference-only plot",
+  "boundary_condition": "transmissive nonperiodic",
+  "cases": [
+    "lax",
+    "collision",
+    "contact_right_exit"
+  ],
+  "zoom_windows": {
+    "lax": [
+      0.4,
+      0.65
+    ],
+    "collision": [
+      0.42,
+      0.58
+    ],
+    "contact_right_exit": [
+      0.9,
+      1.0
+    ]
+  },
+  "display_note": "For contact_right_exit, velocity and pressure are plotted as u-1 and p-1; diagnostics remain in the original variables.",
+  "model_sources": {
+    "4": {
+      "hllc_roe": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_stencil_ablation\\results\\hllc_roe_s4_converged_best_seed0.pt",
+      "central_feas": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_stencil_ablation\\results\\central_nonnegative_feas_s4_converged_best_seed0.pt"
+    },
+    "5": {
+      "hllc_roe": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_convergence_audit\\results\\dissipation_broad_converged_best_seed0.pt",
+      "central_feas": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_roe_upwind_ablation\\results\\central_roe_upwind_feas_broad_converged_best_seed0.pt"
+    },
+    "6": {
+      "hllc_roe": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_stencil_ablation\\results\\hllc_roe_s6_converged_best_seed0.pt",
+      "central_feas": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_stencil_ablation\\results\\central_nonnegative_feas_s6_converged_best_seed0.pt"
+    }
+  },
+  "local_profile_diagnostics": [
+    {
+      "case": "lax",
+      "stencil_size": "reference_2048",
+      "method": "hllc_2048",
+      "variable": 0,
+      "local_total_variation": 1.8654242753982544,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.3432183563709259,
+      "local_maximum": 1.3033720254898071
+    },
+    {
+      "case": "lax",
+      "stencil_size": "reference_2048",
+      "method": "hllc_2048",
+      "variable": 1,
+      "local_total_variation": 2.382293462753296,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.0,
+      "local_maximum": 1.5401179790496826
+    },
+    {
+      "case": "lax",
+      "stencil_size": "reference_2048",
+      "method": "hllc_2048",
+      "variable": 2,
+      "local_total_variation": 2.9821133613586426,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.5710000395774841,
+      "local_maximum": 3.5279998779296875
+    },
+    {
+      "case": "lax",
+      "stencil_size": 4,
+      "method": "hllc_roe",
+      "variable": 0,
+      "local_total_variation": 1.9594959020614624,
+      "local_significant_extrema": 4,
+      "local_minimum": 0.31560200452804565,
+      "local_maximum": 1.3025085926055908
+    },
+    {
+      "case": "lax",
+      "stencil_size": 4,
+      "method": "hllc_roe",
+      "variable": 1,
+      "local_total_variation": 2.42610764503479,
+      "local_significant_extrema": 1,
+      "local_minimum": 0.0,
+      "local_maximum": 1.5488131046295166
+    },
+    {
+      "case": "lax",
+      "stencil_size": 4,
+      "method": "hllc_roe",
+      "variable": 2,
+      "local_total_variation": 3.056637763977051,
+      "local_significant_extrema": 1,
+      "local_minimum": 0.5710000395774841,
+      "local_maximum": 3.5278000831604004
+    },
+    {
+      "case": "lax",
+      "stencil_size": 4,
+      "method": "central_feas",
+      "variable": 0,
+      "local_total_variation": 2.087858200073242,
+      "local_significant_extrema": 5,
+      "local_minimum": 0.2930838465690613,
+      "local_maximum": 1.3087499141693115
+    },
+    {
+      "case": "lax",
+      "stencil_size": 4,
+      "method": "central_feas",
+      "variable": 1,
+      "local_total_variation": 2.4667410850524902,
+      "local_significant_extrema": 2,
+      "local_minimum": 0.0,
+      "local_maximum": 1.5599509477615356
+    },
+    {
+      "case": "lax",
+      "stencil_size": 4,
+      "method": "central_feas",
+      "variable": 2,
+      "local_total_variation": 3.1195850372314453,
+      "local_significant_extrema": 2,
+      "local_minimum": 0.5710000395774841,
+      "local_maximum": 3.5279717445373535
+    },
+    {
+      "case": "lax",
+      "stencil_size": 5,
+      "method": "hllc_roe",
+      "variable": 0,
+      "local_total_variation": 2.010913133621216,
+      "local_significant_extrema": 5,
+      "local_minimum": 0.3017641603946686,
+      "local_maximum": 1.2985340356826782
+    },
+    {
+      "case": "lax",
+      "stencil_size": 5,
+      "method": "hllc_roe",
+      "variable": 1,
+      "local_total_variation": 2.443068504333496,
+      "local_significant_extrema": 2,
+      "local_minimum": 0.0,
+      "local_maximum": 1.5612748861312866
+    },
+    {
+      "case": "lax",
+      "stencil_size": 5,
+      "method": "hllc_roe",
+      "variable": 2,
+      "local_total_variation": 3.067821979522705,
+      "local_significant_extrema": 1,
+      "local_minimum": 0.5710000395774841,
+      "local_maximum": 3.5279674530029297
+    },
+    {
+      "case": "lax",
+      "stencil_size": 5,
+      "method": "central_feas",
+      "variable": 0,
+      "local_total_variation": 1.8319897651672363,
+      "local_significant_extrema": 1,
+      "local_minimum": 0.34205424785614014,
+      "local_maximum": 1.2855026721954346
+    },
+    {
+      "case": "lax",
+      "stencil_size": 5,
+      "method": "central_feas",
+      "variable": 1,
+      "local_total_variation": 2.42280912399292,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.0,
+      "local_maximum": 1.550468921661377
+    },
+    {
+      "case": "lax",
+      "stencil_size": 5,
+      "method": "central_feas",
+      "variable": 2,
+      "local_total_variation": 3.0475549697875977,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.5710000395774841,
+      "local_maximum": 3.527956485748291
+    },
+    {
+      "case": "lax",
+      "stencil_size": 6,
+      "method": "hllc_roe",
+      "variable": 0,
+      "local_total_variation": 2.024515390396118,
+      "local_significant_extrema": 4,
+      "local_minimum": 0.2991572916507721,
+      "local_maximum": 1.299977421760559
+    },
+    {
+      "case": "lax",
+      "stencil_size": 6,
+      "method": "hllc_roe",
+      "variable": 1,
+      "local_total_variation": 2.465205192565918,
+      "local_significant_extrema": 2,
+      "local_minimum": 0.0,
+      "local_maximum": 1.5674445629119873
+    },
+    {
+      "case": "lax",
+      "stencil_size": 6,
+      "method": "hllc_roe",
+      "variable": 2,
+      "local_total_variation": 3.1004717350006104,
+      "local_significant_extrema": 2,
+      "local_minimum": 0.5710000395774841,
+      "local_maximum": 3.5279834270477295
+    },
+    {
+      "case": "lax",
+      "stencil_size": 6,
+      "method": "central_feas",
+      "variable": 0,
+      "local_total_variation": 1.9236613512039185,
+      "local_significant_extrema": 2,
+      "local_minimum": 0.3348251283168793,
+      "local_maximum": 1.3204221725463867
+    },
+    {
+      "case": "lax",
+      "stencil_size": 6,
+      "method": "central_feas",
+      "variable": 1,
+      "local_total_variation": 2.477647304534912,
+      "local_significant_extrema": 2,
+      "local_minimum": 0.0,
+      "local_maximum": 1.5559369325637817
+    },
+    {
+      "case": "lax",
+      "stencil_size": 6,
+      "method": "central_feas",
+      "variable": 2,
+      "local_total_variation": 3.169379472732544,
+      "local_significant_extrema": 2,
+      "local_minimum": 0.5710000395774841,
+      "local_maximum": 3.5278146266937256
+    },
+    {
+      "case": "collision",
+      "stencil_size": "reference_2048",
+      "method": "hllc_2048",
+      "variable": 0,
+      "local_total_variation": 5.248768329620361,
+      "local_significant_extrema": 0,
+      "local_minimum": 1.0,
+      "local_maximum": 3.2600924968719482
+    },
+    {
+      "case": "collision",
+      "stencil_size": "reference_2048",
+      "method": "hllc_2048",
+      "variable": 1,
+      "local_total_variation": 4.000068664550781,
+      "local_significant_extrema": 0,
+      "local_minimum": -2.0,
+      "local_maximum": 2.0
+    },
+    {
+      "case": "collision",
+      "stencil_size": "reference_2048",
+      "method": "hllc_2048",
+      "variable": 2,
+      "local_total_variation": 11.541146278381348,
+      "local_significant_extrema": 0,
+      "local_minimum": 1.0,
+      "local_maximum": 6.770500183105469
+    },
+    {
+      "case": "collision",
+      "stencil_size": 4,
+      "method": "hllc_roe",
+      "variable": 0,
+      "local_total_variation": 5.3228254318237305,
+      "local_significant_extrema": 6,
+      "local_minimum": 0.9771227836608887,
+      "local_maximum": 3.3541507720947266
+    },
+    {
+      "case": "collision",
+      "stencil_size": 4,
+      "method": "hllc_roe",
+      "variable": 1,
+      "local_total_variation": 4.1685590744018555,
+      "local_significant_extrema": 2,
+      "local_minimum": -2.0012502670288086,
+      "local_maximum": 2.0001304149627686
+    },
+    {
+      "case": "collision",
+      "stencil_size": 4,
+      "method": "hllc_roe",
+      "variable": 2,
+      "local_total_variation": 12.48222541809082,
+      "local_significant_extrema": 7,
+      "local_minimum": 0.992503821849823,
+      "local_maximum": 7.036408424377441
+    },
+    {
+      "case": "collision",
+      "stencil_size": 4,
+      "method": "central_feas",
+      "variable": 0,
+      "local_total_variation": 5.293863296508789,
+      "local_significant_extrema": 8,
+      "local_minimum": 0.9935541152954102,
+      "local_maximum": 3.3958849906921387
+    },
+    {
+      "case": "collision",
+      "stencil_size": 4,
+      "method": "central_feas",
+      "variable": 1,
+      "local_total_variation": 4.31710147857666,
+      "local_significant_extrema": 5,
+      "local_minimum": -2.000256299972534,
+      "local_maximum": 2.0000252723693848
+    },
+    {
+      "case": "collision",
+      "stencil_size": 4,
+      "method": "central_feas",
+      "variable": 2,
+      "local_total_variation": 13.326831817626953,
+      "local_significant_extrema": 9,
+      "local_minimum": 0.9996526837348938,
+      "local_maximum": 7.165721416473389
+    },
+    {
+      "case": "collision",
+      "stencil_size": 5,
+      "method": "hllc_roe",
+      "variable": 0,
+      "local_total_variation": 5.154324531555176,
+      "local_significant_extrema": 5,
+      "local_minimum": 0.9595076441764832,
+      "local_maximum": 3.2700512409210205
+    },
+    {
+      "case": "collision",
+      "stencil_size": 5,
+      "method": "hllc_roe",
+      "variable": 1,
+      "local_total_variation": 4.064511299133301,
+      "local_significant_extrema": 1,
+      "local_minimum": -2.016052007675171,
+      "local_maximum": 2.0008864402770996
+    },
+    {
+      "case": "collision",
+      "stencil_size": 5,
+      "method": "hllc_roe",
+      "variable": 2,
+      "local_total_variation": 11.780967712402344,
+      "local_significant_extrema": 4,
+      "local_minimum": 0.9644696116447449,
+      "local_maximum": 6.813636779785156
+    },
+    {
+      "case": "collision",
+      "stencil_size": 5,
+      "method": "central_feas",
+      "variable": 0,
+      "local_total_variation": 4.881965160369873,
+      "local_significant_extrema": 5,
+      "local_minimum": 0.9881271123886108,
+      "local_maximum": 3.2902472019195557
+    },
+    {
+      "case": "collision",
+      "stencil_size": 5,
+      "method": "central_feas",
+      "variable": 1,
+      "local_total_variation": 4.0571160316467285,
+      "local_significant_extrema": 2,
+      "local_minimum": -2.000201463699341,
+      "local_maximum": 2.000002861022949
+    },
+    {
+      "case": "collision",
+      "stencil_size": 5,
+      "method": "central_feas",
+      "variable": 2,
+      "local_total_variation": 11.855849266052246,
+      "local_significant_extrema": 4,
+      "local_minimum": 0.999738872051239,
+      "local_maximum": 6.853124141693115
+    },
+    {
+      "case": "collision",
+      "stencil_size": 6,
+      "method": "hllc_roe",
+      "variable": 0,
+      "local_total_variation": 5.180891036987305,
+      "local_significant_extrema": 6,
+      "local_minimum": 0.9650228023529053,
+      "local_maximum": 3.280369281768799
+    },
+    {
+      "case": "collision",
+      "stencil_size": 6,
+      "method": "hllc_roe",
+      "variable": 1,
+      "local_total_variation": 4.0450520515441895,
+      "local_significant_extrema": 2,
+      "local_minimum": -2.0018985271453857,
+      "local_maximum": 2.000915050506592
+    },
+    {
+      "case": "collision",
+      "stencil_size": 6,
+      "method": "hllc_roe",
+      "variable": 2,
+      "local_total_variation": 11.77070426940918,
+      "local_significant_extrema": 3,
+      "local_minimum": 0.9839552044868469,
+      "local_maximum": 6.82290506362915
+    },
+    {
+      "case": "collision",
+      "stencil_size": 6,
+      "method": "central_feas",
+      "variable": 0,
+      "local_total_variation": 4.868402481079102,
+      "local_significant_extrema": 6,
+      "local_minimum": 0.9924649596214294,
+      "local_maximum": 3.2779297828674316
+    },
+    {
+      "case": "collision",
+      "stencil_size": 6,
+      "method": "central_feas",
+      "variable": 1,
+      "local_total_variation": 4.048791408538818,
+      "local_significant_extrema": 2,
+      "local_minimum": -2.0000014305114746,
+      "local_maximum": 2.000898599624634
+    },
+    {
+      "case": "collision",
+      "stencil_size": 6,
+      "method": "central_feas",
+      "variable": 2,
+      "local_total_variation": 11.793697357177734,
+      "local_significant_extrema": 4,
+      "local_minimum": 0.999380886554718,
+      "local_maximum": 6.822351932525635
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": "reference_2048",
+      "method": "hllc_2048",
+      "variable": 0,
+      "local_total_variation": 0.0005985498428344727,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9994014501571655,
+      "local_maximum": 1.0
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": "reference_2048",
+      "method": "hllc_2048",
+      "variable": 1,
+      "local_total_variation": 0.0,
+      "local_significant_extrema": 0,
+      "local_minimum": 1.0,
+      "local_maximum": 1.0
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": "reference_2048",
+      "method": "hllc_2048",
+      "variable": 2,
+      "local_total_variation": 0.0,
+      "local_significant_extrema": 0,
+      "local_minimum": 1.0,
+      "local_maximum": 1.0
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 4,
+      "method": "hllc_roe",
+      "variable": 0,
+      "local_total_variation": 0.052521467208862305,
+      "local_significant_extrema": 2,
+      "local_minimum": 0.9893103837966919,
+      "local_maximum": 1.0258378982543945
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 4,
+      "method": "hllc_roe",
+      "variable": 1,
+      "local_total_variation": 1.4185905456542969e-05,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.999998152256012,
+      "local_maximum": 1.000001311302185
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 4,
+      "method": "hllc_roe",
+      "variable": 2,
+      "local_total_variation": 1.0609626770019531e-05,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999987483024597,
+      "local_maximum": 1.0000016689300537
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 4,
+      "method": "central_feas",
+      "variable": 0,
+      "local_total_variation": 0.19455254077911377,
+      "local_significant_extrema": 6,
+      "local_minimum": 0.9547809958457947,
+      "local_maximum": 1.052636981010437
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 4,
+      "method": "central_feas",
+      "variable": 1,
+      "local_total_variation": 1.3768672943115234e-05,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999985098838806,
+      "local_maximum": 1.000001311302185
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 4,
+      "method": "central_feas",
+      "variable": 2,
+      "local_total_variation": 1.3113021850585938e-05,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999992251396179,
+      "local_maximum": 1.0000017881393433
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 5,
+      "method": "hllc_roe",
+      "variable": 0,
+      "local_total_variation": 0.01866304874420166,
+      "local_significant_extrema": 1,
+      "local_minimum": 0.9990927577018738,
+      "local_maximum": 1.010923981666565
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 5,
+      "method": "hllc_roe",
+      "variable": 1,
+      "local_total_variation": 7.62939453125e-06,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999994039535522,
+      "local_maximum": 1.0000008344650269
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 5,
+      "method": "hllc_roe",
+      "variable": 2,
+      "local_total_variation": 6.794929504394531e-06,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999997019767761,
+      "local_maximum": 1.0000015497207642
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 5,
+      "method": "central_feas",
+      "variable": 0,
+      "local_total_variation": 0.019390642642974854,
+      "local_significant_extrema": 1,
+      "local_minimum": 0.9937195181846619,
+      "local_maximum": 1.0062211751937866
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 5,
+      "method": "central_feas",
+      "variable": 1,
+      "local_total_variation": 3.2186508178710938e-06,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999991059303284,
+      "local_maximum": 0.9999998807907104
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 5,
+      "method": "central_feas",
+      "variable": 2,
+      "local_total_variation": 3.933906555175781e-06,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999995231628418,
+      "local_maximum": 1.000001311302185
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 6,
+      "method": "hllc_roe",
+      "variable": 0,
+      "local_total_variation": 0.059783935546875,
+      "local_significant_extrema": 5,
+      "local_minimum": 0.9888028502464294,
+      "local_maximum": 1.021048665046692
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 6,
+      "method": "hllc_roe",
+      "variable": 1,
+      "local_total_variation": 1.4781951904296875e-05,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999988079071045,
+      "local_maximum": 1.000001072883606
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 6,
+      "method": "hllc_roe",
+      "variable": 2,
+      "local_total_variation": 1.2040138244628906e-05,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999980330467224,
+      "local_maximum": 1.0000011920928955
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 6,
+      "method": "central_feas",
+      "variable": 0,
+      "local_total_variation": 0.14719128608703613,
+      "local_significant_extrema": 6,
+      "local_minimum": 0.9671793580055237,
+      "local_maximum": 1.032167911529541
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 6,
+      "method": "central_feas",
+      "variable": 1,
+      "local_total_variation": 1.806020736694336e-05,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999985694885254,
+      "local_maximum": 1.000001072883606
+    },
+    {
+      "case": "contact_right_exit",
+      "stencil_size": 6,
+      "method": "central_feas",
+      "variable": 2,
+      "local_total_variation": 1.8835067749023438e-05,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999985098838806,
+      "local_maximum": 1.0000017881393433
+    }
+  ]
+}
