@@ -1,0 +1,409 @@
+{
+  "status": "pass",
+  "seed": 0,
+  "failures": [],
+  "data_shapes": {
+    "training": [
+      580,
+      16,
+      64,
+      3
+    ],
+    "validation": [
+      136,
+      16,
+      64,
+      3
+    ]
+  },
+  "arm_audits": {
+    "hllc_roe_s2": {
+      "checkpoint": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_stencil_ablation\\results\\hllc_roe_s2_converged_best_seed0.pt",
+      "checkpoint_sha256": "88e3799dd572743e579b37eb94430e7982b6123e1b9dc60b3a09d38fae987b82",
+      "stencil_size": 2,
+      "stencil_shifts": [
+        0,
+        -1
+      ],
+      "expected_parameter_count": 5979,
+      "actual_parameter_count": 5979,
+      "best_validation_metric_from_curve": 0.041739081710762176,
+      "best_update_from_curve": 6700,
+      "final_layer_parameter_l2": 2.154924715626259,
+      "proposal_activity_on_independent_validation_states": {
+        "evaluated_states": 2176,
+        "evaluated_interfaces": 139264,
+        "proposal_change_relative_rms": 0.07119202499420263,
+        "learned_coefficient_rms": 0.7125717291146649,
+        "learned_coefficient_mean_absolute": 0.6713204581329768,
+        "raw_entropy_violation_rate": 0.01279584099264706,
+        "hard_projection_intervention_rate": 0.028420840992647058,
+        "hard_projection_relative_rms": 0.013070748323621104,
+        "maximum_projected_tadmor_residual_float64_check": 1.2570828392455269e-05
+      },
+      "nonperiodic_index_alignment": {
+        "compared_interface_count": 63,
+        "maximum_feature_error": 0.0,
+        "maximum_raw_flux_error": 5.960464477539063e-08
+      },
+      "boundary_operator": {
+        "status": "pass",
+        "equal_state_consistency_max_error": 0.0,
+        "constant_update_max_error": 0.0,
+        "left_interface_wrap_leak_max_error": 0.0,
+        "boundary_flux_max_error": 0.0,
+        "flux_form_conservation_max_error": 5.960464477539063e-08
+      },
+      "checks": {
+        "converged": true,
+        "best_checkpoint_matches_curve": true,
+        "parameter_count_matches_design": true,
+        "learned_output_is_nonzero": true,
+        "nonperiodic_feature_index_alignment_exact": true,
+        "nonperiodic_raw_flux_alignment_within_float32_tolerance": true,
+        "boundary_operator_passed": true,
+        "projected_ground_truth_states_satisfy_tadmor": true
+      }
+    },
+    "central_nonnegative_feas_s2": {
+      "checkpoint": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_stencil_ablation\\results\\central_nonnegative_feas_s2_converged_best_seed0.pt",
+      "checkpoint_sha256": "41f9f57ec68e0c64bb682fb728bc7a9baa9165ef071175ea649e64da64236b4d",
+      "stencil_size": 2,
+      "stencil_shifts": [
+        0,
+        -1
+      ],
+      "expected_parameter_count": 5979,
+      "actual_parameter_count": 5979,
+      "best_validation_metric_from_curve": 0.04345140055680362,
+      "best_update_from_curve": 9900,
+      "final_layer_parameter_l2": 1.8457014950756618,
+      "proposal_activity_on_independent_validation_states": {
+        "evaluated_states": 2176,
+        "evaluated_interfaces": 139264,
+        "proposal_change_relative_rms": 0.06993568181938976,
+        "learned_coefficient_rms": 0.6781788891567598,
+        "learned_coefficient_mean_absolute": 0.6529271913499958,
+        "raw_entropy_violation_rate": 0.01047650505514706,
+        "hard_projection_intervention_rate": 0.026482077205882353,
+        "hard_projection_relative_rms": 0.013121874096319062,
+        "maximum_projected_tadmor_residual_float64_check": 1.5952589606627043e-05
+      },
+      "nonperiodic_index_alignment": {
+        "compared_interface_count": 63,
+        "maximum_feature_error": 0.0,
+        "maximum_raw_flux_error": 1.1920928955078125e-07
+      },
+      "boundary_operator": {
+        "status": "pass",
+        "equal_state_consistency_max_error": 0.0,
+        "constant_update_max_error": 0.0,
+        "left_interface_wrap_leak_max_error": 0.0,
+        "boundary_flux_max_error": 0.0,
+        "flux_form_conservation_max_error": 8.940696716308594e-08
+      },
+      "checks": {
+        "converged": true,
+        "best_checkpoint_matches_curve": true,
+        "parameter_count_matches_design": true,
+        "learned_output_is_nonzero": true,
+        "nonperiodic_feature_index_alignment_exact": true,
+        "nonperiodic_raw_flux_alignment_within_float32_tolerance": true,
+        "boundary_operator_passed": true,
+        "projected_ground_truth_states_satisfy_tadmor": true
+      }
+    },
+    "hllc_roe_s4": {
+      "checkpoint": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_stencil_ablation\\results\\hllc_roe_s4_converged_best_seed0.pt",
+      "checkpoint_sha256": "db351043b81fe21edaf395f420bbc3b9d50645c09bc0948d2551782f629e402e",
+      "stencil_size": 4,
+      "stencil_shifts": [
+        1,
+        0,
+        -1,
+        -2
+      ],
+      "expected_parameter_count": 6411,
+      "actual_parameter_count": 6411,
+      "best_validation_metric_from_curve": 0.03088237049827324,
+      "best_update_from_curve": 8500,
+      "final_layer_parameter_l2": 2.6111811263692397,
+      "proposal_activity_on_independent_validation_states": {
+        "evaluated_states": 2176,
+        "evaluated_interfaces": 139264,
+        "proposal_change_relative_rms": 0.07344963663952711,
+        "learned_coefficient_rms": 0.5372978192592521,
+        "learned_coefficient_mean_absolute": 0.4653021354255427,
+        "raw_entropy_violation_rate": 0.014102711397058824,
+        "hard_projection_intervention_rate": 0.03084070542279412,
+        "hard_projection_relative_rms": 0.012982473397125351,
+        "maximum_projected_tadmor_residual_float64_check": 5.8724186935421585e-06
+      },
+      "nonperiodic_index_alignment": {
+        "compared_interface_count": 61,
+        "maximum_feature_error": 0.0,
+        "maximum_raw_flux_error": 0.0
+      },
+      "boundary_operator": {
+        "status": "pass",
+        "equal_state_consistency_max_error": 0.0,
+        "constant_update_max_error": 0.0,
+        "left_interface_wrap_leak_max_error": 0.0,
+        "boundary_flux_max_error": 0.0,
+        "flux_form_conservation_max_error": 2.9802322387695312e-08
+      },
+      "checks": {
+        "converged": true,
+        "best_checkpoint_matches_curve": true,
+        "parameter_count_matches_design": true,
+        "learned_output_is_nonzero": true,
+        "nonperiodic_feature_index_alignment_exact": true,
+        "nonperiodic_raw_flux_alignment_within_float32_tolerance": true,
+        "boundary_operator_passed": true,
+        "projected_ground_truth_states_satisfy_tadmor": true
+      }
+    },
+    "central_nonnegative_feas_s4": {
+      "checkpoint": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_stencil_ablation\\results\\central_nonnegative_feas_s4_converged_best_seed0.pt",
+      "checkpoint_sha256": "664c0d581345a38075dc607f2495011e092df938c44c2af729cb43870766b8e6",
+      "stencil_size": 4,
+      "stencil_shifts": [
+        1,
+        0,
+        -1,
+        -2
+      ],
+      "expected_parameter_count": 6411,
+      "actual_parameter_count": 6411,
+      "best_validation_metric_from_curve": 0.030566247639502265,
+      "best_update_from_curve": 14800,
+      "final_layer_parameter_l2": 2.6779235762469757,
+      "proposal_activity_on_independent_validation_states": {
+        "evaluated_states": 2176,
+        "evaluated_interfaces": 139264,
+        "proposal_change_relative_rms": 0.06778939473214407,
+        "learned_coefficient_rms": 0.5714139018515438,
+        "learned_coefficient_mean_absolute": 0.507220916886411,
+        "raw_entropy_violation_rate": 0.015589096966911764,
+        "hard_projection_intervention_rate": 0.03223374310661765,
+        "hard_projection_relative_rms": 0.013183370758263752,
+        "maximum_projected_tadmor_residual_float64_check": 1.7717782611725852e-05
+      },
+      "nonperiodic_index_alignment": {
+        "compared_interface_count": 61,
+        "maximum_feature_error": 0.0,
+        "maximum_raw_flux_error": 0.0
+      },
+      "boundary_operator": {
+        "status": "pass",
+        "equal_state_consistency_max_error": 0.0,
+        "constant_update_max_error": 0.0,
+        "left_interface_wrap_leak_max_error": 0.0,
+        "boundary_flux_max_error": 0.0,
+        "flux_form_conservation_max_error": 1.1920928955078125e-07
+      },
+      "checks": {
+        "converged": true,
+        "best_checkpoint_matches_curve": true,
+        "parameter_count_matches_design": true,
+        "learned_output_is_nonzero": true,
+        "nonperiodic_feature_index_alignment_exact": true,
+        "nonperiodic_raw_flux_alignment_within_float32_tolerance": true,
+        "boundary_operator_passed": true,
+        "projected_ground_truth_states_satisfy_tadmor": true
+      }
+    },
+    "hllc_roe_s6": {
+      "checkpoint": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_stencil_ablation\\results\\hllc_roe_s6_converged_best_seed0.pt",
+      "checkpoint_sha256": "f224964f3f8166b3c20449a257090d269d6935f860508742dfc1f817645c4b1b",
+      "stencil_size": 6,
+      "stencil_shifts": [
+        2,
+        1,
+        0,
+        -1,
+        -2,
+        -3
+      ],
+      "expected_parameter_count": 6843,
+      "actual_parameter_count": 6843,
+      "best_validation_metric_from_curve": 0.0330482962546689,
+      "best_update_from_curve": 8300,
+      "final_layer_parameter_l2": 2.5296640762691833,
+      "proposal_activity_on_independent_validation_states": {
+        "evaluated_states": 2176,
+        "evaluated_interfaces": 139264,
+        "proposal_change_relative_rms": 0.07187773646818095,
+        "learned_coefficient_rms": 0.5607002135224413,
+        "learned_coefficient_mean_absolute": 0.5082114993801377,
+        "raw_entropy_violation_rate": 0.017599666819852942,
+        "hard_projection_intervention_rate": 0.03461052389705882,
+        "hard_projection_relative_rms": 0.01301599203766985,
+        "maximum_projected_tadmor_residual_float64_check": 9.899623798048651e-06
+      },
+      "nonperiodic_index_alignment": {
+        "compared_interface_count": 59,
+        "maximum_feature_error": 0.0,
+        "maximum_raw_flux_error": 1.1920928955078125e-07
+      },
+      "boundary_operator": {
+        "status": "pass",
+        "equal_state_consistency_max_error": 0.0,
+        "constant_update_max_error": 0.0,
+        "left_interface_wrap_leak_max_error": 0.0,
+        "boundary_flux_max_error": 0.0,
+        "flux_form_conservation_max_error": 8.940696716308594e-08
+      },
+      "checks": {
+        "converged": true,
+        "best_checkpoint_matches_curve": true,
+        "parameter_count_matches_design": true,
+        "learned_output_is_nonzero": true,
+        "nonperiodic_feature_index_alignment_exact": true,
+        "nonperiodic_raw_flux_alignment_within_float32_tolerance": true,
+        "boundary_operator_passed": true,
+        "projected_ground_truth_states_satisfy_tadmor": true
+      }
+    },
+    "central_nonnegative_feas_s6": {
+      "checkpoint": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_stencil_ablation\\results\\central_nonnegative_feas_s6_converged_best_seed0.pt",
+      "checkpoint_sha256": "3947b3c0ab180bdc95a9ef2069e926559132b0f0203170de396db1a65b094b6a",
+      "stencil_size": 6,
+      "stencil_shifts": [
+        2,
+        1,
+        0,
+        -1,
+        -2,
+        -3
+      ],
+      "expected_parameter_count": 6843,
+      "actual_parameter_count": 6843,
+      "best_validation_metric_from_curve": 0.03323189675655803,
+      "best_update_from_curve": 10900,
+      "final_layer_parameter_l2": 2.304586426438168,
+      "proposal_activity_on_independent_validation_states": {
+        "evaluated_states": 2176,
+        "evaluated_interfaces": 139264,
+        "proposal_change_relative_rms": 0.07039955037364916,
+        "learned_coefficient_rms": 0.5611300268291248,
+        "learned_coefficient_mean_absolute": 0.5191008557629854,
+        "raw_entropy_violation_rate": 0.016709271599264705,
+        "hard_projection_intervention_rate": 0.03364114200367647,
+        "hard_projection_relative_rms": 0.013198352136122733,
+        "maximum_projected_tadmor_residual_float64_check": 1.456561768264919e-05
+      },
+      "nonperiodic_index_alignment": {
+        "compared_interface_count": 59,
+        "maximum_feature_error": 0.0,
+        "maximum_raw_flux_error": 2.384185791015625e-07
+      },
+      "boundary_operator": {
+        "status": "pass",
+        "equal_state_consistency_max_error": 0.0,
+        "constant_update_max_error": 0.0,
+        "left_interface_wrap_leak_max_error": 0.0,
+        "boundary_flux_max_error": 0.0,
+        "flux_form_conservation_max_error": 8.940696716308594e-08
+      },
+      "checks": {
+        "converged": true,
+        "best_checkpoint_matches_curve": true,
+        "parameter_count_matches_design": true,
+        "learned_output_is_nonzero": true,
+        "nonperiodic_feature_index_alignment_exact": true,
+        "nonperiodic_raw_flux_alignment_within_float32_tolerance": true,
+        "boundary_operator_passed": true,
+        "projected_ground_truth_states_satisfy_tadmor": true
+      }
+    }
+  },
+  "periodic_rollout_safety": {
+    "hllc_roe_s2": {
+      "minimum_density": 0.01411417219787836,
+      "minimum_pressure": 0.006416612770408392,
+      "maximum_entropy_violation_rate": 0.0,
+      "maximum_total_entropy_change": -0.002370150562597928,
+      "passed": true
+    },
+    "central_nonnegative_feas_s2": {
+      "minimum_density": 0.021786874160170555,
+      "minimum_pressure": 0.00015737077046651393,
+      "maximum_entropy_violation_rate": 0.0,
+      "maximum_total_entropy_change": -0.002588658687685097,
+      "passed": true
+    },
+    "hllc_roe_s4": {
+      "minimum_density": 0.013766400516033173,
+      "minimum_pressure": 0.007850375957787037,
+      "maximum_entropy_violation_rate": 0.0,
+      "maximum_total_entropy_change": -0.002682845154261315,
+      "passed": true
+    },
+    "central_nonnegative_feas_s4": {
+      "minimum_density": 0.01008330937474966,
+      "minimum_pressure": 0.0005742970388382673,
+      "maximum_entropy_violation_rate": 0.0,
+      "maximum_total_entropy_change": -0.002466855217505781,
+      "passed": true
+    },
+    "hllc_roe_s6": {
+      "minimum_density": 0.012726186774671078,
+      "minimum_pressure": 0.007205964531749487,
+      "maximum_entropy_violation_rate": 0.0,
+      "maximum_total_entropy_change": -0.0025672172576207686,
+      "passed": true
+    },
+    "central_nonnegative_feas_s6": {
+      "minimum_density": 1.927255652844906e-05,
+      "minimum_pressure": 1.0011717677116394e-05,
+      "maximum_entropy_violation_rate": 0.0,
+      "maximum_total_entropy_change": -0.0024793084130649845,
+      "passed": true
+    }
+  },
+  "nonperiodic_rollout_safety": {
+    "hllc_roe_s2": {
+      "minimum_density": 0.01911023072898388,
+      "minimum_pressure": 0.006811709608882666,
+      "maximum_boundary_aware_entropy_balance_violation": -2.919296093750745e-08,
+      "maximum_interior_tadmor_residual": 6.252768773264876e-13,
+      "passed": true
+    },
+    "central_nonnegative_feas_s2": {
+      "minimum_density": 0.015022107400000095,
+      "minimum_pressure": 0.0019453726708889008,
+      "maximum_boundary_aware_entropy_balance_violation": -8.344613888766617e-11,
+      "maximum_interior_tadmor_residual": 6.55468374008753e-13,
+      "passed": true
+    },
+    "hllc_roe_s4": {
+      "minimum_density": 0.013769901357591152,
+      "minimum_pressure": 0.007851425558328629,
+      "maximum_boundary_aware_entropy_balance_violation": -5.234820508084881e-06,
+      "maximum_interior_tadmor_residual": 1.3322669386889402e-14,
+      "passed": true
+    },
+    "central_nonnegative_feas_s4": {
+      "minimum_density": 0.012059485539793968,
+      "minimum_pressure": 0.0005052441265434027,
+      "maximum_boundary_aware_entropy_balance_violation": -2.1145524442545138e-07,
+      "maximum_interior_tadmor_residual": 3.8457833198417854e-14,
+      "passed": true
+    },
+    "hllc_roe_s6": {
+      "minimum_density": 0.012699699960649014,
+      "minimum_pressure": 0.007208053022623062,
+      "maximum_boundary_aware_entropy_balance_violation": -1.0034460295516023e-05,
+      "maximum_interior_tadmor_residual": 1.4832565357662754e-14,
+      "passed": true
+    },
+    "central_nonnegative_feas_s6": {
+      "minimum_density": 0.00056657032109797,
+      "minimum_pressure": 0.0016048246761783957,
+      "maximum_boundary_aware_entropy_balance_violation": -2.2231688490137458e-08,
+      "maximum_interior_tadmor_residual": 2.2737262173424568e-13,
+      "passed": true
+    }
+  }
+}

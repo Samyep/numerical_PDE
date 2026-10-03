@@ -619,13 +619,34 @@ class CentralRoeSignedFlux(nn.Module):
         return central_flux - 0.5 * dissipation
 
 
+def interface_stencil_shifts(stencil_size):
+    """Return cell shifts for a flux located at interface ``i + 1/2``.
+
+    Even stencils are balanced about the interface.  For example, the
+    four-cell stencil is ``(i-1, i | i+1, i+2)`` and therefore uses torch
+    roll shifts ``(1, 0, -1, -2)``.  Size five is retained solely for
+    checkpoint compatibility with the original, left-biased architecture.
+    """
+    if stencil_size == 5:
+        return (2, 1, 0, -1, -2)
+    if stencil_size <= 0 or stencil_size % 2:
+        raise ValueError(
+            "Interface-centred stencils must have positive even size; "
+            "size five is supported only for legacy checkpoints."
+        )
+    half = stencil_size // 2
+    return tuple(range(half - 1, -half - 1, -1))
+
+
 class CentralRoeUpwindFlux(nn.Module):
     """Central flux with bounded nonnegative automatic-upwind multipliers."""
 
-    def __init__(self, mean, std, width=72):
+    def __init__(self, mean, std, width=72, stencil_size=5):
         super().__init__()
+        self.stencil_size = int(stencil_size)
+        self.stencil_shifts = interface_stencil_shifts(self.stencil_size)
         self.net = nn.Sequential(
-            nn.Linear(15, width), nn.Tanh(),
+            nn.Linear(3 * self.stencil_size, width), nn.Tanh(),
             nn.Linear(width, width), nn.Tanh(),
             nn.Linear(width, 3),
         )
@@ -638,7 +659,7 @@ class CentralRoeUpwindFlux(nn.Module):
         P = primitive(U)
         feats = torch.cat([
             (torch.roll(P, s, dims=-2) - self.mean) / self.std
-            for s in [2, 1, 0, -1, -2]
+            for s in self.stencil_shifts
         ], dim=-1)
         multipliers = 1.0 + torch.tanh(self.net(feats))
         R, alpha, speeds = entropy_fixed_roe_waves(U)
@@ -682,10 +703,12 @@ class CharacteristicFlux(nn.Module):
 
 
 class DissipationFlux(nn.Module):
-    def __init__(self, mean, std, width=72):
+    def __init__(self, mean, std, width=72, stencil_size=5):
         super().__init__()
+        self.stencil_size = int(stencil_size)
+        self.stencil_shifts = interface_stencil_shifts(self.stencil_size)
         self.net = nn.Sequential(
-            nn.Linear(15, width), nn.Tanh(),
+            nn.Linear(3 * self.stencil_size, width), nn.Tanh(),
             nn.Linear(width, width), nn.Tanh(),
             nn.Linear(width, 3),
         )
@@ -696,7 +719,10 @@ class DissipationFlux(nn.Module):
 
     def forward(self, U):
         P = primitive(U)
-        feats = torch.cat([(torch.roll(P,s,dims=-2)-self.mean)/self.std for s in [2,1,0,-1,-2]], dim=-1)
+        feats = torch.cat([
+            (torch.roll(P, s, dims=-2) - self.mean) / self.std
+            for s in self.stencil_shifts
+        ], dim=-1)
         d = torch.tanh(self.net(feats))
 
         R, u, c = roe_basis(U)
@@ -746,6 +772,11 @@ class Solver(nn.Module):
             self.flux_net = CentralRoeSignedFlux(mean, std, width)
         elif model_name == "central_roe_upwind":
             self.flux_net = CentralRoeUpwindFlux(mean, std, width)
+        elif model_name.startswith("central_roe_upwind_"):
+            stencil_size = int(model_name.rsplit("_", 1)[-1])
+            self.flux_net = CentralRoeUpwindFlux(
+                mean, std, width, stencil_size=stencil_size
+            )
         elif model_name == "direct":
             self.flux_net = DirectFlux(mean, std, width)
         elif model_name == "invariant":
@@ -754,6 +785,11 @@ class Solver(nn.Module):
             self.flux_net = CharacteristicFlux(mean, std, width)
         elif model_name == "dissipation":
             self.flux_net = DissipationFlux(mean, std, width)
+        elif model_name.startswith("dissipation_"):
+            stencil_size = int(model_name.rsplit("_", 1)[-1])
+            self.flux_net = DissipationFlux(
+                mean, std, width, stencil_size=stencil_size
+            )
         elif model_name == "conv":
             self.flux_net = ConvFlux(mean, std, width)
         else:

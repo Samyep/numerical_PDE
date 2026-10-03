@@ -285,12 +285,16 @@ def model_flux(
     state: torch.Tensor,
 ) -> tuple[torch.Tensor, dict[str, float]]:
     """Return boundary-classical/interior-neural fluxes without circular wrap."""
-    left_ghost = state[:, :1].expand(-1, 2, -1)
-    right_ghost = state[:, -1:].expand(-1, 2, -1)
+    shifts = tuple(
+        getattr(model.flux_net, "stencil_shifts", (2, 1, 0, -1, -2))
+    )
+    halo = max(abs(shift) for shift in shifts)
+    left_ghost = state[:, :1].expand(-1, halo, -1)
+    right_ghost = state[:, -1:].expand(-1, halo, -1)
     padded = torch.cat([left_ghost, state, right_ghost], dim=1)
     raw_padded = model.flux_net(padded)
     cells = state.shape[1]
-    raw_interior = raw_padded[:, 2 : cells + 1]
+    raw_interior = raw_padded[:, halo : halo + cells - 1]
     projected_interior = project_entropy_pair(
         raw_interior,
         state[:, :-1],
