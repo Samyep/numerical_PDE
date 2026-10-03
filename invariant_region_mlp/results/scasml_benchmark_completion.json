@@ -1,0 +1,42 @@
+{
+  "protocol": {
+    "new_benchmarks": "LCD, VB, DR",
+    "n": 2,
+    "M": 10,
+    "interior_points": 1000,
+    "boundary_points": 200,
+    "repetitions": 3,
+    "main_terminal_gradient_normalization": "standard EBL",
+    "hjb_repetitions": 10,
+    "hjb_constraint": "uniform ||z||_2 <= sqrt(15)"
+  },
+  "LCD": {
+    "10": {"ours_mlp": 0.2240096315, "ours_std": 0.0099046997, "ir_mlp": 0.2240096315, "ir_std": 0.0099046997, "reduction_pct": 0.0, "paper_mlp": 0.227, "paper_scasml": 0.0274},
+    "20": {"ours_mlp": 0.2398426936, "ours_std": 0.0085157853, "ir_mlp": 0.2398426936, "ir_std": 0.0085157853, "reduction_pct": 0.0, "paper_mlp": 0.235, "paper_scasml": 0.0472},
+    "30": {"ours_mlp": 0.2496310472, "ours_std": 0.0218032331, "ir_mlp": 0.2496310472, "ir_std": 0.0218032331, "reduction_pct": 0.0, "paper_mlp": 0.238, "paper_scasml": 0.0972},
+    "60": {"ours_mlp": 0.2581435675, "ours_std": 0.0089341622, "ir_mlp": 0.2581435675, "ir_std": 0.0089341622, "reduction_pct": 0.0, "paper_mlp": 0.239, "paper_scasml": 0.132}
+  },
+  "VB": {
+    "20": {"ours_mlp": 0.05306279495, "ours_std": 0.00157355607, "ir_mlp": 0.02698264813, "ir_std": 0.00054904653, "reduction_pct": 49.1496, "upstream_normalization_mlp": 0.07322433643, "paper_mlp": 0.0836, "paper_scasml": 0.00403},
+    "40": {"ours_mlp": 0.07133675005, "ours_std": 0.00145215981, "ir_mlp": 0.04142664471, "ir_std": 0.00226183244, "reduction_pct": 41.9280, "upstream_normalization_mlp": 0.09463178367, "paper_mlp": 0.104, "paper_scasml": 0.0292},
+    "60": {"ours_mlp": 0.08176401032, "ours_std": 0.00356156112, "ir_mlp": 0.05217920671, "ir_std": 0.00105349405, "reduction_pct": 36.1832, "upstream_normalization_mlp": 0.1030101244, "paper_mlp": 0.117, "paper_scasml": 0.0288},
+    "80": {"ours_mlp": 0.09277490915, "ours_std": 0.00337188584, "ir_mlp": 0.06290600589, "ir_std": 0.00405974579, "reduction_pct": 32.1950, "upstream_normalization_mlp": 0.1095600045, "paper_mlp": 0.119, "paper_scasml": 0.0564}
+  },
+  "DR": {
+    "100": {"ours_mlp": 0.08836018678, "ours_std": 0.00485218980, "ir_mlp": 0.06821251185, "ir_std": 0.00316254690, "reduction_pct": 22.8018, "paper_mlp": 0.0899, "paper_scasml": 0.0111},
+    "120": {"ours_mlp": 0.09289280777, "ours_std": 0.00173597178, "ir_mlp": 0.06597085809, "ir_std": 0.00095834975, "reduction_pct": 28.9817, "paper_mlp": 0.0913, "paper_scasml": 0.0103},
+    "140": {"ours_mlp": 0.09283257037, "ours_std": 0.00457889884, "ir_mlp": 0.06497755810, "ir_std": 0.00347196028, "reduction_pct": 30.0056, "paper_mlp": 0.0897, "paper_scasml": 0.0300},
+    "160": {"ours_mlp": 0.09122282024, "ours_std": 0.00491522190, "ir_mlp": 0.06085238251, "ir_std": 0.00304675211, "reduction_pct": 33.2926, "paper_mlp": 0.0900, "paper_scasml": 0.0322}
+  },
+  "HJB": {
+    "100": {"ours_corrected_mlp": 1.527, "ir_mlp_uniform_sqrt15": 0.830, "reduction_pct": 45.6451, "paper_mlp": 5.63, "paper_scasml": 0.0553},
+    "120": {"ours_corrected_mlp": 1.564, "ir_mlp_uniform_sqrt15": 0.851, "reduction_pct": 45.5882, "paper_mlp": 5.50, "paper_scasml": 0.0666},
+    "140": {"ours_corrected_mlp": 1.568, "ir_mlp_uniform_sqrt15": 0.864, "reduction_pct": 44.8980, "paper_mlp": 5.37, "paper_scasml": 0.0684},
+    "160": {"ours_corrected_mlp": 1.549, "ir_mlp_uniform_sqrt15": 0.879, "reduction_pct": 43.2537, "paper_mlp": 5.27, "paper_scasml": 0.0994}
+  },
+  "reproducibility_notes": {
+    "lcd_domain": "paper text says [0,0.5]^d; public LCD test path inherits Equation.test_geometry() and uses [-0.5,0.5]^d; main reproduction follows executable test path",
+    "vb_sigma": "paper text and public code disagree; current public Grad_Dependent_Nonlinear returns sigma=0.25, which tracks the reported MLP table, so 0.25 is used in the main comparison",
+    "terminal_gradient": "public MLP_full_history.py divides terminal z estimator by T-t; main scientific track uses standard EBL sqrt(T-t) denominator"
+  }
+}
