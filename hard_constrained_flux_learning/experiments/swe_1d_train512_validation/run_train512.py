@@ -980,14 +980,17 @@ def plot_combined_profiles(
                 global_span = max(float(np.ptp(reference_values)), 1.0e-8)
                 padding = max(0.08 * (y_high - y_low), 0.005 * global_span)
                 inset.set_ylim(y_low - padding, y_high + padding)
-                inset.grid(alpha=0.15, linewidth=0.4)
-                inset.tick_params(axis="both", labelsize=5.5, length=1.8, pad=1.0)
-                axis.indicate_inset_zoom(
-                    inset,
-                    edgecolor="#555555",
-                    alpha=0.55,
-                    linewidth=0.6,
-                )
+                inset.set_xticks([])
+                inset.set_yticks([])
+                if case == "smooth_wave":
+                    inset.remove()
+                else:
+                    axis.indicate_inset_zoom(
+                        inset,
+                        edgecolor="#555555",
+                        alpha=0.55,
+                        linewidth=0.6,
+                    )
                 axis.grid(alpha=0.18)
                 axis.set_xlim(0.0, 1.0)
                 if local_row == 0:
@@ -1013,7 +1016,7 @@ def plot_combined_profiles(
     figure.text(
         0.5,
         0.012,
-        "Insets: high-gradient windows with the largest local HCFL error reduction versus Roe.",
+        "Insets (non-smooth cases): high-gradient windows with the largest local HCFL error reduction versus Roe.",
         ha="center",
         fontsize=7.5,
         color="#555555",
