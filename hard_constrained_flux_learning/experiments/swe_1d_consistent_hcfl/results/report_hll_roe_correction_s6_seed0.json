@@ -1,0 +1,61 @@
+{
+  "method": "same Roe-wave HCFL construction as retained Euler methods",
+  "stencil_cells": 6,
+  "stencil_shifts": [
+    2,
+    1,
+    0,
+    -1,
+    -2,
+    -3
+  ],
+  "training_data_shape": [
+    580,
+    18,
+    64,
+    2
+  ],
+  "validation_data_shape": [
+    136,
+    18,
+    64,
+    2
+  ],
+  "training_trajectory_counts": {
+    "legacy_in_distribution": 220,
+    "legacy_broad": 160,
+    "froude_coverage": 200
+  },
+  "validation_trajectory_counts": {
+    "legacy_in_distribution": 44,
+    "legacy_broad": 32,
+    "froude_coverage": 60
+  },
+  "primitive_mean": [
+    1.2883702516555786,
+    -0.017781075090169907
+  ],
+  "primitive_std": [
+    0.4995391368865967,
+    2.2959437370300293
+  ],
+  "state_std": [
+    0.4995391368865967,
+    3.904985189437866
+  ],
+  "convergence": {
+    "seed": 0,
+    "arm": "hll_roe_correction_s6",
+    "model": "hll_roe",
+    "stencil_cells": 6,
+    "parameter_count": 6338,
+    "best_update": 7200,
+    "stop_update": 12200,
+    "best_validation_rollout_nrmse": 0.04139231580234186,
+    "final_learning_rate": 3e-06,
+    "converged": true,
+    "stop_reason": "validation_plateau_at_minimum_learning_rate",
+    "training_seconds": 245.52683480014093,
+    "proposal_feasibility_weight": 0.0
+  }
+}

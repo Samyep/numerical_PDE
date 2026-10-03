@@ -1,0 +1,207 @@
+{
+  "scope": "single-seed controlled 4-vs-6-cell screening",
+  "seed": 0,
+  "training_boundary_condition": "periodic",
+  "deployment_boundaries": [
+    "periodic",
+    "transmissive"
+  ],
+  "learned_boundary_fluxes": 0,
+  "final_time": 0.025,
+  "reference": "HLL + SSP-RK2 on 2048 cells, conservatively restricted to 512 cells for metrics; raw 2048-cell curve retained in figures",
+  "stencils": {
+    "4": [
+      1,
+      0,
+      -1,
+      -2
+    ],
+    "6": [
+      2,
+      1,
+      0,
+      -1,
+      -2,
+      -3
+    ]
+  },
+  "training_wave_coverage": {
+    "maximum_absolute_froude": 2.0161049365997314,
+    "median_absolute_froude": 0.15023815631866455,
+    "subcritical_fraction": 0.8120405292145594,
+    "right_supercritical_fraction": 0.09054418103448277,
+    "left_supercritical_fraction": 0.09741528975095785
+  },
+  "boundary_operator_self_tests": {
+    "hll_roe_correction_s4": {
+      "boundary_flux_max_error": 0.0,
+      "circular_wrap_leakage_at_first_interior_interface": 0.0,
+      "maximum_interior_entropy_residual": -0.000525776784789711,
+      "status": "pass"
+    },
+    "hll_roe_correction_s6": {
+      "boundary_flux_max_error": 0.0,
+      "circular_wrap_leakage_at_first_interior_interface": 0.0,
+      "maximum_interior_entropy_residual": -0.0003292072138141866,
+      "status": "pass"
+    },
+    "central_nonnegative_feas_s4": {
+      "boundary_flux_max_error": 0.0,
+      "circular_wrap_leakage_at_first_interior_interface": 0.0,
+      "maximum_interior_entropy_residual": -0.0009439281752570416,
+      "status": "pass"
+    },
+    "central_nonnegative_feas_s6": {
+      "boundary_flux_max_error": 0.0,
+      "circular_wrap_leakage_at_first_interior_interface": 0.0,
+      "maximum_interior_entropy_residual": -0.0007884886802661528,
+      "status": "pass"
+    }
+  },
+  "periodic_aggregate": {
+    "native_hll_512": {
+      "mean_rollout_nrmse": 0.02316493926611829,
+      "mean_final_snapshot_nrmse": 0.025449355272775455,
+      "mean_positive_final_tv_excess": 0.0009091481374712523,
+      "total_excess_significant_extrema": 0.0,
+      "minimum_depth": 0.55
+    },
+    "hll_roe_correction_s4": {
+      "mean_rollout_nrmse": 0.015064513850640865,
+      "mean_final_snapshot_nrmse": 0.021383096860059535,
+      "mean_positive_final_tv_excess": 0.8536367205876009,
+      "total_excess_significant_extrema": 238.0,
+      "minimum_depth": 0.4742144048213959,
+      "mean_raw_proposal_positive_residual_rate": 0.003121170331723988,
+      "mean_raw_proposal_violation_rate_at_1e-8": 0.0,
+      "mean_hard_projection_intervention_rate": 0.030014935708095436,
+      "mean_run_local_limiter_intervention_rate": 0.0,
+      "mean_run_mean_local_alpha": 1.0,
+      "mean_run_fd_entropy_intervention_rate": 0.16666666666666666,
+      "mean_run_mean_fd_beta": 0.8984922851125399,
+      "minimum_run_fd_beta": 0.0,
+      "maximum_run_entropy_residual": 1.3405099250478358e-13
+    },
+    "hll_roe_correction_s6": {
+      "mean_rollout_nrmse": 0.019175760485863523,
+      "mean_final_snapshot_nrmse": 0.023016544852821647,
+      "mean_positive_final_tv_excess": 0.8601799543363368,
+      "total_excess_significant_extrema": 236.0,
+      "minimum_depth": 0.456466943025589,
+      "mean_raw_proposal_positive_residual_rate": 0.0036956188268959522,
+      "mean_raw_proposal_violation_rate_at_1e-8": 0.0,
+      "mean_hard_projection_intervention_rate": 0.0304649211193464,
+      "mean_run_local_limiter_intervention_rate": 0.0,
+      "mean_run_mean_local_alpha": 1.0,
+      "mean_run_fd_entropy_intervention_rate": 0.29833333333333334,
+      "mean_run_mean_fd_beta": 0.8364433301488559,
+      "minimum_run_fd_beta": 0.0,
+      "maximum_run_entropy_residual": 1.874789746224867e-13
+    },
+    "central_nonnegative_feas_s4": {
+      "mean_rollout_nrmse": 0.011638163138560892,
+      "mean_final_snapshot_nrmse": 0.014014172169789849,
+      "mean_positive_final_tv_excess": 0.4003292539594596,
+      "total_excess_significant_extrema": 129.0,
+      "minimum_depth": 0.4848457872867584,
+      "mean_raw_proposal_positive_residual_rate": 0.004136029398068786,
+      "mean_raw_proposal_violation_rate_at_1e-8": 0.0,
+      "mean_hard_projection_intervention_rate": 0.021273744438985887,
+      "mean_run_local_limiter_intervention_rate": 0.0,
+      "mean_run_mean_local_alpha": 1.0,
+      "mean_run_fd_entropy_intervention_rate": 0.16666666666666666,
+      "mean_run_mean_fd_beta": 0.9120500952005386,
+      "minimum_run_fd_beta": 0.0,
+      "maximum_run_entropy_residual": 1.3293489657721863e-13
+    },
+    "central_nonnegative_feas_s6": {
+      "mean_rollout_nrmse": 0.014026720061069834,
+      "mean_final_snapshot_nrmse": 0.016955863287938355,
+      "mean_positive_final_tv_excess": 0.4669681925575736,
+      "total_excess_significant_extrema": 150.0,
+      "minimum_depth": 0.5074669718742371,
+      "mean_raw_proposal_positive_residual_rate": 0.004298789892345667,
+      "mean_raw_proposal_violation_rate_at_1e-8": 0.0,
+      "mean_hard_projection_intervention_rate": 0.02068014658470929,
+      "mean_run_local_limiter_intervention_rate": 0.0,
+      "mean_run_mean_local_alpha": 1.0,
+      "mean_run_fd_entropy_intervention_rate": 0.16666666666666666,
+      "mean_run_mean_fd_beta": 0.8939596799015999,
+      "minimum_run_fd_beta": 0.0,
+      "maximum_run_entropy_residual": 1.3293489657721863e-13
+    }
+  },
+  "nonperiodic_aggregate": {
+    "native_hll_512": {
+      "mean_rollout_nrmse": 0.010140181912643643,
+      "mean_final_snapshot_nrmse": 0.009366568764012194,
+      "mean_positive_final_tv_excess": 0.0006326952546492663,
+      "total_excess_significant_extrema": 0.0,
+      "minimum_depth": 0.58
+    },
+    "hll_roe_correction_s4": {
+      "mean_rollout_nrmse": 0.006099373640592025,
+      "mean_final_snapshot_nrmse": 0.007447613824834543,
+      "mean_positive_final_tv_excess": 0.3603582184880947,
+      "total_excess_significant_extrema": 56.0,
+      "minimum_depth": 0.5799996852874756,
+      "mean_raw_proposal_positive_residual_rate": 0.008259468129836023,
+      "mean_raw_proposal_violation_rate_at_1e-8": 0.0010552166495472193,
+      "mean_hard_projection_intervention_rate": 0.03720118151977658,
+      "mean_run_local_limiter_intervention_rate": 0.0,
+      "mean_run_mean_local_alpha": 1.0,
+      "mean_run_fd_entropy_intervention_rate": 0.15457638279192273,
+      "mean_run_mean_fd_beta": 0.913571904717983,
+      "minimum_run_fd_beta": 0.0,
+      "maximum_run_entropy_residual": 1.849921102415453e-13
+    },
+    "hll_roe_correction_s6": {
+      "mean_rollout_nrmse": 0.005866997155505908,
+      "mean_final_snapshot_nrmse": 0.005957575399021054,
+      "mean_positive_final_tv_excess": 0.2518370391926683,
+      "total_excess_significant_extrema": 46.0,
+      "minimum_depth": 0.5799997448921204,
+      "mean_raw_proposal_positive_residual_rate": 0.008201910881325603,
+      "mean_raw_proposal_violation_rate_at_1e-8": 0.0008441733079962432,
+      "mean_hard_projection_intervention_rate": 0.039090979378670454,
+      "mean_run_local_limiter_intervention_rate": 0.0,
+      "mean_run_mean_local_alpha": 1.0,
+      "mean_run_fd_entropy_intervention_rate": 0.368825885191336,
+      "mean_run_mean_fd_beta": 0.79423630782501,
+      "minimum_run_fd_beta": 0.0,
+      "maximum_run_entropy_residual": 2.237289329052618e-13
+    },
+    "central_nonnegative_feas_s4": {
+      "mean_rollout_nrmse": 0.005775123195767337,
+      "mean_final_snapshot_nrmse": 0.007712756866398886,
+      "mean_positive_final_tv_excess": 0.39751495033941897,
+      "total_excess_significant_extrema": 48.0,
+      "minimum_depth": 0.5799996852874756,
+      "mean_raw_proposal_positive_residual_rate": 0.007175472972448915,
+      "mean_raw_proposal_violation_rate_at_1e-8": 0.00015348604938481003,
+      "mean_hard_projection_intervention_rate": 0.029785886639729142,
+      "mean_run_local_limiter_intervention_rate": 0.0,
+      "mean_run_mean_local_alpha": 1.0,
+      "mean_run_fd_entropy_intervention_rate": 0.2638888888888889,
+      "mean_run_mean_fd_beta": 0.8529476679999519,
+      "minimum_run_fd_beta": 0.0,
+      "maximum_run_entropy_residual": 2.0306063442524012e-13
+    },
+    "central_nonnegative_feas_s6": {
+      "mean_rollout_nrmse": 0.00527346098919306,
+      "mean_final_snapshot_nrmse": 0.0049767346619973216,
+      "mean_positive_final_tv_excess": 0.19734738162013207,
+      "total_excess_significant_extrema": 38.0,
+      "minimum_depth": 0.5799996852874756,
+      "mean_raw_proposal_positive_residual_rate": 0.007156287028919905,
+      "mean_raw_proposal_violation_rate_at_1e-8": 0.0,
+      "mean_hard_projection_intervention_rate": 0.030438203364610672,
+      "mean_run_local_limiter_intervention_rate": 0.0,
+      "mean_run_mean_local_alpha": 1.0,
+      "mean_run_fd_entropy_intervention_rate": 0.34998951027992564,
+      "mean_run_mean_fd_beta": 0.807139784906459,
+      "minimum_run_fd_beta": 0.0,
+      "maximum_run_entropy_residual": 9.560726102850897e-14
+    }
+  }
+}
