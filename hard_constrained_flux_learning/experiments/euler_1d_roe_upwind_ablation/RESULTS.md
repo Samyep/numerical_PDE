@@ -134,6 +134,46 @@ automatic upwinding keeps substantially more pressure margin.  The direct
 Roe-complete model is oscillatory, needs hard projection on 47.70% of 512-cell
 interfaces on average, and also approaches the pressure floor.
 
+## Oscillation-aware interpretation
+
+Rollout NRMSE alone hides the main weakness of the signed central-Roe arm.  An
+additional diagnostic over the final density, velocity, and pressure profiles
+of all five 512-cell cases gives:
+
+| Method | Mean TV / reference TV | Excess local extrema | Mean normalized range violation | Interpretation |
+|---|---:|---:|---:|---|
+| HLLC + Roe correction | **1.0351** | **55** | 1.017% | Retain: reliable HLLC-anchored method |
+| Central + signed Roe | 1.6577 | 790 | 3.655% | Reject as a main method: severe oscillation |
+| Central + nonnegative Roe, no feasibility loss | 1.0430 | 74 | **0.786%** | Architectural control |
+| Central + nonnegative Roe + feasibility (`1e-3`) | 1.0482 | 73 | 1.385% | Retain: feasibility-trained alternative |
+
+The successful second configuration is the **nonnegative Roe model trained
+with proposal-feasibility loss**, not the signed model.  Relative to signed
+Roe, its mean TV ratio falls from `1.6577` to `1.0482`, excess extrema fall
+from 790 to 73 (90.8%), and mean normalized range violation falls from 3.655%
+to 1.385% (62.1%).  The visibly severe signed-Roe oscillation is therefore no
+longer present in the retained feasibility-trained configuration.
+
+The controlled comparison against the zero-penalty nonnegative model needs a
+more precise interpretation: `lambda_feas=1e-3` changes aggregate excess
+extrema only from 74 to 73 and does not improve aggregate TV or range
+violation.  It does reduce selected visible oscillations (for example, Lax
+density excess extrema fall from 13 to 7), but the present ablation cannot
+attribute all of the improvement over signed Roe to the feasibility term
+alone.  The nonnegative output map and feasibility training act together in
+the retained method.
+
+Therefore there are **two successful methods to carry forward**:
+
+1. **HLLC + Roe correction**: the conservative reference architecture, with a
+   physics-based Riemann-solver anchor and the fewest excess extrema here.
+2. **Central + nonnegative Roe + proposal-feasibility loss
+   (`lambda_feas=1e-3`)**: a distinct, effective feasibility-trained
+   architecture whose final profiles avoid the severe signed-Roe oscillation.
+
+These methods are complementary candidates.  The present one-seed experiment
+does not justify declaring either one universally superior.
+
 ## Conclusion
 
 The experiments answer the two proposed directions differently:
@@ -144,14 +184,17 @@ The experiments answer the two proposed directions differently:
 2. **An analytic central flux plus Roe-wave assembly is useful.**  Both
    structured variants beat the previous learned method on the five-case
    512-cell mean.
-3. **Nonnegative automatic upwinding is the preferred main method.**  Its mean
-   error differs from signed by only 0.92% in this one seed, which is not enough
-   evidence to favor signed over the stronger structural guarantee.  Its
-   mechanism is physically interpretable, its final-time mean is lower, its
-   projection burden is smaller, and its near-vacuum pressure margin is much
-   better.
-4. The signed arm should remain as an accuracy/anti-diffusion ablation, not be
-   presented as the safer default.
+3. **Central + nonnegative Roe + proposal-feasibility loss is an effective
+   second method alongside the existing HLLC + Roe correction method.**  It
+   retains exact consistency, nonnegative characteristic dissipation, and a
+   hard-projected PDE update, while sharply suppressing the signed-arm
+   oscillations.
+4. **HLLC + Roe correction remains a main method**, rather than being replaced:
+   it supplies the stronger physics-based baseline and has slightly lower
+   oscillation counts in these tests.
+5. The signed arm should remain only as an accuracy/anti-diffusion ablation;
+   its low aggregate NRMSE is not sufficient to accept its visibly oscillatory
+   solutions.
 
 This is still a single-training-seed result over five named problems.  It is
 strong evidence for the architecture, not yet a multi-seed statistical claim.
@@ -159,7 +202,10 @@ strong evidence for the architecture, not yet a multi-seed statistical claim.
 A focused follow-up added the raw-proposal feasibility loss while keeping this
 nonnegative architecture and the hard-projected PDE update unchanged.  It
 improved teacher-forced 64-cell proposal feasibility but worsened zero-shot
-512-cell accuracy for both tested weights.  See `FEASIBILITY_RESULTS.md`.
+512-cell accuracy relative to the zero-penalty control.  Nevertheless, the
+`1e-3` configuration remains a useful oscillation-controlled method and is the
+second retained approach here; this is different from claiming that the
+penalty wins its own ablation.  See `FEASIBILITY_RESULTS.md`.
 
 ## Artifacts
 

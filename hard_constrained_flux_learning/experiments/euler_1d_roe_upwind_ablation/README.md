@@ -93,5 +93,10 @@ python summarize_results.py --seed 0
 python audit_results.py --seed 0
 ```
 
-The focused feasibility-loss result and its negative cross-resolution finding
-are reported in `FEASIBILITY_RESULTS.md`.
+The focused feasibility-loss result and its cross-resolution accuracy tradeoff
+are reported in `FEASIBILITY_RESULTS.md`.  The two retained effective methods
+are Central + nonnegative Roe + proposal-feasibility loss (`lambda_feas=1e-3`)
+and the existing HLLC + Roe correction.  The zero-penalty nonnegative model is
+kept as the architectural control, while the signed central-Roe arm remains an
+oscillatory ablation rather than a recommended method.  See `RESULTS.md` for
+the TV/extrema evidence and the causal qualification.

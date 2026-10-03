@@ -65,11 +65,24 @@ projection reliance is unchanged or higher, and both tested weights reduce
 cross-resolution accuracy.  The likely failure mode is state-distribution and
 resolution shift, not loss nonconvergence.
 
-Therefore the feasibility-loss checkpoints are retained as converged negative
-results, but neither replaces the unregularized Central + nonnegative Roe
-control.  A future attempt would need feasibility training on autoregressive
-states and/or multiple resolutions; simply increasing `lambda_feas` is not
-supported by these results.
+As a strict loss ablation against the zero-penalty nonnegative control, the
+result is negative for aggregate accuracy: neither penalty wins at 512 cells.
+That is not the same as saying that the complete feasibility-trained method is
+unusable.  The `lambda_feas=1e-3` model completes all five cases, has a mean
+TV ratio of `1.0482` and 73 excess extrema, and visibly avoids the severe
+oscillation of Central + signed Roe (mean TV ratio `1.6577`, 790 excess
+extrema).  Its mean rollout/final NRMSE (`0.0540494` / `0.0651243`) is also
+3.94% / 5.60% lower than HLLC + Roe correction in this seed.
+
+We therefore retain **Central + nonnegative Roe + proposal-feasibility loss
+(`lambda_feas=1e-3`)** as one of the two effective methods, alongside
+**HLLC + Roe correction**.  The lighter `1e-4` arm is not retained.  This
+classification records the good complete method without overstating causal
+evidence: versus the zero-penalty nonnegative control, `1e-3` changes total
+excess extrema only from 74 to 73 and slightly worsens aggregate TV/range
+metrics.  More autoregressive and multi-resolution feasibility training would
+be needed to show that the penalty itself supplies an additional general
+improvement.
 
 ## Artifacts
 

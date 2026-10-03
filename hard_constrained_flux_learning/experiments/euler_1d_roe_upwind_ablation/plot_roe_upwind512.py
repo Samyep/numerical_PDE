@@ -75,6 +75,58 @@ LINESTYLES = {
     "central_roe_signed_hcfl_512": "--",
     "central_roe_upwind_hcfl_512": "-.",
 }
+VARIABLES = ("density", "velocity", "pressure")
+
+
+def circular_total_variation(values: np.ndarray) -> float:
+    return float(np.abs(np.roll(values, -1) - values).sum())
+
+
+def significant_extrema(values: np.ndarray, scale: float) -> int:
+    left = values - np.roll(values, 1)
+    right = np.roll(values, -1) - values
+    threshold = 1.0e-3 * max(scale, 1.0e-8)
+    return int(
+        (
+            (left * right < 0.0)
+            & (np.minimum(np.abs(left), np.abs(right)) > threshold)
+        ).sum()
+    )
+
+
+def oscillation_diagnostics(
+    reference: torch.Tensor,
+    candidate: torch.Tensor,
+) -> dict[str, Any]:
+    """Measure final-profile oscillation relative to the scoring reference."""
+    reference_primitive = base.primitive(reference).numpy()[0, -1]
+    candidate_primitive = base.primitive(candidate).numpy()[0, -1]
+    variables: dict[str, dict[str, float | int]] = {}
+    for index, name in enumerate(VARIABLES):
+        truth = reference_primitive[:, index]
+        prediction = candidate_primitive[:, index]
+        scale = max(float(np.ptp(truth)), 1.0e-8)
+        reference_tv = circular_total_variation(truth)
+        candidate_tv = circular_total_variation(prediction)
+        range_violation = (
+            max(float(truth.min() - prediction.min()), 0.0)
+            + max(float(prediction.max() - truth.max()), 0.0)
+        ) / scale
+        reference_extrema = significant_extrema(truth, scale)
+        candidate_extrema = significant_extrema(prediction, scale)
+        variables[name] = {
+            "reference_total_variation": reference_tv,
+            "candidate_total_variation": candidate_tv,
+            "total_variation_ratio": candidate_tv
+            / max(reference_tv, 1.0e-10),
+            "normalized_global_range_violation": range_violation,
+            "reference_significant_extrema": reference_extrema,
+            "candidate_significant_extrema": candidate_extrema,
+            "excess_significant_extrema": max(
+                candidate_extrema - reference_extrema, 0
+            ),
+        }
+    return {"variables": variables}
 
 
 def completed_mean(
@@ -84,7 +136,7 @@ def completed_mean(
         name for name in cases if cases[name][method]["completed"]
     ]
     failed = [name for name in cases if name not in completed]
-    return {
+    result = {
         "completed_cases": len(completed),
         "failed_cases": failed,
         "mean_rollout_nrmse": (
@@ -104,6 +156,43 @@ def completed_mean(
         ),
         "all_five_case_mean_is_valid": not failed,
     }
+    profiles = [
+        values
+        for name in completed
+        for values in cases[name][method]["oscillation"]["variables"].values()
+    ]
+    if profiles:
+        result.update(
+            {
+                "mean_final_total_variation_ratio": float(
+                    np.mean([
+                        row["total_variation_ratio"] for row in profiles
+                    ])
+                ),
+                "maximum_final_total_variation_ratio": float(
+                    max(row["total_variation_ratio"] for row in profiles)
+                ),
+                "mean_normalized_global_range_violation": float(
+                    np.mean([
+                        row["normalized_global_range_violation"]
+                        for row in profiles
+                    ])
+                ),
+                "maximum_normalized_global_range_violation": float(
+                    max(
+                        row["normalized_global_range_violation"]
+                        for row in profiles
+                    )
+                ),
+                "total_excess_significant_extrema": int(
+                    sum(
+                        row["excess_significant_extrema"]
+                        for row in profiles
+                    )
+                ),
+            }
+        )
+    return result
 
 
 def plot_profiles(
@@ -341,6 +430,11 @@ def main() -> None:
                 )
             else:
                 case[method] = stats
+        for method in METHODS:
+            if case[method]["completed"]:
+                case[method]["oscillation"] = oscillation_diagnostics(
+                    reference_512, trajectories[name][method]
+                )
         cases[name] = case
 
     mean_metrics = {

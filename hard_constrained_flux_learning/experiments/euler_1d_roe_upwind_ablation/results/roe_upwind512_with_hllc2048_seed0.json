@@ -10,35 +10,60 @@
       "failed_cases": [],
       "mean_rollout_nrmse": 0.07423693537712098,
       "mean_final_snapshot_nrmse": 0.0913161652162671,
-      "all_five_case_mean_is_valid": true
+      "all_five_case_mean_is_valid": true,
+      "mean_final_total_variation_ratio": 0.9853942613899406,
+      "maximum_final_total_variation_ratio": 1.093075117586999,
+      "mean_normalized_global_range_violation": 0.0016645672292138994,
+      "maximum_normalized_global_range_violation": 0.011887105656430343,
+      "total_excess_significant_extrema": 2
     },
     "hllc_roe_correction_hcfl_512": {
       "completed_cases": 5,
       "failed_cases": [],
       "mean_rollout_nrmse": 0.05626891329884529,
       "mean_final_snapshot_nrmse": 0.06899025747552515,
-      "all_five_case_mean_is_valid": true
+      "all_five_case_mean_is_valid": true,
+      "mean_final_total_variation_ratio": 1.03510820321349,
+      "maximum_final_total_variation_ratio": 1.1582171290630698,
+      "mean_normalized_global_range_violation": 0.010173147798592554,
+      "maximum_normalized_global_range_violation": 0.056743502616882324,
+      "total_excess_significant_extrema": 55
     },
     "roe_complete_hcfl_512": {
       "completed_cases": 5,
       "failed_cases": [],
       "mean_rollout_nrmse": 0.2114106509834528,
       "mean_final_snapshot_nrmse": 0.3477074660360813,
-      "all_five_case_mean_is_valid": true
+      "all_five_case_mean_is_valid": true,
+      "mean_final_total_variation_ratio": 2.017750955123185,
+      "maximum_final_total_variation_ratio": 3.420088238914208,
+      "mean_normalized_global_range_violation": 0.19669530098240376,
+      "maximum_normalized_global_range_violation": 0.8069691298588568,
+      "total_excess_significant_extrema": 1248
     },
     "central_roe_signed_hcfl_512": {
       "completed_cases": 5,
       "failed_cases": [],
       "mean_rollout_nrmse": 0.04933954514563084,
       "mean_final_snapshot_nrmse": 0.06419273503124714,
-      "all_five_case_mean_is_valid": true
+      "all_five_case_mean_is_valid": true,
+      "mean_final_total_variation_ratio": 1.6576724946393968,
+      "maximum_final_total_variation_ratio": 3.3984049304162047,
+      "mean_normalized_global_range_violation": 0.036549047785626794,
+      "maximum_normalized_global_range_violation": 0.12189491273025516,
+      "total_excess_significant_extrema": 790
     },
     "central_roe_upwind_hcfl_512": {
       "completed_cases": 5,
       "failed_cases": [],
       "mean_rollout_nrmse": 0.04979701954871416,
       "mean_final_snapshot_nrmse": 0.06190616451203823,
-      "all_five_case_mean_is_valid": true
+      "all_five_case_mean_is_valid": true,
+      "mean_final_total_variation_ratio": 1.042967313397642,
+      "maximum_final_total_variation_ratio": 1.170970869828203,
+      "mean_normalized_global_range_violation": 0.007859757335867159,
+      "maximum_normalized_global_range_violation": 0.021574633126740576,
+      "total_excess_significant_extrema": 74
     }
   },
   "cases": {
@@ -69,6 +94,37 @@
           "density": 0.0,
           "momentum": 1.1641532182693481e-09,
           "energy": 1.1920928955078125e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 1.750417709350586,
+              "candidate_total_variation": 1.75,
+              "total_variation_ratio": 0.9997613659023474,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 0,
+              "excess_significant_extrema": 0
+            },
+            "velocity": {
+              "reference_total_variation": 3.719010829925537,
+              "candidate_total_variation": 3.7277116775512695,
+              "total_variation_ratio": 1.0023395596365894,
+              "normalized_global_range_violation": 0.00234084464911467,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 0,
+              "excess_significant_extrema": 0
+            },
+            "pressure": {
+              "reference_total_variation": 1.8037797212600708,
+              "candidate_total_variation": 1.8043897151947021,
+              "total_variation_ratio": 1.0003381754032612,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 0,
+              "excess_significant_extrema": 0
+            }
+          }
         }
       },
       "hllc_roe_correction_hcfl_512": {
@@ -101,6 +157,37 @@
           "density": 5.960464477539063e-08,
           "momentum": 1.2223608791828156e-09,
           "energy": 2.384185791015625e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 1.750417709350586,
+              "candidate_total_variation": 1.7687658071517944,
+              "total_variation_ratio": 1.0104821253253977,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 2,
+              "excess_significant_extrema": 2
+            },
+            "velocity": {
+              "reference_total_variation": 3.719010829925537,
+              "candidate_total_variation": 3.846550941467285,
+              "total_variation_ratio": 1.0342940952243211,
+              "normalized_global_range_violation": 0.02314108349040362,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 4,
+              "excess_significant_extrema": 4
+            },
+            "pressure": {
+              "reference_total_variation": 1.8037797212600708,
+              "candidate_total_variation": 1.8479442596435547,
+              "total_variation_ratio": 1.024484441122684,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 4,
+              "excess_significant_extrema": 4
+            }
+          }
         }
       },
       "roe_complete_hcfl_512": {
@@ -111,7 +198,7 @@
         "maximum_characteristic_speed": 2.219550848007202,
         "minimum_internal_dt": 0.0004,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 2.5647905999794602,
+        "wall_seconds": 2.5509285998996347,
         "hard_projection_intervention_rate": 0.485076419890873,
         "hard_projection_relative_flux_rms": 0.015844416121768443,
         "hard_projection_max_absolute_change": 0.11764049530029297,
@@ -137,6 +224,37 @@
           "density": 5.960464477539063e-08,
           "momentum": 3.725290298461914e-09,
           "energy": 2.384185791015625e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 1.750417709350586,
+              "candidate_total_variation": 1.8921098709106445,
+              "total_variation_ratio": 1.080947627987966,
+              "normalized_global_range_violation": 0.0037144252232142855,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 12,
+              "excess_significant_extrema": 12
+            },
+            "velocity": {
+              "reference_total_variation": 3.719010829925537,
+              "candidate_total_variation": 4.166694641113281,
+              "total_variation_ratio": 1.1203771195247387,
+              "normalized_global_range_violation": 0.03240057484487593,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 26,
+              "excess_significant_extrema": 26
+            },
+            "pressure": {
+              "reference_total_variation": 1.8037797212600708,
+              "candidate_total_variation": 1.9355336427688599,
+              "total_variation_ratio": 1.0730432435601114,
+              "normalized_global_range_violation": 0.0004740307854024777,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 8,
+              "excess_significant_extrema": 8
+            }
+          }
         }
       },
       "central_roe_signed_hcfl_512": {
@@ -147,7 +265,7 @@
         "maximum_characteristic_speed": 2.2506160736083984,
         "minimum_internal_dt": 0.0004,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 2.589465399971232,
+        "wall_seconds": 2.5235516000539064,
         "hard_projection_intervention_rate": 0.07691979786706349,
         "hard_projection_relative_flux_rms": 0.002736493007084764,
         "hard_projection_max_absolute_change": 0.07186335325241089,
@@ -173,6 +291,37 @@
           "density": 5.960464477539063e-08,
           "momentum": 3.026798367500305e-09,
           "energy": 2.384185791015625e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 1.750417709350586,
+              "candidate_total_variation": 2.515045166015625,
+              "total_variation_ratio": 1.436825708846787,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 25,
+              "excess_significant_extrema": 25
+            },
+            "velocity": {
+              "reference_total_variation": 3.719010829925537,
+              "candidate_total_variation": 4.959951400756836,
+              "total_variation_ratio": 1.3336749010908757,
+              "normalized_global_range_violation": 0.04771552884440012,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 25,
+              "excess_significant_extrema": 25
+            },
+            "pressure": {
+              "reference_total_variation": 1.8037797212600708,
+              "candidate_total_variation": 2.6280434131622314,
+              "total_variation_ratio": 1.4569647181344032,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 27,
+              "excess_significant_extrema": 27
+            }
+          }
         }
       },
       "central_roe_upwind_hcfl_512": {
@@ -183,7 +332,7 @@
         "maximum_characteristic_speed": 2.2249748706817627,
         "minimum_internal_dt": 0.0004,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 2.562232700176537,
+        "wall_seconds": 2.534970099804923,
         "hard_projection_intervention_rate": 0.0002208891369047619,
         "hard_projection_relative_flux_rms": 6.005557710392816e-05,
         "hard_projection_max_absolute_change": 0.007172048091888428,
@@ -209,6 +358,37 @@
           "density": 5.960464477539063e-08,
           "momentum": 5.3551048040390015e-09,
           "energy": 2.384185791015625e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 1.750417709350586,
+              "candidate_total_variation": 1.8051127195358276,
+              "total_variation_ratio": 1.0312468331947657,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 8,
+              "excess_significant_extrema": 8
+            },
+            "velocity": {
+              "reference_total_variation": 3.719010829925537,
+              "candidate_total_variation": 3.922488212585449,
+              "total_variation_ratio": 1.0547127695952383,
+              "normalized_global_range_violation": 0.021574633126740576,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 6,
+              "excess_significant_extrema": 6
+            },
+            "pressure": {
+              "reference_total_variation": 1.8037797212600708,
+              "candidate_total_variation": 1.8757473230361938,
+              "total_variation_ratio": 1.039898220901302,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 5,
+              "excess_significant_extrema": 5
+            }
+          }
         }
       }
     },
@@ -239,6 +419,37 @@
           "density": 2.9802322387695312e-08,
           "momentum": 1.4901161193847656e-08,
           "energy": 9.5367431640625e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 3.3465492725372314,
+              "candidate_total_variation": 3.1244683265686035,
+              "total_variation_ratio": 0.9336388237904968,
+              "normalized_global_range_violation": 0.0014690270277770763,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 2,
+              "excess_significant_extrema": 2
+            },
+            "velocity": {
+              "reference_total_variation": 5.172695159912109,
+              "candidate_total_variation": 5.2102460861206055,
+              "total_variation_ratio": 1.0072594508370631,
+              "normalized_global_range_violation": 0.0072710575588439425,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 0,
+              "excess_significant_extrema": 0
+            },
+            "pressure": {
+              "reference_total_variation": 5.946703910827637,
+              "candidate_total_variation": 5.972234725952148,
+              "total_variation_ratio": 1.0042932716185895,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 0,
+              "excess_significant_extrema": 0
+            }
+          }
         }
       },
       "hllc_roe_correction_hcfl_512": {
@@ -271,6 +482,37 @@
           "density": 5.960464477539063e-08,
           "momentum": 1.4901161193847656e-08,
           "energy": 9.5367431640625e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 3.3465492725372314,
+              "candidate_total_variation": 3.571882724761963,
+              "total_variation_ratio": 1.0673330747208427,
+              "normalized_global_range_violation": 0.008083018111251615,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 8,
+              "excess_significant_extrema": 8
+            },
+            "velocity": {
+              "reference_total_variation": 5.172695159912109,
+              "candidate_total_variation": 5.323782920837402,
+              "total_variation_ratio": 1.0292087115622448,
+              "normalized_global_range_violation": 0.012606930638397471,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 3,
+              "excess_significant_extrema": 3
+            },
+            "pressure": {
+              "reference_total_variation": 5.946703910827637,
+              "candidate_total_variation": 6.146736145019531,
+              "total_variation_ratio": 1.0336374968707758,
+              "normalized_global_range_violation": 0.0004775628507543123,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 3,
+              "excess_significant_extrema": 3
+            }
+          }
         }
       },
       "roe_complete_hcfl_512": {
@@ -281,7 +523,7 @@
         "maximum_characteristic_speed": 4.753040790557861,
         "minimum_internal_dt": 0.0004,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 2.5903004000429064,
+        "wall_seconds": 2.6603990998119116,
         "hard_projection_intervention_rate": 0.47541542658730157,
         "hard_projection_relative_flux_rms": 0.009477525893996318,
         "hard_projection_max_absolute_change": 1.2735669612884521,
@@ -307,6 +549,37 @@
           "density": 5.960464477539063e-08,
           "momentum": 2.9802322387695312e-08,
           "energy": 1.9073486328125e-06
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 3.3465492725372314,
+              "candidate_total_variation": 4.4480204582214355,
+              "total_variation_ratio": 1.3291364017028529,
+              "normalized_global_range_violation": 0.014021553615505718,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 193,
+              "excess_significant_extrema": 193
+            },
+            "velocity": {
+              "reference_total_variation": 5.172695159912109,
+              "candidate_total_variation": 7.49658203125,
+              "total_variation_ratio": 1.4492603564477935,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 134,
+              "excess_significant_extrema": 134
+            },
+            "pressure": {
+              "reference_total_variation": 5.946703910827637,
+              "candidate_total_variation": 8.18276309967041,
+              "total_variation_ratio": 1.376016566886978,
+              "normalized_global_range_violation": 0.027805619261061995,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 57,
+              "excess_significant_extrema": 57
+            }
+          }
         }
       },
       "central_roe_signed_hcfl_512": {
@@ -317,7 +590,7 @@
         "maximum_characteristic_speed": 5.1036787033081055,
         "minimum_internal_dt": 0.0004,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 2.558075899956748,
+        "wall_seconds": 2.549707500031218,
         "hard_projection_intervention_rate": 0.14927842881944445,
         "hard_projection_relative_flux_rms": 0.0013745862112175353,
         "hard_projection_max_absolute_change": 0.6038057804107666,
@@ -343,6 +616,37 @@
           "density": 5.960464477539063e-08,
           "momentum": 2.9802322387695312e-08,
           "energy": 9.5367431640625e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 3.3465492725372314,
+              "candidate_total_variation": 4.83657693862915,
+              "total_variation_ratio": 1.4452430084683123,
+              "normalized_global_range_violation": 0.0873650396817002,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 53,
+              "excess_significant_extrema": 53
+            },
+            "velocity": {
+              "reference_total_variation": 5.172695159912109,
+              "candidate_total_variation": 17.57891273498535,
+              "total_variation_ratio": 3.3984049304162047,
+              "normalized_global_range_violation": 0.12189491273025516,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 61,
+              "excess_significant_extrema": 61
+            },
+            "pressure": {
+              "reference_total_variation": 5.946703910827637,
+              "candidate_total_variation": 17.519611358642578,
+              "total_variation_ratio": 2.9461045347731587,
+              "normalized_global_range_violation": 0.00041515635970520916,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 63,
+              "excess_significant_extrema": 63
+            }
+          }
         }
       },
       "central_roe_upwind_hcfl_512": {
@@ -353,7 +657,7 @@
         "maximum_characteristic_speed": 5.182736396789551,
         "minimum_internal_dt": 0.0004,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 2.5111493999138474,
+        "wall_seconds": 2.5114561999216676,
         "hard_projection_intervention_rate": 0.09938461061507936,
         "hard_projection_relative_flux_rms": 0.00019846594233190672,
         "hard_projection_max_absolute_change": 0.31060999631881714,
@@ -379,6 +683,37 @@
           "density": 5.960464477539063e-08,
           "momentum": 1.4901161193847656e-08,
           "energy": 1.430511474609375e-06
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 3.3465492725372314,
+              "candidate_total_variation": 3.787518262863159,
+              "total_variation_ratio": 1.1317682646852534,
+              "normalized_global_range_violation": 0.010772329358680305,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 13,
+              "excess_significant_extrema": 13
+            },
+            "velocity": {
+              "reference_total_variation": 5.172695159912109,
+              "candidate_total_variation": 5.337860584259033,
+              "total_variation_ratio": 1.0319302451122463,
+              "normalized_global_range_violation": 0.010350759504021229,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 2,
+              "excess_significant_extrema": 2
+            },
+            "pressure": {
+              "reference_total_variation": 5.946703910827637,
+              "candidate_total_variation": 6.1656036376953125,
+              "total_variation_ratio": 1.0368102616424382,
+              "normalized_global_range_violation": 0.0008927192104595214,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 2,
+              "excess_significant_extrema": 2
+            }
+          }
         }
       }
     },
@@ -409,6 +744,37 @@
           "density": 5.960464477539063e-08,
           "momentum": 3.725290298461914e-08,
           "energy": 4.76837158203125e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 6.576802730560303,
+              "candidate_total_variation": 7.079221725463867,
+              "total_variation_ratio": 1.0763925900603624,
+              "normalized_global_range_violation": 0.00018179431220648488,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 0,
+              "excess_significant_extrema": 0
+            },
+            "velocity": {
+              "reference_total_variation": 8.0000581741333,
+              "candidate_total_variation": 8.0,
+              "total_variation_ratio": 0.9999927282862157,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 0,
+              "excess_significant_extrema": 0
+            },
+            "pressure": {
+              "reference_total_variation": 13.419910430908203,
+              "candidate_total_variation": 13.407820701599121,
+              "total_variation_ratio": 0.9990991199701872,
+              "normalized_global_range_violation": 8.698325444435395e-05,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 0,
+              "excess_significant_extrema": 0
+            }
+          }
         }
       },
       "hllc_roe_correction_hcfl_512": {
@@ -441,6 +807,37 @@
           "density": 1.1920928955078125e-07,
           "momentum": 1.993030309677124e-07,
           "energy": 4.76837158203125e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 6.576802730560303,
+              "candidate_total_variation": 7.203598976135254,
+              "total_variation_ratio": 1.095304097029158,
+              "normalized_global_range_violation": 0.005904366155150007,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 6,
+              "excess_significant_extrema": 6
+            },
+            "velocity": {
+              "reference_total_variation": 8.0000581741333,
+              "candidate_total_variation": 8.312493324279785,
+              "total_variation_ratio": 1.0390541097759372,
+              "normalized_global_range_violation": 0.005251646041870117,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 2,
+              "excess_significant_extrema": 2
+            },
+            "pressure": {
+              "reference_total_variation": 13.419910430908203,
+              "candidate_total_variation": 13.910177230834961,
+              "total_variation_ratio": 1.0365327922604903,
+              "normalized_global_range_violation": 0.0064455017931768456,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 4,
+              "excess_significant_extrema": 4
+            }
+          }
         }
       },
       "roe_complete_hcfl_512": {
@@ -451,7 +848,7 @@
         "maximum_characteristic_speed": 3.8348612785339355,
         "minimum_internal_dt": 0.0004,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 2.5800536000169814,
+        "wall_seconds": 2.5284426999278367,
         "hard_projection_intervention_rate": 0.45592680431547616,
         "hard_projection_relative_flux_rms": 0.02292400719171982,
         "hard_projection_max_absolute_change": 10.12364387512207,
@@ -477,6 +874,37 @@
           "density": 1.1920928955078125e-07,
           "momentum": 9.313225746154785e-08,
           "energy": 4.76837158203125e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 6.576802730560303,
+              "candidate_total_variation": 19.319089889526367,
+              "total_variation_ratio": 2.9374592307226615,
+              "normalized_global_range_violation": 0.5971296367914543,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 65,
+              "excess_significant_extrema": 65
+            },
+            "velocity": {
+              "reference_total_variation": 8.0000581741333,
+              "candidate_total_variation": 12.527228355407715,
+              "total_variation_ratio": 1.5658921576235754,
+              "normalized_global_range_violation": 0.15858793258666992,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 100,
+              "excess_significant_extrema": 100
+            },
+            "pressure": {
+              "reference_total_variation": 13.419910430908203,
+              "candidate_total_variation": 45.89727783203125,
+              "total_variation_ratio": 3.420088238914208,
+              "normalized_global_range_violation": 0.8069691298588568,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 36,
+              "excess_significant_extrema": 36
+            }
+          }
         }
       },
       "central_roe_signed_hcfl_512": {
@@ -487,7 +915,7 @@
         "maximum_characteristic_speed": 3.265038251876831,
         "minimum_internal_dt": 0.0004,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 2.451698899967596,
+        "wall_seconds": 2.4157788001466542,
         "hard_projection_intervention_rate": 0.42094881572420634,
         "hard_projection_relative_flux_rms": 0.001734441766104362,
         "hard_projection_max_absolute_change": 1.384615421295166,
@@ -513,6 +941,37 @@
           "density": 1.1920928955078125e-07,
           "momentum": 9.313225746154785e-08,
           "energy": 4.76837158203125e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 6.576802730560303,
+              "candidate_total_variation": 12.091418266296387,
+              "total_variation_ratio": 1.8384948981533877,
+              "normalized_global_range_violation": 0.0354744008920181,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 138,
+              "excess_significant_extrema": 138
+            },
+            "velocity": {
+              "reference_total_variation": 8.0000581741333,
+              "candidate_total_variation": 15.078861236572266,
+              "total_variation_ratio": 1.8848439484261448,
+              "normalized_global_range_violation": 0.009987115859985352,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 112,
+              "excess_significant_extrema": 112
+            },
+            "pressure": {
+              "reference_total_variation": 13.419910430908203,
+              "candidate_total_variation": 22.086341857910156,
+              "total_variation_ratio": 1.6457890662997103,
+              "normalized_global_range_violation": 0.045654034303239256,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 118,
+              "excess_significant_extrema": 118
+            }
+          }
         }
       },
       "central_roe_upwind_hcfl_512": {
@@ -523,7 +982,7 @@
         "maximum_characteristic_speed": 4.749195098876953,
         "minimum_internal_dt": 0.0004,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 2.402974999975413,
+        "wall_seconds": 2.322611700044945,
         "hard_projection_intervention_rate": 0.21191018725198413,
         "hard_projection_relative_flux_rms": 0.0010214672365688295,
         "hard_projection_max_absolute_change": 1.7500019073486328,
@@ -549,6 +1008,37 @@
           "density": 1.1920928955078125e-07,
           "momentum": 7.450580596923828e-08,
           "energy": 4.76837158203125e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 6.576802730560303,
+              "candidate_total_variation": 6.922396183013916,
+              "total_variation_ratio": 1.0525473344133847,
+              "normalized_global_range_violation": 0.007680162468829231,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 7,
+              "excess_significant_extrema": 7
+            },
+            "velocity": {
+              "reference_total_variation": 8.0000581741333,
+              "candidate_total_variation": 9.08620834350586,
+              "total_variation_ratio": 1.135767783899925,
+              "normalized_global_range_violation": 0.0015380382537841797,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 3,
+              "excess_significant_extrema": 3
+            },
+            "pressure": {
+              "reference_total_variation": 13.419910430908203,
+              "candidate_total_variation": 13.673776626586914,
+              "total_variation_ratio": 1.0189171304075186,
+              "normalized_global_range_violation": 0.004954552226693143,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 1,
+              "excess_significant_extrema": 1
+            }
+          }
         }
       }
     },
@@ -579,6 +1069,37 @@
           "density": 5.960464477539063e-08,
           "momentum": 1.1175870895385742e-08,
           "energy": 4.76837158203125e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 16.689916610717773,
+              "candidate_total_variation": 10.905722618103027,
+              "total_variation_ratio": 0.6534318218881748,
+              "normalized_global_range_violation": 0.0014221066469700106,
+              "reference_significant_extrema": 2,
+              "candidate_significant_extrema": 2,
+              "excess_significant_extrema": 0
+            },
+            "velocity": {
+              "reference_total_variation": 5.5649895668029785,
+              "candidate_total_variation": 5.631141185760498,
+              "total_variation_ratio": 1.0118871056564303,
+              "normalized_global_range_violation": 0.011887105656430343,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 0,
+              "excess_significant_extrema": 0
+            },
+            "pressure": {
+              "reference_total_variation": 10.04840087890625,
+              "candidate_total_variation": 10.045172691345215,
+              "total_variation_ratio": 0.999678736188978,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 0,
+              "excess_significant_extrema": 0
+            }
+          }
         }
       },
       "hllc_roe_correction_hcfl_512": {
@@ -611,6 +1132,37 @@
           "density": 1.1920928955078125e-07,
           "momentum": 2.60770320892334e-08,
           "energy": 9.5367431640625e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 16.689916610717773,
+              "candidate_total_variation": 13.177725791931152,
+              "total_variation_ratio": 0.7895621110215018,
+              "normalized_global_range_violation": 0.010184602436992624,
+              "reference_significant_extrema": 2,
+              "candidate_significant_extrema": 5,
+              "excess_significant_extrema": 3
+            },
+            "velocity": {
+              "reference_total_variation": 5.5649895668029785,
+              "candidate_total_variation": 5.717458724975586,
+              "total_variation_ratio": 1.0273979234538257,
+              "normalized_global_range_violation": 0.010563869351000704,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 2,
+              "excess_significant_extrema": 2
+            },
+            "pressure": {
+              "reference_total_variation": 10.04840087890625,
+              "candidate_total_variation": 10.330835342407227,
+              "total_variation_ratio": 1.0281074040441467,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 2,
+              "excess_significant_extrema": 2
+            }
+          }
         }
       },
       "roe_complete_hcfl_512": {
@@ -621,7 +1173,7 @@
         "maximum_characteristic_speed": 3.9742581844329834,
         "minimum_internal_dt": 0.0004,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 2.597607099916786,
+        "wall_seconds": 2.52530590002425,
         "hard_projection_intervention_rate": 0.45641896081349204,
         "hard_projection_relative_flux_rms": 0.07428528862683978,
         "hard_projection_max_absolute_change": 15.588252067565918,
@@ -647,6 +1199,37 @@
           "density": 1.1920928955078125e-07,
           "momentum": 1.862645149230957e-08,
           "energy": 9.5367431640625e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 16.689916610717773,
+              "candidate_total_variation": 30.516399383544922,
+              "total_variation_ratio": 1.8284333046905812,
+              "normalized_global_range_violation": 0.5409211516235284,
+              "reference_significant_extrema": 2,
+              "candidate_significant_extrema": 102,
+              "excess_significant_extrema": 100
+            },
+            "velocity": {
+              "reference_total_variation": 5.5649895668029785,
+              "candidate_total_variation": 11.725135803222656,
+              "total_variation_ratio": 2.106946592167397,
+              "normalized_global_range_violation": 0.05626924649905331,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 136,
+              "excess_significant_extrema": 136
+            },
+            "pressure": {
+              "reference_total_variation": 10.04840087890625,
+              "candidate_total_variation": 32.748291015625,
+              "total_variation_ratio": 3.2590549889754787,
+              "normalized_global_range_violation": 0.020393182114617787,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 94,
+              "excess_significant_extrema": 94
+            }
+          }
         }
       },
       "central_roe_signed_hcfl_512": {
@@ -657,7 +1240,7 @@
         "maximum_characteristic_speed": 3.9239070415496826,
         "minimum_internal_dt": 0.0004,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 2.6030808000359684,
+        "wall_seconds": 2.4857216000091285,
         "hard_projection_intervention_rate": 0.016775948660714284,
         "hard_projection_relative_flux_rms": 0.003156039823268398,
         "hard_projection_max_absolute_change": 0.5204834938049316,
@@ -683,6 +1266,37 @@
           "density": 5.960464477539063e-08,
           "momentum": 1.30385160446167e-08,
           "energy": 4.76837158203125e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 16.689916610717773,
+              "candidate_total_variation": 14.428119659423828,
+              "total_variation_ratio": 0.8644812311499815,
+              "normalized_global_range_violation": 0.012183491700101726,
+              "reference_significant_extrema": 2,
+              "candidate_significant_extrema": 17,
+              "excess_significant_extrema": 15
+            },
+            "velocity": {
+              "reference_total_variation": 5.5649895668029785,
+              "candidate_total_variation": 7.408761024475098,
+              "total_variation_ratio": 1.3313162469649236,
+              "normalized_global_range_violation": 0.0391017913430373,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 30,
+              "excess_significant_extrema": 30
+            },
+            "pressure": {
+              "reference_total_variation": 10.04840087890625,
+              "candidate_total_variation": 13.098295211791992,
+              "total_variation_ratio": 1.3035203680307108,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 28,
+              "excess_significant_extrema": 28
+            }
+          }
         }
       },
       "central_roe_upwind_hcfl_512": {
@@ -693,7 +1307,7 @@
         "maximum_characteristic_speed": 3.9566140174865723,
         "minimum_internal_dt": 0.0004,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 2.573298799805343,
+        "wall_seconds": 2.4851134000346065,
         "hard_projection_intervention_rate": 0.003127325148809524,
         "hard_projection_relative_flux_rms": 0.00012994972849529629,
         "hard_projection_max_absolute_change": 0.052611351013183594,
@@ -719,6 +1333,37 @@
           "density": 1.1920928955078125e-07,
           "momentum": 9.313225746154785e-09,
           "energy": 9.5367431640625e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 16.689916610717773,
+              "candidate_total_variation": 12.979700088500977,
+              "total_variation_ratio": 0.7776971204377255,
+              "normalized_global_range_violation": 0.0164253260582486,
+              "reference_significant_extrema": 2,
+              "candidate_significant_extrema": 5,
+              "excess_significant_extrema": 3
+            },
+            "velocity": {
+              "reference_total_variation": 5.5649895668029785,
+              "candidate_total_variation": 5.806631088256836,
+              "total_variation_ratio": 1.0434217384512865,
+              "normalized_global_range_violation": 0.01852269487788533,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 4,
+              "excess_significant_extrema": 4
+            },
+            "pressure": {
+              "reference_total_variation": 10.04840087890625,
+              "candidate_total_variation": 10.581680297851562,
+              "total_variation_ratio": 1.053071073235621,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 5,
+              "excess_significant_extrema": 5
+            }
+          }
         }
       }
     },
@@ -749,6 +1394,37 @@
           "density": 5.960464477539063e-08,
           "momentum": 4.0978193283081055e-08,
           "energy": 2.384185791015625e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 8.805228233337402,
+              "candidate_total_variation": 9.624775886535645,
+              "total_variation_ratio": 1.093075117586999,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 0,
+              "excess_significant_extrema": 0
+            },
+            "velocity": {
+              "reference_total_variation": 8.00001335144043,
+              "candidate_total_variation": 8.0,
+              "total_variation_ratio": 0.9999983310727316,
+              "normalized_global_range_violation": 0.0,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 0,
+              "excess_significant_extrema": 0
+            },
+            "pressure": {
+              "reference_total_variation": 11.246809959411621,
+              "candidate_total_variation": 11.24374771118164,
+              "total_variation_ratio": 0.9997277229506828,
+              "normalized_global_range_violation": 0.00030958933242160926,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 0,
+              "excess_significant_extrema": 0
+            }
+          }
         }
       },
       "hllc_roe_correction_hcfl_512": {
@@ -781,6 +1457,37 @@
           "density": 1.1920928955078125e-07,
           "momentum": 9.685754776000977e-08,
           "energy": 2.384185791015625e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 8.805228233337402,
+              "candidate_total_variation": 10.198366165161133,
+              "total_variation_ratio": 1.1582171290630698,
+              "normalized_global_range_violation": 0.004717337857243108,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 7,
+              "excess_significant_extrema": 7
+            },
+            "velocity": {
+              "reference_total_variation": 8.00001335144043,
+              "candidate_total_variation": 8.760770797729492,
+              "total_variation_ratio": 1.095094522080027,
+              "normalized_global_range_violation": 0.056743502616882324,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 3,
+              "excess_significant_extrema": 3
+            },
+            "pressure": {
+              "reference_total_variation": 11.246809959411621,
+              "candidate_total_variation": 11.898146629333496,
+              "total_variation_ratio": 1.0579130146479288,
+              "normalized_global_range_violation": 0.008477795635765565,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 2,
+              "excess_significant_extrema": 2
+            }
+          }
         }
       },
       "roe_complete_hcfl_512": {
@@ -791,7 +1498,7 @@
         "maximum_characteristic_speed": 47.50686264038086,
         "minimum_internal_dt": 0.00013813793703189886,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 2.9856867999769747,
+        "wall_seconds": 2.947929099900648,
         "hard_projection_intervention_rate": 0.5122457837301587,
         "hard_projection_relative_flux_rms": 0.026263481714203365,
         "hard_projection_max_absolute_change": 6.426916122436523,
@@ -817,6 +1524,37 @@
           "density": 1.1920928955078125e-07,
           "momentum": 1.564621925354004e-07,
           "energy": 2.384185791015625e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 8.805228233337402,
+              "candidate_total_variation": 27.892662048339844,
+              "total_variation_ratio": 3.167738678565499,
+              "normalized_global_range_violation": 0.20764256117474467,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 79,
+              "excess_significant_extrema": 79
+            },
+            "velocity": {
+              "reference_total_variation": 8.00001335144043,
+              "candidate_total_variation": 17.88928985595703,
+              "total_variation_ratio": 2.2361575000041722,
+              "normalized_global_range_violation": 0.09268838167190552,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 148,
+              "excess_significant_extrema": 148
+            },
+            "pressure": {
+              "reference_total_variation": 11.246809959411621,
+              "candidate_total_variation": 26.044376373291016,
+              "total_variation_ratio": 2.315712319073766,
+              "normalized_global_range_violation": 0.39141208868516497,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 60,
+              "excess_significant_extrema": 60
+            }
+          }
         }
       },
       "central_roe_signed_hcfl_512": {
@@ -827,7 +1565,7 @@
         "maximum_characteristic_speed": 19.623485565185547,
         "minimum_internal_dt": 1.3138694338595892e-05,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 2.5319687998853624,
+        "wall_seconds": 2.574558899970725,
         "hard_projection_intervention_rate": 0.23787047371031747,
         "hard_projection_relative_flux_rms": 0.002526936060903672,
         "hard_projection_max_absolute_change": 1.2933968305587769,
@@ -853,6 +1591,37 @@
           "density": 1.1920928955078125e-07,
           "momentum": 9.685754776000977e-08,
           "energy": 2.384185791015625e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 8.805228233337402,
+              "candidate_total_variation": 10.57352066040039,
+              "total_variation_ratio": 1.2008230088083431,
+              "normalized_global_range_violation": 0.05087263424291447,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 42,
+              "excess_significant_extrema": 42
+            },
+            "velocity": {
+              "reference_total_variation": 8.00001335144043,
+              "candidate_total_variation": 12.382676124572754,
+              "total_variation_ratio": 1.5478319323483642,
+              "normalized_global_range_violation": 0.03232228755950928,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 42,
+              "excess_significant_extrema": 42
+            },
+            "pressure": {
+              "reference_total_variation": 11.246809959411621,
+              "candidate_total_variation": 13.84222412109375,
+              "total_variation_ratio": 1.2307689176796501,
+              "normalized_global_range_violation": 0.06524932326753563,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 11,
+              "excess_significant_extrema": 11
+            }
+          }
         }
       },
       "central_roe_upwind_hcfl_512": {
@@ -863,7 +1632,7 @@
         "maximum_characteristic_speed": 48.46589279174805,
         "minimum_internal_dt": 4.5708388567833715e-07,
         "low_order_dt_halvings": 0,
-        "wall_seconds": 4.341979099903256,
+        "wall_seconds": 4.224336200160906,
         "hard_projection_intervention_rate": 0.21159241691468253,
         "hard_projection_relative_flux_rms": 0.0013147450423455262,
         "hard_projection_max_absolute_change": 1.4830385446548462,
@@ -889,6 +1658,37 @@
           "density": 1.1920928955078125e-07,
           "momentum": 9.685754776000977e-08,
           "energy": 4.76837158203125e-07
+        },
+        "oscillation": {
+          "variables": {
+            "density": {
+              "reference_total_variation": 8.805228233337402,
+              "candidate_total_variation": 9.216716766357422,
+              "total_variation_ratio": 1.046732296099048,
+              "normalized_global_range_violation": 0.003459491125325553,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 8,
+              "excess_significant_extrema": 8
+            },
+            "velocity": {
+              "reference_total_variation": 8.00001335144043,
+              "candidate_total_variation": 9.367782592773438,
+              "total_variation_ratio": 1.170970869828203,
+              "normalized_global_range_violation": 0.021231651306152344,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 6,
+              "excess_significant_extrema": 6
+            },
+            "pressure": {
+              "reference_total_variation": 11.246809959411621,
+              "candidate_total_variation": 11.460699081420898,
+              "total_variation_ratio": 1.019017759060674,
+              "normalized_global_range_violation": 0.0004940025211873874,
+              "reference_significant_extrema": 0,
+              "candidate_significant_extrema": 1,
+              "excess_significant_extrema": 1
+            }
+          }
         }
       }
     }
