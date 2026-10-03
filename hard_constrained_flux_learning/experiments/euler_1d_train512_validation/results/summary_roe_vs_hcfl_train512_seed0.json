@@ -1,0 +1,312 @@
+{
+  "scope": "single-seed direct 512-cell Euler training validation",
+  "seed": 0,
+  "architecture": "central + nonnegative Roe + feasibility, symmetric 4-cell stencil",
+  "training_report": {
+    "seed": 0,
+    "arm": "central_nonnegative_feas_s4_train512",
+    "model": "central_roe_upwind_4",
+    "stencil_cells": 4,
+    "training_cells": 512,
+    "reference_cells": 2048,
+    "interval_substeps": 8,
+    "substep_dt_over_dx": 0.0256,
+    "physical_supervision_interval": 0.0004,
+    "parameter_count": 6411,
+    "best_update": 30500,
+    "stop_update": 39500,
+    "best_validation_rollout_nrmse": 0.020633563551702212,
+    "best_checkpoint_validation": {
+      "rollout_nrmse": 0.020633563551702212,
+      "minimum_density": 0.00023173572844825685,
+      "minimum_pressure": 0.008203471079468727,
+      "local_limiter_intervention_rate": 3.430547423887588e-06,
+      "fd_entropy_intervention_rate": 0.0018149882903981266,
+      "mean_fd_beta": 0.9997584552898898,
+      "minimum_fd_beta": 0.0
+    },
+    "final_learning_rate": 3e-06,
+    "converged": true,
+    "stop_reason": "validation_plateau_at_minimum_learning_rate",
+    "training_seconds": 9024.986871500034,
+    "proposal_feasibility_weight": 0.001,
+    "device": "cpu",
+    "reference_precision_audit": {
+      "trajectories": 2,
+      "maximum_absolute_state_difference": 1.910742827959666e-06,
+      "rms_state_difference": 1.0273839466779813e-07,
+      "normalized_rms_state_difference": 1.9895984179579154e-07
+    },
+    "training_trajectory_count": 580,
+    "validation_trajectory_count": 136,
+    "multiplier_activity": {
+      "mean_absolute_multiplier_change_from_one": 0.6385294198989868,
+      "minimum_multiplier": 0.0002741217613220215,
+      "maximum_multiplier": 1.998276710510254,
+      "mean_multiplier": 0.3660918176174164
+    }
+  },
+  "reference_precision_audit": {
+    "trajectories": 2,
+    "maximum_absolute_state_difference": 1.910742827959666e-06,
+    "rms_state_difference": 1.0273839466779813e-07,
+    "normalized_rms_state_difference": 1.9895984179579154e-07
+  },
+  "held_out_final_time": 0.0252,
+  "figure_cases": {
+    "first_block": [
+      "sod",
+      "lax",
+      "collision",
+      "strong_pressure"
+    ],
+    "second_block": [
+      "near_vacuum_expansion",
+      "contact_left_exit",
+      "contact_right_exit",
+      "pressure_right_exit"
+    ]
+  },
+  "aggregate": {
+    "periodic": {
+      "roe_512": {
+        "cases": 4,
+        "mean_rollout_nrmse": 0.06908163125626743,
+        "mean_final_snapshot_nrmse": 0.08698880299925804,
+        "mean_normalized_final_tv_excess": 0.023621087352924404,
+        "total_excess_significant_extrema": 3,
+        "minimum_density": 0.0032356842420995235,
+        "minimum_pressure": 0.0004415154398884624
+      },
+      "hcfl_trained_512": {
+        "cases": 4,
+        "mean_rollout_nrmse": 0.021812234306707978,
+        "mean_final_snapshot_nrmse": 0.0259482265682891,
+        "mean_normalized_final_tv_excess": 0.05139228642952596,
+        "total_excess_significant_extrema": 30,
+        "minimum_density": 0.08486483246088028,
+        "minimum_pressure": 0.032419126480817795
+      }
+    },
+    "transmissive": {
+      "roe_512": {
+        "cases": 4,
+        "mean_rollout_nrmse": 0.04280762234702706,
+        "mean_final_snapshot_nrmse": 0.035103169502690434,
+        "mean_normalized_final_tv_excess": 0.04598311403070244,
+        "total_excess_significant_extrema": 2,
+        "minimum_density": 5.6550506997155026e-05,
+        "minimum_pressure": 1.0000005204346962e-05
+      },
+      "hcfl_trained_512": {
+        "cases": 4,
+        "mean_rollout_nrmse": 0.024902218952775,
+        "mean_final_snapshot_nrmse": 0.013805171241983771,
+        "mean_normalized_final_tv_excess": 0.03670406146009618,
+        "total_excess_significant_extrema": 20,
+        "minimum_density": 0.012018331326544285,
+        "minimum_pressure": 0.0009256533230654895
+      }
+    }
+  },
+  "no_f_low_ablation": [
+    {
+      "boundary": "periodic",
+      "case": "sod",
+      "method": "hcfl_projection_only_no_f_low",
+      "completed": true,
+      "substeps": 504,
+      "minimum_density": 0.125,
+      "minimum_pressure": 0.10000000149011612,
+      "fully_discrete_entropy_violations": 0,
+      "fully_discrete_entropy_checks": 504,
+      "max_fully_discrete_entropy_increase": -0.002203704074787538,
+      "fully_discrete_entropy_violation_rate": 0.0,
+      "rollout_nrmse": 0.004409655928611755,
+      "final_snapshot_nrmse": 0.004178975708782673,
+      "peak_snapshot_nrmse": 0.005414748564362526,
+      "peak_snapshot_index": 3,
+      "max_final_primitive_absolute_error": {
+        "density": 0.020168140530586243,
+        "velocity": 0.15577439963817596,
+        "pressure": 0.02796351909637451
+      },
+      "mean_normalized_final_tv_excess": 0.06227875911950506,
+      "mean_normalized_global_range_violation": 0.007893806318066686,
+      "total_excess_significant_extrema": 11,
+      "max_absolute_state_difference_vs_full_safe": 1.9431114196777344e-05
+    },
+    {
+      "boundary": "periodic",
+      "case": "lax",
+      "method": "hcfl_projection_only_no_f_low",
+      "completed": true,
+      "substeps": 504,
+      "minimum_density": 0.19711032509803772,
+      "minimum_pressure": 0.5710000395774841,
+      "fully_discrete_entropy_violations": 0,
+      "fully_discrete_entropy_checks": 504,
+      "max_fully_discrete_entropy_increase": -0.017269578598074986,
+      "fully_discrete_entropy_violation_rate": 0.0,
+      "rollout_nrmse": 0.015757646411657333,
+      "final_snapshot_nrmse": 0.016962848603725433,
+      "peak_snapshot_nrmse": 0.016962848603725433,
+      "peak_snapshot_index": 63,
+      "max_final_primitive_absolute_error": {
+        "density": 0.07407957315444946,
+        "velocity": 0.19055305421352386,
+        "pressure": 0.1390526294708252
+      },
+      "mean_normalized_final_tv_excess": 0.064078523497067,
+      "mean_normalized_global_range_violation": 0.007481854837664256,
+      "total_excess_significant_extrema": 9,
+      "max_absolute_state_difference_vs_full_safe": 0.040775299072265625
+    },
+    {
+      "boundary": "periodic",
+      "case": "collision",
+      "method": "hcfl_projection_only_no_f_low",
+      "completed": true,
+      "substeps": 504,
+      "minimum_density": 0.08474461734294891,
+      "minimum_pressure": 0.03223728761076927,
+      "fully_discrete_entropy_violations": 0,
+      "fully_discrete_entropy_checks": 504,
+      "max_fully_discrete_entropy_increase": -0.093292250093711,
+      "fully_discrete_entropy_violation_rate": 0.0,
+      "rollout_nrmse": 0.01332448236644268,
+      "final_snapshot_nrmse": 0.008775671944022179,
+      "peak_snapshot_nrmse": 0.018362484872341156,
+      "peak_snapshot_index": 5,
+      "max_final_primitive_absolute_error": {
+        "density": 0.05687999725341797,
+        "velocity": 0.06340553611516953,
+        "pressure": 0.09338617324829102
+      },
+      "mean_normalized_final_tv_excess": 0.016011509162993116,
+      "mean_normalized_global_range_violation": 0.0013077867625471472,
+      "total_excess_significant_extrema": 3,
+      "max_absolute_state_difference_vs_full_safe": 0.06279850006103516
+    },
+    {
+      "boundary": "periodic",
+      "case": "strong_pressure",
+      "method": "hcfl_projection_only_no_f_low",
+      "completed": true,
+      "substeps": 504,
+      "minimum_density": 0.547922670841217,
+      "minimum_pressure": 0.05000000074505806,
+      "fully_discrete_entropy_violations": 0,
+      "fully_discrete_entropy_checks": 504,
+      "max_fully_discrete_entropy_increase": -0.3291190371942321,
+      "fully_discrete_entropy_violation_rate": 0.0,
+      "rollout_nrmse": 0.05357097089290619,
+      "final_snapshot_nrmse": 0.07385227084159851,
+      "peak_snapshot_nrmse": 0.07385227084159851,
+      "peak_snapshot_index": 63,
+      "max_final_primitive_absolute_error": {
+        "density": 0.5398733615875244,
+        "velocity": 0.257429838180542,
+        "pressure": 0.399045467376709
+      },
+      "mean_normalized_final_tv_excess": 0.011002244845190542,
+      "mean_normalized_global_range_violation": 0.0008230615188786816,
+      "total_excess_significant_extrema": 5,
+      "max_absolute_state_difference_vs_full_safe": 0.0010991096496582031
+    },
+    {
+      "boundary": "transmissive",
+      "case": "near_vacuum_expansion",
+      "method": "hcfl_projection_only_no_f_low",
+      "completed": false,
+      "substeps": 225,
+      "minimum_density": -2.436850991216488e-06,
+      "minimum_pressure": 0.00016610417515039444,
+      "fully_discrete_entropy_violations": 37,
+      "fully_discrete_entropy_checks": 226,
+      "max_fully_discrete_entropy_increase": 0.05940813707252346,
+      "failure_reason": "non_admissible_state",
+      "failure_snapshot": 29,
+      "failure_substep": 226,
+      "fully_discrete_entropy_violation_rate": 0.16371681415929204
+    },
+    {
+      "boundary": "transmissive",
+      "case": "contact_left_exit",
+      "method": "hcfl_projection_only_no_f_low",
+      "completed": true,
+      "substeps": 504,
+      "minimum_density": 0.25,
+      "minimum_pressure": 0.9999987483024597,
+      "fully_discrete_entropy_violations": 0,
+      "fully_discrete_entropy_checks": 504,
+      "max_fully_discrete_entropy_increase": -8.233274768350285e-05,
+      "fully_discrete_entropy_violation_rate": 0.0,
+      "rollout_nrmse": 0.010077910497784615,
+      "final_snapshot_nrmse": 0.0030899832490831614,
+      "peak_snapshot_nrmse": 0.014484741725027561,
+      "peak_snapshot_index": 3,
+      "max_final_primitive_absolute_error": {
+        "density": 0.0432356595993042,
+        "velocity": 2.2649765014648438e-06,
+        "pressure": 1.2516975402832031e-06
+      },
+      "mean_normalized_final_tv_excess": 0.0569907029469808,
+      "mean_normalized_global_range_violation": 0.02771302064259847,
+      "total_excess_significant_extrema": 5,
+      "max_absolute_state_difference_vs_full_safe": 0.0
+    },
+    {
+      "boundary": "transmissive",
+      "case": "contact_right_exit",
+      "method": "hcfl_projection_only_no_f_low",
+      "completed": true,
+      "substeps": 504,
+      "minimum_density": 0.25,
+      "minimum_pressure": 0.9999973177909851,
+      "fully_discrete_entropy_violations": 0,
+      "fully_discrete_entropy_checks": 504,
+      "max_fully_discrete_entropy_increase": -1.2991678917051441e-05,
+      "fully_discrete_entropy_violation_rate": 0.0,
+      "rollout_nrmse": 0.00795594323426485,
+      "final_snapshot_nrmse": 0.0010746198240667582,
+      "peak_snapshot_nrmse": 0.012395638972520828,
+      "peak_snapshot_index": 3,
+      "max_final_primitive_absolute_error": {
+        "density": 0.01834934949874878,
+        "velocity": 1.0728836059570312e-06,
+        "pressure": 1.430511474609375e-06
+      },
+      "mean_normalized_final_tv_excess": 0.01306958993243749,
+      "mean_normalized_global_range_violation": 0.007917722066172436,
+      "total_excess_significant_extrema": 2,
+      "max_absolute_state_difference_vs_full_safe": 0.0
+    },
+    {
+      "boundary": "transmissive",
+      "case": "pressure_right_exit",
+      "method": "hcfl_projection_only_no_f_low",
+      "completed": true,
+      "substeps": 504,
+      "minimum_density": 0.547922670841217,
+      "minimum_pressure": 0.05000000074505806,
+      "fully_discrete_entropy_violations": 0,
+      "fully_discrete_entropy_checks": 504,
+      "max_fully_discrete_entropy_increase": -0.013593938088888535,
+      "fully_discrete_entropy_violation_rate": 0.0,
+      "rollout_nrmse": 0.07573755830526352,
+      "final_snapshot_nrmse": 0.047024548053741455,
+      "peak_snapshot_nrmse": 0.09716373682022095,
+      "peak_snapshot_index": 52,
+      "max_final_primitive_absolute_error": {
+        "density": 0.4682281017303467,
+        "velocity": 0.042148470878601074,
+        "pressure": 0.1358039379119873
+      },
+      "mean_normalized_final_tv_excess": 0.056552585100134826,
+      "mean_normalized_global_range_violation": 0.009946947596930579,
+      "total_excess_significant_extrema": 9,
+      "max_absolute_state_difference_vs_full_safe": 6.67572021484375e-06
+    }
+  ]
+}

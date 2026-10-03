@@ -1,0 +1,44 @@
+{
+  "seed": 0,
+  "arm": "central_nonnegative_feas_s4_train512",
+  "model": "central_roe_upwind_4",
+  "stencil_cells": 4,
+  "training_cells": 512,
+  "reference_cells": 2048,
+  "interval_substeps": 8,
+  "substep_dt_over_dx": 0.0256,
+  "physical_supervision_interval": 0.0004,
+  "parameter_count": 6411,
+  "best_update": 30500,
+  "stop_update": 39500,
+  "best_validation_rollout_nrmse": 0.020633563551702212,
+  "best_checkpoint_validation": {
+    "rollout_nrmse": 0.020633563551702212,
+    "minimum_density": 0.00023173572844825685,
+    "minimum_pressure": 0.008203471079468727,
+    "local_limiter_intervention_rate": 3.430547423887588e-06,
+    "fd_entropy_intervention_rate": 0.0018149882903981266,
+    "mean_fd_beta": 0.9997584552898898,
+    "minimum_fd_beta": 0.0
+  },
+  "final_learning_rate": 3e-06,
+  "converged": true,
+  "stop_reason": "validation_plateau_at_minimum_learning_rate",
+  "training_seconds": 9024.986871500034,
+  "proposal_feasibility_weight": 0.001,
+  "device": "cpu",
+  "reference_precision_audit": {
+    "trajectories": 2,
+    "maximum_absolute_state_difference": 1.910742827959666e-06,
+    "rms_state_difference": 1.0273839466779813e-07,
+    "normalized_rms_state_difference": 1.9895984179579154e-07
+  },
+  "training_trajectory_count": 580,
+  "validation_trajectory_count": 136,
+  "multiplier_activity": {
+    "mean_absolute_multiplier_change_from_one": 0.6385294198989868,
+    "minimum_multiplier": 0.0002741217613220215,
+    "maximum_multiplier": 1.998276710510254,
+    "mean_multiplier": 0.3660918176174164
+  }
+}
