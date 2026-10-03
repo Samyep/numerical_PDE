@@ -900,6 +900,7 @@ def plot_combined_profiles(
                     coarse_x,
                     values["trained512"][:, component],
                     color="#0072B2",
+                    linestyle="--",
                     linewidth=1.15,
                     label="HCFL trained at 512" if first else None,
                 )
