@@ -1,0 +1,216 @@
+{
+  "seed": 0,
+  "training": "no training; inference-only plot",
+  "boundary_condition": "transmissive nonperiodic",
+  "case": "contact_left_exit",
+  "zoom_window": [
+    0.0,
+    0.1
+  ],
+  "display_note": "Velocity and pressure are plotted as u+1 and p-1; local diagnostics remain in the original primitive variables.",
+  "model_sources": {
+    "4": {
+      "hllc_roe": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_stencil_ablation\\results\\hllc_roe_s4_converged_best_seed0.pt",
+      "central_feas": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_stencil_ablation\\results\\central_nonnegative_feas_s4_converged_best_seed0.pt"
+    },
+    "5": {
+      "hllc_roe": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_convergence_audit\\results\\dissipation_broad_converged_best_seed0.pt",
+      "central_feas": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_roe_upwind_ablation\\results\\central_roe_upwind_feas_broad_converged_best_seed0.pt"
+    },
+    "6": {
+      "hllc_roe": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_stencil_ablation\\results\\hllc_roe_s6_converged_best_seed0.pt",
+      "central_feas": "C:\\Users\\Yeping\\workspace\\HCFL\\numerical_PDE\\hard_constrained_flux_learning\\experiments\\euler_1d_stencil_ablation\\results\\central_nonnegative_feas_s6_converged_best_seed0.pt"
+    }
+  },
+  "local_profile_diagnostics": [
+    {
+      "stencil_size": "reference_2048",
+      "method": "hllc_2048",
+      "variable": 0,
+      "local_total_variation": 0.0005985498428344727,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9994014501571655,
+      "local_maximum": 1.0
+    },
+    {
+      "stencil_size": "reference_2048",
+      "method": "hllc_2048",
+      "variable": 1,
+      "local_total_variation": 0.0,
+      "local_significant_extrema": 0,
+      "local_minimum": -1.0,
+      "local_maximum": -1.0
+    },
+    {
+      "stencil_size": "reference_2048",
+      "method": "hllc_2048",
+      "variable": 2,
+      "local_total_variation": 0.0,
+      "local_significant_extrema": 0,
+      "local_minimum": 1.0,
+      "local_maximum": 1.0
+    },
+    {
+      "stencil_size": 4,
+      "method": "hllc_roe",
+      "variable": 0,
+      "local_total_variation": 0.017804861068725586,
+      "local_significant_extrema": 1,
+      "local_minimum": 0.9993721842765808,
+      "local_maximum": 1.0148597955703735
+    },
+    {
+      "stencil_size": 4,
+      "method": "hllc_roe",
+      "variable": 1,
+      "local_total_variation": 6.794929504394531e-06,
+      "local_significant_extrema": 0,
+      "local_minimum": -1.0000003576278687,
+      "local_maximum": -0.9999993443489075
+    },
+    {
+      "stencil_size": 4,
+      "method": "hllc_roe",
+      "variable": 2,
+      "local_total_variation": 3.3974647521972656e-06,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.999999463558197,
+      "local_maximum": 1.0000003576278687
+    },
+    {
+      "stencil_size": 4,
+      "method": "central_feas",
+      "variable": 0,
+      "local_total_variation": 0.13634872436523438,
+      "local_significant_extrema": 3,
+      "local_minimum": 0.9692713618278503,
+      "local_maximum": 1.0529530048370361
+    },
+    {
+      "stencil_size": 4,
+      "method": "central_feas",
+      "variable": 1,
+      "local_total_variation": 1.3113021850585938e-05,
+      "local_significant_extrema": 0,
+      "local_minimum": -1.000001072883606,
+      "local_maximum": -0.9999985098838806
+    },
+    {
+      "stencil_size": 4,
+      "method": "central_feas",
+      "variable": 2,
+      "local_total_variation": 1.6808509826660156e-05,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999977350234985,
+      "local_maximum": 1.0000019073486328
+    },
+    {
+      "stencil_size": 5,
+      "method": "hllc_roe",
+      "variable": 0,
+      "local_total_variation": 0.1602872610092163,
+      "local_significant_extrema": 7,
+      "local_minimum": 0.9635490775108337,
+      "local_maximum": 1.0335321426391602
+    },
+    {
+      "stencil_size": 5,
+      "method": "hllc_roe",
+      "variable": 1,
+      "local_total_variation": 1.9729137420654297e-05,
+      "local_significant_extrema": 0,
+      "local_minimum": -1.000001072883606,
+      "local_maximum": -0.9999976754188538
+    },
+    {
+      "stencil_size": 5,
+      "method": "hllc_roe",
+      "variable": 2,
+      "local_total_variation": 2.3126602172851562e-05,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999979138374329,
+      "local_maximum": 1.000001311302185
+    },
+    {
+      "stencil_size": 5,
+      "method": "central_feas",
+      "variable": 0,
+      "local_total_variation": 0.07650578022003174,
+      "local_significant_extrema": 2,
+      "local_minimum": 0.9840523600578308,
+      "local_maximum": 1.0343135595321655
+    },
+    {
+      "stencil_size": 5,
+      "method": "central_feas",
+      "variable": 1,
+      "local_total_variation": 1.8537044525146484e-05,
+      "local_significant_extrema": 0,
+      "local_minimum": -1.0000016689300537,
+      "local_maximum": -0.9999974966049194
+    },
+    {
+      "stencil_size": 5,
+      "method": "central_feas",
+      "variable": 2,
+      "local_total_variation": 1.5735626220703125e-05,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999974370002747,
+      "local_maximum": 1.0000008344650269
+    },
+    {
+      "stencil_size": 6,
+      "method": "hllc_roe",
+      "variable": 0,
+      "local_total_variation": 0.022477567195892334,
+      "local_significant_extrema": 1,
+      "local_minimum": 0.9865673780441284,
+      "local_maximum": 1.00434148311615
+    },
+    {
+      "stencil_size": 6,
+      "method": "hllc_roe",
+      "variable": 1,
+      "local_total_variation": 8.225440979003906e-06,
+      "local_significant_extrema": 0,
+      "local_minimum": -1.0000003576278687,
+      "local_maximum": -0.9999990463256836
+    },
+    {
+      "stencil_size": 6,
+      "method": "hllc_roe",
+      "variable": 2,
+      "local_total_variation": 4.76837158203125e-06,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999998211860657,
+      "local_maximum": 1.0000008344650269
+    },
+    {
+      "stencil_size": 6,
+      "method": "central_feas",
+      "variable": 0,
+      "local_total_variation": 0.02078300714492798,
+      "local_significant_extrema": 1,
+      "local_minimum": 0.9919747710227966,
+      "local_maximum": 1.0061664581298828
+    },
+    {
+      "stencil_size": 6,
+      "method": "central_feas",
+      "variable": 1,
+      "local_total_variation": 5.841255187988281e-06,
+      "local_significant_extrema": 0,
+      "local_minimum": -1.0000001192092896,
+      "local_maximum": -0.9999983310699463
+    },
+    {
+      "stencil_size": 6,
+      "method": "central_feas",
+      "variable": 2,
+      "local_total_variation": 4.231929779052734e-06,
+      "local_significant_extrema": 0,
+      "local_minimum": 0.9999990463256836,
+      "local_maximum": 1.0000004768371582
+    }
+  ]
+}
