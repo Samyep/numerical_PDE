@@ -884,14 +884,14 @@ def plot_combined_profiles(
                 axis.plot(
                     fine_x,
                     values["reference"][:, component],
-                    color="#B7B7B7",
+                    color="#111111",
                     linewidth=1.1,
                     label="HLL-2048" if first else None,
                 )
                 axis.plot(
                     coarse_x,
                     values["classical_roe"][:, component],
-                    color="#7A5195",
+                    color="#D55E00",
                     linestyle=":",
                     linewidth=1.05,
                     label="classical Roe-512" if first else None,
