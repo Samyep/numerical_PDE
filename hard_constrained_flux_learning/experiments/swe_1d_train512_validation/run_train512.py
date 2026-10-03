@@ -892,7 +892,7 @@ def plot_combined_profiles(
                     coarse_x,
                     values["classical_roe"][:, component],
                     color="#D55E00",
-                    linestyle=":",
+                    linestyle=(0, (8, 3)),
                     linewidth=1.05,
                     label="classical Roe-512" if first else None,
                 )
