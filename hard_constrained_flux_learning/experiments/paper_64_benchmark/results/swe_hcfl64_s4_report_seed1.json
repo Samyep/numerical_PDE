@@ -1,0 +1,56 @@
+{
+  "system": "SWE 1D",
+  "training_cells": 64,
+  "training_data_shape": [
+    580,
+    18,
+    64,
+    2
+  ],
+  "validation_data_shape": [
+    136,
+    18,
+    64,
+    2
+  ],
+  "method": "central + nonnegative Roe + feasibility + hard safety",
+  "stencil_cells": 4,
+  "stencil_shifts": [
+    1,
+    0,
+    -1,
+    -2
+  ],
+  "checkpoint": "swe_hcfl64_s4_converged_best_seed1.pt",
+  "convergence": {
+    "seed": 1,
+    "arm": "central_nonnegative_feas_s4",
+    "model": "central_nonnegative",
+    "stencil_cells": 4,
+    "parameter_count": 6050,
+    "best_update": 8500,
+    "stop_update": 12500,
+    "best_validation_rollout_nrmse": 0.03892102264383296,
+    "final_learning_rate": 3e-06,
+    "converged": true,
+    "stop_reason": "validation_plateau_at_minimum_learning_rate",
+    "training_seconds": 210.01956469984725,
+    "proposal_feasibility_weight": 0.001
+  },
+  "validation_metrics": {
+    "split": "validation",
+    "trajectory_count": 136,
+    "rollout_nrmse": 0.03892102264383296,
+    "minimum_depth": 0.12456156313419342,
+    "entropy_violation_rate": 0.0,
+    "maximum_entropy_residual": 2.539683640290452e-13,
+    "local_limiter_intervention_rate": 0.0,
+    "mean_local_alpha": 1.0,
+    "fd_entropy_intervention_rate": 0.0,
+    "minimum_fd_beta": 1.0,
+    "mean_fd_beta": 1.0,
+    "maximum_total_entropy_change": -1.8481499068911944e-05,
+    "mean_substeps_per_snapshot": 2.0,
+    "evaluation_seconds": 0.41849420010112226
+  }
+}

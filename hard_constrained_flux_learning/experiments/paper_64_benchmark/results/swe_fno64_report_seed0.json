@@ -1,0 +1,36 @@
+{
+  "system": "swe",
+  "baseline": "compact periodic residual FNO",
+  "scope": "same-data architecture baseline; not an exact reproduction of the original FNO paper",
+  "training_cells": 64,
+  "training_data_shape": [
+    580,
+    18,
+    64,
+    2
+  ],
+  "validation_data_shape": [
+    136,
+    18,
+    64,
+    2
+  ],
+  "parameter_count": 30770,
+  "width": 24,
+  "modes": 12,
+  "layers": 4,
+  "best_update": 8200,
+  "stop_update": 16200,
+  "best_validation_rollout_nrmse": 0.0405872652190341,
+  "converged": true,
+  "stop_reason": "validation_plateau_at_minimum_learning_rate",
+  "training_seconds": 150.55530190002173,
+  "validation_metrics": {
+    "rollout_nrmse_completed_only": 0.0405872652190341,
+    "rollout_nrmse_all_finite_outputs": 0.0405872652190341,
+    "completion_rate": 1.0,
+    "completed_trajectories": 136.0,
+    "minimum_density_or_depth": 0.20930854976177216,
+    "minimum_pressure": null
+  }
+}

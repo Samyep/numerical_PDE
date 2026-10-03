@@ -1,0 +1,35 @@
+{
+  "system": "swe",
+  "baseline": "unconstrained conservative local learned flux",
+  "scope": "same-data learned-neural-FVM family baseline; not an exact reproduction of a published architecture",
+  "training_cells": 64,
+  "training_data_shape": [
+    580,
+    18,
+    64,
+    2
+  ],
+  "validation_data_shape": [
+    136,
+    18,
+    64,
+    2
+  ],
+  "parameter_count": 6050,
+  "stencil_cells": 4,
+  "width": 72,
+  "best_update": 9000,
+  "stop_update": 12200,
+  "best_validation_rollout_nrmse": 0.06344565855756633,
+  "converged": true,
+  "stop_reason": "validation_plateau_at_minimum_learning_rate",
+  "training_seconds": 47.29608369991183,
+  "validation_metrics": {
+    "rollout_nrmse_completed_only": 0.06344565855756633,
+    "rollout_nrmse_all_finite_outputs": 0.06344565855756633,
+    "completion_rate": 1.0,
+    "completed_trajectories": 136.0,
+    "minimum_density_or_depth": 0.22063031792640686,
+    "minimum_pressure": null
+  }
+}

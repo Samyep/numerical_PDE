@@ -1,0 +1,56 @@
+{
+  "system": "SWE 1D",
+  "training_cells": 64,
+  "training_data_shape": [
+    580,
+    18,
+    64,
+    2
+  ],
+  "validation_data_shape": [
+    136,
+    18,
+    64,
+    2
+  ],
+  "method": "central + nonnegative Roe + feasibility + hard safety",
+  "stencil_cells": 4,
+  "stencil_shifts": [
+    1,
+    0,
+    -1,
+    -2
+  ],
+  "checkpoint": "swe_hcfl64_s4_converged_best_seed2.pt",
+  "convergence": {
+    "seed": 2,
+    "arm": "central_nonnegative_feas_s4",
+    "model": "central_nonnegative",
+    "stencil_cells": 4,
+    "parameter_count": 6050,
+    "best_update": 8900,
+    "stop_update": 13900,
+    "best_validation_rollout_nrmse": 0.0424388188201286,
+    "final_learning_rate": 3e-06,
+    "converged": true,
+    "stop_reason": "validation_plateau_at_minimum_learning_rate",
+    "training_seconds": 528.6571606998332,
+    "proposal_feasibility_weight": 0.001
+  },
+  "validation_metrics": {
+    "split": "validation",
+    "trajectory_count": 136,
+    "rollout_nrmse": 0.0424388188201286,
+    "minimum_depth": 0.19641995429992676,
+    "entropy_violation_rate": 0.0,
+    "maximum_entropy_residual": 2.163609479921433e-13,
+    "local_limiter_intervention_rate": 0.0,
+    "mean_local_alpha": 1.0,
+    "fd_entropy_intervention_rate": 0.012975778546712802,
+    "minimum_fd_beta": 0.0,
+    "mean_fd_beta": 0.9933080046234659,
+    "maximum_total_entropy_change": -2.7670691906678258e-06,
+    "mean_substeps_per_snapshot": 1.0,
+    "evaluation_seconds": 0.22156380000524223
+  }
+}

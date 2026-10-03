@@ -1,0 +1,97 @@
+{
+  "scope": "three independently initialized/data-seeded 64-cell training runs of the common four-cell HCFL method",
+  "rows": [
+    {
+      "system": "Euler",
+      "seed": 0,
+      "best_update": 14800,
+      "stop_update": 18800,
+      "validation_rollout_nrmse": 0.030566247639502265,
+      "converged": true,
+      "stop_reason": "validation_plateau_at_minimum_learning_rate",
+      "parameter_count": 6411
+    },
+    {
+      "system": "Euler",
+      "seed": 1,
+      "best_update": 15100,
+      "stop_update": 19100,
+      "validation_rollout_nrmse": 0.024145519539063135,
+      "converged": true,
+      "stop_reason": "validation_plateau_at_minimum_learning_rate",
+      "parameter_count": 6411
+    },
+    {
+      "system": "Euler",
+      "seed": 2,
+      "best_update": 16500,
+      "stop_update": 20600,
+      "validation_rollout_nrmse": 0.02499886927557902,
+      "converged": true,
+      "stop_reason": "validation_plateau_at_minimum_learning_rate",
+      "parameter_count": 6411
+    },
+    {
+      "system": "SWE",
+      "seed": 0,
+      "best_update": 7000,
+      "stop_update": 9000,
+      "validation_rollout_nrmse": 0.043548097001950004,
+      "converged": true,
+      "stop_reason": "validation_plateau_at_minimum_learning_rate",
+      "parameter_count": 6050
+    },
+    {
+      "system": "SWE",
+      "seed": 1,
+      "best_update": 8500,
+      "stop_update": 12500,
+      "validation_rollout_nrmse": 0.03892102264383296,
+      "converged": true,
+      "stop_reason": "validation_plateau_at_minimum_learning_rate",
+      "parameter_count": 6050
+    },
+    {
+      "system": "SWE",
+      "seed": 2,
+      "best_update": 8900,
+      "stop_update": 13900,
+      "validation_rollout_nrmse": 0.0424388188201286,
+      "converged": true,
+      "stop_reason": "validation_plateau_at_minimum_learning_rate",
+      "parameter_count": 6050
+    }
+  ],
+  "aggregate": {
+    "Euler": {
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "all_converged": true,
+      "validation_rollout_nrmse_mean": 0.026570212151381473,
+      "validation_rollout_nrmse_sample_std": 0.0034868719735521563,
+      "validation_rollout_nrmse_values": [
+        0.030566247639502265,
+        0.024145519539063135,
+        0.02499886927557902
+      ]
+    },
+    "SWE": {
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "all_converged": true,
+      "validation_rollout_nrmse_mean": 0.04163597948863718,
+      "validation_rollout_nrmse_sample_std": 0.0024157540278406343,
+      "validation_rollout_nrmse_values": [
+        0.043548097001950004,
+        0.03892102264383296,
+        0.0424388188201286
+      ]
+    }
+  }
+}

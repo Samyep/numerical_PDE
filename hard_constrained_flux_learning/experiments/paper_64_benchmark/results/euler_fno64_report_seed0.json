@@ -1,0 +1,36 @@
+{
+  "system": "euler",
+  "baseline": "compact periodic residual FNO",
+  "scope": "same-data architecture baseline; not an exact reproduction of the original FNO paper",
+  "training_cells": 64,
+  "training_data_shape": [
+    580,
+    16,
+    64,
+    3
+  ],
+  "validation_data_shape": [
+    136,
+    16,
+    64,
+    3
+  ],
+  "parameter_count": 30819,
+  "width": 24,
+  "modes": 12,
+  "layers": 4,
+  "best_update": 8000,
+  "stop_update": 14400,
+  "best_validation_rollout_nrmse": 0.04774543669067233,
+  "converged": true,
+  "stop_reason": "validation_plateau_at_minimum_learning_rate",
+  "training_seconds": 134.3268107001204,
+  "validation_metrics": {
+    "rollout_nrmse_completed_only": 0.04362751885258701,
+    "rollout_nrmse_all_finite_outputs": 0.04774543669067233,
+    "completion_rate": 0.9705882352941176,
+    "completed_trajectories": 132.0,
+    "minimum_density_or_depth": 0.05401594936847687,
+    "minimum_pressure": -1.0711274147033691
+  }
+}
