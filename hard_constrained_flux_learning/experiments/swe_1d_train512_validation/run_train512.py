@@ -864,10 +864,10 @@ def plot_combined_profiles(
     fine_x = (np.arange(REFERENCE_CELLS) + 0.5) / REFERENCE_CELLS
     coarse_x = (np.arange(TRAIN_CELLS) + 0.5) / TRAIN_CELLS
     blocks = (
-        (0, "periodic", deployment.PERIODIC_CASES),
-        (2, "transmissive", deployment.NONPERIODIC_CASES),
+        (0, deployment.PERIODIC_CASES),
+        (2, deployment.NONPERIODIC_CASES),
     )
-    for row_offset, boundary, cases in blocks:
+    for row_offset, cases in blocks:
         for column, (case, display) in enumerate(cases.items()):
             item = trajectories[case]
             values = {
@@ -924,14 +924,14 @@ def plot_combined_profiles(
                 axis.grid(alpha=0.18)
                 axis.set_xlim(0.0, 1.0)
                 if local_row == 0:
-                    axis.set_title(f"{boundary}: {display}")
+                    axis.set_title(display.removeprefix("periodic "))
                 if column == 0:
                     axis.set_ylabel(variable)
                 if local_row == 1:
                     axis.set_xlabel("x")
     figure.suptitle(
-        "Periodic and transmissive 512-grid deployment — "
-        f"training-resolution ablation, t={base.DT_SNAPSHOT * (deployment.EVAL_SNAPSHOTS - 1):.4f}",
+        "512-grid deployment — training-resolution ablation, "
+        f"t={base.DT_SNAPSHOT * (deployment.EVAL_SNAPSHOTS - 1):.4f}",
         fontsize=13,
     )
     handles, labels = axes[0, 0].get_legend_handles_labels()
