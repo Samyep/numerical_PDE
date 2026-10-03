@@ -83,6 +83,7 @@ itself.
 
 Primary figures:
 
+- `periodic_and_nonperiodic_train64_vs_train512_seed0.png` (combined)
 - `periodic_train64_vs_train512_seed0.png`
 - `nonperiodic_train64_vs_train512_seed0.png`
 - `stability_accuracy_train64_vs_train512_seed0.png`

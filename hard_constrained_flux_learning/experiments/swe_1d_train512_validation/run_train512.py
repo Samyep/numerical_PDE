@@ -851,6 +851,92 @@ def plot_profiles(
     plt.close(figure)
 
 
+def plot_combined_profiles(
+    trajectories: dict[str, Any],
+    output: Path,
+) -> None:
+    """Put periodic and transmissive profile audits in one figure."""
+    figure, axes = plt.subplots(4, 4, figsize=(14.8, 11.0), squeeze=False)
+    fine_x = (np.arange(REFERENCE_CELLS) + 0.5) / REFERENCE_CELLS
+    coarse_x = (np.arange(TRAIN_CELLS) + 0.5) / TRAIN_CELLS
+    blocks = (
+        (0, "periodic", deployment.PERIODIC_CASES),
+        (2, "transmissive", deployment.NONPERIODIC_CASES),
+    )
+    for row_offset, boundary, cases in blocks:
+        for column, (case, display) in enumerate(cases.items()):
+            item = trajectories[case]
+            values = {
+                "reference": deployment.primitive_np(item["raw_reference"][-1]),
+                "native": deployment.primitive_np(item["native"][-1]),
+                "classical_roe": deployment.primitive_np(
+                    item["classical_roe"][-1]
+                ),
+                "trained64": deployment.primitive_np(item["trained64"][-1]),
+                "trained512": deployment.primitive_np(item["trained512"][-1]),
+            }
+            for local_row, (component, variable) in enumerate(((0, "h"), (1, "u"))):
+                row = row_offset + local_row
+                axis = axes[row, column]
+                first = row == 0 and column == 0
+                axis.plot(
+                    fine_x,
+                    values["reference"][:, component],
+                    color="#B7B7B7",
+                    linewidth=1.1,
+                    label="HLL-2048" if first else None,
+                )
+                axis.plot(
+                    coarse_x,
+                    values["native"][:, component],
+                    color="#222222",
+                    linestyle="--",
+                    linewidth=1.05,
+                    label="HLL-512" if first else None,
+                )
+                axis.plot(
+                    coarse_x,
+                    values["classical_roe"][:, component],
+                    color="#7A5195",
+                    linestyle=":",
+                    linewidth=1.05,
+                    label="classical Roe-512" if first else None,
+                )
+                axis.plot(
+                    coarse_x,
+                    values["trained64"][:, component],
+                    color="#D55E00",
+                    linewidth=1.0,
+                    alpha=0.85,
+                    label="HCFL trained at 64" if first else None,
+                )
+                axis.plot(
+                    coarse_x,
+                    values["trained512"][:, component],
+                    color="#0072B2",
+                    linewidth=1.15,
+                    label="HCFL trained at 512" if first else None,
+                )
+                axis.grid(alpha=0.18)
+                axis.set_xlim(0.0, 1.0)
+                if local_row == 0:
+                    axis.set_title(f"{boundary}: {display}")
+                if column == 0:
+                    axis.set_ylabel(variable)
+                if local_row == 1:
+                    axis.set_xlabel("x")
+    figure.suptitle(
+        "Periodic and transmissive 512-grid deployment — "
+        f"training-resolution ablation, t={base.DT_SNAPSHOT * (deployment.EVAL_SNAPSHOTS - 1):.4f}",
+        fontsize=13,
+    )
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    figure.legend(handles, labels, loc="lower center", ncol=5, frameon=False)
+    figure.tight_layout(rect=(0.0, 0.045, 1.0, 0.965))
+    figure.savefig(output, dpi=180)
+    plt.close(figure)
+
+
 def plot_summary(rows: list[dict[str, Any]], output: Path) -> None:
     summary = aggregate(rows)
     methods = (
@@ -1070,6 +1156,10 @@ def main() -> None:
         trajectories,
         "Transmissive: identical HCFL architecture, training resolution ablation",
         output / f"nonperiodic_train64_vs_train512_seed{args.seed}.png",
+    )
+    plot_combined_profiles(
+        trajectories,
+        output / f"periodic_and_nonperiodic_train64_vs_train512_seed{args.seed}.png",
     )
     plot_summary(
         rows,
