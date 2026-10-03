@@ -603,7 +603,11 @@ def method_row(
         "method": method,
         "training_cells": training_cells,
         **deployment.diagnostics(reference, prediction, state_std, periodic),
-        **{f"run_{key}": value for key, value in run_stats.items()},
+        **{
+            f"run_{key}": value
+            for key, value in run_stats.items()
+            if key != "seconds"
+        },
     }
 
 
