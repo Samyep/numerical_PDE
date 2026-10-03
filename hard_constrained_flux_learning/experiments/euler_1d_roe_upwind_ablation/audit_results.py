@@ -93,6 +93,9 @@ def audit_arm(
     multipliers = experiment.multiplier_diagnostics(
         model, model_name, validation_data
     )
+    feasibility = experiment.proposal_feasibility_diagnostics(
+        model, validation_data
+    )
     if model_name.startswith("central_roe_"):
         if consistency["maximum_raw_absolute_error"] != 0.0:
             raise AssertionError(f"{arm} lost raw consistency")
@@ -115,6 +118,7 @@ def audit_arm(
         "checkpoint_sha256": sha256(checkpoint),
         "equal_interface_consistency": consistency,
         "wave_multiplier_diagnostics": multipliers,
+        "raw_proposal_feasibility": feasibility,
     }
 
 
@@ -155,13 +159,69 @@ def audit_512(results: Path, seed: int) -> dict[str, Any]:
         raise AssertionError(
             "512-cell conservation drift exceeded the float32 audit tolerance"
         )
-    return {
+    original = {
         "all_new_methods_completed_all_five_cases": True,
         "minimum_density": minimum_density,
         "minimum_pressure": minimum_pressure,
         "maximum_conservation_drift": maximum_conservation_drift,
         "mean_metrics": {
             method: report["mean_metrics"][method] for method in new_methods
+        },
+    }
+    focused_report = json.loads(
+        (results / f"upwind_feasibility512_seed{seed}.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    focused_methods = ("control", "feas_1e4", "feas_1e3")
+    focused_maximum_conservation_drift = 0.0
+    focused_minimum_density = float("inf")
+    focused_minimum_pressure = float("inf")
+    for case in focused_report["cases"].values():
+        for method in focused_methods:
+            metrics = case[method]
+            if not metrics["completed"]:
+                raise AssertionError(
+                    f"Focused feasibility arm {method} has an incomplete case"
+                )
+            focused_minimum_density = min(
+                focused_minimum_density, float(metrics["minimum_density"])
+            )
+            focused_minimum_pressure = min(
+                focused_minimum_pressure, float(metrics["minimum_pressure"])
+            )
+            focused_maximum_conservation_drift = max(
+                focused_maximum_conservation_drift,
+                *(float(value) for value in metrics[
+                    "max_conservation_drift"
+                ].values()),
+            )
+    if focused_minimum_density <= 0.0 or focused_minimum_pressure <= 0.0:
+        raise AssertionError("A focused feasibility rollout is inadmissible")
+    if focused_maximum_conservation_drift > 2.0e-5:
+        raise AssertionError(
+            "Focused feasibility conservation drift exceeded tolerance"
+        )
+    original_control = report["mean_metrics"][
+        "central_roe_upwind_hcfl_512"
+    ]["mean_rollout_nrmse"]
+    focused_control = focused_report["mean_metrics"]["control"][
+        "mean_rollout_nrmse"
+    ]
+    if original_control != focused_control:
+        raise AssertionError(
+            "Focused control does not reproduce the original 512 result"
+        )
+    return {
+        "original_ablation": original,
+        "focused_nonnegative_roe_feasibility": {
+            "all_three_methods_completed_all_five_cases": True,
+            "minimum_density": focused_minimum_density,
+            "minimum_pressure": focused_minimum_pressure,
+            "maximum_conservation_drift": (
+                focused_maximum_conservation_drift
+            ),
+            "mean_metrics": focused_report["mean_metrics"],
         },
     }
 
@@ -207,7 +267,8 @@ def main() -> None:
         "verdict": (
             "PASS for checkpoint selection, metric reproduction, exact "
             "central-Roe consistency, automatic-upwind nonnegativity, and "
-            "completed admissible conservative 512-cell rollouts"
+            "completed admissible conservative 512-cell rollouts, including "
+            "both proposal-feasibility weights"
         ),
         "checks": {
             "validation_only_checkpoint_selection": "pass",
@@ -217,6 +278,7 @@ def main() -> None:
             "automatic_upwind_multiplier_nonnegative": "pass",
             "signed_negative_branch_exercised": "pass",
             "all_new_512_rollouts_completed": "pass",
+            "focused_feasibility_512_rollouts_completed": "pass",
             "512_admissibility_and_conservation": "pass",
         },
         "training_tensor_shape": list(train_data.shape),

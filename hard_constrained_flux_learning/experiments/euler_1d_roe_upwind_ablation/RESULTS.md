@@ -156,6 +156,11 @@ The experiments answer the two proposed directions differently:
 This is still a single-training-seed result over five named problems.  It is
 strong evidence for the architecture, not yet a multi-seed statistical claim.
 
+A focused follow-up added the raw-proposal feasibility loss while keeping this
+nonnegative architecture and the hard-projected PDE update unchanged.  It
+improved teacher-forced 64-cell proposal feasibility but worsened zero-shot
+512-cell accuracy for both tested weights.  See `FEASIBILITY_RESULTS.md`.
+
 ## Artifacts
 
 - `results/roe_upwind_summary_seed0.png`

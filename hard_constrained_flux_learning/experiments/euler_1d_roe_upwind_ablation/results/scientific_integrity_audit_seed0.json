@@ -1,6 +1,6 @@
 {
   "seed": 0,
-  "verdict": "PASS for checkpoint selection, metric reproduction, exact central-Roe consistency, automatic-upwind nonnegativity, and completed admissible conservative 512-cell rollouts",
+  "verdict": "PASS for checkpoint selection, metric reproduction, exact central-Roe consistency, automatic-upwind nonnegativity, and completed admissible conservative 512-cell rollouts, including both proposal-feasibility weights",
   "checks": {
     "validation_only_checkpoint_selection": "pass",
     "all_retained_new_checkpoints_converged": "pass",
@@ -9,6 +9,7 @@
     "automatic_upwind_multiplier_nonnegative": "pass",
     "signed_negative_branch_exercised": "pass",
     "all_new_512_rollouts_completed": "pass",
+    "focused_feasibility_512_rollouts_completed": "pass",
     "512_admissibility_and_conservation": "pass"
   },
   "training_tensor_shape": [
@@ -42,7 +43,16 @@
         "raw_relative_consistency_nrmse": 0.09914404247842593,
         "projected_relative_consistency_nrmse": 0.09914404247842593
       },
-      "wave_multiplier_diagnostics": null
+      "wave_multiplier_diagnostics": null,
+      "raw_proposal_feasibility": {
+        "evaluated_ground_truth_states": 2176,
+        "evaluated_interfaces": 139264,
+        "raw_entropy_violation_rate": 0.10674689797794118,
+        "mean_squared_positive_entropy_residual": 0.5212429563115716,
+        "rms_distance_to_entropy_half_space": 0.11730454867176118,
+        "relative_projection_distance_rms": 0.015188132471811189,
+        "maximum_positive_entropy_residual": 72.27943420410156
+      }
     },
     "central_roe_signed_broad": {
       "model": "central_roe_signed",
@@ -74,6 +84,15 @@
           "contact": 0.46180322181873423,
           "right_acoustic": 0.0786837013626663
         }
+      },
+      "raw_proposal_feasibility": {
+        "evaluated_ground_truth_states": 2176,
+        "evaluated_interfaces": 139264,
+        "raw_entropy_violation_rate": 0.09744083180147059,
+        "mean_squared_positive_entropy_residual": 0.14775781769750762,
+        "rms_distance_to_entropy_half_space": 0.11735956170377998,
+        "relative_projection_distance_rms": 0.01477236136589723,
+        "maximum_positive_entropy_residual": 34.957244873046875
       }
     },
     "central_roe_upwind_broad": {
@@ -106,35 +125,187 @@
           "contact": 0.6814445694334983,
           "right_acoustic": 0.45830354250596
         }
+      },
+      "raw_proposal_feasibility": {
+        "evaluated_ground_truth_states": 2176,
+        "evaluated_interfaces": 139264,
+        "raw_entropy_violation_rate": 0.04085765165441176,
+        "mean_squared_positive_entropy_residual": 0.11612566436078785,
+        "rms_distance_to_entropy_half_space": 0.10632911931283232,
+        "relative_projection_distance_rms": 0.013391010529426121,
+        "maximum_positive_entropy_residual": 38.44931411743164
+      }
+    },
+    "central_roe_upwind_feas_broad": {
+      "model": "central_roe_upwind",
+      "parameter_count": 6627,
+      "selected_update": 9800,
+      "stop_update": 13800,
+      "recorded_validation_rollout_nrmse": 0.032091010268665496,
+      "recomputed_validation_rollout_nrmse": 0.032091010268665496,
+      "absolute_metric_difference": 0.0,
+      "checkpoint_sha256": "2924e681c25e333268cd75d2158c27dc4008767531225c4080bbc4f13c4588bb",
+      "equal_interface_consistency": {
+        "sample_count": 256,
+        "outer_stencil_was_held_constant": false,
+        "maximum_raw_absolute_error": 0.0,
+        "maximum_projected_absolute_error": 0.0,
+        "raw_relative_consistency_nrmse": 0.0,
+        "projected_relative_consistency_nrmse": 0.0
+      },
+      "wave_multiplier_diagnostics": {
+        "minimum_multiplier": 0.0005663633346557617,
+        "maximum_multiplier": 1.9986212253570557,
+        "mean_multiplier": 0.5605133204706934,
+        "standard_deviation": 0.31489967110268485,
+        "negative_multiplier_fraction": 0.0,
+        "near_zero_fraction": 0.00858321844362745,
+        "near_upper_nominal_bound_fraction": 0.0012230966605392157,
+        "mean_by_wave": {
+          "left_acoustic": 0.5295702270831337,
+          "contact": 0.6786253678972785,
+          "right_acoustic": 0.47334436643166766
+        }
+      },
+      "raw_proposal_feasibility": {
+        "evaluated_ground_truth_states": 2176,
+        "evaluated_interfaces": 139264,
+        "raw_entropy_violation_rate": 0.03515625,
+        "mean_squared_positive_entropy_residual": 0.0871246660573814,
+        "rms_distance_to_entropy_half_space": 0.10429494623856643,
+        "relative_projection_distance_rms": 0.013134700569299778,
+        "maximum_positive_entropy_residual": 36.70203399658203
+      }
+    },
+    "central_roe_upwind_feas_light_broad": {
+      "model": "central_roe_upwind",
+      "parameter_count": 6627,
+      "selected_update": 14800,
+      "stop_update": 17800,
+      "recorded_validation_rollout_nrmse": 0.029070289797262457,
+      "recomputed_validation_rollout_nrmse": 0.029070289797262457,
+      "absolute_metric_difference": 0.0,
+      "checkpoint_sha256": "5f61940453811a2c01b26f838511d73b42c34fab7ecebeb3b8bbb39c125cb867",
+      "equal_interface_consistency": {
+        "sample_count": 256,
+        "outer_stencil_was_held_constant": false,
+        "maximum_raw_absolute_error": 0.0,
+        "maximum_projected_absolute_error": 0.0,
+        "raw_relative_consistency_nrmse": 0.0,
+        "projected_relative_consistency_nrmse": 0.0
+      },
+      "wave_multiplier_diagnostics": {
+        "minimum_multiplier": 2.092123031616211e-05,
+        "maximum_multiplier": 1.999114751815796,
+        "mean_multiplier": 0.564598541346712,
+        "standard_deviation": 0.40459375708495726,
+        "negative_multiplier_fraction": 0.0,
+        "near_zero_fraction": 0.013298483455882353,
+        "near_upper_nominal_bound_fraction": 0.002297794117647059,
+        "mean_by_wave": {
+          "left_acoustic": 0.49620669082822344,
+          "contact": 0.7512535468190703,
+          "right_acoustic": 0.4463353863928419
+        }
+      },
+      "raw_proposal_feasibility": {
+        "evaluated_ground_truth_states": 2176,
+        "evaluated_interfaces": 139264,
+        "raw_entropy_violation_rate": 0.03891170726102941,
+        "mean_squared_positive_entropy_residual": 0.09667299612376139,
+        "rms_distance_to_entropy_half_space": 0.10509472638637278,
+        "relative_projection_distance_rms": 0.013244817378524839,
+        "maximum_positive_entropy_residual": 37.74702072143555
       }
     }
   },
   "cell512": {
-    "all_new_methods_completed_all_five_cases": true,
-    "minimum_density": 1.0002971066569444e-05,
-    "minimum_pressure": 1.0002614544646349e-05,
-    "maximum_conservation_drift": 1.9073486328125e-06,
-    "mean_metrics": {
-      "roe_complete_hcfl_512": {
-        "completed_cases": 5,
-        "failed_cases": [],
-        "mean_rollout_nrmse": 0.2114106509834528,
-        "mean_final_snapshot_nrmse": 0.3477074660360813,
-        "all_five_case_mean_is_valid": true
-      },
-      "central_roe_signed_hcfl_512": {
-        "completed_cases": 5,
-        "failed_cases": [],
-        "mean_rollout_nrmse": 0.04933954514563084,
-        "mean_final_snapshot_nrmse": 0.06419273503124714,
-        "all_five_case_mean_is_valid": true
-      },
-      "central_roe_upwind_hcfl_512": {
-        "completed_cases": 5,
-        "failed_cases": [],
-        "mean_rollout_nrmse": 0.04979701954871416,
-        "mean_final_snapshot_nrmse": 0.06190616451203823,
-        "all_five_case_mean_is_valid": true
+    "original_ablation": {
+      "all_new_methods_completed_all_five_cases": true,
+      "minimum_density": 1.0002971066569444e-05,
+      "minimum_pressure": 1.0002614544646349e-05,
+      "maximum_conservation_drift": 1.9073486328125e-06,
+      "mean_metrics": {
+        "roe_complete_hcfl_512": {
+          "completed_cases": 5,
+          "failed_cases": [],
+          "mean_rollout_nrmse": 0.2114106509834528,
+          "mean_final_snapshot_nrmse": 0.3477074660360813,
+          "all_five_case_mean_is_valid": true
+        },
+        "central_roe_signed_hcfl_512": {
+          "completed_cases": 5,
+          "failed_cases": [],
+          "mean_rollout_nrmse": 0.04933954514563084,
+          "mean_final_snapshot_nrmse": 0.06419273503124714,
+          "all_five_case_mean_is_valid": true
+        },
+        "central_roe_upwind_hcfl_512": {
+          "completed_cases": 5,
+          "failed_cases": [],
+          "mean_rollout_nrmse": 0.04979701954871416,
+          "mean_final_snapshot_nrmse": 0.06190616451203823,
+          "all_five_case_mean_is_valid": true
+        }
+      }
+    },
+    "focused_nonnegative_roe_feasibility": {
+      "all_three_methods_completed_all_five_cases": true,
+      "minimum_density": 1.0002971066569444e-05,
+      "minimum_pressure": 0.0001844212383730337,
+      "maximum_conservation_drift": 1.9073486328125e-06,
+      "mean_metrics": {
+        "control": {
+          "completed_cases": 5,
+          "failed_cases": [],
+          "all_five_case_mean_is_valid": true,
+          "mean_rollout_nrmse": 0.04979701954871416,
+          "mean_final_snapshot_nrmse": 0.06190616451203823,
+          "mean_hard_projection_intervention_rate": 0.10524708581349207,
+          "mean_local_limiter_intervention_rate": 0.0005745002815315315,
+          "mean_fd_entropy_intervention_rate": 0.0,
+          "minimum_density": 1.0002971066569444e-05,
+          "minimum_pressure": 0.001919406815432012,
+          "mean_final_total_variation_ratio": 1.042967313397642,
+          "maximum_final_total_variation_ratio": 1.170970869828203,
+          "mean_normalized_global_range_violation": 0.007859757335867159,
+          "maximum_normalized_global_range_violation": 0.021574633126740576,
+          "total_excess_significant_extrema": 74
+        },
+        "feas_1e4": {
+          "completed_cases": 5,
+          "failed_cases": [],
+          "all_five_case_mean_is_valid": true,
+          "mean_rollout_nrmse": 0.05999066233634949,
+          "mean_final_snapshot_nrmse": 0.0735078576952219,
+          "mean_hard_projection_intervention_rate": 0.10561058407738096,
+          "mean_local_limiter_intervention_rate": 0.0,
+          "mean_fd_entropy_intervention_rate": 0.0,
+          "minimum_density": 0.0005619706935249269,
+          "minimum_pressure": 0.0011891460744664073,
+          "mean_final_total_variation_ratio": 1.0578028406140574,
+          "maximum_final_total_variation_ratio": 1.1707651149378289,
+          "mean_normalized_global_range_violation": 0.01714699986285527,
+          "maximum_normalized_global_range_violation": 0.062033891677856445,
+          "total_excess_significant_extrema": 80
+        },
+        "feas_1e3": {
+          "completed_cases": 5,
+          "failed_cases": [],
+          "all_five_case_mean_is_valid": true,
+          "mean_rollout_nrmse": 0.05404939092695713,
+          "mean_final_snapshot_nrmse": 0.06512429211288691,
+          "mean_hard_projection_intervention_rate": 0.1198823474702381,
+          "mean_local_limiter_intervention_rate": 0.0,
+          "mean_fd_entropy_intervention_rate": 0.0,
+          "minimum_density": 0.0005545279709622264,
+          "minimum_pressure": 0.0001844212383730337,
+          "mean_final_total_variation_ratio": 1.0481723824706346,
+          "maximum_final_total_variation_ratio": 1.1521790779234784,
+          "mean_normalized_global_range_violation": 0.013854347541138432,
+          "maximum_normalized_global_range_violation": 0.07667917010473282,
+          "total_excess_significant_extrema": 73
+        }
       }
     }
   },

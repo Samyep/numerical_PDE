@@ -124,10 +124,13 @@ def train_to_convergence(
     learning_rate_factor: float,
     minimum_learning_rate: float,
     output: Path,
+    proposal_feasibility_weight: float = 0.0,
 ) -> tuple[base.Solver, dict[str, Any], list[dict[str, Any]]]:
     """Train one arm until safe validation rollout NRMSE reaches a plateau."""
     if max_updates < fixed_budget_updates:
         raise ValueError("max_updates must include the fixed-budget checkpoint")
+    if proposal_feasibility_weight < 0.0:
+        raise ValueError("proposal_feasibility_weight must be nonnegative")
 
     torch.manual_seed(12000 + seed)
     model = base.Solver(model_name, mean, std, width=width)
@@ -190,8 +193,22 @@ def train_to_convergence(
         )
         inputs = train_data[indices, times]
         targets = train_data[indices, times + 1]
-        prediction = model.one_step(inputs)
-        loss = (((prediction - targets) / state_std) ** 2).mean()
+        if proposal_feasibility_weight > 0.0:
+            raw_flux = model.flux_net(inputs)
+            projected_flux = base.hard_entropy_projection(raw_flux, inputs)
+            prediction = base.fv_step(inputs, projected_flux)
+            trajectory_loss = (
+                ((prediction - targets) / state_std) ** 2
+            ).mean()
+            raw_entropy_residual = base.entropy_residual(raw_flux, inputs)
+            feasibility_loss = torch.relu(raw_entropy_residual).square().mean()
+            loss = (
+                trajectory_loss
+                + proposal_feasibility_weight * feasibility_loss
+            )
+        else:
+            prediction = model.one_step(inputs)
+            loss = (((prediction - targets) / state_std) ** 2).mean()
 
         optimizer.zero_grad()
         loss.backward()
@@ -268,6 +285,7 @@ def train_to_convergence(
         "converged": converged,
         "stop_reason": stop_reason,
         "training_seconds": elapsed,
+        "proposal_feasibility_weight": proposal_feasibility_weight,
     }
     model.load_state_dict(best_state)
     model.eval()

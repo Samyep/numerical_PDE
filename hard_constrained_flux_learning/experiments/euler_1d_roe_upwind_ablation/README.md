@@ -48,6 +48,24 @@ an acoustic dissipation floor.
 Both central-Roe arms satisfy `F_hat(U,U)=F(U)` exactly because `alpha=0` for
 an equal interface.  The direct-complete Roe-coordinate arm does not.
 
+### 4. Nonnegative automatic upwinding with proposal feasibility learning
+
+This arm keeps design 3 unchanged and continues to use the hard-projected flux
+for every finite-volume update.  It adds a loss only on the raw proposal:
+
+```text
+r_raw = (v_R - v_L)^T F_raw - (psi_R - psi_L)
+loss = trajectory_loss + lambda_feas * mean(relu(r_raw)^2)
+F_update = hard_entropy_projection(F_raw)
+```
+
+Thus the forward entropy guarantee is identical to design 3, while an active
+raw violation receives a gradient in the missing entropy-normal direction.
+The existing `central_roe_upwind_broad` checkpoint is the sole architectural
+control.  A second weight of `1e-4` is retained as a scale-sensitivity check;
+both arms use the identical Central + nonnegative Roe model.  No HLLC+Roe arm
+is retrained or modified in this experiment.
+
 ## Selection protocol
 
 - 580 training and 136 disjoint validation trajectories.
@@ -67,7 +85,13 @@ python run_roe_upwind_ablation.py --self-test
 python run_roe_upwind_ablation.py --arm roe_complete_broad --seed 0
 python run_roe_upwind_ablation.py --arm central_roe_signed_broad --seed 0
 python run_roe_upwind_ablation.py --arm central_roe_upwind_broad --seed 0
+python run_roe_upwind_ablation.py --arm central_roe_upwind_feas_broad --seed 0
+python run_roe_upwind_ablation.py --arm central_roe_upwind_feas_light_broad --seed 0
 python plot_roe_upwind512.py --seed 0
+python plot_upwind_feasibility512.py --seed 0
 python summarize_results.py --seed 0
 python audit_results.py --seed 0
 ```
+
+The focused feasibility-loss result and its negative cross-resolution finding
+are reported in `FEASIBILITY_RESULTS.md`.

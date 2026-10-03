@@ -35,6 +35,13 @@ ARMS = {
     "roe_complete_broad": "roe_complete",
     "central_roe_signed_broad": "central_roe_signed",
     "central_roe_upwind_broad": "central_roe_upwind",
+    "central_roe_upwind_feas_broad": "central_roe_upwind",
+    "central_roe_upwind_feas_light_broad": "central_roe_upwind",
+}
+
+DEFAULT_FEASIBILITY_WEIGHTS = {
+    "central_roe_upwind_feas_broad": 1.0e-3,
+    "central_roe_upwind_feas_light_broad": 1.0e-4,
 }
 
 
@@ -87,6 +94,62 @@ def multiplier_diagnostics(
     }
 
 
+@torch.no_grad()
+def proposal_feasibility_diagnostics(
+    model: base.Solver,
+    data: torch.Tensor,
+    batch_size: int = 256,
+) -> dict[str, float | int]:
+    """Measure the raw proposal before the hard entropy projection."""
+    states = data.reshape(-1, data.shape[-2], data.shape[-1])
+    interfaces = 0
+    violations = 0
+    residual_squared = 0.0
+    projection_distance_squared = 0.0
+    raw_flux_squared = 0.0
+    maximum_residual = 0.0
+    for start in range(0, states.shape[0], batch_size):
+        state = states[start : start + batch_size]
+        raw_flux = model.flux_net(state)
+        right = torch.roll(state, -1, dims=-2)
+        normal = (
+            base.entropy_variables(right) - base.entropy_variables(state)
+        )
+        bound = base.entropy_potential(right) - base.entropy_potential(state)
+        residual = (normal * raw_flux).sum(dim=-1) - bound
+        positive = torch.relu(residual)
+        norm_squared = (normal * normal).sum(dim=-1)
+        valid = norm_squared > 1.0e-14
+
+        interfaces += residual.numel()
+        violations += int((residual > 0.0).sum())
+        residual_squared += float(positive.double().square().sum())
+        projection_distance_squared += float(
+            (
+                positive[valid].double().square()
+                / norm_squared[valid].double()
+            ).sum()
+        )
+        raw_flux_squared += float(raw_flux.double().square().sum())
+        maximum_residual = max(maximum_residual, float(positive.max()))
+
+    return {
+        "evaluated_ground_truth_states": int(states.shape[0]),
+        "evaluated_interfaces": interfaces,
+        "raw_entropy_violation_rate": violations / max(interfaces, 1),
+        "mean_squared_positive_entropy_residual": (
+            residual_squared / max(interfaces, 1)
+        ),
+        "rms_distance_to_entropy_half_space": np.sqrt(
+            projection_distance_squared / max(interfaces, 1)
+        ),
+        "relative_projection_distance_rms": np.sqrt(
+            projection_distance_squared / max(raw_flux_squared, 1.0e-30)
+        ),
+        "maximum_positive_entropy_residual": maximum_residual,
+    }
+
+
 def self_test() -> None:
     initial = base.generate_ic(4, base.NREF, 4491, ood=False)
     data = torch.from_numpy(shared.strict_rollout_reference(initial, nsnap=4))
@@ -119,6 +182,40 @@ def self_test() -> None:
     )
     if diagnostics is None or diagnostics["minimum_multiplier"] < 0.0:
         raise RuntimeError("Automatic-upwind multiplier became negative")
+
+    # Construct an entropy-infeasible raw proposal and verify that the
+    # auxiliary loss supplies a nonzero parameter gradient while the forward
+    # hard projection still closes the half-space violation.
+    state = data[:, 0]
+    raw_flux = upwind.flux_net(state)
+    right = torch.roll(state, -1, dims=-2)
+    normal = base.entropy_variables(right) - base.entropy_variables(state)
+    bound = base.entropy_potential(right) - base.entropy_potential(state)
+    residual = (normal * raw_flux).sum(dim=-1) - bound
+    norm_squared = (normal * normal).sum(dim=-1)
+    valid = norm_squared > 1.0e-14
+    shift_size = torch.zeros_like(residual)
+    shift_size[valid] = (
+        torch.clamp(1.0 - residual.detach()[valid], min=0.0)
+        / norm_squared[valid]
+    )
+    violating_flux = raw_flux + shift_size[..., None] * normal
+    feasibility_loss = torch.relu(
+        base.entropy_residual(violating_flux, state)
+    ).square().mean()
+    upwind.zero_grad()
+    feasibility_loss.backward()
+    gradient_norm = sum(
+        float(parameter.grad.square().sum())
+        for parameter in upwind.parameters()
+        if parameter.grad is not None
+    )
+    if gradient_norm <= 0.0:
+        raise RuntimeError("Proposal-feasibility loss supplied no gradient")
+    with torch.no_grad():
+        projected = base.hard_entropy_projection(violating_flux, state)
+        if float(base.entropy_residual(projected, state).max()) > 1.0e-4:
+            raise RuntimeError("Hard projection lost the forward guarantee")
     print("self-test passed")
 
 
@@ -141,6 +238,17 @@ def run(args: argparse.Namespace) -> None:
     std = primitive.std(dim=(0, 1, 2)).numpy()
     state_std = train_data.std(dim=(0, 1, 2))
 
+    feasibility_weight = (
+        args.feasibility_weight
+        if args.feasibility_weight is not None
+        else DEFAULT_FEASIBILITY_WEIGHTS.get(arm, 0.0)
+    )
+    if arm not in DEFAULT_FEASIBILITY_WEIGHTS and feasibility_weight != 0.0:
+        raise ValueError(
+            "A nonzero proposal-feasibility weight is registered only for "
+            "the two central-Roe upwind feasibility arms."
+        )
+
     model, result, curve = audit.train_to_convergence(
         arm=arm,
         model_name=model_name,
@@ -161,6 +269,7 @@ def run(args: argparse.Namespace) -> None:
         learning_rate_factor=args.learning_rate_factor,
         minimum_learning_rate=args.minimum_learning_rate,
         output=output,
+        proposal_feasibility_weight=feasibility_weight,
     )
     convergence = {
         key: value
@@ -198,6 +307,10 @@ def run(args: argparse.Namespace) -> None:
     multipliers = multiplier_diagnostics(
         model, model_name, validation_data
     )
+    train_feasibility = proposal_feasibility_diagnostics(model, train_data)
+    validation_feasibility = proposal_feasibility_diagnostics(
+        model, validation_data
+    )
 
     curve_path = output / f"training_curve_{arm}_seed{args.seed}.csv"
     convergence_path = output / f"convergence_{arm}_seed{args.seed}.csv"
@@ -228,6 +341,11 @@ def run(args: argparse.Namespace) -> None:
         "minimum_learning_rate": args.minimum_learning_rate,
         "width": args.width,
         "batch_size": args.batch_size,
+        "proposal_feasibility_weight": feasibility_weight,
+        "proposal_feasibility_loss": (
+            "mean(relu((v_R-v_L)^T F_raw - (psi_R-psi_L))^2)"
+        ),
+        "pde_update_flux": "hard_entropy_projection(F_raw)",
         "data_generation_seconds": data_seconds,
         "total_wall_seconds": time.perf_counter() - total_started,
     }
@@ -241,6 +359,12 @@ def run(args: argparse.Namespace) -> None:
             equal_interface
         ),
         "learned_wave_multiplier_diagnostics": multipliers,
+        "raw_proposal_feasibility_on_training_ground_truth_states": (
+            train_feasibility
+        ),
+        "raw_proposal_feasibility_on_validation_ground_truth_states": (
+            validation_feasibility
+        ),
         "metrics": metrics,
     }
     (output / f"report_{arm}_seed{args.seed}.json").write_text(
@@ -265,6 +389,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--minimum-relative-improvement", type=float, default=1.0e-3)
     parser.add_argument("--learning-rate-factor", type=float, default=0.3)
     parser.add_argument("--minimum-learning-rate", type=float, default=3.0e-6)
+    parser.add_argument("--feasibility-weight", type=float, default=None)
     parser.add_argument("--outdir", default=str(HERE / "results"))
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
