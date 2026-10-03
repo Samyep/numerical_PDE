@@ -876,7 +876,6 @@ def plot_combined_profiles(
                 "classical_roe": deployment.primitive_np(
                     item["classical_roe"][-1]
                 ),
-                "trained64": deployment.primitive_np(item["trained64"][-1]),
                 "trained512": deployment.primitive_np(item["trained512"][-1]),
             }
             for local_row, (component, variable) in enumerate(((0, "h"), (1, "u"))):
@@ -908,14 +907,6 @@ def plot_combined_profiles(
                 )
                 axis.plot(
                     coarse_x,
-                    values["trained64"][:, component],
-                    color="#D55E00",
-                    linewidth=1.0,
-                    alpha=0.85,
-                    label="HCFL trained at 64" if first else None,
-                )
-                axis.plot(
-                    coarse_x,
                     values["trained512"][:, component],
                     color="#0072B2",
                     linewidth=1.15,
@@ -935,7 +926,7 @@ def plot_combined_profiles(
         fontsize=13,
     )
     handles, labels = axes[0, 0].get_legend_handles_labels()
-    figure.legend(handles, labels, loc="lower center", ncol=5, frameon=False)
+    figure.legend(handles, labels, loc="lower center", ncol=4, frameon=False)
     figure.tight_layout(rect=(0.0, 0.045, 1.0, 0.965))
     figure.savefig(output, dpi=180)
     plt.close(figure)
