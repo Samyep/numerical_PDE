@@ -1,0 +1,33 @@
+{
+  "seed": 0,
+  "arm": "central_nonnegative_feas_s4_train512",
+  "model": "central_nonnegative",
+  "stencil_cells": 4,
+  "training_cells": 512,
+  "reference_cells": 2048,
+  "interval_substeps": 8,
+  "substep_dt_over_dx": 0.032,
+  "physical_supervision_interval": 0.0005,
+  "parameter_count": 6050,
+  "best_update": 30600,
+  "stop_update": 33000,
+  "best_validation_rollout_nrmse": 0.004618063381356316,
+  "best_checkpoint_validation": {
+    "rollout_nrmse": 0.004618063381356316,
+    "minimum_depth": 0.17836517095565796
+  },
+  "final_learning_rate": 3e-06,
+  "converged": true,
+  "stop_reason": "validation_plateau_at_minimum_learning_rate",
+  "training_seconds": 3810.6303520000074,
+  "proposal_feasibility_weight": 0.001,
+  "device": "cuda",
+  "reference_precision_audit": {
+    "trajectories": 2,
+    "maximum_absolute_state_difference": 1.0853552286471668e-05,
+    "rms_state_difference": 4.012153422536632e-07,
+    "normalized_rms_state_difference": 2.5784898055662285e-06
+  },
+  "training_trajectory_count": 580,
+  "validation_trajectory_count": 136
+}

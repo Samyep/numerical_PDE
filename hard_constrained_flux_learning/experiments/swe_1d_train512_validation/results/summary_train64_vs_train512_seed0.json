@@ -1,0 +1,113 @@
+{
+  "scope": "single-seed direct 512-cell training validation",
+  "seed": 0,
+  "architecture": "central + nonnegative Roe + feasibility, 4-cell stencil",
+  "training_report": {
+    "seed": 0,
+    "arm": "central_nonnegative_feas_s4_train512",
+    "model": "central_nonnegative",
+    "stencil_cells": 4,
+    "training_cells": 512,
+    "reference_cells": 2048,
+    "interval_substeps": 8,
+    "substep_dt_over_dx": 0.032,
+    "physical_supervision_interval": 0.0005,
+    "parameter_count": 6050,
+    "best_update": 30600,
+    "stop_update": 33000,
+    "best_validation_rollout_nrmse": 0.004618063381356316,
+    "best_checkpoint_validation": {
+      "rollout_nrmse": 0.004618063381356316,
+      "minimum_depth": 0.17836517095565796
+    },
+    "final_learning_rate": 3e-06,
+    "converged": true,
+    "stop_reason": "validation_plateau_at_minimum_learning_rate",
+    "training_seconds": 3810.6303520000074,
+    "proposal_feasibility_weight": 0.001,
+    "device": "cuda",
+    "reference_precision_audit": {
+      "trajectories": 2,
+      "maximum_absolute_state_difference": 1.0853552286471668e-05,
+      "rms_state_difference": 4.012153422536632e-07,
+      "normalized_rms_state_difference": 2.5784898055662285e-06
+    },
+    "training_trajectory_count": 580,
+    "validation_trajectory_count": 136
+  },
+  "reference_precision_audit": {
+    "trajectories": 2,
+    "maximum_absolute_state_difference": 1.0853552286471668e-05,
+    "rms_state_difference": 4.012153422536632e-07,
+    "normalized_rms_state_difference": 2.5784898055662285e-06
+  },
+  "held_out_final_time": 0.025,
+  "aggregate": {
+    "periodic": {
+      "native_hll_512": {
+        "mean_rollout_nrmse": 0.02316493926611829,
+        "mean_final_snapshot_nrmse": 0.025449355272775455,
+        "mean_positive_final_tv_excess": 0.0009091481374712523,
+        "total_excess_significant_extrema": 0,
+        "minimum_depth": 0.55
+      },
+      "classical_roe_512": {
+        "mean_rollout_nrmse": 0.015394305173456191,
+        "mean_final_snapshot_nrmse": 0.016743720738674063,
+        "mean_positive_final_tv_excess": 0.0004575591920444453,
+        "total_excess_significant_extrema": 0,
+        "minimum_depth": 0.5499997735023499,
+        "mean_absolute_roe_multiplier_change_from_one": 0.0
+      },
+      "hcfl_trained_64": {
+        "mean_rollout_nrmse": 0.011638163138560892,
+        "mean_final_snapshot_nrmse": 0.014014172169789849,
+        "mean_positive_final_tv_excess": 0.4003292539594596,
+        "total_excess_significant_extrema": 129,
+        "minimum_depth": 0.4848457872867584,
+        "mean_absolute_roe_multiplier_change_from_one": 0.7130483239889145
+      },
+      "hcfl_trained_512": {
+        "mean_rollout_nrmse": 0.0056176666099661664,
+        "mean_final_snapshot_nrmse": 0.005360677450425886,
+        "mean_positive_final_tv_excess": 0.008798907206675506,
+        "total_excess_significant_extrema": 7,
+        "minimum_depth": 0.5333309769630432,
+        "mean_absolute_roe_multiplier_change_from_one": 0.4823634475469589
+      }
+    },
+    "transmissive": {
+      "native_hll_512": {
+        "mean_rollout_nrmse": 0.010140181912643641,
+        "mean_final_snapshot_nrmse": 0.009366568764012194,
+        "mean_positive_final_tv_excess": 0.0006326952546492663,
+        "total_excess_significant_extrema": 0,
+        "minimum_depth": 0.58
+      },
+      "classical_roe_512": {
+        "mean_rollout_nrmse": 0.006503323074843936,
+        "mean_final_snapshot_nrmse": 0.006269985101508979,
+        "mean_positive_final_tv_excess": 0.0003089364898092546,
+        "total_excess_significant_extrema": 0,
+        "minimum_depth": 0.5799998044967651,
+        "mean_absolute_roe_multiplier_change_from_one": 0.0
+      },
+      "hcfl_trained_64": {
+        "mean_rollout_nrmse": 0.005775123195767336,
+        "mean_final_snapshot_nrmse": 0.007712756866398886,
+        "mean_positive_final_tv_excess": 0.39751495033941897,
+        "total_excess_significant_extrema": 48,
+        "minimum_depth": 0.5799996852874756,
+        "mean_absolute_roe_multiplier_change_from_one": 0.6787364780902863
+      },
+      "hcfl_trained_512": {
+        "mean_rollout_nrmse": 0.002774948824166665,
+        "mean_final_snapshot_nrmse": 0.0026231950199603698,
+        "mean_positive_final_tv_excess": 0.015531101572862157,
+        "total_excess_significant_extrema": 3,
+        "minimum_depth": 0.5799997448921204,
+        "mean_absolute_roe_multiplier_change_from_one": 0.47534358501434326
+      }
+    }
+  }
+}
