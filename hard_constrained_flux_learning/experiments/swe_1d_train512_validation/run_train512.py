@@ -872,7 +872,6 @@ def plot_combined_profiles(
             item = trajectories[case]
             values = {
                 "reference": deployment.primitive_np(item["raw_reference"][-1]),
-                "native": deployment.primitive_np(item["native"][-1]),
                 "classical_roe": deployment.primitive_np(
                     item["classical_roe"][-1]
                 ),
@@ -888,14 +887,6 @@ def plot_combined_profiles(
                     color="#B7B7B7",
                     linewidth=1.1,
                     label="HLL-2048" if first else None,
-                )
-                axis.plot(
-                    coarse_x,
-                    values["native"][:, component],
-                    color="#222222",
-                    linestyle="--",
-                    linewidth=1.05,
-                    label="HLL-512" if first else None,
                 )
                 axis.plot(
                     coarse_x,
@@ -921,12 +912,12 @@ def plot_combined_profiles(
                 if local_row == 1:
                     axis.set_xlabel("x")
     figure.suptitle(
-        "512-grid deployment — training-resolution ablation, "
+        "512-grid deployment — method comparison, "
         f"t={base.DT_SNAPSHOT * (deployment.EVAL_SNAPSHOTS - 1):.4f}",
         fontsize=13,
     )
     handles, labels = axes[0, 0].get_legend_handles_labels()
-    figure.legend(handles, labels, loc="lower center", ncol=4, frameon=False)
+    figure.legend(handles, labels, loc="lower center", ncol=3, frameon=False)
     figure.tight_layout(rect=(0.0, 0.045, 1.0, 0.965))
     figure.savefig(output, dpi=180)
     plt.close(figure)
