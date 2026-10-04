@@ -1,0 +1,27 @@
+FROM python:3.10-slim-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    FC=gfortran \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends \
+        build-essential \
+        gfortran \
+        git \
+        libblas-dev \
+        liblapack-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clawpack 5.10 is the version documented by the gallery page used for this
+# benchmark.  NumPy is pinned below 2 because this release predates NumPy 2.
+RUN python -m pip install --no-cache-dir --upgrade "pip<25" setuptools wheel \
+    && python -m pip install --no-cache-dir \
+        "numpy==1.26.4" \
+        "scipy==1.11.4" \
+        "meson-python==0.15.0" \
+        "ninja==1.11.1.1" \
+    && python -m pip install --no-cache-dir --no-build-isolation "clawpack==5.10.0"
+
+WORKDIR /workspace

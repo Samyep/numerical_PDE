@@ -1,0 +1,59 @@
+{
+  "status": "prospective_model_evaluation_protocol",
+  "public_test_was_known": true,
+  "learned_2d_euler_result_existed_at_freeze": false,
+  "source": "https://www.clawpack.org/gallery/pyclaw/gallery/quadrants.html",
+  "physics": {
+    "system": "2d_euler",
+    "gamma": 1.4,
+    "domain": [[0.0, 1.0], [0.0, 1.0]],
+    "boundary": "constant_extrapolation"
+  },
+  "reference": {
+    "clawpack_version": "5.10.0",
+    "solver": "classic_pyclaw_euler_4wave_2d",
+    "transverse_waves": 2,
+    "formal_cells": 1024,
+    "audit_cells": [256, 512, 1024],
+    "deployed_cells": 64,
+    "restriction": "conservative_block_average"
+  },
+  "splits": {
+    "train": {"count": 48, "seed": 81001, "tfinal": 0.1},
+    "validation": {"count": 12, "seed": 82001, "tfinal": 0.1},
+    "test_id": {"count": 12, "seed": 83001, "tfinal": 0.1},
+    "test_official_quadrants": {"count": 1, "tfinal": 0.8}
+  },
+  "saved_interval": 0.005,
+  "random_quadrants": {
+    "rho_log_uniform": [0.5, 2.0],
+    "pressure_log_uniform": [0.4, 2.0],
+    "u_uniform": [-0.6, 0.6],
+    "v_uniform": [-0.6, 0.6],
+    "x_split_uniform": [0.3, 0.7],
+    "y_split_uniform": [0.3, 0.7],
+    "silent_resampling": false
+  },
+  "hcfl": {
+    "base_flux": "HLLC",
+    "correction": "signed_four_wave_Roe_basis",
+    "hard_interface_entropy_projection": true,
+    "proposal_feasibility_weight": 0.001,
+    "low_order_flux_in_training": false,
+    "deployment_safety_endpoint": "HLL",
+    "stencil_candidates": [4, 6],
+    "width": 72,
+    "batch_size": 4,
+    "initial_learning_rate": 0.0005,
+    "validation_interval": 500,
+    "maximum_updates": 50000,
+    "selection": "completion_then_validation_NMAE",
+    "seeds": [0, 1, 2]
+  },
+  "comparators": ["native_PyClaw_Roe_64", "HLLC_64", "HCFL_64"],
+  "primary_accuracy_metric": "primitive_training_std_normalized_MAE",
+  "secondary_accuracy_metric": "primitive_training_std_normalized_RMSE",
+  "raw_mae_channels": ["density", "x_velocity", "y_velocity", "pressure"],
+  "failed_trajectories_are_retained": true,
+  "official_test_is_not_used_for_selection": true
+}
