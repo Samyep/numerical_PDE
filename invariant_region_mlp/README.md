@@ -24,6 +24,8 @@ See:
 - `experiments/counterexample_rescue/` for the simulator and validation code.
 - `results/counterexample_rescue/` for aggregate and raw replica results.
 - `docs/counterexample_rescue_theory.md` for the proof notes.
+- `docs/counterexample_control_certificate.md` for the control-based certificate and short HJB verification intuition.
+- `paper/counterexample_certificate_insert.tex` for the exact manuscript insert used in the current draft.
 - `docs/COUNTEREXAMPLE_REPORT.md` for the audited experiment report.
 
 ## Broader project
