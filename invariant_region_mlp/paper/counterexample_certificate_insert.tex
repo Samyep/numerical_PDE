@@ -1,0 +1,58 @@
+% Main-text insert: structural certificate
+\paragraph{Why is this subspace certified? A control interpretation.}
+The Hamiltonian is the support function of the unit ball in the last
+$d-1$ coordinates:
+\begin{equation}
+ f_d(p)=\sup_{\substack{a_1=0\\\|a\|_2\le1}} a^\top p.
+\end{equation}
+Hence the counterexample PDE is the HJB equation of
+\[
+ dX_s=a_s\,ds+dW_s,
+ \qquad a_{s,1}=0,
+ \qquad \|a_s\|_2\le1,
+\]
+with terminal reward $g_d(X_1)=|X_{1,1}|$.  The controller cannot move the
+first coordinate, while the reward reads only that coordinate.  Thus, for
+every admissible control,
+\[
+ X_{s,1}=x_1+W_1(s)-W_1(t),
+\]
+so every control produces the same terminal payoff distribution. Therefore
+\[
+ u_d(t,x)=\sup_a \mathbb E|X^{t,x,a}_{1,1}|
+ =\mathbb E|x_1+W_1(1)-W_1(t)|.
+\]
+The value function is independent of $x_2,\ldots,x_d$, hence
+\[
+ \partial_{x_2}u_d=\cdots=\partial_{x_d}u_d=0,
+ \qquad
+ \nabla u_d(t,x)\in \operatorname{span}(e_1).
+\]
+Thus the invariant subspace is certified by the PDE/control structure rather
+than selected from numerical ground truth.
+
+% Appendix insert: short verification/uniqueness intuition
+\paragraph{Verification intuition.}
+Write the HJB equation as
+\[
+ w_t+\tfrac12\Delta w+
+ \sup_{\substack{a_1=0\\\|a\|_2\le1}} a^\top\nabla w=0.
+\]
+For a sufficiently smooth solution $w$ and any admissible controlled diffusion
+$X^a$, It\^o's formula gives
+\[
+ dw(s,X_s^a)=
+ \bigl(w_t+\tfrac12\Delta w+a_s^\top\nabla w\bigr)ds
+ +\nabla w^\top dW_s.
+\]
+Since $a_s^\top\nabla w$ is bounded above by the Hamiltonian supremum, the
+drift is nonpositive. Hence
+\[
+ w(t,x)\ge \mathbb E g_d(X_1^a)
+\]
+for every admissible control. Choosing a maximizing feedback direction makes
+the drift zero, giving equality with the control value. Therefore any
+classical solution agrees with the same value function. For the nonsmooth
+terminal datum $|x_1|$, the rigorous counterpart is the standard
+viscosity-solution dynamic-programming/comparison argument for this globally
+Lipschitz Hamiltonian.
