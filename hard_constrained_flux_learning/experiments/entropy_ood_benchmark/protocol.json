@@ -1,0 +1,92 @@
+{
+  "status": "exploratory_design_record",
+  "immutable_preregistration": false,
+  "chronology_note": "SWE details preceded formal SWE model training, but no immutable repository commit existed; four Euler cases had prior local results.",
+  "euler": {
+    "cells": 64,
+    "reference_cells": 2048,
+    "saved_intervals": 63,
+    "training_saved_intervals": 15,
+    "boundary_condition": "periodic",
+    "cases": {
+      "sod": [[1.0, 0.0, 1.0], [0.125, 0.0, 0.1]],
+      "transonic_rarefaction": [[0.1, -2.0, 0.1], [1.0, -1.0, 1.0]],
+      "near_vacuum_expansion": [[1.0, -2.0, 0.4], [1.0, 2.0, 0.4]],
+      "collision": [[1.0, 2.0, 1.0], [1.0, -2.0, 1.0]],
+      "strong_pressure": [[1.0, 0.0, 5.0], [1.0, 0.0, 0.05]]
+    },
+    "hcfl_seeds": [0, 1, 2],
+    "primary_order": [
+      "physical_completion",
+      "entropy_admissibility",
+      "conservation",
+      "accuracy",
+      "oscillation"
+    ]
+  },
+  "swe_2d": {
+    "task": "radial_dam_break",
+    "official_pdebench_commit": "4ff3e3a4aa1561721b5571fa3a048a0a463e0568",
+    "official_clawfno_commit": "1c549dbf1d06dc35a8a5df2b897c62aa2f9db186",
+    "domain": [[-2.5, 2.5], [-2.5, 2.5]],
+    "gravity": 1.0,
+    "cells": 32,
+    "reference_cells": 128,
+    "reference_method": "MC-HLL SSP-RK2 adaptation of the PDEBench task",
+    "boundary_condition": "constant_extrapolation",
+    "train_trajectories": 100,
+    "validation_trajectories": 20,
+    "test_trajectories": {
+      "in_distribution": 20,
+      "radius_ood": 20,
+      "strong_height_ood": 20,
+      "double_horizon": 10
+    },
+    "saved_interval": 0.04,
+    "ordinary_saved_states": 25,
+    "double_horizon_saved_states": 49,
+    "train_radius": [0.3, 0.7],
+    "radius_ood": [[0.15, 0.25], [0.75, 0.85]],
+    "train_inner_height": 2.0,
+    "strong_ood_inner_height": [2.5, 3.0],
+    "operator_architecture": {
+      "modes": 8,
+      "time_modes": 6,
+      "width": 20,
+      "output_frames": 24
+    },
+    "dataset_seeds": {
+      "train": 61001,
+      "validation": 62001,
+      "test_id": 63001,
+      "test_radius_ood": 64001,
+      "test_height_ood": 65001,
+      "test_long": 66001
+    },
+    "hcfl_training": {
+      "seed": 0,
+      "stencil_cells": [4, 6],
+      "width": 72,
+      "learning_rate": 0.0005,
+      "batch_size": 4,
+      "validation_interval": 500,
+      "arm_update_cap": 8000,
+      "proposal_feasibility_weight": 0.001,
+      "fully_discrete_entropy_tolerance": 5e-7,
+      "selection": "lexicographic completion then completed-only NRMSE"
+    },
+    "operator_training": {
+      "seed": 0,
+      "batch_size": 10,
+      "learning_rate": 0.01,
+      "weight_decay": 0.0001,
+      "maximum_epochs": 500,
+      "patience": 100,
+      "selection": "lexicographic completion then completed-only error; inadmissible checkpoint diagnostic if none complete"
+    },
+    "exclude": ["dry_bed", "bathymetry"]
+  },
+  "official_roenet_commit": "ef877957c1c0ddb16eac17006d75bdf7bd786d45",
+  "maximum_optimizer_updates": 50000,
+  "failed_trajectories_are_retained": true
+}

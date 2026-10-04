@@ -1,0 +1,45 @@
+{
+  "baseline": "same-data RoeNet architecture adaptation",
+  "is_exact_paper_reproduction": false,
+  "official_source_commit": "ef877957c1c0ddb16eac17006d75bdf7bd786d45",
+  "controlled_changes": [
+    "64-cell periodic benchmark instead of the paper's 200-cell Sod task",
+    "same 580/136 trajectory split used by HCFL",
+    "state normalization inside the learned maps",
+    "regularized least-squares inverse instead of an unregularized matrix inverse",
+    "validation-plateau stopping with a 50000-update cap"
+  ],
+  "seed": 0,
+  "training_data_shape": [
+    580,
+    16,
+    64,
+    3
+  ],
+  "validation_data_shape": [
+    136,
+    16,
+    64,
+    3
+  ],
+  "parameter_count": 73056,
+  "hidden_waves": 64,
+  "internal_steps": 1,
+  "best_update": 2000,
+  "stop_update": 12000,
+  "converged": true,
+  "stop_reason": "validation plateau at minimum learning rate",
+  "learning_rate_reductions": 4,
+  "best_validation_score": 0.049028392003357894,
+  "checkpoint_selection_rule": "lexicographic(completed_trajectories, -completed_only_nrmse)",
+  "best_validation_completion_rate": 0.9852941176470589,
+  "validation_metrics": {
+    "rollout_nrmse_completed_only": 0.049028392003357894,
+    "completion_rate": 0.9852941176470589,
+    "completed_trajectories": 134.0,
+    "minimum_density": 0.02211279794573784,
+    "minimum_pressure": -0.2575435936450958
+  },
+  "training_seconds": 219.20617579994723,
+  "checkpoint": "roenet_adaptation64_best_seed0.pt"
+}

@@ -1,0 +1,93 @@
+{
+  "exploratory_design_record": "PROTOCOL.md",
+  "hcfl_attempts": [
+    {
+      "best_update": 2000,
+      "best_validation_completion": 1.0,
+      "best_validation_rollout_nrmse": 0.18953333077915846,
+      "maximum_updates": 8000,
+      "method": "2-D HLL + Roe correction + hard projection + feasibility",
+      "parameters": 6411,
+      "proposal_feasibility_weight": 0.001,
+      "stencil_cells": 4,
+      "stop_reason": "validation_plateau_at_minimum_learning_rate",
+      "stop_update": 5000,
+      "training_seconds": 475.7795937000774,
+      "uses_low_order_flux_during_training": false,
+      "uses_low_order_flux_only_in_deployment_safety_wrapper": true
+    },
+    {
+      "best_update": 2000,
+      "best_validation_completion": 1.0,
+      "best_validation_rollout_nrmse": 0.1888980118559693,
+      "maximum_updates": 8000,
+      "method": "2-D HLL + Roe correction + hard projection + feasibility",
+      "parameters": 6843,
+      "proposal_feasibility_weight": 0.001,
+      "stencil_cells": 6,
+      "stop_reason": "validation_plateau_at_minimum_learning_rate",
+      "stop_update": 5000,
+      "training_seconds": 485.3203586000018,
+      "uses_low_order_flux_during_training": false,
+      "uses_low_order_flux_only_in_deployment_safety_wrapper": true
+    }
+  ],
+  "higher_grid_attempted": false,
+  "higher_grid_rule": "Only if matched-grid HCFL is materially deficient; changing only HCFL after viewing results would invalidate the comparison.",
+  "official_clawno_commit": "1c549dbf1d06dc35a8a5df2b897c62aa2f9db186",
+  "operator_reports": {
+    "claw": {
+      "best_epoch": 258,
+      "best_validation_completion": 0.0,
+      "best_validation_minimum_depth": -0.8698883056640625,
+      "best_validation_primitive_relative_l2_completed_only": null,
+      "checkpoint_selection_rule": "lexicographic(completion, -completed_only_error)",
+      "diagnostic_validation_relative_l2_all_predictions": 162.91062927246094,
+      "has_fully_admissible_validation_checkpoint": false,
+      "label": "official-architecture adaptation",
+      "method": "official clawFNO3d",
+      "official_source_commit": "1c549dbf1d06dc35a8a5df2b897c62aa2f9db186",
+      "parameters": 2464683,
+      "published_radial_hyperparameters": {
+        "batch_size": 10,
+        "early_stopping_patience": 100,
+        "learning_rate": 0.01,
+        "maximum_epochs": 500,
+        "modes": 8,
+        "time_modes": 6,
+        "weight_decay": 0.0001,
+        "width": 20
+      },
+      "stop_epoch": 358,
+      "training_seconds": 106.05646659992635
+    },
+    "fno": {
+      "best_epoch": 477,
+      "best_validation_completion": 1.0,
+      "best_validation_minimum_depth": 0.31229522824287415,
+      "best_validation_primitive_relative_l2_completed_only": 0.015391306951642036,
+      "checkpoint_selection_rule": "lexicographic(completion, -completed_only_error)",
+      "diagnostic_validation_relative_l2_all_predictions": 0.015391306951642036,
+      "has_fully_admissible_validation_checkpoint": true,
+      "label": "official-architecture adaptation",
+      "method": "official FNO3d",
+      "official_source_commit": "1c549dbf1d06dc35a8a5df2b897c62aa2f9db186",
+      "parameters": 2464683,
+      "published_radial_hyperparameters": {
+        "batch_size": 10,
+        "early_stopping_patience": 100,
+        "learning_rate": 0.01,
+        "maximum_epochs": 500,
+        "modes": 8,
+        "time_modes": 6,
+        "weight_decay": 0.0001,
+        "width": 20
+      },
+      "stop_epoch": 500,
+      "training_seconds": 104.12380679999478
+    }
+  },
+  "selected_hcfl_stencil": 6,
+  "selection_used_validation_only": true,
+  "test_sets_used_for_tuning": false
+}

@@ -1,0 +1,17 @@
+{
+  "case": "radius=0.5, inner_height=2.0",
+  "coarse_comparison_cells": 32,
+  "saved_states": 25,
+  "final_time": 0.96,
+  "runtime_seconds": {
+    "64": 0.5718399998731911,
+    "128": 0.9450646999757737,
+    "256": 1.9309994999784976
+  },
+  "primitive_nrmse": {
+    "64_vs_128_rollout": 0.09644141298083357,
+    "128_vs_256_rollout": 0.034274970450228516,
+    "128_vs_256_final": 0.03182205819390342
+  },
+  "interpretation": "The chosen 128-grid reference matches PDEBench's native spatial resolution, but is not continuum-exact; the 128-vs-256 gap is reported as reference-discretization uncertainty."
+}
