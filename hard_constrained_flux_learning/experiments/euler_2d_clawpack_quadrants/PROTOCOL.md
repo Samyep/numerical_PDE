@@ -133,3 +133,15 @@ denominator; conditional errors are never presented without completion.
 No hyperparameter, checkpoint, or method is selected using the official
 quadrant result.  Any later change to this protocol must be recorded as a
 dated amendment before the affected run.
+
+## Amendments
+
+### 2026-10-04, before formal data generation or model training
+
+The `0.005` saved interval is restricted to the random training, validation,
+and ID-test trajectories.  The official `t=0.8` gallery case is saved at the
+gallery's 10 equal output intervals (`0.08`, giving 11 states including the
+initial state).  All coarse solvers still integrate with adaptive internal
+substeps and audit every internal step.  This change avoids retaining 161
+full `1024 x 1024 x 4` snapshots solely for plotting/error quadrature; it does
+not alter the reference evolution, endpoint, model selection, or safety audit.
