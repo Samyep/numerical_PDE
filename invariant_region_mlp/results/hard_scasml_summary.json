@@ -1,0 +1,60 @@
+{
+  "protocol": {
+    "method": "SCaSML defect correction with the same non-oracle frozen-terminal surrogate for LCD/VB/DR/HJB; linearized Feynman-Kac surrogate for finance",
+    "defect_projection_rule": "form total=(u_hat+u_breve,z_hat+z_breve), project total, return projected defect",
+    "n": 2,
+    "M": 10,
+    "terminal_gradient_normalization": "standard EBL sqrt(dt)",
+    "field_runs": "LCD/VB/DR: 3 reps x 360 test points; HJB100: 3 x 360; HJB120/140: 2 x 220; HJB160: 2 x 120",
+    "finance_runs": "10 paired seeds at x0, n=2,M=10, linearized FK surrogate with 128 antithetic samples"
+  },
+  "LCD": {
+    "10": {"surrogate": 0.29966847547126413, "scasml": 5.1137030253423774e-17, "hard_scasml": 5.1137030253423774e-17},
+    "20": {"surrogate": 0.21728638592376667, "scasml": 5.3036038595989594e-17, "hard_scasml": 5.3036038595989594e-17},
+    "30": {"surrogate": 0.1901325112738459, "scasml": 3.7893667223086e-17, "hard_scasml": 3.7893667223086e-17},
+    "60": {"surrogate": 0.12452818075386256, "scasml": 2.6636340387505366e-17, "hard_scasml": 2.6636340387505366e-17}
+  },
+  "VB": {
+    "20": {"surrogate": 0.0985151884217181, "scasml": 0.007974513997205473, "hard_scasml": 0.008812454882923254, "hard_change_pct": -10.5077360954},
+    "40": {"surrogate": 0.08436061606350458, "scasml": 0.00845258648970443, "hard_scasml": 0.013685686404382981, "hard_change_pct": -61.91122588397},
+    "60": {"surrogate": 0.07247766300613921, "scasml": 0.01000859641882536, "hard_scasml": 0.0165947774396441, "hard_change_pct": -65.8052412667},
+    "80": {"surrogate": 0.06889247407338413, "scasml": 0.010757227422589307, "hard_scasml": 0.019488152618816087, "hard_change_pct": -81.163341196}
+  },
+  "DR": {
+    "100": {"surrogate": 0.014677819769381007, "scasml": 0.00864593107001628, "hard_scasml": 0.008649987248609865, "hard_change_pct": -0.0469143064},
+    "120": {"surrogate": 0.017064249309747592, "scasml": 0.01115186127331945, "hard_scasml": 0.011153140212462895, "hard_change_pct": -0.0114683918},
+    "140": {"surrogate": 0.020320714375838243, "scasml": 0.013482443359334904, "hard_scasml": 0.013481929141247474, "hard_change_pct": 0.0038139829},
+    "160": {"surrogate": 0.021532904932818148, "scasml": 0.016774564771654888, "hard_scasml": 0.016771488224815813, "hard_change_pct": 0.0183405464}
+  },
+  "HJB": {
+    "100": {"surrogate": 0.9418691881206572, "scasml": 1.8107511241312835, "hard_scasml": 0.919943328884507, "hard_improvement_pct": 49.1954848668},
+    "120": {"surrogate": 0.9509047852742085, "scasml": 1.6815172256641269, "hard_scasml": 0.9356894972960239, "hard_improvement_pct": 44.3544506702},
+    "140": {"surrogate": 0.9559991650139255, "scasml": 1.6069005380811214, "hard_scasml": 0.9321559458764537, "hard_improvement_pct": 41.9904391227},
+    "160": {"surrogate": 0.9618230992315515, "scasml": 1.531124755973249, "hard_scasml": 0.9400938266838466, "hard_improvement_pct": 38.6010955008}
+  },
+  "Funding100": {
+    "surrogate": 21.9495751629583,
+    "reference": 21.299,
+    "scasml_mean": 21.432228788413944,
+    "hard_scasml_mean": 21.421530840383816,
+    "scasml_mae": 0.13322878841394684,
+    "hard_scasml_mae": 0.1265631870280494,
+    "mae_improvement_pct": 5.003126,
+    "paired_p_value": 0.20454833248279947,
+    "projection_activation": 0.11818181818181817
+  },
+  "Credit100": {
+    "surrogate": 3.270830040588529,
+    "reference": 2.626,
+    "scasml_mean": 3.2857822119281366,
+    "hard_scasml_mean": 3.2857822119281366,
+    "scasml_mae": 0.6597822119281368,
+    "hard_scasml_mae": 0.6597822119281368,
+    "mae_improvement_pct": 0.0,
+    "projection_activation": 0.0
+  },
+  "ablations": {
+    "VB80": {"scasml": 0.010137317137270842, "value_only": 0.009818413963126986, "gradient_ball_1x": 0.035279941536628, "joint_1x": 0.03526580733705134, "gradient_ball_2x": 0.011021784941251936},
+    "HJB140": {"scasml": 1.5960426362045417, "value_only": 1.0429675313369418, "gradient_ball_only": 0.9565983945076925, "joint": 0.9502474637308745}
+  }
+}
