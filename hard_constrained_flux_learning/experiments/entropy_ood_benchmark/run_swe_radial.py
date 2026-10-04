@@ -610,7 +610,14 @@ def evaluate_all(
     frame = pd.DataFrame(rows)
     frame.to_csv(output / "swe_radial_case_metrics.csv", index=False)
     torch.save(trajectories, output / "swe_radial_trajectories.pt")
-    summary: dict[str, Any] = {"exact_flux_method_safety": exact_safety, "aggregate": {}}
+    summary: dict[str, Any] = {
+        "completion_definition": (
+            "finite and positive only; this is not a conservation/entropy/oscillation "
+            "success criterion"
+        ),
+        "exact_flux_method_safety": exact_safety,
+        "aggregate": {},
+    }
     for (split_name, method), group in frame.groupby(["split", "method"], sort=False):
         completed = group["completed"].astype(bool)
         completed_rows = group[completed]
@@ -641,7 +648,41 @@ def evaluate_all(
             "mean_height_range_overshoot_completed": None
             if completed_rows.empty
             else float(completed_rows["height_range_overshoot"].mean()),
+            "mean_centerline_curvature_ratio_completed": None
+            if completed_rows.empty
+            else float(completed_rows["centerline_curvature_ratio"].mean()),
         }
+    summary["method_qualification"] = {
+        "FNO": {
+            "status": "not_physics_qualified",
+            "lower_nrmse_is_not_solver_success": True,
+            "reason": (
+                "finite/positive output but no FV conservation or entropy guarantee; "
+                "measured conservation and entropy violations plus visible OOD ringing"
+            ),
+            "by_split": {
+                split_name: {
+                    "maximum_conservation_residual": values["FNO"][
+                        "maximum_conservation_residual"
+                    ],
+                    "mean_entropy_violation_rate": values["FNO"][
+                        "mean_entropy_violation_rate_completed_only"
+                    ],
+                    "mean_centerline_curvature_ratio": values["FNO"][
+                        "mean_centerline_curvature_ratio_completed"
+                    ],
+                    "mean_height_range_overshoot": values["FNO"][
+                        "mean_height_range_overshoot_completed"
+                    ],
+                }
+                for split_name, values in summary["aggregate"].items()
+            },
+        },
+        "clawFNO": {
+            "status": "failed",
+            "reason": "no finite-positive validation or evaluation trajectory",
+        },
+    }
     save_json(output / "swe_radial_summary.json", summary)
     make_figures(trajectories, frame, output, hcfl_stencil)
     return frame, summary
@@ -654,6 +695,13 @@ def make_figures(
     hcfl_stencil: int,
 ) -> None:
     method_order = ("reference", "HLL-32", f"HCFL-s{hcfl_stencil}", "FNO", "clawFNO")
+    display_names = {
+        "reference": "reference",
+        "HLL-32": "HLL-32",
+        f"HCFL-s{hcfl_stencil}": f"HCFL-s{hcfl_stencil}",
+        "FNO": "FNO (non-admissible)",
+        "clawFNO": "clawFNO (failed)",
+    }
     split_order = ("test_id", "test_radius_ood", "test_height_ood", "test_long")
     labels = ("ID", "radius OOD", "height OOD", "2x horizon")
     fig, axes = plt.subplots(len(split_order), len(method_order), figsize=(16, 11), constrained_layout=True)
@@ -675,7 +723,7 @@ def make_figures(
             axis.set_xticks([])
             axis.set_yticks([])
             if row == 0:
-                axis.set_title(method)
+                axis.set_title(display_names[method])
             if column == 0:
                 axis.set_ylabel(label)
             if column == len(method_order) - 1:
@@ -706,7 +754,14 @@ def make_figures(
     for axis, split_name, label in zip(axes.flat, split_order, labels):
         for method in method_order:
             profile = trajectories[split_name][method][0, -1, middle, :, 0]
-            axis.plot(coordinate, profile, color=colors[method], linestyle=styles[method], linewidth=1.8, label=method)
+            axis.plot(
+                coordinate,
+                profile,
+                color=colors[method],
+                linestyle=styles[method],
+                linewidth=1.8,
+                label=display_names[method],
+            )
         axis.set_title(label)
         axis.set_xlabel("x")
         axis.set_ylabel("h")
@@ -735,14 +790,20 @@ def make_figures(
     x = np.arange(len(split_order))
     for offset, method in enumerate(plot_methods):
         subset = aggregate[aggregate.method == method].set_index("split").reindex(split_order)
-        axes[0].bar(x + (offset - 1.5) * width, subset.completion, width, label=method)
+        axes[0].bar(
+            x + (offset - 1.5) * width,
+            subset.completion,
+            width,
+            label=display_names[method],
+        )
         axes[1].bar(x + (offset - 1.5) * width, subset.error, width, label=method)
     for axis in axes:
         axis.set_xticks(x, labels, rotation=15)
         axis.grid(axis="y", alpha=0.2)
     axes[0].set_ylim(0, 1.05)
-    axes[0].set_ylabel("physical completion rate")
-    axes[1].set_ylabel("rollout NRMSE (completed only)")
+    axes[0].set_ylabel("finite + positive rate (not entropy-qualified)")
+    axes[1].set_ylabel("raw rollout NRMSE (finite + positive only)")
+    axes[1].set_title("Low error alone is not solver success")
     axes[0].legend(frameon=False, ncol=2)
     fig.savefig(output / "swe_radial_aggregate.png", dpi=180)
     plt.close(fig)

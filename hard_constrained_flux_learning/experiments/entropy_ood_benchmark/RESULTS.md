@@ -15,12 +15,13 @@ interface-entropy, positivity, conservation, and fully-discrete entropy
 checks.  It is also substantially more accurate than its low-order finite
 volume endpoint on every evaluated Euler and SWE stress split.
 
-Vanilla FNO is much more accurate on in-distribution 2-D radial dam breaks and
-also wins the radius-only OOD split.  Its advantage disappears under the
-stronger-height shift and a two-block rollout, where HCFL is respectively
-47.4% and 68.0% lower in rollout NRMSE.  FNO has no corresponding hard
-conservation, positivity, or entropy guarantee.  This is the accuracy/robustness
-tradeoff the paper should report, rather than suppressing the ID result.
+Vanilla FNO attains lower **raw NRMSE** on the in-distribution and radius-only
+OOD radial dam breaks, but it is not counted as a successful physical solver:
+its profiles ring under OOD shifts, it has large conservation residuals, and
+38--60% of its saved time intervals violate the sampled entropy balance.  Its
+strong-height and long-horizon errors also exceed HCFL by large margins.  The
+paper may report FNO's low ID regression error, but must not call that result
+physically admissible or an overall win.
 
 The official data-free PINN checkpoints are the most accurate methods on their
 own two native, per-instance Euler tasks.  They are not amortized solvers for a
@@ -94,19 +95,35 @@ one-shot output).  Because the data are locally generated, these are
 **official-architecture adaptations**, not reproductions of the paper's
 downloaded-data error table.
 
-| Evaluation split | HLL-32 | HCFL-s6 | Vanilla FNO | clawFNO | Completion (HLL / HCFL / FNO / claw) |
+| Evaluation split | HLL-32 | HCFL-s6 | FNO (non-admissible) | clawFNO | Finite-positive count (HLL / HCFL / FNO / claw) |
 |---|---:|---:|---:|---:|---:|
-| ID radius, standard height | 0.37379 | 0.18158 | **0.02357** | — | 20/20 / 20/20 / 20/20 / 0/20 |
-| Radius OOD | 0.35334 | 0.20751 | **0.12478** | — | 20/20 / 20/20 / 20/20 / 0/20 |
+| ID radius, standard height | 0.37379 | 0.18158 | 0.02357 | — | 20/20 / 20/20 / 20/20 / 0/20 |
+| Radius OOD | 0.35334 | 0.20751 | 0.12478 | — | 20/20 / 20/20 / 20/20 / 0/20 |
 | Strong-height OOD | 0.60287 | **0.32998** | 0.62692 | — | 20/20 / 20/20 / 20/20 / 0/20 |
 | Two-block / 2x horizon | 0.45789 | **0.22163** | 0.69303 | — | 10/10 / 10/10 / 10/10 / 0/10 |
 
-The error metric is identical across methods: primitive-variable NRMSE using
-training-split channel standard deviations.  HCFL lowers HLL error by 51.4%,
-41.3%, 45.3%, and 51.6% on the four rows.  FNO is 7.7 times more accurate than
-HCFL in distribution and 1.66 times more accurate on radius OOD.  HCFL is 1.90
-times more accurate on strong-height OOD and 3.13 times more accurate at the
-doubled horizon.
+The raw error metric is identical across methods: primitive-variable NRMSE
+using training-split channel standard deviations.  HCFL lowers HLL error by
+51.4%, 41.3%, 45.3%, and 51.6% on the four rows.  FNO's raw NRMSE is 7.7 times
+lower than HCFL in distribution and 1.66 times lower on radius OOD; these two
+numbers measure regression fit only.  HCFL's raw NRMSE is 1.90 times lower on
+strong-height OOD and 3.13 times lower at the doubled horizon.
+
+FNO's numerical defects are not hidden by the error table:
+
+| Split | Max conservation residual | Entropy-violating saved intervals | Mean centerline curvature / reference | Mean height-range overshoot |
+|---|---:|---:|---:|---:|
+| ID | 0.159 | 38.5% | 1.00 | 0.008 |
+| Radius OOD | 1.52 | 51.9% | 1.16 | 0.062 |
+| Strong-height OOD | 8.11 | 60.2% | 2.27 | 0.408 |
+| 2x horizon | 8.19 | 38.1% | 0.71 | 0.000 |
+
+The curvature ratio quantifies the visible centerline ringing: values above
+one contain more discrete curvature than the reference.  The strong-height
+case is more than twice the reference curvature and has a large overshoot;
+the long-horizon case instead becomes too smooth while following the wrong
+profile.  Thus FNO is **finite and positive here, but non-admissible**.  The
+finite-positive counts above must not be called physical success rates.
 
 clawFNO's conserved-variable training loss decreased, but no training epoch
 produced even one fully physical validation trajectory (0/20).  Its diagnostic

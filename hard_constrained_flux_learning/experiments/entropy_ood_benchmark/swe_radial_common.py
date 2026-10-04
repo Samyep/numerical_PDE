@@ -794,6 +794,7 @@ class SequenceAudit:
     entropy_violation_rate: float | None
     height_tv_excess: float | None
     height_range_overshoot: float | None
+    centerline_curvature_ratio: float | None
 
 
 def _boundary_conservation_increment(state: torch.Tensor, dt: float) -> torch.Tensor:
@@ -865,9 +866,24 @@ def audit_sequence(
         pred_min = float(prediction[-1, ..., 0].min())
         pred_max = float(prediction[-1, ..., 0].max())
         height_overshoot = max(ref_min - pred_min, pred_max - ref_max, 0.0)
+        middle = prediction.shape[-3] // 2
+        predicted_profile = prediction[-1, middle, :, 0]
+        reference_profile = reference[-1, middle, :, 0]
+        predicted_curvature = (
+            predicted_profile[2:]
+            - 2.0 * predicted_profile[1:-1]
+            + predicted_profile[:-2]
+        ).abs().sum()
+        reference_curvature = (
+            reference_profile[2:]
+            - 2.0 * reference_profile[1:-1]
+            + reference_profile[:-2]
+        ).abs().sum().clamp_min(1.0e-12)
+        centerline_curvature_ratio = float(predicted_curvature / reference_curvature)
     else:
         tv_excess = None
         height_overshoot = None
+        centerline_curvature_ratio = None
     return SequenceAudit(
         completed=completed,
         minimum_depth=minimum_depth,
@@ -882,4 +898,5 @@ def audit_sequence(
         ),
         height_tv_excess=tv_excess,
         height_range_overshoot=height_overshoot,
+        centerline_curvature_ratio=centerline_curvature_ratio,
     )

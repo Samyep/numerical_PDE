@@ -166,6 +166,18 @@ def main() -> None:
         )
 
     swe = read_json(RESULTS / "swe_radial" / "swe_radial_summary.json")
+    require(
+        swe["method_qualification"]["FNO"]["status"] == "not_physics_qualified"
+        and swe["method_qualification"]["FNO"]["lower_nrmse_is_not_solver_success"],
+        "FNO raw error was incorrectly promoted to physical solver success",
+    )
+    require(
+        swe["aggregate"]["test_height_ood"]["FNO"][
+            "mean_centerline_curvature_ratio_completed"
+        ]
+        > 2.0,
+        "FNO strong-height ringing diagnostic changed unexpectedly",
+    )
     safety_maxima = []
     for split, values in swe["exact_flux_method_safety"].items():
         hcfl = values["HCFL-s6"]
@@ -201,6 +213,8 @@ def main() -> None:
         "official_commits": commits,
         "euler_rows": len(euler["rows"]),
         "swe_rows": len(swe_frame),
+        "fno_physics_qualification": swe["method_qualification"]["FNO"]["status"],
+        "fno_lower_nrmse_is_not_solver_success": True,
         "maximum_exact_hcfl_entropy_balance": max(safety_maxima),
         "fully_discrete_tolerance": C.ENTROPY_TOL,
         "reference_grid_audit": errors,
