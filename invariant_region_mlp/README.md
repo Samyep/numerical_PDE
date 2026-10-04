@@ -1,14 +1,35 @@
-# Invariant-Region MLP (IR-MLP)
+# Invariant-Region Multilevel Picard (IR-MLP)
 
-Certified projection inside multilevel Picard recursions for high-dimensional semilinear PDEs.
+**Canonical development location.** This directory is now the maintained IR-MLP repository. The older standalone `Samyep/invariant-region-mlp` repository is archival.
 
-This directory contains the current IR-MLP research prototype. The complete source snapshot, including all experiment scripts and JSON results, is stored in `archive/invariant-region-mlp-source.tar.gz`.
+IR-MLP inserts PDE-certified projection inside stochastic Picard recursion, before noisy intermediate states are reused by nonlinear generators.
 
-## Current results
+## Current central result: IR-MLP breaks a known MLP counterexample
 
-- SCaSML-style HJB, n=2, M=10, 1,200 points x 10 repetitions: heuristic rel-L2 1.53-1.57 versus 0.79-0.85 with the exact-matrix joint projection.
-- A non-oracle uniform HJB bound derived only from the public coefficient ranges gives rel-L2 0.83/0.85/0.86/0.88 in 100/120/140/160D.
-- 100D nonlinear funding: at n=4,M=3, baseline MAE 3.025, joint hard projection 0.877, coordinate box 2.708.
-- 100D counterparty-credit-risk negative control: the certified value interval is almost never violated and hard projection is effectively identical to baseline.
+For the Hutzenthaler--Nguyen (2025) HJB counterexample
+[
+u_t + \tfrac12\Delta u + (\sum_{j=2}^d |\partial_{x_j}u|^2)^{1/2}=0,\qquad u(1,x)=|x_1|,
+]
+the true gradient lies in the certified subspace `span(e1)`. Projecting each recursive gradient state to this subspace makes the nonlinear driver vanish pathwise, removes the spurious inactive-coordinate feedback, and reduces the scheme to one-dimensional terminal Monte Carlo.
 
-See `docs/current_round_report.md` for the compact tables and `integration/scasml/` for the upstream patch design.
+At `(t,x)=(0,0)`, with `N=m^n` terminal samples,
+[
+\mathbb E\|\widehat Y^{IR}-Y^*\|_2^2=(4-2/\pi)/N,
+]
+which is independent of the ambient dimension.
+
+At `n=m=3`, 512 paired replicas give full-state RMSE about 0.356 for recursive subspace IR from d=2 through d=1000, while the original MLP grows from about 1.20 (d=2) to about 1.70e4 (d=1000). Final-output-only projection does not repair the value error; projection must occur before nonlinear feedback.
+
+See:
+- `experiments/counterexample_rescue/` for the simulator and validation code.
+- `results/counterexample_rescue/` for aggregate and raw replica results.
+- `docs/counterexample_rescue_theory.md` for the proof notes.
+- `docs/COUNTEREXAMPLE_REPORT.md` for the audited experiment report.
+
+## Broader project
+
+Other current evidence includes high-dimensional quadratic HJB, nonlinear finance, Neufeld--Wu 100--300D gradient-dependent MLP benchmarks, mechanism diagnostics based on invariant-region violations, and negative controls. Older SCaSML integration material is retained for reference but is no longer the center of the project.
+
+The maintained research question is:
+
+> Can PDE-certified invariant regions remove statistically spurious directions in high-dimensional stochastic fixed-point solvers before nonlinearities amplify them?
