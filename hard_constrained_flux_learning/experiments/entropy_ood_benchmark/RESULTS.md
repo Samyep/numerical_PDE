@@ -15,8 +15,9 @@ interface-entropy, positivity, conservation, and fully-discrete entropy
 checks.  It is also substantially more accurate than its low-order finite
 volume endpoint on every evaluated Euler and SWE stress split.
 
-Vanilla FNO attains lower **raw NRMSE** on the in-distribution and radius-only
-OOD radial dam breaks, but it is not counted as a successful physical solver:
+Vanilla FNO attains lower **raw NRMSE and normalized MAE** on the
+in-distribution and radius-only OOD radial dam breaks, but it is not counted as
+a successful physical solver:
 its profiles ring under OOD shifts, it has large conservation residuals, and
 38--60% of its saved time intervals violate the sampled entropy balance.  Its
 strong-height and long-horizon errors also exceed HCFL by large margins.  The
@@ -29,6 +30,13 @@ held-out initial condition, and their sampled predictions do not exactly close
 the finite-volume conservation or entropy balances.  Those facts make the
 PINN result complementary rather than a same-task ranking.
 
+In all tables, NMAE means mean absolute error after the same per-channel
+training-standard-deviation normalization used by NRMSE.  Therefore NMAE and
+NRMSE differ only in the absolute-versus-square aggregation, not in the tested
+states or their scaling.  Euler uses conserved channels `(rho, rho*u, E)` and
+2-D SWE uses primitive channels `(h, u, v)`.  Raw per-primitive-channel MAEs
+are retained in the linked CSV files.
+
 ## 64-cell Euler stress suite
 
 Five named periodic cases are rolled for 63 saved intervals, 4.2 times the
@@ -37,16 +45,19 @@ evidence is primarily the longer horizon plus the transonic case.  Every
 failed trajectory remains in the completion denominator.  Errors and entropy
 are reported only on physically completed trajectories.
 
-| Method | Completion | Mean rollout NRMSE | Worst completed NRMSE | Max entropy increase (completed only) | Max conservation drift |
-|---|---:|---:|---:|---:|---:|
-| HLLC-64 | 5/5 | 0.12341 | 0.20488 | -9.25e-3 | 1.38e-8 |
-| MUSCL-HLLC-64 | 5/5 | 0.08424 | 0.13581 | -2.10e-3 | 1.42e-8 |
-| RoeNet-64 same-data adaptation | 3/5 | 0.11183 | 0.24934 | -2.60e-2 | 4.92e-2 |
-| Vanilla residual FNO-64 | 1/5 | 0.05549 | 0.05549 | +4.52e-3 | 5.27e-2 |
-| HCFL-64, 3 seeds | 15/15 | **0.06996 ± 0.00220** | 0.15659 | -6.68e-3 | 1.12e-7 |
+| Method | Completion | Mean rollout NRMSE | Mean rollout NMAE | Worst completed NRMSE | Max entropy increase (completed only) | Max conservation drift |
+|---|---:|---:|---:|---:|---:|---:|
+| HLLC-64 | 5/5 | 0.12341 | 0.04153 | 0.20488 | -9.25e-3 | 1.38e-8 |
+| MUSCL-HLLC-64 | 5/5 | 0.08424 | **0.02068** | 0.13581 | -2.10e-3 | 1.42e-8 |
+| RoeNet-64 same-data adaptation | 3/5 | 0.11183 | 0.03042 | 0.24934 | -2.60e-2 | 4.92e-2 |
+| Vanilla residual FNO-64 | 1/5 | 0.05549 | 0.02168 | 0.05549 | +4.52e-3 | 5.27e-2 |
+| HCFL-64, 3 seeds | 15/15 | **0.06996 ± 0.00220** | 0.02355 ± 0.00045 | 0.15659 | -6.68e-3 | 1.12e-7 |
 
-Across seeds, HCFL lowers mean error by 43.3% relative to HLLC-64 and by
-16.9% relative to MUSCL-HLLC-64 while completing all cases.  The FNO number is
+Across seeds, HCFL lowers mean NRMSE by 43.3% relative to HLLC-64 and by
+16.9% relative to MUSCL-HLLC-64 while completing all cases.  NMAE gives a
+more nuanced result: HCFL is 43.3% below HLLC but 13.9% above MUSCL.  Thus HCFL
+reduces the larger localized errors that dominate RMSE, while MUSCL retains a
+smaller average absolute error over the bulk of cells.  The FNO numbers are
 conditional on its only completed case and must not be read as a 5-case mean.
 RoeNet is an explicitly labelled architecture adaptation: it uses the official
 64-wave learned decomposition but the matched 580/136 HCFL data split,
@@ -68,14 +79,14 @@ eighth-order Gauss-Legendre rule converts their continuous prediction to 64
 finite-volume cell averages.  This is not a same-task amortized/OOD comparison:
 each checkpoint was optimized for its displayed initial condition.
 
-| Case | Method | Rollout NRMSE | Final NRMSE | Max relative conservation residual | Entropy-balance violating steps |
-|---|---|---:|---:|---:|---:|
-| Sod | HLLC-64 | 0.01847 | 0.02612 | 4.74e-9 | 0% |
-| Sod | HCFL-64 | 0.01820 | 0.02253 | 2.88e-8 | 0% |
-| Sod | Official L-NN2 PINN | **0.00488** | **0.00513** | 1.57e-3 | 38.1% |
-| Lax | HLLC-64 | 0.08872 | 0.14305 | 3.21e-8 | 0% |
-| Lax | HCFL-64 | 0.07048 | 0.12876 | 3.16e-8 | 0% |
-| Lax | Official L-NN2 PINN | **0.01639** | **0.01621** | 3.37e-3 | 31.7% |
+| Case | Method | Rollout NRMSE | Rollout NMAE | Final NRMSE | Max relative conservation residual | Entropy-balance violating steps |
+|---|---|---:|---:|---:|---:|---:|
+| Sod | HLLC-64 | 0.01847 | 0.00476 | 0.02612 | 4.74e-9 | 0% |
+| Sod | HCFL-64 | 0.01820 | 0.00405 | 0.02253 | 2.88e-8 | 0% |
+| Sod | Official L-NN2 PINN | **0.00488** | **0.00090** | **0.00513** | 1.57e-3 | 38.1% |
+| Lax | HLLC-64 | 0.08872 | 0.02152 | 0.14305 | 3.21e-8 | 0% |
+| Lax | HCFL-64 | 0.07048 | 0.01544 | 0.12876 | 3.16e-8 | 0% |
+| Lax | Official L-NN2 PINN | **0.01639** | **0.00376** | **0.01621** | 3.37e-3 | 31.7% |
 
 The PINN is decisively more accurate on the tasks it was trained to solve.
 HCFL's distinct advantage is an amortized conservative update with hard
@@ -102,12 +113,28 @@ downloaded-data error table.
 | Strong-height OOD | 0.60287 | **0.32998** | 0.62692 | — | 20/20 / 20/20 / 20/20 / 0/20 |
 | Two-block / 2x horizon | 0.45789 | **0.22163** | 0.69303 | — | 10/10 / 10/10 / 10/10 / 0/10 |
 
-The raw error metric is identical across methods: primitive-variable NRMSE
-using training-split channel standard deviations.  HCFL lowers HLL error by
+The corresponding normalized MAE comparison is:
+
+| Evaluation split | HLL-32 NMAE | HCFL-s6 NMAE | FNO NMAE (non-admissible) | clawFNO NMAE |
+|---|---:|---:|---:|---:|
+| ID radius, standard height | 0.16197 | 0.07146 | 0.00930 | — |
+| Radius OOD | 0.15912 | 0.08145 | 0.04702 | — |
+| Strong-height OOD | 0.27337 | **0.13553** | 0.23386 | — |
+| Two-block / 2x horizon | 0.27767 | **0.11943** | 0.34833 | — |
+
+Both error metrics use identical data and scaling across methods:
+primitive-variable NRMSE/NMAE using training-split channel standard
+deviations.  HCFL lowers HLL NRMSE by
 51.4%, 41.3%, 45.3%, and 51.6% on the four rows.  FNO's raw NRMSE is 7.7 times
 lower than HCFL in distribution and 1.66 times lower on radius OOD; these two
 numbers measure regression fit only.  HCFL's raw NRMSE is 1.90 times lower on
 strong-height OOD and 3.13 times lower at the doubled horizon.
+
+NMAE reaches the same qualitative SWE conclusion: HCFL lowers HLL by 55.9%,
+48.8%, 50.4%, and 57.0%.  FNO has lower NMAE on ID and radius OOD, while HCFL
+has 1.73 times lower NMAE on strong-height OOD and 2.92 times lower NMAE at the
+doubled horizon.  As with NRMSE, FNO's low conditional MAE does not override
+its failed conservation/entropy/oscillation qualification.
 
 FNO's numerical defects are not hidden by the error table:
 
@@ -160,10 +187,11 @@ not rotational invariance.
 
 ## Reference and scope limitations
 
-- A fixed radius-0.5 grid-refinement audit gives primitive NRMSE 0.0964 for
-  `64 -> 128` and 0.0343 for `128 -> 256`, after restriction to 32 cells.
-  Thus the chosen 128-grid reference is materially converged relative to 64
-  and matches PDEBench's native resolution, but is not continuum-exact.
+- A fixed radius-0.5 grid-refinement audit gives primitive NRMSE/NMAE
+  0.0964/0.0305 for `64 -> 128` and 0.0343/0.0101 for `128 -> 256`, after
+  restriction to 32 cells.  Thus the chosen 128-grid reference is materially
+  converged relative to 64 and matches PDEBench's native resolution, but is
+  not continuum-exact.
 - The 2-D reference is a local MC-HLL implementation, not byte-identical
   PyClaw output.  This is why no published clawNO error number is claimed.
 - The SWE experiment is flat-bed and strictly wet.  It supports no claim about

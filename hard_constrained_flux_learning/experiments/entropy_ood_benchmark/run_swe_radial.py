@@ -627,9 +627,24 @@ def evaluate_all(
             "mean_rollout_nrmse_completed": None
             if completed_rows.empty
             else float(completed_rows["rollout_nrmse"].mean()),
+            "mean_rollout_nmae_completed": None
+            if completed_rows.empty
+            else float(completed_rows["rollout_nmae"].mean()),
             "mean_final_nrmse_completed": None
             if completed_rows.empty
             else float(completed_rows["final_nrmse"].mean()),
+            "mean_final_nmae_completed": None
+            if completed_rows.empty
+            else float(completed_rows["final_nmae"].mean()),
+            "mean_rollout_height_mae_completed": None
+            if completed_rows.empty
+            else float(completed_rows["rollout_height_mae"].mean()),
+            "mean_rollout_x_velocity_mae_completed": None
+            if completed_rows.empty
+            else float(completed_rows["rollout_x_velocity_mae"].mean()),
+            "mean_rollout_y_velocity_mae_completed": None
+            if completed_rows.empty
+            else float(completed_rows["rollout_y_velocity_mae"].mean()),
             "minimum_depth": float(group["minimum_depth"].min()),
             "maximum_conservation_residual": float(group["maximum_conservation_residual"].max()),
             "maximum_entropy_balance_completed_only": (
@@ -656,6 +671,7 @@ def evaluate_all(
         "FNO": {
             "status": "not_physics_qualified",
             "lower_nrmse_is_not_solver_success": True,
+            "lower_nmae_is_not_solver_success": True,
             "reason": (
                 "finite/positive output but no FV conservation or entropy guarantee; "
                 "measured conservation and entropy violations plus visible OOD ringing"
@@ -781,10 +797,15 @@ def make_figures(
 
     aggregate = (
         metrics.groupby(["split", "method"], sort=False)
-        .agg(completion=("completed", "mean"), error=("rollout_nrmse", "mean"))
+        .agg(
+            completion=("completed", "mean"),
+            nrmse=("rollout_nrmse", "mean"),
+            nmae=("rollout_nmae", "mean"),
+        )
         .reset_index()
     )
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4), constrained_layout=True)
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4.6))
+    fig.subplots_adjust(left=0.07, right=0.99, bottom=0.20, top=0.76, wspace=0.28)
     plot_methods = ("HLL-32", f"HCFL-s{hcfl_stencil}", "FNO", "clawFNO")
     width = 0.19
     x = np.arange(len(split_order))
@@ -796,16 +817,29 @@ def make_figures(
             width,
             label=display_names[method],
         )
-        axes[1].bar(x + (offset - 1.5) * width, subset.error, width, label=method)
+        axes[1].bar(x + (offset - 1.5) * width, subset.nrmse, width, label=method)
+        axes[2].bar(x + (offset - 1.5) * width, subset.nmae, width, label=method)
     for axis in axes:
         axis.set_xticks(x, labels, rotation=15)
         axis.grid(axis="y", alpha=0.2)
     axes[0].set_ylim(0, 1.05)
-    axes[0].set_ylabel("finite + positive rate (not entropy-qualified)")
-    axes[1].set_ylabel("raw rollout NRMSE (finite + positive only)")
-    axes[1].set_title("Low error alone is not solver success")
-    axes[0].legend(frameon=False, ncol=2)
-    fig.savefig(output / "swe_radial_aggregate.png", dpi=180)
+    axes[0].set_ylabel("finite + positive rate\n(not entropy-qualified)")
+    axes[1].set_ylabel("rollout NRMSE\n(finite + positive only)")
+    axes[2].set_ylabel("rollout normalized MAE\n(finite + positive only)")
+    axes[0].set_title("Completion screen")
+    axes[1].set_title("Normalized RMSE")
+    axes[2].set_title("Normalized MAE")
+    handles, legend_labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        legend_labels,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.90),
+        ncol=4,
+        frameon=False,
+    )
+    fig.suptitle("Low error alone is not physical solver success", y=0.98)
+    fig.savefig(output / "swe_radial_aggregate.png", dpi=180, bbox_inches="tight")
     plt.close(fig)
 
 

@@ -88,5 +88,13 @@
   },
   "official_roenet_commit": "ef877957c1c0ddb16eac17006d75bdf7bd786d45",
   "maximum_optimizer_updates": 50000,
-  "failed_trajectories_are_retained": true
+  "failed_trajectories_are_retained": true,
+  "post_hoc_accuracy_metric": {
+    "added_after_predictions_were_frozen": true,
+    "model_selection_or_retraining_performed": false,
+    "name": "normalized mean absolute error (NMAE)",
+    "definition": "mean(abs((prediction-reference)/training_channel_std))",
+    "same_completion_mask_as_nrmse": true,
+    "raw_per_primitive_channel_mae_is_also_retained": true
+  }
 }

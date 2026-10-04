@@ -120,10 +120,20 @@ def main() -> None:
     require(euler["aggregate"]["fno64"]["completed_cases"] == 1, "Euler FNO failure count changed")
     require(euler["aggregate"]["roenet64"]["completed_cases"] == 3, "RoeNet failure count changed")
     for row in euler["rows"]:
-        if not row["completed"]:
+        if row["completed"]:
+            require(
+                0.0 <= row["rollout_nmae_completed_only"]
+                <= row["rollout_nrmse_completed_only"],
+                "Euler normalized MAE is missing or inconsistent with NRMSE",
+            )
+        else:
             require(
                 row["maximum_saved_snapshot_entropy_increase"] is None,
                 "A failed Euler state was assigned thermodynamic entropy",
+            )
+            require(
+                row["rollout_nmae_completed_only"] is None,
+                "A failed Euler state was assigned finite MAE",
             )
     roenet_report = read_json(RESULTS / "roenet" / "roenet_adaptation64_report_seed0.json")
     require(roenet_report["best_update"] == 2000, "Corrected RoeNet winner changed")
@@ -136,6 +146,10 @@ def main() -> None:
     pinn = read_json(RESULTS / "official_pinn" / "official_lnn2_native_summary.json")
     require(len(pinn["rows"]) == 6, "PINN native table must contain exactly six rows")
     require(not pinn["is_same_task_amortized_comparison"], "PINN scope label became misleading")
+    require(
+        all(0.0 <= row["rollout_nmae"] <= row["rollout_nrmse"] for row in pinn["rows"]),
+        "PINN/HLLC/HCFL MAE fields are missing or inconsistent",
+    )
 
     dataset = torch.load(RESULTS / "swe_radial" / "swe_radial_dataset.pt", weights_only=False)
     for name, spec in C.SPLIT_SPECS.items():
@@ -160,15 +174,22 @@ def main() -> None:
         claw = subset[subset.method == "clawFNO"]
         require(not claw.completed.any(), f"clawFNO failure count changed on {split}")
         require(claw.rollout_nrmse.isna().all(), "Failed clawFNO rows were assigned finite error")
+        require(claw.rollout_nmae.isna().all(), "Failed clawFNO rows were assigned finite MAE")
         require(
             claw.maximum_entropy_balance.isna().all(),
             "Failed clawFNO rows were assigned thermodynamic entropy",
+        )
+        completed = subset[subset.completed]
+        require(
+            (completed.rollout_nmae <= completed.rollout_nrmse + 1.0e-12).all(),
+            f"SWE normalized MAE exceeds NRMSE on {split}",
         )
 
     swe = read_json(RESULTS / "swe_radial" / "swe_radial_summary.json")
     require(
         swe["method_qualification"]["FNO"]["status"] == "not_physics_qualified"
-        and swe["method_qualification"]["FNO"]["lower_nrmse_is_not_solver_success"],
+        and swe["method_qualification"]["FNO"]["lower_nrmse_is_not_solver_success"]
+        and swe["method_qualification"]["FNO"]["lower_nmae_is_not_solver_success"],
         "FNO raw error was incorrectly promoted to physical solver success",
     )
     require(
@@ -205,7 +226,13 @@ def main() -> None:
 
     refinement = read_json(RESULTS / "swe_radial" / "reference_grid_audit.json")
     errors = refinement["primitive_nrmse"]
+    absolute_errors = refinement["primitive_nmae"]
     require(errors["128_vs_256_rollout"] < errors["64_vs_128_rollout"], "Reference is not grid-converging")
+    require(
+        absolute_errors["128_vs_256_rollout"]
+        < absolute_errors["64_vs_128_rollout"],
+        "Reference is not grid-converging in normalized MAE",
+    )
 
     report = {
         "status": "PASS",
@@ -215,9 +242,12 @@ def main() -> None:
         "swe_rows": len(swe_frame),
         "fno_physics_qualification": swe["method_qualification"]["FNO"]["status"],
         "fno_lower_nrmse_is_not_solver_success": True,
+        "fno_lower_nmae_is_not_solver_success": True,
+        "normalized_mae_metrics_present": True,
         "maximum_exact_hcfl_entropy_balance": max(safety_maxima),
         "fully_discrete_tolerance": C.ENTROPY_TOL,
         "reference_grid_audit": errors,
+        "reference_grid_nmae_audit": absolute_errors,
     }
     output = RESULTS / "AUDIT.json"
     output.write_text(json.dumps(report, indent=2), encoding="utf-8")

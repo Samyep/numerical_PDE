@@ -234,8 +234,19 @@ def metrics(
     )
     error = (safe - reference) / state_std.reshape(1, 1, 1, 3)
     error_value = float(torch.sqrt(error.double().square().mean())) if completed else None
+    mae_value = float(error.double().abs().mean()) if completed else None
     final_error = (
         float(torch.sqrt(error[:, -1].double().square().mean())) if completed else None
+    )
+    final_mae = float(error[:, -1].double().abs().mean()) if completed else None
+    predicted_primitive = conservative_to_primitive(safe)
+    reference_primitive = conservative_to_primitive(reference)
+    primitive_absolute_error = (predicted_primitive - reference_primitive).abs().double()
+    primitive_rollout_mae = (
+        primitive_absolute_error.mean(dim=(0, 1, 2)) if completed else None
+    )
+    primitive_final_mae = (
+        primitive_absolute_error[:, -1].mean(dim=(0, 1)) if completed else None
     )
     balances = (
         balance_metrics(safe, boundary)
@@ -252,8 +263,29 @@ def metrics(
         "label": LABELS[method],
         "completed": completed,
         "rollout_nrmse": error_value,
+        "rollout_nmae": mae_value,
         "initial_nrmse": float(torch.sqrt(error[:, 0].double().square().mean())),
+        "initial_nmae": float(error[:, 0].double().abs().mean()),
         "final_nrmse": final_error,
+        "final_nmae": final_mae,
+        "rollout_primitive_mae_density": (
+            float(primitive_rollout_mae[0]) if primitive_rollout_mae is not None else None
+        ),
+        "rollout_primitive_mae_velocity": (
+            float(primitive_rollout_mae[1]) if primitive_rollout_mae is not None else None
+        ),
+        "rollout_primitive_mae_pressure": (
+            float(primitive_rollout_mae[2]) if primitive_rollout_mae is not None else None
+        ),
+        "final_primitive_mae_density": (
+            float(primitive_final_mae[0]) if primitive_final_mae is not None else None
+        ),
+        "final_primitive_mae_velocity": (
+            float(primitive_final_mae[1]) if primitive_final_mae is not None else None
+        ),
+        "final_primitive_mae_pressure": (
+            float(primitive_final_mae[2]) if primitive_final_mae is not None else None
+        ),
         "minimum_density": float(density.min()),
         "minimum_pressure": float(pressure.min()),
         "inference_or_rollout_seconds": seconds,

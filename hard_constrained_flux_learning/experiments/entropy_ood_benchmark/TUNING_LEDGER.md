@@ -115,3 +115,11 @@ resolution and HCFL halves HLL error on ID and doubled-horizon tests.  Raising
 only HCFL's deployment grid after seeing the 32-grid results would break
 the matched comparison.  A future 64-grid 2-D study should be committed as a
 new locked design with all baselines rerun at the same resolution.
+
+## Post-result MAE addition (2026-10-04)
+
+Normalized MAE and raw per-primitive-channel MAE were computed from the
+already frozen trajectories.  No optimizer was restarted, no checkpoint was
+reselected, and no hyperparameter changed.  NMAE uses the same channel
+standardization and completion mask as each table's NRMSE.  This makes the
+addition a reporting analysis, not a new tuning round.

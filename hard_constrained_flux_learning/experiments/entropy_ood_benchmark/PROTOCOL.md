@@ -126,6 +126,21 @@ that quantity is defined.  A failed trajectory is never removed from the
 completion denominator.  Conditional error and completion rate are reported
 separately; no arbitrary finite error is assigned to NaNs.
 
+After the predictions and checkpoints were frozen, normalized mean absolute
+error (NMAE) was added as a second accuracy view at the user's request.  This
+post-hoc metric did not select or retrain any model.  It uses the same
+training-channel standardization and the same completed trajectories as
+NRMSE:
+
+`NMAE = mean(abs((prediction - reference) / training_channel_std))`.
+
+Euler and the native PINN table use the conserved channels `(rho, rho*u, E)`,
+matching their reported NRMSE; 2-D SWE uses primitive channels `(h, u, v)`,
+again matching its NRMSE.  The machine-readable tables additionally retain
+unnormalized per-primitive-channel MAE so that the aggregate cannot hide which
+physical variable dominates.  Model selection remains based on the original
+completion-first, NRMSE-second rule.
+
 ## Tuning history rule
 
 The first run evaluated existing 64-cell checkpoints.  Subsequent tuning used

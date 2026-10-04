@@ -199,13 +199,22 @@ def metrics(
     safe = torch.where(torch.isfinite(trajectory), trajectory, torch.zeros_like(trajectory))
     state_error = (safe - reference) / state_std.reshape(1, 1, 1, -1)
     rollout_nrmse = float(torch.sqrt(state_error.double().square().mean())) if completed else None
+    rollout_nmae = float(state_error.double().abs().mean()) if completed else None
     final_nrmse = (
         float(torch.sqrt(state_error[:, -1].double().square().mean()))
         if completed
         else None
     )
+    final_nmae = float(state_error[:, -1].double().abs().mean()) if completed else None
     predicted_primitive = primitive(safe)
     reference_primitive = primitive(reference)
+    primitive_absolute_error = (predicted_primitive - reference_primitive).abs().double()
+    primitive_rollout_mae = (
+        primitive_absolute_error.mean(dim=(0, 1, 2)) if completed else None
+    )
+    primitive_final_mae = (
+        primitive_absolute_error[:, -1].mean(dim=(0, 1)) if completed else None
+    )
     primitive_scale = reference_primitive.abs().mean(dim=(0, 1, 2)).clamp_min(1.0e-8)
     relative_l1 = (
         float(
@@ -264,7 +273,27 @@ def metrics(
         "finite": finite,
         "first_failure_snapshot": first_failure,
         "rollout_nrmse_completed_only": rollout_nrmse,
+        "rollout_nmae_completed_only": rollout_nmae,
         "final_nrmse_completed_only": final_nrmse,
+        "final_nmae_completed_only": final_nmae,
+        "rollout_primitive_mae_density_completed_only": (
+            float(primitive_rollout_mae[0]) if primitive_rollout_mae is not None else None
+        ),
+        "rollout_primitive_mae_velocity_completed_only": (
+            float(primitive_rollout_mae[1]) if primitive_rollout_mae is not None else None
+        ),
+        "rollout_primitive_mae_pressure_completed_only": (
+            float(primitive_rollout_mae[2]) if primitive_rollout_mae is not None else None
+        ),
+        "final_primitive_mae_density_completed_only": (
+            float(primitive_final_mae[0]) if primitive_final_mae is not None else None
+        ),
+        "final_primitive_mae_velocity_completed_only": (
+            float(primitive_final_mae[1]) if primitive_final_mae is not None else None
+        ),
+        "final_primitive_mae_pressure_completed_only": (
+            float(primitive_final_mae[2]) if primitive_final_mae is not None else None
+        ),
         "primitive_relative_l1_completed_only": relative_l1,
         "maximum_relative_conservation_drift": conservation_drift,
         "saved_snapshot_entropy_violation_rate": entropy_violation_rate,
@@ -331,8 +360,18 @@ def aggregate(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 if completed
                 else None
             ),
+            "mean_rollout_nmae_completed_only": (
+                float(np.mean([row["rollout_nmae_completed_only"] for row in completed]))
+                if completed
+                else None
+            ),
             "worst_rollout_nrmse_completed_only": (
                 float(np.max([row["rollout_nrmse_completed_only"] for row in completed]))
+                if completed
+                else None
+            ),
+            "worst_rollout_nmae_completed_only": (
+                float(np.max([row["rollout_nmae_completed_only"] for row in completed]))
                 if completed
                 else None
             ),

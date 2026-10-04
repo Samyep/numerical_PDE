@@ -783,12 +783,36 @@ def primitive_nrmse(
     return float(torch.sqrt((normalized.double().square()).mean()))
 
 
+def primitive_nmae(
+    prediction: torch.Tensor, reference: torch.Tensor, scale: torch.Tensor
+) -> float:
+    """Mean absolute primitive error after training-channel standardization."""
+    normalized = (primitive(prediction) - primitive(reference)) / scale.to(prediction.device)
+    return float(normalized.double().abs().mean())
+
+
+def primitive_channel_mae(
+    prediction: torch.Tensor, reference: torch.Tensor
+) -> torch.Tensor:
+    """Unnormalized MAE for each primitive channel over every leading axis."""
+    absolute = (primitive(prediction) - primitive(reference)).double().abs()
+    return absolute.reshape(-1, absolute.shape[-1]).mean(dim=0)
+
+
 @dataclass
 class SequenceAudit:
     completed: bool
     minimum_depth: float
     rollout_nrmse: float | None
+    rollout_nmae: float | None
     final_nrmse: float | None
+    final_nmae: float | None
+    rollout_height_mae: float | None
+    rollout_x_velocity_mae: float | None
+    rollout_y_velocity_mae: float | None
+    final_height_mae: float | None
+    final_x_velocity_mae: float | None
+    final_y_velocity_mae: float | None
     maximum_conservation_residual: float
     maximum_entropy_balance: float | None
     entropy_violation_rate: float | None
@@ -828,10 +852,18 @@ def audit_sequence(
     completed = finite and minimum_depth >= H_FLOOR
     if completed:
         rollout = primitive_nrmse(prediction[1:], reference[1:], scale)
+        rollout_nmae = primitive_nmae(prediction[1:], reference[1:], scale)
         final = primitive_nrmse(prediction[-1:], reference[-1:], scale)
+        final_nmae = primitive_nmae(prediction[-1:], reference[-1:], scale)
+        rollout_channel_mae = primitive_channel_mae(prediction[1:], reference[1:])
+        final_channel_mae = primitive_channel_mae(prediction[-1:], reference[-1:])
     else:
         rollout = None
+        rollout_nmae = None
         final = None
+        final_nmae = None
+        rollout_channel_mae = None
+        final_channel_mae = None
 
     initial_sum = prediction[0].double().sum(dim=(-3, -2)) if finite else torch.zeros(3, dtype=torch.float64)
     cumulative = torch.zeros(3, dtype=torch.float64, device=prediction.device)
@@ -888,7 +920,27 @@ def audit_sequence(
         completed=completed,
         minimum_depth=minimum_depth,
         rollout_nrmse=rollout,
+        rollout_nmae=rollout_nmae,
         final_nrmse=final,
+        final_nmae=final_nmae,
+        rollout_height_mae=(
+            float(rollout_channel_mae[0]) if rollout_channel_mae is not None else None
+        ),
+        rollout_x_velocity_mae=(
+            float(rollout_channel_mae[1]) if rollout_channel_mae is not None else None
+        ),
+        rollout_y_velocity_mae=(
+            float(rollout_channel_mae[2]) if rollout_channel_mae is not None else None
+        ),
+        final_height_mae=(
+            float(final_channel_mae[0]) if final_channel_mae is not None else None
+        ),
+        final_x_velocity_mae=(
+            float(final_channel_mae[1]) if final_channel_mae is not None else None
+        ),
+        final_y_velocity_mae=(
+            float(final_channel_mae[2]) if final_channel_mae is not None else None
+        ),
         maximum_conservation_residual=conservation_max,
         # Entropy is not defined once depth is nonpositive.  The failure and
         # minimum depth remain reported, but post-failure entropy is NA.

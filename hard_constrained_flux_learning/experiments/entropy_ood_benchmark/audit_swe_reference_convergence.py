@@ -81,6 +81,17 @@ def main() -> None:
                 sequences[128][:, -1:], sequences[256][:, -1:], scale
             ),
         },
+        "primitive_nmae": {
+            "64_vs_128_rollout": C.primitive_nmae(
+                sequences[64][:, 1:], sequences[128][:, 1:], scale
+            ),
+            "128_vs_256_rollout": C.primitive_nmae(
+                sequences[128][:, 1:], sequences[256][:, 1:], scale
+            ),
+            "128_vs_256_final": C.primitive_nmae(
+                sequences[128][:, -1:], sequences[256][:, -1:], scale
+            ),
+        },
         "interpretation": (
             "The chosen 128-grid reference matches PDEBench's native spatial "
             "resolution, but is not continuum-exact; the 128-vs-256 gap is "
