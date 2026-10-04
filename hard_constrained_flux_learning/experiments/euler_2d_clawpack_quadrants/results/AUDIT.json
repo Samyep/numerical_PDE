@@ -1,0 +1,69 @@
+{
+  "checkpoint_sha256": {
+    "seed0": "e27abe428722d10be3db37b650cde7eb01e92021a0ef499f9236f614118987d8",
+    "seed1": "072f68757495df3df0bd912ab1093dcf69a7e3e8cf2cd81b36b55cb9e2715c69",
+    "seed2": "7bb0436d0cb8c6a6efaf69a3239c902902afabce6bbb5bcefb5468c358380e9d"
+  },
+  "checks": {
+    "all_case_rows_completed": true,
+    "all_hcfl_conservation_closures_below_1e-7": true,
+    "all_hcfl_entropy_balances_nonpositive_with_tolerance": true,
+    "all_hcfl_interface_residuals_below_1e-6": true,
+    "all_seed_best_updates_are_500": true,
+    "all_seed_validation_completion_is_one": true,
+    "all_seeds_validation_plateau_stopped": true,
+    "data_audit_passed": true,
+    "figures_nonempty": true,
+    "no_hcfl_entropy_fallback": true,
+    "no_hcfl_positivity_fallback": true,
+    "selected_stencil_is_six": true,
+    "selection_preceded_official_test": true,
+    "three_seed_reports_present": true
+  },
+  "claim_status": {
+    "not_supported": [
+      "HCFL outperforms native PyClaw Roe-64",
+      "the current normal-stencil HCFL suppresses 2-D grid-aligned oscillations"
+    ],
+    "supported": [
+      "HCFL improves its dimension-by-dimension HLLC base in ID and official OOD NMAE",
+      "all evaluated HCFL rollouts remain positive, conservative, and entropy admissible",
+      "the deployment low-order fallback is inactive in every evaluated HCFL substep"
+    ]
+  },
+  "comparisons": {
+    "official_quadrants": {
+      "hcfl64_nmae": 0.10814370887812226,
+      "hcfl_beats_hllc": true,
+      "hcfl_beats_roe": false,
+      "hcfl_relative_reduction_vs_hllc": 0.07897552118473034,
+      "hcfl_relative_reduction_vs_roe": -0.41776377217037536,
+      "hllc64_nmae": 0.11741675858303946,
+      "roe64_nmae": 0.07627766416444053
+    },
+    "test_id": {
+      "hcfl64_nmae": 0.028238123718574235,
+      "hcfl_beats_hllc": true,
+      "hcfl_beats_roe": false,
+      "hcfl_relative_reduction_vs_hllc": 0.2525683107217014,
+      "hcfl_relative_reduction_vs_roe": -0.6977279667431796,
+      "hllc64_nmae": 0.037780206704696,
+      "roe64_nmae": 0.01663289070553781
+    }
+  },
+  "figures": {
+    "nmae_comparison.png": {
+      "bytes": 82931,
+      "sha256": "87ddd714b8eb41c92b5689ef6bc8e4a1a3056bef0a55f0a0ee02896b871f17a3"
+    },
+    "official_density_linecuts.png": {
+      "bytes": 202254,
+      "sha256": "22148c697f0b63d6e928312051ba456e6b038e38234921273a47900104b48158"
+    },
+    "official_final_density.png": {
+      "bytes": 87863,
+      "sha256": "e10c77eadbb992375c62e73c77cadc2849de6d5c492a0b75a8ac6f7f68b0dcd8"
+    }
+  },
+  "passed": true
+}

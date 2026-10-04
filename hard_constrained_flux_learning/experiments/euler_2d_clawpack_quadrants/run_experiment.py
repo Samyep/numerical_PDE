@@ -555,6 +555,14 @@ def summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 else None
             ),
         }
+        seeded = [row for row in completed if row["seed"] not in (None, "")]
+        seed_means: dict[int, list[float]] = defaultdict(list)
+        for row in seeded:
+            seed_means[int(row["seed"])].append(float(row["nmae"]))
+        means = [float(np.mean(values)) for values in seed_means.values()]
+        summary[key]["nmae_between_seed_std"] = (
+            float(np.std(means)) if len(means) > 1 else None
+        )
         for field in (
             "density_mae",
             "x_velocity_mae",
@@ -587,7 +595,12 @@ def make_figures(
 ) -> None:
     RESULTS.mkdir(parents=True, exist_ok=True)
     states = [reference[-1], native[-1], hllc[-1], hcfl[-1]]
-    titles = ["PyClaw Roe-1024 reference", "PyClaw Roe-64", "HLLC-64", "HCFL-64"]
+    titles = [
+        "PyClaw Roe-1024 reference",
+        "PyClaw Roe-64",
+        "HLLC-64",
+        "HCFL-64 (seed 0)",
+    ]
     density_min = min(float(state[..., 0].min()) for state in states)
     density_max = max(float(state[..., 0].max()) for state in states)
     figure, axes = plt.subplots(1, 4, figsize=(15.2, 3.7), constrained_layout=True)
@@ -635,6 +648,58 @@ def make_figures(
     axes[-1].set_xlabel("x")
     axes[0].legend(ncol=2, fontsize=8)
     figure.savefig(RESULTS / "official_density_linecuts.png", dpi=220)
+    plt.close(figure)
+
+
+def make_nmae_figure(rows: list[dict[str, Any]]) -> None:
+    methods = ("PyClaw Roe-64", "HLLC-64", "HCFL-64")
+    splits = ("test_id", "official_quadrants")
+    labels = ("Held-out ID", "Official quadrants OOD")
+    values = np.zeros((len(splits), len(methods)), dtype=np.float64)
+    errors = np.zeros_like(values)
+    for split_index, split in enumerate(splits):
+        for method_index, method in enumerate(methods):
+            selected = [
+                row
+                for row in rows
+                if row["split"] == split
+                and row["method"] == method
+                and bool(row["completed"])
+            ]
+            if method == "HCFL-64":
+                by_seed: dict[int, list[float]] = defaultdict(list)
+                for row in selected:
+                    by_seed[int(row["seed"])].append(float(row["nmae"]))
+                seed_means = np.asarray(
+                    [np.mean(item) for item in by_seed.values()], dtype=np.float64
+                )
+                values[split_index, method_index] = seed_means.mean()
+                errors[split_index, method_index] = seed_means.std()
+            else:
+                values[split_index, method_index] = np.mean(
+                    [float(row["nmae"]) for row in selected]
+                )
+
+    colors = ("#d55e00", "#0072b2", "#009e73")
+    figure, axes = plt.subplots(1, 2, figsize=(9.2, 3.8), constrained_layout=True)
+    for split_index, axis in enumerate(axes):
+        positions = np.arange(len(methods))
+        axis.bar(
+            positions,
+            values[split_index],
+            yerr=errors[split_index],
+            color=colors,
+            capsize=4,
+            edgecolor="black",
+            linewidth=0.7,
+        )
+        axis.set_xticks(positions, methods, rotation=15, ha="right")
+        axis.set_ylabel("NMAE")
+        axis.set_title(labels[split_index])
+        axis.grid(axis="y", alpha=0.25)
+        for position, value in zip(positions, values[split_index]):
+            axis.text(position, value, f"{value:.4f}", ha="center", va="bottom", fontsize=8)
+    figure.savefig(RESULTS / "nmae_comparison.png", dpi=220)
     plt.close(figure)
 
 
@@ -727,6 +792,7 @@ def evaluate(stencil: int, seeds: list[int], device: torch.device) -> dict[str, 
     make_figures(
         official_reference[0], official_native[0], hllc_official[0], plot_hcfl
     )
+    make_nmae_figure(rows)
     print(json.dumps(summary, indent=2), flush=True)
     return summary
 
