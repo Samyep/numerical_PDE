@@ -1,0 +1,160 @@
+{
+  "files": {
+    "test.npz": {
+      "family_counts": {
+        "colliding_waves": 6,
+        "contact_shear": 6,
+        "oblique_quadrant": 6,
+        "oblique_riemann": 6,
+        "radial_interface": 6,
+        "smooth_packet": 6
+      },
+      "finite": true,
+      "has_native_roe_coarse": true,
+      "metadata": {
+        "balanced_family_cycle": true,
+        "base_generator_sha256": "d378e3640ac4d592cee8b86966cb4bb30604fd08dfacff5369f82a059deb6c1b",
+        "boundary": "constant_extrapolation",
+        "clawpack_version": "5.10.0",
+        "coarse_cells": 64,
+        "common_coarse_initial_state_for_native_baseline": true,
+        "count": 36,
+        "families": [
+          "oblique_riemann",
+          "contact_shear",
+          "oblique_quadrant",
+          "radial_interface",
+          "colliding_waves",
+          "smooth_packet"
+        ],
+        "fine_cells": 512,
+        "gamma": 1.4,
+        "generator_sha256": "f0a1e2a16a19129a509b3672934c729d60b4db3ecdcff37dbbe3a142ad960bff",
+        "output_intervals": 20,
+        "restriction": "conservative_block_average_of_conserved_variables",
+        "seed": 88001,
+        "solver": "classic_pyclaw_euler_4wave_2D",
+        "tfinal": 0.1,
+        "transverse_waves": 2
+      },
+      "minimum_density": 0.14326652884483337,
+      "minimum_pressure": 0.1311856210231781,
+      "passed": true,
+      "sha256": "ed877ba706a48d10266790da9919cf2d5b102bb55dd9a5cc696871aaad8bdea0",
+      "shape": [
+        36,
+        21,
+        64,
+        64,
+        4
+      ],
+      "times_match": true
+    },
+    "train.npz": {
+      "family_counts": {
+        "colliding_waves": 32,
+        "contact_shear": 32,
+        "oblique_quadrant": 32,
+        "oblique_riemann": 32,
+        "radial_interface": 32,
+        "smooth_packet": 32
+      },
+      "finite": true,
+      "has_native_roe_coarse": false,
+      "metadata": {
+        "balanced_family_cycle": true,
+        "base_generator_sha256": "d378e3640ac4d592cee8b86966cb4bb30604fd08dfacff5369f82a059deb6c1b",
+        "boundary": "constant_extrapolation",
+        "clawpack_version": "5.10.0",
+        "coarse_cells": 64,
+        "common_coarse_initial_state_for_native_baseline": false,
+        "count": 192,
+        "families": [
+          "oblique_riemann",
+          "contact_shear",
+          "oblique_quadrant",
+          "radial_interface",
+          "colliding_waves",
+          "smooth_packet"
+        ],
+        "fine_cells": 512,
+        "gamma": 1.4,
+        "generator_sha256": "f0a1e2a16a19129a509b3672934c729d60b4db3ecdcff37dbbe3a142ad960bff",
+        "output_intervals": 20,
+        "restriction": "conservative_block_average_of_conserved_variables",
+        "seed": 86001,
+        "solver": "classic_pyclaw_euler_4wave_2D",
+        "tfinal": 0.1,
+        "transverse_waves": 2
+      },
+      "minimum_density": 0.14307859539985657,
+      "minimum_pressure": 0.09486761689186096,
+      "passed": true,
+      "sha256": "a99ffa2bae301902a14792406dcbbf0b599c375a4989580e19e7ca05fa559f4f",
+      "shape": [
+        192,
+        21,
+        64,
+        64,
+        4
+      ],
+      "times_match": true
+    },
+    "validation.npz": {
+      "family_counts": {
+        "colliding_waves": 6,
+        "contact_shear": 6,
+        "oblique_quadrant": 6,
+        "oblique_riemann": 6,
+        "radial_interface": 6,
+        "smooth_packet": 6
+      },
+      "finite": true,
+      "has_native_roe_coarse": false,
+      "metadata": {
+        "balanced_family_cycle": true,
+        "base_generator_sha256": "d378e3640ac4d592cee8b86966cb4bb30604fd08dfacff5369f82a059deb6c1b",
+        "boundary": "constant_extrapolation",
+        "clawpack_version": "5.10.0",
+        "coarse_cells": 64,
+        "common_coarse_initial_state_for_native_baseline": false,
+        "count": 36,
+        "families": [
+          "oblique_riemann",
+          "contact_shear",
+          "oblique_quadrant",
+          "radial_interface",
+          "colliding_waves",
+          "smooth_packet"
+        ],
+        "fine_cells": 512,
+        "gamma": 1.4,
+        "generator_sha256": "f0a1e2a16a19129a509b3672934c729d60b4db3ecdcff37dbbe3a142ad960bff",
+        "output_intervals": 20,
+        "restriction": "conservative_block_average_of_conserved_variables",
+        "seed": 87001,
+        "solver": "classic_pyclaw_euler_4wave_2D",
+        "tfinal": 0.1,
+        "transverse_waves": 2
+      },
+      "minimum_density": 0.12596572935581207,
+      "minimum_pressure": 0.1271338313817978,
+      "passed": true,
+      "sha256": "7e449077c17a113b8930abed3bb1a249ea147a525ab9023a618b810236f3225c",
+      "shape": [
+        36,
+        21,
+        64,
+        64,
+        4
+      ],
+      "times_match": true
+    }
+  },
+  "passed": true,
+  "splits_are_disjoint": {
+    "train_test": true,
+    "train_validation": true,
+    "validation_test": true
+  }
+}

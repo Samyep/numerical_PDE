@@ -1,0 +1,10 @@
+FROM pytorch/pytorch:2.8.0-cuda12.8-cudnn9-runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# The shared 2-D experiment module imports Matplotlib for its evaluation
+# figures.  Training itself otherwise uses only NumPy and CUDA PyTorch.
+RUN python -m pip install --no-cache-dir "matplotlib==3.10.6"
+
+WORKDIR /workspace

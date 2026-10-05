@@ -1,0 +1,69 @@
+{
+  "checks": {
+    "all_hcfl_test_trajectories_completed": true,
+    "all_training_runs_validation_stopped": true,
+    "data_audit_passed": true,
+    "fully_discrete_entropy_balance_nonpositive": true,
+    "hcfl_improves_hllc_mean_nmae": true,
+    "interface_projection_residual_below_5e-6": true,
+    "learned_correction_is_nonzero": true,
+    "no_positivity_fallback": true,
+    "positive_density_and_pressure": true,
+    "relative_conservation_closure_below_1e-7": true
+  },
+  "entropy_fallback_activations": 1.0,
+  "entropy_fallback_rate_per_batch_substep": 0.00011384335154826958,
+  "hcfl_case_wins_out_of_36": {
+    "HLLC-64": 35,
+    "PyClaw Roe-64": 8
+  },
+  "hcfl_relative_nmae_gap_above_roe": 0.34542585543469384,
+  "hcfl_relative_nmae_improvement_over_hllc": 0.3619617186194459,
+  "learned_flux_nonzero_audit": {
+    "flat18 seed 0": {
+      "coefficient_fraction_above_1e-3": 0.9999877714395944,
+      "mean_absolute_roe_coefficient": 0.7864682979684658,
+      "raw_correction_to_hllc_flux_l1_ratio": 0.006947331518928433,
+      "relative_transverse_coefficient_response": 0.008415330317177304
+    },
+    "flat18 seed 1": {
+      "coefficient_fraction_above_1e-3": 0.9999764040454144,
+      "mean_absolute_roe_coefficient": 0.8264928235789035,
+      "raw_correction_to_hllc_flux_l1_ratio": 0.00708601737305347,
+      "relative_transverse_coefficient_response": 0.011173032118233261
+    },
+    "flat18 seed 2": {
+      "coefficient_fraction_above_1e-3": 0.9999822599757495,
+      "mean_absolute_roe_coefficient": 0.8116003880845596,
+      "raw_correction_to_hllc_flux_l1_ratio": 0.007134737454177166,
+      "relative_transverse_coefficient_response": 0.010233758670522492
+    }
+  },
+  "maximum_fully_discrete_entropy_balance": -9.892259186017327e-06,
+  "maximum_interface_projection_residual": 4.5542571930345943e-07,
+  "maximum_relative_conservation_closure": 3.3278479145802875e-09,
+  "minimum_entropy_fallback_beta": 0.9477882385253906,
+  "passed": true,
+  "positivity_fallback_activations": 0.0,
+  "test_nmae": {
+    "HCFL-64_between_seed_std": 0.00012109098164485997,
+    "HCFL-64_mean": 0.015179569632154487,
+    "HCFL-64_seed_means": [
+      0.015023542414096834,
+      0.01519645903016619,
+      0.015318707452200438
+    ],
+    "HLLC-64": 0.023791001378960716,
+    "PyClaw Roe-64": 0.011282353145540018
+  },
+  "validation_best_nmae": [
+    0.017921127290163784,
+    0.01792391690615405,
+    0.018021653294907344
+  ],
+  "validation_best_update": [
+    500,
+    1000,
+    1000
+  ]
+}
