@@ -1,0 +1,47 @@
+\section{Conclusion}
+MLP can amplify Monte Carlo noise when infeasible intermediate states are passed through nonlinear generators. Constraint-aware MLP inserts a certified retraction exactly at that interface. The strongest result is structural: on a published dimensionality counterexample, enforcing the PDE-certified active subspace removes all nonlinear corrections pathwise and changes the error from ambient-dimension dependent to the exact dimension-free rate $(4-2/\pi)/N$. Beyond that example, high-dimensional experiments show large reductions in generator error and recursive variance, while samplewise and batchwise retractions expose a practical bias--variance tradeoff. The broader message is modest: if PDE structure already tells us where the exact state can live, using that information inside the stochastic recursion can be materially safer than waiting until the final output.
+
+\begin{thebibliography}{9}
+
+\bibitem[E et~al.(2021)E, Hutzenthaler, Jentzen, and Kruse]{E2021}
+W.~E, M.~Hutzenthaler, A.~Jentzen, and T.~Kruse.
+\newblock Multilevel Picard iterations for solving smooth semilinear parabolic heat equations.
+\newblock \emph{Partial Differential Equations and Applications}, 2(6):80, 2021.
+
+\bibitem[Hutzenthaler and Kruse(2020)]{HutzenthalerKruse2020}
+M.~Hutzenthaler and T.~Kruse.
+\newblock Multilevel Picard approximations of high-dimensional semilinear parabolic differential equations with gradient-dependent nonlinearities.
+\newblock \emph{SIAM Journal on Numerical Analysis}, 58(2):929--961, 2020.
+
+\bibitem[Beck et~al.(2020)Beck, Hornung, Hutzenthaler, Jentzen, and Kruse]{Beck2020}
+C.~Beck, F.~Hornung, M.~Hutzenthaler, A.~Jentzen, and T.~Kruse.
+\newblock Overcoming the curse of dimensionality in the numerical approximation of Allen--Cahn PDEs via truncated full-history recursive multilevel Picard approximations.
+\newblock \emph{Journal of Numerical Mathematics}, 28:197--222, 2020.
+
+\bibitem[Fan et~al.(2026)Fan, Sun, Yang, and Lu]{Fan2026}
+Z.~Fan, Y.~Sun, S.~Yang, and Y.~Lu.
+\newblock Physics-informed inference time scaling for solving high-dimensional PDE via defect correction.
+\newblock In \emph{International Conference on Learning Representations}, 2026.
+
+\bibitem[Hutzenthaler and Nguyen(2025)]{HutzenthalerNguyen2025}
+M.~Hutzenthaler and T.~A.~Nguyen.
+\newblock Full history recursive multilevel Picard approximations suffer from the curse of dimensionality for the Hamilton--Jacobi--Bellman equation of a stochastic control problem.
+\newblock arXiv:2506.23969, 2025.
+
+\bibitem[Min et~al.(2024)Min, Sonar, and Azizan]{Min2024}
+Y.~Min, A.~Sonar, and N.~Azizan.
+\newblock Hard-constrained neural networks with universal approximation guarantees.
+\newblock arXiv:2410.10807, 2024.
+
+\bibitem[Neufeld and Wu(2025)]{NeufeldWu2025}
+A.~Neufeld and S.~Wu.
+\newblock Multilevel Picard algorithm for general semilinear parabolic PDEs with gradient-dependent nonlinearities.
+\newblock \emph{Journal of Numerical Mathematics}, 2025.
+
+\bibitem[Neufeld et~al.(2025)Neufeld, Nguyen, and Wu]{NeufeldNguyenWu2025}
+A.~Neufeld, T.~A.~Nguyen, and S.~Wu.
+\newblock Multilevel Picard approximations overcome the curse of dimensionality in the numerical approximation of general semilinear PDEs with gradient-dependent nonlinearities.
+\newblock \emph{Journal of Complexity}, 90:101946, 2025.
+
+\end{thebibliography}
+

@@ -1,0 +1,58 @@
+\section{Certificates Used in the Broader Benchmarks}
+\label{app:certificates}
+\paragraph{Rosenbrock HJB.}
+For $u_t+\Delta u-\norm{\nabla u}^2=0$ and $g(x)=\log(1+x^\top Ax/2)$,
+\[
+\nabla g(x)=\frac{2Ax}{1+x^\top Ax},\qquad
+\norm{\nabla g(x)}\le\sqrt{\lambda_{\max}(A)}.
+\]
+The Hopf--Cole representation carries the same envelope backward in time. With the benchmark convention $z=\sqrt2\nabla u$ and coefficient range giving $\lambda_{\max}(A)\le7.5$, we use $\norm z\le\sqrt{15}$.
+
+\paragraph{Neufeld--Wu.}
+The public example has linear drift $\mu(x)=0.06x$, additive diffusion, a 1-Lipschitz terminal payoff, and a thresholded driver proportional to $(\norm z_\infty-25)_+$. Flow sensitivity gives $\norm{\nabla u(t,\cdot)}\le e^{0.06(T-t)}\le e^{0.015}$ over the benchmark horizon, well below the activation threshold.
+
+\paragraph{Nonlinear funding.}
+For the 100D borrowing/lending benchmark, a model-derived delta envelope yields
+\[
+\sum_{i=1}^d\left(\frac{z_i}{\sigma x_i}\right)^2
+\le \exp(\sigma^2(T-t)),
+\]
+which defines a state-dependent ellipsoid in normalized delta coordinates.
+
+\section{Additional Experimental Results}
+\begin{table}[h]
+\caption{Corrected HJB--Rosenbrock mean relative $L_2$ error.}
+\centering\small
+\begin{tabular}{rrrrr}
+\toprule
+$d$&heur.&exact ball&$\sqrt{15}$ ball&box\\
+\midrule
+100&2.080&0.561&0.634&1.110\\
+120&2.277&0.555&0.641&1.117\\
+140&2.414&0.547&0.635&1.121\\
+160&2.492&0.565&0.643&1.121\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\caption{Neufeld--Wu benchmark, 30 runs.}
+\centering\small
+\begin{tabular}{rrrrr}
+\toprule
+$d$&$M$&raw MAE&IR MAE&reduction\\
+\midrule
+100&2&0.05687&0.01888&66.8\%\\
+100&3&0.01637&0.00469&71.4\%\\
+200&2&0.04989&0.01505&69.8\%\\
+200&3&0.01103&0.00580&47.5\%\\
+300&2&0.03813&0.01887&50.5\%\\
+300&3&0.01397&0.00668&52.2\%\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Reproducibility Note}
+Code, aggregate results, validation scripts, and project notes are maintained in the project repository. The counterexample implementation uses the source random-time law and matched random trees; the HJB tables use the corrected scaled Gauss--Laguerre reference rather than the superseded unscaled high-dimensional quadrature.
+
+\end{document}

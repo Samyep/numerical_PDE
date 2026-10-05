@@ -1,0 +1,48 @@
+\section{Where Do the Constraints Come From?}
+\label{sec:certificates-main}
+The method is useful only when $\mathcal C(t,x)$ is certified independently of the noisy solver output. We use three kinds of structure. First, translation symmetry can force inactive gradient coordinates to be exactly zero, producing a linear subspace. Second, Hopf--Cole or Lipschitz arguments can give norm balls for gradients. Third, financial sensitivities can yield state-dependent ellipsoids in normalized coordinates. These are not thresholds tuned to realized test error.
+
+For the Rosenbrock HJB benchmark, the terminal condition is $g(x)=\log(1+x^\top Ax/2)$ and $\norm{\nabla g(x)}\le\sqrt{\lambda_{\max}(A)}$. The Hopf--Cole representation carries this envelope backward; with the benchmark convention $z=\sqrt2\nabla u$ and $\lambda_{\max}(A)\le7.5$, we obtain the non-oracle ball $\norm z\le\sqrt{15}$. In the Neufeld--Wu benchmark, a flow-sensitivity bound places the exact gradient well below the threshold where the driver activates. In the funding problem, the certificate is an ellipsoid in normalized delta coordinates. Derivations are collected in Appendix~\ref{app:certificates}.
+
+\section{Exact Structural Rescue}
+\label{sec:rescue}
+Consider the family studied by \citet{HutzenthalerNguyen2025}:
+\begin{equation}
+g_d(x)=|x_1|,\qquad
+f_d(v)=\left(\sum_{j=2}^dv_j^2\right)^{1/2},
+\label{eq:counterdata}
+\end{equation}
+\begin{equation}
+\partial_tu_d+\tfrac12\Delta u_d+f_d(\nabla u_d)=0,
+\qquad u_d(1,x)=g_d(x).
+\label{eq:counterpde}
+\end{equation}
+Although the target depends only on $x_1$, the full-history recursion estimates all $d$ gradient coordinates. Noise in coordinates $2{:}d$ is nonnegative after $f_d$ and becomes a spurious recursive source. The source paper proves that the unprojected method suffers a dimensional lower bound with depth-dependent quantifiers; Appendix~\ref{app:counter} states it precisely.
+
+Translation symmetry certifies the active subspace
+\[
+S_d=\operatorname{span}(e_1),\qquad \nabla u_d(t,x)\in S_d,
+\]
+and the driver is exactly compatible with it:
+\begin{equation}
+f_d(v)=0\quad\text{for all }v\in S_d.
+\label{eq:null}
+\end{equation}
+
+\begin{theorem}[Structural rescue and dimension-free error]
+\label{thm:rescue}
+Apply any recursive correction before every $f_d$ evaluation such that each corrected child gradient lies in $S_d$ almost surely. Then all nonlinear multilevel corrections vanish pathwise. In particular, for recursive orthogonal projection $Q_d$ onto $S_d$, at $(t,x)=(0,0)$ with $N=m^n$ terminal samples,
+\begin{equation}
+\E\norm{\widehat Y^{\rm IR}_{n,m}-Y^\star}^2
+=\frac{4-2/\pi}{N},
+\label{eq:exactmse}
+\end{equation}
+independent of ambient dimension $d$. Any batch-coupled correction of the form $v_i\mapsto\alpha_BQ_dv_i$, $0\le\alpha_B\le1$, has the same pathwise nonlinear collapse.
+\end{theorem}
+\begin{proof}
+Equation~\eqref{eq:null} makes every corrected generator value zero, recursively, so the full nonlinear tree collapses to the projected terminal block. At the origin the only nonzero estimated components are
+$N^{-1}\sum_i|G_i|$ and $N^{-1}\sum_i|G_i|G_i$, with $G_i\sim\mathcal N(0,1)$. They are unbiased with variances $(1-2/\pi)/N$ and $3/N$; summing gives~\eqref{eq:exactmse}. The batch statement follows because $\alpha_BQ_dv_i\in S_d$.
+\end{proof}
+
+The theorem identifies the essential property: not clipping magnitude, but returning to a \emph{generator-compatible certified set}. Final-only projection cannot undo earlier nonlinear feedback; generator-only projection fixes the value path but leaves inactive gradient noise in the reported state. Exact ablation identities are in Appendix~\ref{app:counter}.
+
