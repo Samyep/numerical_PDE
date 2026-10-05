@@ -1,6 +1,9 @@
 \section{Conclusion}
 MLP can amplify Monte Carlo noise when infeasible intermediate states are passed through nonlinear generators. Constraint-aware MLP inserts a certified retraction exactly at that interface. The strongest result is structural: on a published dimensionality counterexample, enforcing the PDE-certified active subspace removes all nonlinear corrections pathwise and changes the error from ambient-dimension dependent to the exact dimension-free rate $(4-2/\pi)/N$. Beyond that example, high-dimensional experiments show large reductions in generator error and recursive variance, while samplewise and batchwise retractions expose a practical bias--variance tradeoff. The broader message is modest: if PDE structure already tells us where the exact state can live, using that information inside the stochastic recursion can be materially safer than waiting until the final output.
 
+\section*{Impact Statement}
+This paper develops numerical methods for high-dimensional PDEs. Its broader impacts are those of improving scientific and financial simulation tools; no application-specific societal impact is singled out here.
+
 \begin{thebibliography}{9}
 
 \bibitem[E et~al.(2021)E, Hutzenthaler, Jentzen, and Kruse]{E2021}
