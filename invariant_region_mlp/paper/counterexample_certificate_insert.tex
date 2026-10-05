@@ -11,25 +11,34 @@ Hence the counterexample PDE is the HJB equation of
  \qquad a_{s,1}=0,
  \qquad \|a_s\|_2\le1,
 \]
-with terminal reward $g_d(X_1)=|X_{1,1}|$.  The controller cannot move the
-first coordinate, while the reward reads only that coordinate.  Thus, for
-every admissible control,
+with terminal reward $g_d(X_1)=|X_{1,1}|$. The controller cannot move the
+first coordinate, while the reward reads only that coordinate. Thus every
+admissible control produces the same terminal payoff distribution and
 \[
- X_{s,1}=x_1+W_1(s)-W_1(t),
+ u_d(t,x)=\mathbb E|x_1+W_1(1)-W_1(t)|.
 \]
-so every control produces the same terminal payoff distribution. Therefore
-\[
- u_d(t,x)=\sup_a \mathbb E|X^{t,x,a}_{1,1}|
- =\mathbb E|x_1+W_1(1)-W_1(t)|.
-\]
-The value function is independent of $x_2,\ldots,x_d$, hence
+Consequently
 \[
  \partial_{x_2}u_d=\cdots=\partial_{x_d}u_d=0,
  \qquad
- \nabla u_d(t,x)\in \operatorname{span}(e_1).
+ \nabla u_d(t,x)\in S_d:=\operatorname{span}(e_1).
 \]
-Thus the invariant subspace is certified by the PDE/control structure rather
-than selected from numerical ground truth.
+
+\paragraph{The rescue is a property of the retraction, not of one projector.}
+Since
+\[
+ f_d(z)=\|z_{2:d}\|_2=0\qquad\text{for every }z\in S_d,
+\]
+any recursive correction---including a batch-coupled one---that returns every
+child gradient to $S_d$ before the parent evaluates $f_d$ makes the nonlinear
+full-history corrections vanish pathwise. Samplewise IR uses $Q_dz_i$.
+A batchwise structural version may use
+\[
+ \widetilde z_i=\alpha_BQ_dz_i,\qquad0\le\alpha_B\le1.
+\]
+Both therefore exact-rescue the nonlinear feedback. Pure common scaling
+$\alpha_Bz_i$ by itself is not sufficient because it leaves inactive
+coordinates nonzero.
 
 % Appendix insert: short verification/uniqueness intuition
 \paragraph{Verification intuition.}
@@ -38,21 +47,16 @@ Write the HJB equation as
  w_t+\tfrac12\Delta w+
  \sup_{\substack{a_1=0\\\|a\|_2\le1}} a^\top\nabla w=0.
 \]
-For a sufficiently smooth solution $w$ and any admissible controlled diffusion
-$X^a$, It\^o's formula gives
+For a sufficiently smooth solution $w$ and any admissible controlled
+diffusion $X^a$, It\^o's formula gives
 \[
  dw(s,X_s^a)=
  \bigl(w_t+\tfrac12\Delta w+a_s^\top\nabla w\bigr)ds
  +\nabla w^\top dW_s.
 \]
 Since $a_s^\top\nabla w$ is bounded above by the Hamiltonian supremum, the
-drift is nonpositive. Hence
-\[
- w(t,x)\ge \mathbb E g_d(X_1^a)
-\]
-for every admissible control. Choosing a maximizing feedback direction makes
-the drift zero, giving equality with the control value. Therefore any
-classical solution agrees with the same value function. For the nonsmooth
+drift is nonpositive, hence $w(t,x)\ge\mathbb E g_d(X_1^a)$ for every
+admissible control. A maximizing feedback gives equality. For the nonsmooth
 terminal datum $|x_1|$, the rigorous counterpart is the standard
 viscosity-solution dynamic-programming/comparison argument for this globally
 Lipschitz Hamiltonian.
