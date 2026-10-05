@@ -55,3 +55,13 @@ The experiment changes the methodological picture:
 5. Samplewise IR retains distinct theoretical advantages: locality, nearest-point geometry, deterministic Fejer improvement, and no cross-sample coupling.
 
 A natural next question is: among constraint-preserving transformations of a stochastic Picard batch, what bias--variance tradeoff is optimal before a nonlinear generator?
+
+
+## Extended suite (2026-10-05)
+
+We subsequently ran the requested extension in priority order 1 -> 2 -> 3 -> 6 -> 4:
+headline 100--160D HJB, deeper funding, Neufeld--Wu at M=2, matched Batch-IR mechanism diagnostics, and a batchwise structural sanity check on the dimensionality counterexample.
+
+The main new result is that, on the corrected headline HJB protocol (n=2, M=10), Batch-IR reduces mean relative-L2 error from Samplewise IR values 0.621--0.640 to 0.243--0.265 across d=100--160, winning all 10/10 paired repetitions at every dimension. On the same states, Batch-IR also has lower generator MSE and lower variance of the actual nonlinear level correction. Deeper funding tests retain a 10.5--21.8% MAE reduction relative to Samplewise IR. Neufeld--Wu remains an exact value-error tie between the two feasible corrections, and the structural counterexample confirms realization-by-realization equality after applying the certified subspace map before the common batch scale.
+
+See `docs/batchwise_extended_suite_report.md` and `results/batch_contraction/batchwise_extended_suite_summary.json` for the complete tables and caveats.
