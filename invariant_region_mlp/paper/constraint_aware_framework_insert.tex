@@ -1,0 +1,102 @@
+% Unified manuscript insert: two recursive retractions and structural rescue
+
+\subsection{Constraint-aware recursive retractions}
+\label{sec:constraint-retractions}
+
+Let $Y=(Y_1,\ldots,Y_B)$ denote a sibling Monte Carlo batch of recursive
+MLP child-state estimates, and let $\mathcal C(t,x)$ be a PDE-certified
+feasible set for the exact state. We apply a retraction
+\[
+  \mathcal R_B:Y\longmapsto \mathcal R_B(Y)\in\mathcal C(t,x)^B
+\]
+\emph{before} the corrected child states are reused by the nonlinear
+generator $F$. We require $\mathcal R_B(Y)=Y$ for an already feasible
+batch. This formulation separates the structural requirement of returning to
+the certified set from the statistical geometry used to perform the
+correction.
+
+\paragraph{Samplewise IR-MLP.}
+For a closed convex set,
+\[
+ [\mathcal R_{\rm sep}(Y)]_i=\Pi_{\mathcal C}(Y_i).
+\]
+Equivalently,
+\[
+ \mathcal R_{\rm sep}(Y)
+ \in\arg\min_{Z\in\mathcal C^B}\sum_{i=1}^B\|Z_i-Y_i\|_2^2.
+\]
+This retraction is local and nonexpansive.
+
+\paragraph{Batchwise Gauge IR.}
+For a star-shaped or gauge feasible set
+\[
+ \mathcal C=\{y:\gamma_{\mathcal C}(y)\le1\},
+\]
+define
+\[
+ \Gamma(Y)=\max_{1\le i\le B}\gamma_{\mathcal C}(Y_i),
+ \qquad
+ \alpha_B(Y)=\min\{1,\Gamma(Y)^{-1}\},
+\]
+and use
+\[
+ [\mathcal R_{\rm batch}(Y)]_i=\alpha_B(Y)Y_i.
+\]
+Thus all sibling samples use the largest common feasible scale. The method
+preserves their relative directions and ratios but couples the batch and
+generally changes its empirical mean. Samplewise and batchwise IR therefore
+share the same certified product set, insertion point, and fixed-point target;
+they differ in the geometry of the retraction.
+
+\subsection{A retraction-invariant counterexample rescue}
+\label{sec:retraction-rescue}
+
+For the counterexample let
+\[
+ S_d=\operatorname{span}(e_1),
+ \qquad
+ f_d(z)=\|z_{2:d}\|_2.
+\]
+The control certificate gives $\nabla u_d(t,x)\in S_d$, and
+$f_d(z)=0$ for every $z\in S_d$.
+
+\begin{proposition}[Structural recursive rescue]
+\label{prop:structural-retraction-rescue}
+Consider any recursive correction, possibly coupled across a sibling Monte
+Carlo batch, such that every corrected gradient returned to a parent generator
+evaluation belongs to $S_d$. Then every nonlinear full-history Picard
+correction vanishes pathwise. Consequently the high-dimensional nonlinear
+recursion reduces to terminal Monte Carlo on the active first coordinate.
+\end{proposition}
+
+The proposition is deliberately independent of Euclidean projection.
+Samplewise IR uses $z_i\mapsto Q_dz_i$, where $Q_d$ is the orthogonal
+projection onto $S_d$. A structurally compatible batchwise realization is
+\[
+ z_i\mapsto \alpha_BQ_dz_i,
+ \qquad 0\le\alpha_B\le1,
+\]
+which has the same pathwise nonlinear collapse. In contrast, pure common
+scaling $z_i\mapsto\alpha_Bz_i$ does not exact-rescue this example because
+it need not remove the inactive coordinates.
+
+For the samplewise choice at $(t,x)=(0,0)$, with $N=m^n$ terminal samples,
+\[
+ \mathbb E\|\widehat Y^{\rm IR}-Y^*\|_2^2
+ =\frac{4-2/\pi}{N},
+\]
+independent of the ambient dimension. The structural theorem therefore
+identifies the essential property behind the rescue: recursive return to a
+generator-compatible certified set, rather than a particular choice of
+nearest-point projector.
+
+\paragraph{Finite-sample tradeoff.}
+The two retractions need not have the same finite-sample error away from the
+exact-rescue setting. In paired low-budget HJB experiments, Batch-IR reduces
+relative $L_2$ error from $0.2412$ to $0.0966$ at $d=20$ and from $0.1993$
+to $0.0833$ at $d=40$ compared with Samplewise IR. In the 100-dimensional
+nonlinear-funding benchmark, the corresponding MAEs are $0.5102$ versus
+$0.4807$ at $M=10$, $0.2965$ versus $0.2539$ at $M=20$, and $0.1993$
+versus $0.1486$ at $M=40$. We therefore treat the two algorithms as
+complementary realizations of the same constraint-aware principle rather than
+claiming that Euclidean projection is universally optimal.
