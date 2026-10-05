@@ -38,7 +38,13 @@ python run_diverse64.py train --seed 0
 python run_diverse64.py train --seed 1
 python run_diverse64.py train --seed 2
 python run_diverse64.py evaluate --seeds 0 1 2
+python plot_final_heatmaps.py
 ```
+
+`plot_final_heatmaps.py` uses seed 0 and the first held-out case from each
+family, chosen without looking at test error.  It renders final-time density
+with nearest-cell interpolation and a common colour scale within each row,
+plus directly comparable absolute-error heatmaps.
 
 Large generated `.npz` files are reproducible and ignored by Git.  Selected
 checkpoints, scalar curves, audits, and the final report are retained.
