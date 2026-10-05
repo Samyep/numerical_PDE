@@ -1,0 +1,39 @@
+{
+  "best_update": 10000,
+  "best_validation_completion": 1.0,
+  "best_validation_metrics": {
+    "completion": 1.0,
+    "final_density_tv_excess_completed": 0.07580771343782544,
+    "maximum_entropy_balance": -0.0014348745091865567,
+    "maximum_interface_residual": 3.583588165274876e-08,
+    "mean_absolute_transverse_coefficient_response": 0.003964854587638189,
+    "mean_transverse_gate": 0.024807091017879507,
+    "minimum_density": 0.25740137696266174,
+    "minimum_entropy_beta": 1.0,
+    "minimum_positivity_theta": 1.0,
+    "minimum_pressure": 0.19564786553382874,
+    "relative_transverse_coefficient_response": 0.004472304965400372,
+    "rollout_nmae_completed": 0.029294820157372056,
+    "rollout_nrmse_completed": 0.08593795299316646
+  },
+  "best_validation_nmae": 0.029294820157372056,
+  "cells_per_face_input": 18,
+  "checkpoint": "flat18_best_seed1.pt",
+  "maximum_updates": 50000,
+  "method": "18-cell transverse HLLC + signed Roe correction + hard entropy projection + proposal feasibility",
+  "oriented_patch": [
+    3,
+    6
+  ],
+  "parameters": 10804,
+  "proposal_feasibility_weight": 0.001,
+  "seed": 1,
+  "stop_reason": "validation_plateau_at_minimum_learning_rate",
+  "stop_update": 11500,
+  "training_seconds": 3714.0031552000437,
+  "training_substeps_per_saved_interval": 6,
+  "uses_low_order_flux_during_training": false,
+  "uses_low_order_flux_only_in_deployment_safety_wrapper": true,
+  "validation_interval": 500,
+  "variant": "flat18"
+}

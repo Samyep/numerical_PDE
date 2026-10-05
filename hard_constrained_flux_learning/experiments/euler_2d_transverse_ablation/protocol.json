@@ -1,0 +1,32 @@
+{
+  "status": "exploratory_causal_architecture_ablation",
+  "question": "Does adding true transverse context reduce the error and grid-aligned oscillation of the normal-only 2-D HCFL model?",
+  "cells_per_face_input": 18,
+  "oriented_patch": [3, 6],
+  "variants": {
+    "normal6wide": "capacity control: normal six-cell input with width 90 and exactly the same 10,804 parameters as flat18",
+    "flat18": "single MLP over all 3x6 primitive cells; transverse relevance is learned without a structural gate",
+    "gated18": "six-cell normal branch plus zero-compatible transverse residual gate; exact reduction when all three rows agree"
+  },
+  "controlled_factors": {
+    "training_data": "reuse frozen euler_2d_clawpack_quadrants train split",
+    "validation_data": "reuse frozen validation split",
+    "optimizer_and_stopping": "same as the original 6-cell experiment",
+    "base_flux": "HLLC",
+    "roe_correction": "signed four-wave normal Roe basis",
+    "hard_entropy_projection": true,
+    "proposal_feasibility_weight": 0.001,
+    "deployment_low_order_endpoint": "HLL"
+  },
+  "parameter_counts": {
+    "normal6wide": 10804,
+    "flat18": 10804,
+    "gated18": 10872
+  },
+  "selection": "completion_then_validation_NMAE",
+  "selected_architecture": "flat18 after seed-0 validation ablation",
+  "confirmation_seeds": [0, 1, 2],
+  "official_quadrant_role": "post-hoc diagnostic only; never used for selection because it was already observed",
+  "capacity_control_amendment": "normal6wide was added after flat18 validation began but before any new test or official-quadrant evaluation; it is an adversarial attribution control, not a selectable transverse method",
+  "interpretation_limit": "A later confirmatory experiment requires newly generated validation and held-out oblique/quadrant cases."
+}
