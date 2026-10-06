@@ -30,6 +30,7 @@ import euler_2d_common as C  # noqa: E402
 TRANSVERSE_VARIANTS = ("flat18", "gated18")
 MODEL_TYPES = ("normal6wide", *TRANSVERSE_VARIANTS)
 CONSISTENT_VARIANT = "central_nonnegative18"
+NORMAL6_CONSISTENT_VARIANT = "central_nonnegative6"
 # Backward-compatible name used by the first running flat18 process.
 VARIANTS = TRANSVERSE_VARIANTS
 NORMAL_SHIFTS = (-3, -2, -1, 0, 1, 2)
@@ -248,6 +249,59 @@ class DirectionalPatchCentralNonnegativeRoe(nn.Module):
         return self._assemble_oriented(state, self.multipliers(state))
 
 
+class DirectionalNormalCentralNonnegativeRoe(nn.Module):
+    """The retained central/nonnegative Roe map on a normal six-cell stencil.
+
+    This is the dimension-consistent 2-D analogue of the six-cell 1-D model:
+    only cells along the face normal enter the shared neural network.  The
+    transverse numerical transport, when requested, is supplied separately by
+    a fixed solver and introduces no learned parameters.
+    """
+
+    def __init__(
+        self,
+        mean: np.ndarray,
+        std: np.ndarray,
+        width: int = 72,
+    ) -> None:
+        super().__init__()
+        self.shifts = NORMAL_SHIFTS
+        self.net = _mlp(6 * 4, width)
+        self.register_buffer("mean", torch.tensor(mean, dtype=torch.float32))
+        self.register_buffer("std", torch.tensor(std, dtype=torch.float32))
+
+    def normalized_stencil(self, state: torch.Tensor) -> torch.Tensor:
+        values = C.primitive(state)
+        cells = values.shape[-2]
+        interfaces = torch.arange(1, cells, device=state.device)
+        offsets = torch.tensor(self.shifts, device=state.device)
+        indices = (interfaces[:, None] + offsets[None, :]).clamp(0, cells - 1)
+        gathered = values.index_select(-2, indices.reshape(-1)).reshape(
+            *values.shape[:-2], cells - 1, len(self.shifts), 4
+        )
+        return (gathered - self.mean) / self.std
+
+    def multipliers(self, state: torch.Tensor) -> torch.Tensor:
+        features = self.normalized_stencil(state).flatten(start_dim=-2)
+        return 1.0 + torch.tanh(self.net(features))
+
+    @staticmethod
+    def _assemble_oriented(
+        state: torch.Tensor, multipliers: torch.Tensor
+    ) -> torch.Tensor:
+        return DirectionalPatchCentralNonnegativeRoe._assemble_oriented(
+            state, multipliers
+        )
+
+    def standard_roe_faces_oriented(self, state: torch.Tensor) -> torch.Tensor:
+        shape = (*state.shape[:-2], state.shape[-2] - 1, 4)
+        multipliers = torch.ones(shape, dtype=state.dtype, device=state.device)
+        return self._assemble_oriented(state, multipliers)
+
+    def forward_oriented(self, state: torch.Tensor) -> torch.Tensor:
+        return self._assemble_oriented(state, self.multipliers(state))
+
+
 class HCFL2DTransverse(C.HCFL2DEuler):
     """HCFL wrapper retaining the original hard projections and safety path."""
 
@@ -273,6 +327,16 @@ class HCFL2DCentralNonnegative(C.HCFL2DEuler):
         self.stencil_cells = 18
 
 
+class HCFL2DNormalCentralNonnegative(C.HCFL2DEuler):
+    """Six normal cells, with the retained 1-D HCFL flux parameterization."""
+
+    def __init__(self, mean: np.ndarray, std: np.ndarray) -> None:
+        nn.Module.__init__(self)
+        self.flux_net = DirectionalNormalCentralNonnegativeRoe(mean, std)
+        self.variant = NORMAL6_CONSISTENT_VARIANT
+        self.stencil_cells = 6
+
+
 def make_model(
     mean: np.ndarray,
     std: np.ndarray,
@@ -284,4 +348,6 @@ def make_model(
         return C.HCFL2DEuler(mean, std, width=90, stencil_cells=6)
     if variant == CONSISTENT_VARIANT:
         return HCFL2DCentralNonnegative(mean, std)
+    if variant == NORMAL6_CONSISTENT_VARIANT:
+        return HCFL2DNormalCentralNonnegative(mean, std)
     return HCFL2DTransverse(mean, std, variant)

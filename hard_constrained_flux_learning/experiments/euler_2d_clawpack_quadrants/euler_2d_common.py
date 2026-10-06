@@ -461,7 +461,10 @@ class HCFL2DEuler(nn.Module):
         )
         self.stencil_cells = stencil_cells
 
-    def raw_fluxes(self, state: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def raw_fluxes(
+        self, state: torch.Tensor, dt: float | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        del dt
         raw_x = self.flux_net.forward_oriented(orient_state(state, "x"))
         raw_y = deorient_flux(
             self.flux_net.forward_oriented(orient_state(state, "y")), "y"
@@ -496,8 +499,10 @@ class HCFL2DEuler(nn.Module):
         )
         return flux_x, deorient_flux(flux_y_oriented, "y")
 
-    def projected_fluxes(self, state: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        return self.project_raw_fluxes(state, self.raw_fluxes(state))
+    def projected_fluxes(
+        self, state: torch.Tensor, dt: float | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.project_raw_fluxes(state, self.raw_fluxes(state, dt=dt))
 
     def feasibility_loss_from_raw(
         self,
@@ -547,6 +552,26 @@ def boundary_conservation_increment(state: torch.Tensor, dt: float) -> torch.Ten
     x_increment = (flux_x[..., -1, :] - flux_x[..., 0, :]).sum(dim=-2)
     y_oriented = (flux_y[..., -1, :] - flux_y[..., 0, :]).sum(dim=-2)
     y_increment = y_oriented[..., [0, 2, 1, 3]]
+    return factor * (x_increment + y_increment)
+
+
+def numerical_boundary_conservation_increment(
+    state: torch.Tensor,
+    fluxes: tuple[torch.Tensor, torch.Tensor],
+    dt: float,
+) -> torch.Tensor:
+    """Boundary contribution of the numerical fluxes actually used.
+
+    For the dimension-by-dimension solvers this equals
+    :func:`boundary_conservation_increment`.  A corner-transport method may
+    add a uniform transverse correction at transmissive boundary faces; using
+    the actual face arrays keeps the conservation audit exact in both cases.
+    """
+
+    flux_x, flux_y = fluxes
+    factor = dt / (DOMAIN_LENGTH / state.shape[-2])
+    x_increment = (flux_x[..., -1, :] - flux_x[..., 0, :]).sum(dim=-2)
+    y_increment = (flux_y[..., -1, :, :] - flux_y[..., 0, :, :]).sum(dim=-2)
     return factor * (x_increment + y_increment)
 
 
@@ -640,12 +665,22 @@ def _global_entropy_blend(
 
 
 def _conservation_closure(
-    before: torch.Tensor, after: torch.Tensor, dt: float
+    before: torch.Tensor,
+    after: torch.Tensor,
+    dt: float,
+    fluxes: tuple[torch.Tensor, torch.Tensor] | None = None,
 ) -> float:
+    boundary = (
+        boundary_conservation_increment(before.double(), dt)
+        if fluxes is None
+        else numerical_boundary_conservation_increment(
+            before.double(), (fluxes[0].double(), fluxes[1].double()), dt
+        )
+    )
     closure = (
         after.double().sum(dim=(-3, -2))
         - before.double().sum(dim=(-3, -2))
-        + boundary_conservation_increment(before.double(), dt)
+        + boundary
     )
     scale = before.double().abs().sum(dim=(-3, -2)).clamp_min(1.0)
     return float((closure.abs() / scale).max())
@@ -671,7 +706,7 @@ def advance_hllc_interval(
             raise RuntimeError("HLLC could not retain an admissible Euler state")
         statistics["maximum_conservation_closure"] = max(
             statistics["maximum_conservation_closure"],
-            _conservation_closure(state, candidate, dt),
+            _conservation_closure(state, candidate, dt, fluxes),
         )
         statistics["substeps"] += 1.0
         state = candidate
@@ -712,7 +747,7 @@ def advance_hcfl_interval(
         else:
             raise RuntimeError("Could not establish the low-order Euler premise")
 
-        high_fluxes = model.projected_fluxes(state)
+        high_fluxes = model.projected_fluxes(state, dt=dt)
         positive_fluxes, theta = _global_admissibility_blend(
             state, high_fluxes, low_fluxes, dt
         )
@@ -757,7 +792,7 @@ def advance_hcfl_interval(
         )
         statistics["maximum_conservation_closure"] = max(
             statistics["maximum_conservation_closure"],
-            _conservation_closure(state, candidate, dt),
+            _conservation_closure(state, candidate, dt, final_fluxes),
         )
         statistics["substeps"] += 1.0
         state = candidate

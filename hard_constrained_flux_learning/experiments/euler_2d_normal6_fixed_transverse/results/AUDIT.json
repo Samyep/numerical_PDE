@@ -1,0 +1,109 @@
+{
+  "checks": {
+    "all_test_trajectories_completed": true,
+    "all_training_runs_validation_stopped": true,
+    "fully_discrete_entropy_within_tolerance": true,
+    "interface_projection_residual_below_5e-6": true,
+    "learned_normal_flux_is_not_standard_roe": true,
+    "relative_conservation_closure_below_1e-7": true,
+    "roe_multipliers_nonnegative_and_bounded": true,
+    "transverse_solver_has_zero_trainable_parameters": true
+  },
+  "entropy_fallback_activations": 32.0,
+  "entropy_fallback_rate_per_batch_substep": 0.003618272274988693,
+  "learned_flux_audit": {
+    "HCFL-6 + fixed transverse Roe seed 0": {
+      "fixed_transverse_to_normal_flux_l1_ratio": 0.0003541406417478574,
+      "maximum_roe_multiplier": 1.978688359260559,
+      "mean_absolute_multiplier_change_from_one": 0.8201402654092779,
+      "mean_roe_multiplier": 0.1827585733336326,
+      "minimum_roe_multiplier": 0.0013736486434936523,
+      "multiplier_change_fraction_above_1e-3": 0.9999888048390653,
+      "normal_proposal_change_from_standard_roe_l1_ratio": 0.007266629120348855,
+      "raw_full_proposal_entropy_violation_fraction": 0.06536802799823634,
+      "transverse_trainable_parameters": 0.0
+    },
+    "HCFL-6 + fixed transverse Roe seed 1": {
+      "fixed_transverse_to_normal_flux_l1_ratio": 0.0003520617835387332,
+      "maximum_roe_multiplier": 1.9748127460479736,
+      "mean_absolute_multiplier_change_from_one": 0.8451989357223376,
+      "mean_roe_multiplier": 0.15773520705140667,
+      "minimum_roe_multiplier": 0.0011906623840332031,
+      "multiplier_change_fraction_above_1e-3": 0.9999869102733686,
+      "normal_proposal_change_from_standard_roe_l1_ratio": 0.007418695319805831,
+      "raw_full_proposal_entropy_violation_fraction": 0.07053571428571428,
+      "transverse_trainable_parameters": 0.0
+    },
+    "HCFL-6 + fixed transverse Roe seed 2": {
+      "fixed_transverse_to_normal_flux_l1_ratio": 0.0003504346004147971,
+      "maximum_roe_multiplier": 1.9658560752868652,
+      "mean_absolute_multiplier_change_from_one": 0.7958862499795473,
+      "mean_roe_multiplier": 0.206053848535716,
+      "minimum_roe_multiplier": 0.002522289752960205,
+      "multiplier_change_fraction_above_1e-3": 0.9999872547398589,
+      "normal_proposal_change_from_standard_roe_l1_ratio": 0.007192320159902027,
+      "raw_full_proposal_entropy_violation_fraction": 0.06260196208112875,
+      "transverse_trainable_parameters": 0.0
+    }
+  },
+  "maximum_fully_discrete_entropy_balance": -8.581591828260571e-07,
+  "maximum_interface_projection_residual": 4.285316978699938e-08,
+  "maximum_relative_conservation_closure": 2.297111647618281e-09,
+  "minimum_entropy_fallback_beta": 0.0,
+  "paired_comparisons": {
+    "HCFL-18 learned transverse": {
+      "bootstrap_95_percent_interval": [
+        -0.0004881179533063152,
+        1.7420110945922103e-05
+      ],
+      "candidate_case_wins_out_of_36": 28,
+      "mean_paired_nmae_difference": -0.00022424582684258917
+    },
+    "HCFL-6 transverse disabled after training": {
+      "bootstrap_95_percent_interval": [
+        -0.00015127703178894987,
+        0.0001391773937092297
+      ],
+      "candidate_case_wins_out_of_36": 15,
+      "mean_paired_nmae_difference": 5.823792023430519e-07
+    },
+    "HLLC-64": {
+      "bootstrap_95_percent_interval": [
+        -0.011241450324266938,
+        -0.007337362567910368
+      ],
+      "candidate_case_wins_out_of_36": 35,
+      "mean_paired_nmae_difference": -0.00928327514150585
+    },
+    "PyClaw Roe-64": {
+      "bootstrap_95_percent_interval": [
+        0.002003939789241004,
+        0.004509724561495453
+      ],
+      "candidate_case_wins_out_of_36": 8,
+      "mean_paired_nmae_difference": 0.00322537309191485
+    }
+  },
+  "passed": true,
+  "positivity_fallback_activations": 0.0,
+  "relative_nmae_change_fixed_vs_learned_transverse": -0.015221711381468241,
+  "relative_nmae_change_fixed_vs_pyclaw_roe": 0.28587769327091694,
+  "relative_nmae_change_fixed_vs_same_weights_transverse_disabled": 4.014430462897886e-05,
+  "test_nmae": {
+    "HCFL-18 learned transverse": 0.014731972064297461,
+    "HCFL-6 + fixed transverse Roe": 0.014507726237454872,
+    "HCFL-6 transverse disabled after training": 0.01450714385825253,
+    "HLLC-64": 0.023791001378960716,
+    "PyClaw Roe-64": 0.011282353145540018
+  },
+  "validation_best_nmae": [
+    0.01780930053438909,
+    0.017957084489449833,
+    0.0179690428143155
+  ],
+  "validation_best_update": [
+    1500,
+    1500,
+    1000
+  ]
+}
