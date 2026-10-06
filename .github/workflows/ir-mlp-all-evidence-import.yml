@@ -1,4 +1,4 @@
-name: Import approved IR-MLP complete-evidence manuscript
+name: Build approved IR-MLP all-evidence manuscript
 on:
   push:
     branches: [publish/ir-mlp-all-evidence-20261005]
@@ -6,75 +6,81 @@ on:
 permissions:
   contents: write
 jobs:
-  import:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 1
-      - name: Verify and unpack approved source distribution
+          fetch-depth: 2
+      - name: Reconstruct verified transfer
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          import hashlib, io, json, shutil, tarfile
-          transfer=Path('_manuscript_transfer/ir_mlp_all_evidence')
-          meta=json.loads((transfer/'READY.json').read_text())
-          payload=b''.join((transfer/f'part-{i:02d}.bin').read_bytes() for i in range(meta['parts']))
-          assert hashlib.sha256(payload).hexdigest()==meta['sha256'], 'Transfer checksum mismatch'
-          dest=Path('invariant_region_mlp/paper/icml2026')
-          legacy=dest/'legacy_tight_20261005'
-          legacy.mkdir(parents=True,exist_ok=True)
-          for name in ['main.tex','README.md','icml2026.sty']:
-              p=dest/name
-              if p.exists(): shutil.copy2(p,legacy/name)
-          if (dest/'sections').exists(): shutil.copytree(dest/'sections',legacy/'sections',dirs_exist_ok=True)
-          with tarfile.open(fileobj=io.BytesIO(payload),mode='r:xz') as archive:
-              for item in archive.getmembers():
-                  assert item.isfile() and not item.name.startswith('/') and '..' not in Path(item.name).parts, item.name
-              archive.extractall(dest,filter='data')
-          inventory=json.loads((dest/'GIT_DISTRIBUTION.json').read_text())
-          for name,expected in inventory['sha256'].items():
-              assert hashlib.sha256((dest/name).read_bytes()).hexdigest()==expected, name
-          report={'source_payload_sha256':meta['sha256'],'verified_files':len(inventory['sha256']),'distinct_panels':34,'placements':35,'raw_cache_and_preview_omissions':inventory['omitted_recomputable_or_preview_files'],'status':'all included source and figure bytes verified'}
-          (dest/'GIT_PUBLISH_REPORT.json').write_text(json.dumps(report,indent=2)+'\n')
-          (dest/'all_evidence_sources.tar.xz').write_bytes(payload)
-          print(json.dumps({k:v for k,v in report.items() if k!='raw_cache_and_preview_omissions'},indent=2))
-          PY
-      - name: Install LaTeX build dependencies
+          set -euo pipefail
+          T=_manuscript_transfer/ir_mlp_all_evidence
+          cat "$T"/text_payload.part*.bin > /tmp/ir_mlp_text_payload.tar.xz
+          cat "$T"/finance_budget_curve.png.part*.bin > /tmp/finance_budget_curve.png
+          cat "$T"/hjb_violation_rate_panel.png.part*.bin > /tmp/hjb_violation_rate_panel.png
+          echo "4121d875df8795e9f8650128c97797fdcc72b48ec2ff3dcd1292f66455ff548b  /tmp/ir_mlp_text_payload.tar.xz" | sha256sum -c -
+          echo "11aa02be6407e24fda565ef86f8c582bc1f90828fccde0eb5e3d79f3ce505f76  /tmp/finance_budget_curve.png" | sha256sum -c -
+          echo "e66ea02b21372417b0309630603b8fb676ac026fd98f9ecb2ff280b1e0ee4b02  /tmp/hjb_violation_rate_panel.png" | sha256sum -c -
+          rm -rf invariant_region_mlp/paper/icml2026
+          mkdir -p invariant_region_mlp/paper/icml2026/figures
+          tar -xJf /tmp/ir_mlp_text_payload.tar.xz -C invariant_region_mlp/paper/icml2026
+          cp /tmp/finance_budget_curve.png invariant_region_mlp/paper/icml2026/figures/
+          cp /tmp/hjb_violation_rate_panel.png invariant_region_mlp/paper/icml2026/figures/
+      - name: Install build dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
-      - name: Compile the unchanged manuscript and package Overleaf sources
+          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils libcairo2
+          python -m pip install --disable-pip-version-check numpy matplotlib cairosvg
+      - name: Regenerate all reproducible figure panels
         working-directory: invariant_region_mlp/paper/icml2026
         run: |
+          set -euo pipefail
+          python scripts/restore_figures.py
+          python scripts/plot_extended_suite.py
+          python scripts/plot_restored_evidence.py
+          # Keep the two archived raster panels and vector PDFs; discard redundant generated PNG copies/SVG renderings.
+          find figures -type f -name '*.png' ! -name 'finance_budget_curve.png' ! -name 'hjb_violation_rate_panel.png' -delete
+          find figures -type f -name '*.svg' -delete
+      - name: Compile ICML manuscript
+        working-directory: invariant_region_mlp/paper/icml2026
+        run: |
+          set -euo pipefail
           pdflatex -interaction=nonstopmode -halt-on-error main.tex > build-pass-1.txt
           pdflatex -interaction=nonstopmode -halt-on-error main.tex > build-pass-2.txt
           pdflatex -interaction=nonstopmode -halt-on-error main.tex > build-pass-3.txt
           if grep -E 'There were undefined references|Reference .* undefined|Citation .* undefined' main.log; then exit 1; fi
-          pdfinfo main.pdf | head -20
+          pdfinfo main.pdf | grep -E '^(Pages|Page size)'
           python - <<'PY'
           from pathlib import Path
-          import json, re, subprocess, zipfile
-          d=json.loads(Path('GIT_DISTRIBUTION.json').read_text())
-          report=json.loads(Path('GIT_PUBLISH_REPORT.json').read_text())
+          import json,re,subprocess
           info=subprocess.check_output(['pdfinfo','main.pdf'],text=True)
-          report['compiled_pages']=int(re.search(r'^Pages:\s+(\d+)',info,re.M).group(1))
-          report['compile_passes']=3
-          report['undefined_references']=False
-          Path('GIT_PUBLISH_REPORT.json').write_text(json.dumps(report,indent=2)+'\n')
-          names=list(d['sha256'])+['GIT_DISTRIBUTION.json','GIT_PUBLISH_REPORT.json','main.pdf']
-          with zipfile.ZipFile('overleaf_all_evidence.zip','w',zipfile.ZIP_DEFLATED) as z:
-              for name in names: z.write(name,name)
-          print('Packaged',len(names),'files; PDF pages:',report['compiled_pages'])
-          for name in ['main.aux','main.log','main.out','main.toc','build-pass-1.txt','build-pass-2.txt','build-pass-3.txt']:
-              Path(name).unlink(missing_ok=True)
+          pages=int(re.search(r'^Pages:\s+(\d+)',info,re.M).group(1))
+          refs=[]
+          for p in [Path('main.tex'), *sorted(Path('sections').glob('*.tex'))]:
+              refs += re.findall(r'\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}',p.read_text())
+          missing=[r for r in refs if not Path(r).exists()]
+          assert not missing, missing
+          Path('GIT_PUBLISH_REPORT.json').write_text(json.dumps({
+              'source':'Constraint_Aware_MLP_ICML2026_all_evidence.zip',
+              'compiled_pages':pages,
+              'figure_placements':len(refs),
+              'distinct_figure_files':len(set(refs)),
+              'compile_passes':3,
+              'undefined_references':False,
+              'transfer_checksums_verified':True,
+              'note':'Large raw overshoot NPZ and duplicate raster renderings are omitted; all manuscript-used panels are present.'
+          },indent=2)+'\n')
           PY
-      - name: Publish only the manuscript directory to this staging branch
+          rm -f main.aux main.log main.out main.toc build-pass-1.txt build-pass-2.txt build-pass-3.txt
+      - name: Commit clean manuscript tree to staging branch
         run: |
+          set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add invariant_region_mlp/paper/icml2026
-          git diff --cached --stat
-          git commit -m 'Publish complete-evidence ICML manuscript with all 34 figure panels'
+          git add -A invariant_region_mlp/paper/icml2026
+          git rm -rf _manuscript_transfer/ir_mlp_all_evidence
+          git rm .github/workflows/ir-mlp-all-evidence-import.yml
+          git commit -m 'Publish complete-evidence ICML manuscript with all figure panels'
           git push origin HEAD:publish/ir-mlp-all-evidence-20261005
