@@ -1,0 +1,69 @@
+{
+  "protocol": {
+    "d": 100,
+    "T": 0.1,
+    "N": 50,
+    "Adam_iterations": 500,
+    "batch": 64,
+    "validation": 256,
+    "start_radius": 0.5,
+    "solver": "neural random-terminal-time BSDE; not MLP"
+  },
+  "no_scale_3seed": [
+    {
+      "method": "No scale",
+      "rel_u_error": 0.0176,
+      "terminal_loss": 0.0275
+    },
+    {
+      "method": "Joint ball",
+      "rel_u_error": 0.018,
+      "terminal_loss": 0.0103
+    },
+    {
+      "method": "Coordinate box",
+      "rel_u_error": 0.0053,
+      "terminal_loss": 0.2682
+    }
+  ],
+  "seed0": [
+    {
+      "method": "No scale",
+      "gradient_error": 4.781,
+      "driver_abs_error": 41.106,
+      "terminal_loss": 0.0264
+    },
+    {
+      "method": "Joint ball",
+      "gradient_error": 1.222,
+      "driver_abs_error": 0.241,
+      "terminal_loss": 0.0109
+    },
+    {
+      "method": "Coordinate box",
+      "gradient_error": 7.657,
+      "driver_abs_error": 60.9,
+      "terminal_loss": 0.262
+    },
+    {
+      "method": "Upstream /d",
+      "gradient_error": 0.862,
+      "driver_abs_error": 0.722,
+      "terminal_loss": 0.0063
+    }
+  ],
+  "radius_sweep": [
+    {
+      "radius": 1,
+      "terminal_loss": 0.0109
+    },
+    {
+      "radius": 2,
+      "terminal_loss": 0.0275
+    },
+    {
+      "radius": 4,
+      "terminal_loss": 0.102
+    }
+  ]
+}

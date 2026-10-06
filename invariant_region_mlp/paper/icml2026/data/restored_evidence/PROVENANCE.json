@@ -1,0 +1,38 @@
+{
+  "base_manuscript": "Constraint_Aware_MLP_ICML2026_batchwise_extended.zip",
+  "main_repo_snapshot": "Samyep/numerical_PDE@771f26594aa7ee364d426ad29744b7716d76cdc3",
+  "archival_repo": "Samyep/invariant-region-mlp",
+  "archival_tree_sha": "e0d6116998dbb9d68f1fdd9427efb5cde0ed9696",
+  "parabolic_archive_git_blob_sha": "60168f9e831fb30ba19ee233dcafd9980a6c8f07",
+  "finance_archive_library_file_id": "file_000000006cf4822fba709c9eeb6e5634",
+  "negative_controls": {
+    "path": "invariant_region_mlp/results/negative_controls/batchir_negative_controls.json",
+    "blob_sha": "9718c8aea133297fb6014ece27a1dd1de3557381",
+    "representation": "exact extracted metric subset; no raw replicas reconstructed"
+  },
+  "batch_additional": {
+    "path": "invariant_region_mlp/docs/batch_contraction_report.md",
+    "blob_sha": "c61aa1e2e26aa5538c1c82b3b109f11adf132ed6",
+    "precision": "as printed in report"
+  },
+  "elliptic": {
+    "path": "docs/elliptic_quadratic_gradient_report.md",
+    "blob_sha": "4a9cc8c365c4683ba0d0ac5cc06a6eb68835a72d",
+    "diagnostic_definition_code_blob": "f48e1f79fe7dd54d1975baa000047a3d150130d7",
+    "precision": "rounded report; not new PDE experiment"
+  },
+  "overshoot": {
+    "status": "new independent reproduction of old Figure 7 diagnostic",
+    "original_png_recovered": false,
+    "original_summary_spearman_overshoot_gain": 0.889,
+    "original_summary_spearman_violation_gain": 0.996,
+    "new_protocol": "overshoot_36_protocol.json",
+    "new_points": "overshoot_36_results.json",
+    "new_raw_arrays": "overshoot_36_raw.npz"
+  },
+  "data_caveats": [
+    "The archived Neufeld JSON contains a literal newline in one unused diagnostic key. The standard metric subset is read with strict=False and saved separately; original bytes are preserved.",
+    "The archived violation_gain_sweep.json uses superseded unscaled reference errors and contains a malformed numeric token. It is archived unchanged, never parsed into current plots.",
+    "Full new Batch-IR extension data and old baseline assets are not overwritten."
+  ]
+}

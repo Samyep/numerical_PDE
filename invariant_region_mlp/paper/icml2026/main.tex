@@ -1,11 +1,685 @@
-% Tight ICML 2026 submission version.
-% The full Overleaf package contains the figure assets; this repository source
-% keeps the manuscript text modular and compiles with placeholders if those
-% assets are not present.
-\input{sections/00_front.tex}
-\input{sections/01_method.tex}
-\input{sections/02_constraints_rescue.tex}
-\input{sections/03_experiments_discussion.tex}
-\input{sections/04_conclusion_refs.tex}
-\input{sections/90_appendix_theory_counterexample.tex}
-\input{sections/91_appendix_certificates_experiments.tex}
+\documentclass{article}
+
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{placeins}
+\usepackage{microtype}
+\usepackage[hyperfootnotes=false]{hyperref}
+\usepackage{icml2026}
+\raggedbottom
+% Float placement only: keep paired evidence near its first discussion.
+\renewcommand{\dbltopfraction}{0.92}
+\renewcommand{\textfraction}{0.08}
+\setcounter{dbltopnumber}{2}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newcommand{\R}{\mathbb R}
+\newcommand{\E}{\mathbb E}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\Proj}{\operatorname{Proj}}
+\newcommand{\dist}{\operatorname{dist}}
+
+\icmltitlerunning{Constraint-Aware Multilevel Picard Methods}
+
+\begin{document}
+
+\twocolumn[
+\icmltitle{Constraint-Aware Multilevel Picard Methods}
+
+\begin{icmlauthorlist}
+\icmlauthor{Yeping Wang}{gatech}
+\end{icmlauthorlist}
+\icmlaffiliation{gatech}{H. Milton Stewart School of Industrial and Systems Engineering, Georgia Institute of Technology, USA}
+\icmlcorrespondingauthor{Yeping Wang}{anonymous@anonymous.edu}
+\icmlkeywords{multilevel Picard, high-dimensional PDE, Monte Carlo, hard constraints, invariant regions}
+\vskip 0.3in
+]
+\printAffiliationsAndNotice{}
+
+\begin{abstract}
+Multilevel Picard (MLP) methods repeatedly feed finite-sample value--gradient estimates into a nonlinear generator. We study a simple failure mode: a noisy child state can leave a region that PDE structure certifies for the exact solution, and the generator can amplify that infeasible component before Monte Carlo averaging has a chance to cancel it. We propose constraint-aware MLP, which retracts child states into certified feasible sets immediately before nonlinear reuse, with both samplewise nearest-point and batch-coupled gauge realizations. On a known high-dimensional MLP counterexample, a certified active subspace makes the offending generator vanish; recursively enforcing that subspace removes every nonlinear correction pathwise and yields exact full-state MSE $(4-2/\pi)/N$, independent of ambient dimension. In a paired 100--160D HJB study, Batch-IR reduces value error by 57--62\% relative to Samplewise IR, with gains also persisting in deeper nonlinear-funding recursions. Matched generator and level-correction diagnostics, thresholded-driver ties, and inactive-constraint controls delimit this finite-budget advantage rather than establish universal dominance.
+\end{abstract}
+
+\begin{figure*}[!t]
+\centering
+\begin{tikzpicture}[node distance=.60cm,>=Stealth,every node/.style={font=\small}]
+\node[draw,rounded corners,align=center,minimum width=3.0cm,minimum height=.90cm] (raw) {Raw child state(s)\\$\widehat Y_i=(\widehat u_i,\widehat z_i)$};
+\node[draw,rounded corners,align=center,right=of raw,minimum width=3.15cm,minimum height=.90cm] (proj) {Certified retraction\\samplewise or batchwise};
+\node[draw,rounded corners,align=center,right=of proj,minimum width=2.95cm,minimum height=.90cm] (f) {Nonlinear generator\\$f(t_i,x_i,\widetilde Y_i)$};
+\node[draw,rounded corners,align=center,right=of f,minimum width=2.85cm,minimum height=.90cm] (next) {Next recursive\\state};
+\draw[->] (raw)--(proj); \draw[->] (proj)--(f); \draw[->] (f)--(next);
+\draw[->] (next.south) -- ++(0,-.55cm) -| (raw.south);
+\node[below=.65cm of proj,xshift=1.5cm] {reused at a higher Picard level};
+\end{tikzpicture}
+\caption{\textbf{Retract before nonlinear reuse.} The correction acts inside the stochastic tree, between each child estimate and the nonlinear generator. Samplewise IR corrects children independently; Batch-IR uses a common feasible scale. A correction only at the final output cannot undo earlier generator evaluations.}
+\label{fig:interface}
+\end{figure*}
+
+\section{Introduction}
+High-dimensional MLP methods combine Picard iteration with Monte Carlo and multilevel differences to solve semilinear parabolic PDEs without spatial grids \citep{E2021,HutzenthalerKruse2020,NeufeldWu2025}. Their recursive structure creates a numerical issue that is easy to miss: a finite-sample value--gradient state is itself an input to later nonlinear evaluations. Thus an error that would be harmless under linear averaging can become large after a norm, square, threshold, or other nonlinear transformation.
+
+Suppose PDE structure certifies that the exact state $Y^\star=(u,z)$ lies in a set $\mathcal C(t,x)$, but a Monte Carlo child $\widehat Y$ lies outside. The usual recursion evaluates $f(t,x,\widehat Y)$ anyway. Our proposal is minimal:
+\begin{equation}
+\widehat Y \;\longrightarrow\; \widetilde Y=\mathcal R(\widehat Y)\in\mathcal C(t,x)
+\;\longrightarrow\; f(t,x,\widetilde Y),
+\label{eq:principle}
+\end{equation}
+where the correction occurs \emph{inside} the tree, before nonlinear reuse. We call this constraint-aware MLP.
+
+We study two realizations. \textbf{Samplewise IR-MLP} applies the metric projection independently to each child. \textbf{Batch-IR} uses one common gauge factor for a sibling Monte Carlo batch. Samplewise projection has cleaner geometry; batchwise contraction couples samples and moves the empirical mean, but can suppress batch spread more aggressively.
+
+Clipping inside MLP is already used in truncated MLP and SCaSML \citep{Beck2020,Fan2026}. Our contribution is not the projection primitive or its insertion before a driver call. It is the connection between \emph{PDE-certified value--gradient geometry}, the nonlinear feedback it removes, and the statistical choice of a separable or batch-coupled correction (Section~\ref{sec:related}).
+
+The main theoretical result is an exact structural rescue of the dimensionality counterexample of \citet{HutzenthalerNguyen2025}. The true gradient lies in $\operatorname{span}(e_1)$, on which the offending driver vanishes. Enforcing this structure recursively removes every nonlinear correction pathwise. Ordinary samplewise convergence is a supporting inheritance result, conditional on the assumptions of existing MLP theory, rather than a separate contribution (Appendix~\ref{app:convergence}).
+
+\paragraph{Contributions.}
+\textbf{(1) Geometry-aware recursive correction.} We formulate a common interface for correcting completed value--gradient child estimates before nonlinear reuse, with samplewise metric projection and a shared batch gauge as two realizations.
+\textbf{(2) Exact structural rescue.} We give a generator-compatible sufficient condition for pathwise collapse on a published counterexample and derive exact dimension-independent MSE for recursive subspace projection; final-only and generator-only ablations isolate the required insertion points.
+\textbf{(3) Mechanism-resolving evidence.} Paired high-dimensional HJB, deeper funding, and gradient-dependent experiments connect final error to generator MSE and the variance of the averaged recursive correction. Thresholded-driver ties, batchwise structural checks, and inactive-constraint controls delimit the finite-budget advantage.
+
+\section{Related Work}
+\label{sec:related}
+\paragraph{MLP and gradient-dependent solvers.}
+MLP combines Picard iteration, Monte Carlo sampling, and multilevel differences \citep{E2021}. Gradient-dependent variants approximate the solution and its gradient through stochastic representations \citep{HutzenthalerKruse2020,HutzenthalerJentzenKruse2022}. \citet{NeufeldWu2025} develop a scheme for nonconstant coefficients, and \citet{NeufeldNguyenWu2025} establish polynomial complexity under suitable dimension-dependent assumptions. These works supply our numerical engine and conditional convergence theory; we study the feasible-state corrections inserted within that engine.
+
+\paragraph{Truncated MLP: the closest algorithmic precedent.}
+\citet{Beck2020} use a priori solution bounds to treat locally Lipschitz coercive scalar reactions, including Allen--Cahn equations. Their truncated driver is $f\circ P_r$, with $P_r$ the interval projector; nonexpansiveness transfers a Lipschitz bound to the modified driver \citep[Eq.~(76), Lemma~3.2]{Beck2020}. Thus PDE-based truncation before nonlinear evaluation and the modified-driver inheritance argument are existing ideas. We extend the numerical focus from scalar reaction truncation to structured value--gradient constraints, including inactive subspaces, joint norm bounds, and normalized sensitivity regions. The substantive questions are which geometry eliminates a harmful gradient-feedback mechanism and how separable versus batch-coupled retractions affect finite-budget error.
+
+\paragraph{Surrogate correction and clipping.}
+SCaSML uses a learned PDE surrogate and solves a semilinear defect equation with an MLP corrector at inference time \citep{Fan2026}. Its experimental implementations also clip estimated values and gradients; clipping is therefore not a distinction by itself. Our intervention concerns the geometry of child states passed to the nonlinear driver, rather than the construction or learning of a defect equation. Surrogate correction reduces the defect to be estimated; our retractions control which noisy states the driver reuses. The mechanisms are complementary, and our standalone method requires no trained surrogate.
+
+\paragraph{Hard constraints in learned predictors.}
+HardNet embeds hard-constraint enforcement into neural networks and proves universal approximation guarantees for constrained predictors \citep{MinAzizan2025}. We share the use of feasible-set geometry, but apply it to recursive Monte Carlo child estimates rather than trainable network outputs. The relevant guarantees concern recursive numerical error rather than approximation capacity of a learned function.
+
+\paragraph{Constraints on the physical process.}
+\citet{Zhong2025} study MLP for drift-control problems with state constraints using reflected dynamics. Those constraints restrict the controlled spatial process. Our sets instead restrict the estimated solution--gradient pair $(u,z)$ at a sampled point, without imposing reflection on the simulated diffusion. The constrained objects, and therefore the numerical modifications, are different.
+
+\paragraph{Dimensional failure and structural rescue.}
+\citet{HutzenthalerNguyen2025} identify an HJB family for which the original full-history recursion suffers dimensional deterioration despite a low-dimensional solution. Building on that failure, we identify a sufficient repair condition: every corrected gradient lies in a certified set on which the offending generator vanishes. This yields pathwise collapse for any compatible retraction and an exact MSE for the subspace projector (Theorem~\ref{thm:rescue}). The certificate is supplied by PDE symmetry, not learned from data; after collapse, the estimator equals reduced Monte Carlo. This identifies and repairs an obstruction in the stochastic recurrence while retaining the reduced-dimensional benchmark as the appropriate reference.
+
+\section{Constraint-Aware MLP}
+\label{sec:method}
+Consider a semilinear parabolic PDE
+\begin{equation}
+\partial_tu+\mathcal Lu+f(t,x,u,z)=0,\qquad u(T,x)=g(x),
+\label{eq:pde}
+\end{equation}
+with gradient-like state $z=\sigma(t,x)^\top\nabla_xu$. MLP recursively estimates $Y=(u,z)$ at random space--time points and reuses those estimates inside $f$. The relevant failure mode is not merely that $\widehat Y$ has large variance; it is that the nonlinear map can destroy cancellation. For example, if the exact gradient obeys $\norm{z}\le 4$ but a finite-sample estimate has norm $12$, then the quadratic HJB driver $f(z)=-\tfrac12\norm z^2$ turns a factor-three state error into a factor-nine driver magnitude. Once this value enters a higher Picard level, a final-output correction is too late. Figure~\ref{fig:interface} shows the insertion point.
+
+
+
+\subsection{Two recursive retractions}
+Let $Y_1,\ldots,Y_B$ be completed sibling child-state estimates at sampled points $(t_i,x_i)$, with certified sets $\mathcal C_i=\mathcal C(t_i,x_i)$. The formulas suppress the index when all sets coincide.
+
+\paragraph{Samplewise IR.}
+For nonempty closed convex $\mathcal C$,
+\begin{equation}
+\widetilde Y_i=\Pi_{\mathcal C}Y_i.
+\label{eq:samplewise}
+\end{equation}
+This is local, introduces no cross-sample coupling, and makes the smallest Euclidean correction to each child.
+
+\paragraph{Batch-IR.}
+For a gauge set $\mathcal C=\{y:\gamma_{\mathcal C}(y)\le1\}$, define
+\begin{equation}
+\alpha_B=\min\!\left\{1,\frac{1}{\max_i\gamma_{\mathcal C_i}(Y_i)}\right\},
+\qquad \widetilde Y_i=\alpha_BY_i.
+\label{eq:batch}
+\end{equation}
+For a common ball, $\alpha_B=\min\{1,R/\max_i\norm{Y_i}\}$. At distinct sampled points each child uses its own gauge. The gradient-only experiments leave the value component unchanged. A common scale preserves relative directions and magnitudes in the constrained coordinates, but couples siblings and moves their empirical mean.
+
+\begin{table}[t]
+\caption{Same feasibility principle, different statistical geometry.}
+\label{tab:methods}
+\centering\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+& Samplewise & Batchwise\\
+\midrule
+map & $\Pi_{\mathcal C}Y_i$ & $\alpha_BY_i$\\
+coupling & none & shared\\
+nearest point & yes & no\\
+theory & projection & structural rescue\\
+risk & proj. bias & coupling/bias\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Target Preservation and Local Work}
+The key deterministic geometry is the projection inequality: for every feasible $Y^\star\in\mathcal C$,
+\begin{equation}
+\norm{\Pi_{\mathcal C}Y-Y^\star}^2
+\le \norm{Y-Y^\star}^2-\dist(Y,\mathcal C)^2.
+\label{eq:pyth}
+\end{equation}
+Thus samplewise projection removes at least the squared overshoot component of child-state error.
+
+\begin{proposition}[Target preservation]
+\label{prop:target}
+If $Y^\star(t,x)\in\mathcal C(t,x)$ and the retraction is the identity on feasible states, then constraint-aware evaluation leaves the exact generator unchanged:
+\[
+f\bigl(t,x,\mathcal R(Y^\star(t,x))\bigr)=f(t,x,Y^\star(t,x)).
+\]
+Hence the correction stabilizes off-target stochastic states rather than changing the intended PDE solution.
+\end{proposition}
+\begin{proof}
+Feasibility gives $\mathcal R(Y^\star)=Y^\star$.
+\end{proof}
+
+For samplewise convex projection, this can be strengthened under the standard assumptions used by gradient-dependent MLP theory: defining $\bar f(t,x,y)=f(t,x,\Pi_{\mathcal C(t,x)}y)$ yields an ordinary MLP problem with the same feasible solution, and nonexpansiveness of projection does not increase the state Lipschitz constant. We give the short inheritance argument in Appendix~\ref{app:convergence}.
+
+\paragraph{Work order.}
+Projection onto the coordinate subspaces, balls, and diagonal-normalized ellipsoids used below costs $O(d)$ per state. Forming a batch gauge and rescaling $B$ $d$-dimensional states costs $O(Bd)$, the same arithmetic order as reading the batch. When the projected problem satisfies the cited convergence theorem with the same parameter scalings, this local overhead preserves its polynomial complexity exponents. For Batch-IR we claim only unchanged per-update arithmetic order; a sharp cost-to-accuracy theory must account for coupling and is future work.
+
+\section{Where Do the Constraints Come From?}
+\label{sec:certificates-main}
+The method is useful only when $\mathcal C(t,x)$ is certified independently of the noisy solver output. We use three kinds of structure. First, translation symmetry can force inactive gradient coordinates to be exactly zero, producing a linear subspace. Second, Hopf--Cole or Lipschitz arguments can give norm balls for gradients. Third, financial sensitivities can yield state-dependent ellipsoids in normalized coordinates. These are not thresholds tuned to realized test error.
+
+For the Rosenbrock HJB benchmark, the terminal condition is $g(x)=\log((1+x^\top Ax)/2)$ and $\norm{\nabla g(x)}\le\sqrt{\lambda_{\max}(A)}$. The Hopf--Cole representation carries this envelope backward; with the benchmark convention $z=\sqrt2\nabla u$ and $\lambda_{\max}(A)\le7.5$, we obtain the non-oracle ball $\norm z\le\sqrt{15}$. In the Neufeld--Wu benchmark, a flow-sensitivity bound places the exact gradient well below the threshold where the driver activates. In the funding problem, the certificate is an ellipsoid in normalized delta coordinates. Derivations are collected in Appendix~\ref{app:certificates}.
+
+\section{Exact Structural Rescue}
+\label{sec:rescue}
+Consider the family studied by \citet{HutzenthalerNguyen2025}:
+\begin{equation}
+g_d(x)=|x_1|,\qquad
+f_d(v)=\left(\sum_{j=2}^dv_j^2\right)^{1/2},
+\label{eq:counterdata}
+\end{equation}
+\begin{equation}
+\partial_tu_d+\tfrac12\Delta u_d+f_d(\nabla u_d)=0,
+\qquad u_d(1,x)=g_d(x).
+\label{eq:counterpde}
+\end{equation}
+Although the target depends only on $x_1$, the full-history recursion estimates all $d$ gradient coordinates. Noise in coordinates $2{:}d$ is nonnegative after $f_d$ and becomes a spurious recursive source. The source paper proves that the unprojected method suffers a dimensional lower bound with depth-dependent quantifiers; Appendix~\ref{app:counter} states it precisely.
+
+Translation symmetry certifies the active subspace
+\[
+S_d=\operatorname{span}(e_1),\qquad \nabla u_d(t,x)\in S_d,
+\]
+and the driver is exactly compatible with it:
+\begin{equation}
+f_d(v)=0\quad\text{for all }v\in S_d.
+\label{eq:null}
+\end{equation}
+
+\begin{theorem}[Structural rescue and dimension-free error]
+\label{thm:rescue}
+Apply any recursive correction before every $f_d$ evaluation such that each corrected child gradient lies in $S_d$ almost surely. Then all nonlinear multilevel corrections vanish pathwise. In particular, for orthogonal projection $Q_d$ onto $S_d$ at every recursive return, including the final gradient, at $(t,x)=(0,0)$ with $N=m^n$ terminal samples,
+\begin{equation}
+\E\norm{\widehat Y^{\rm IR}_{n,m}-Y^\star}^2
+=\frac{4-2/\pi}{N},
+\label{eq:exactmse}
+\end{equation}
+independent of ambient dimension $d$. Any batch-coupled correction of the form $v_i\mapsto\alpha_BQ_dv_i$, $0\le\alpha_B\le1$, has the same pathwise nonlinear collapse.
+\end{theorem}
+\begin{proof}
+Equation~\eqref{eq:null} makes every corrected generator value zero, recursively, so the full nonlinear tree collapses to the projected terminal block. At the origin the only nonzero estimated components are
+$N^{-1}\sum_i|G_i|$ and $N^{-1}\sum_i|G_i|G_i$, with $G_i\sim\mathcal N(0,1)$. They are unbiased with variances $(1-2/\pi)/N$ and $3/N$; summing gives~\eqref{eq:exactmse}. The batch statement follows because $\alpha_BQ_dv_i\in S_d$.
+\end{proof}
+
+The theorem identifies the essential property: not clipping magnitude, but returning to a \emph{generator-compatible certified set}. Final-only projection cannot undo earlier nonlinear feedback; generator-only projection fixes the value path but leaves inactive gradient noise in the reported state. Exact ablation identities are in Appendix~\ref{app:counter}.
+
+\section{Experiments}
+\subsection{Counterexample: the mechanism is visible}
+We reproduce the source recurrence using its random-time law $\mathbb P(r\le b)=\sqrt b$, independent child trees in each multilevel difference, and matched random trees across methods. We test $d\in\{2,5,10,20,50,100,200,500,1000\}$ and $n=m\in\{1,2,3,4\}$ with 512 estimator replicas per configuration. Time and active-coordinate streams are coupled across dimensions, so a flat subspace-IR curve is an expected consequence of the theorem rather than post-hoc smoothing. We separately validate the closed-form MSE with 65,536 fresh Gaussian replicas for each $N\in\{1,4,27,256\}$.
+
+
+
+\begin{figure*}[!t]
+\centering
+\begin{subfigure}[t]{.485\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/counterexample_state_full.pdf}
+\caption{Full value--gradient state.}\label{fig:counter-state}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{.485\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/counterexample_value_rmse.pdf}
+\caption{Value error alone.}\label{fig:counter-value}
+\end{subfigure}
+\caption{\textbf{Recursive feasibility repairs more than the final gradient metric.} All nine dimensions are shown at $n=m=3$, with 512 paired replicas. (a) Full-state error distinguishes final-only, generator-only, norm-ball, and recursive subspace corrections. (b) Raw MLP and final-only correction have identical value outputs; recursive subspace IR, generator-only projection, and reduced MC coincide in value. Shared active-coordinate streams explain the flat IR curve. These are finite-depth comparisons, not a fitted asymptotic lower bound.}
+\label{fig:counter}
+\end{figure*}
+
+Figure~\ref{fig:counter} separates full-state error from value error (selected values are in Table~\ref{tab:counter}). At $d=1000$, raw MLP and final-only projection have the same value RMSE, $396.978$, whereas recursive subspace IR has value RMSE $0.119$. Thus the gain is not an artifact of deleting gradient coordinates from the final metric. The exact MSE prediction in~\eqref{eq:exactmse} agrees with an independent Gaussian-moment validation to within $0.56\%$ across $N\in\{1,4,27,256\}$. Appendix~\ref{app:counter} keeps the independent MSE check, the separate primary-sweep RMSE comparison, and the full depth sweep (Figures~\ref{fig:validation}--\ref{fig:depth}).
+
+
+\subsection{Headline HJB and Deeper Funding}
+\label{sec:extended-main}
+We extend the paired study to the headline Rosenbrock HJB protocol and deeper funding recursions. Within each configuration the three methods share random draws, and only child gradients are corrected before driver evaluation; the final value is never clipped. These are standalone MLP experiments, not comparisons against a trained SCaSML pipeline. Earlier geometry ablations, diagnostics, and mean-preserving controls are retained in Appendix~\ref{app:experiments}; the extension's protocols and complete tables are in Appendix~\ref{app:extended}.
+
+\begin{figure*}[!t]
+\centering
+\begin{subfigure}[t]{.485\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/extended_hjb_headline.pdf}
+\caption{Rosenbrock HJB: $n=2$, $M=10$.}\label{fig:extended-hjb}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{.485\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/extended_funding_deep.pdf}
+\caption{100D funding: three depth/budget settings.}\label{fig:extended-funding}
+\end{subfigure}
+\caption{\textbf{Batch-IR gains extend to headline dimensions and deeper recursion.} (a) Relative $L_2$ value error over 1,200 fixed space--time points at each dimension; error bars are one sample standard deviation across 10 paired repetitions, often smaller than the markers. Raw means no correction, not the older heuristic baseline. (b) MAE over 100 paired root estimates per setting, against the reference value 21.299. Both $n$ and $M$ change, so this is not a fixed-work depth comparison. Different metrics are compared only within each panel.}
+\label{fig:extended-outcomes}
+\end{figure*}
+
+\paragraph{100--160D Rosenbrock HJB.}
+We use $n=2$, $M=10$, a fixed matrix at each dimension, 1,000 interior unit-ball points and 200 unit-sphere points with sampled times, and 10 paired repetitions. The radius is the non-oracle $\sqrt{15}$; the reference uses scaled Hopf--Cole quadrature. Figure~\ref{fig:extended-hjb} shows Samplewise IR errors of $0.621$--$0.640$ and Batch-IR errors of $0.243$--$0.265$: a $57.3$--$62.1\%$ reduction, with Batch-IR lower in all 10 repetitions at each dimension. The uncorrected errors are $2.280$--$3.479$. These raw values must not be substituted for the older heuristic-clipping results in Figure~\ref{fig:benchmarks}(a).
+
+\paragraph{Deeper 100D funding.}
+We use the same normalized-delta region for both corrections, with 100 paired root estimates per setting. The three depth/budget pairs in Figure~\ref{fig:extended-funding} have Samplewise/Batch-IR MAEs of $0.5215/0.4566$, $0.3839/0.3001$, and $0.7708/0.6897$, respectively. The gain therefore persists at depths three and four; it is not confined to the earlier shallow sweep. The corresponding reductions are $12.4\%$, $21.8\%$, and $10.5\%$, with lower absolute error on $73\%$, $75\%$, and $60\%$ of paired estimates. Different budgets preclude a monotone-depth or wall-clock claim. The earlier funding work envelope remains in Figure~\ref{fig:finance-budget}.
+
+\subsection{Matched Mechanism Diagnostics}
+\label{sec:extended-mechanism}
+On the same HJB study, generator MSE falls from $38.42$--$43.17$ for Samplewise IR to $10.30$--$10.98$ for Batch-IR. The variance across repetitions of the \emph{actual averaged level correction} falls from $0.206$--$0.222$ to $0.139$--$0.153$ (Figure~\ref{fig:extended-mechanism}). Relative to raw MLP, the respective reductions are $99.76$--$99.92\%$ and $99.30$--$99.75\%$.
+
+\begin{figure*}[!t]
+\centering
+\begin{subfigure}[t]{.485\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/extended_generator_mse.pdf}
+\caption{Generator MSE at matched child points.}\label{fig:extended-generator}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{.485\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/extended_correction_variance.pdf}
+\caption{Variance of the averaged nonlinear correction.}\label{fig:extended-variance}
+\end{subfigure}
+\caption{\textbf{The batchwise extension improves two distinct recursive diagnostics.} (a) Generator MSE is averaged over 6,400 sampled child states, evaluated with a stable reference gradient. (b) At each of the 1,200 fixed parent points, variance is computed across 10 repetitions and then averaged over points. This includes the effect of sibling coupling. Pooled individual-increment variance is a different statistic: it is \emph{higher} for Batch-IR than Samplewise IR at $d=120,140,160$ (Table~\ref{tab:extended-increments}).}
+\label{fig:extended-mechanism}
+\end{figure*}
+
+The distinction matters: the pooled variance of individual generator values is \emph{not} uniformly reduced. At three of four dimensions it rises relative to Samplewise IR even though the averaged correction has lower variance. Batch-IR couples siblings, so individual dispersion alone does not determine correction variance. Its common scale activates for $99.87$--$99.98\%$ of HJB batches, with mean scale decreasing from $0.330$ to $0.260$. These results show an aggressive finite-budget correction, not a vanishing-bias or consistency theorem. The earlier two-method diagnostics are preserved in Figure~\ref{fig:hjbdiag}.
+
+
+\subsection{Overshoot and an Independent Positive Benchmark}
+\label{sec:restored-positive}
+The earlier mechanism and benchmark evidence answers questions beyond whether Batch-IR beats Samplewise IR. Figure~\ref{fig:restored-mechanism}(a) reproduces the 100D, $n=2$ overshoot sweep over six sampling bases and six valid radius factors, correcting only child gradients and leaving the final value untouched. The descriptive Spearman correlations are $0.886$ for overshoot energy versus final gain and $0.995$ for violation frequency versus gain. Larger radii and budgets share data; this is not an independent-sample causal test. Complete new draws and corrected-reference details are in Appendix~\ref{app:overshoot}.
+
+\begin{figure*}[!t]
+\centering
+\begin{subfigure}[t]{.485\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/restored/overshoot_energy_reproduction.pdf}
+\caption{36-setting HJB overshoot/gain reproduction.}\label{fig:overshoot-main}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{.485\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/neufeld_wu.pdf}
+\caption{Independent Neufeld--Wu multi-budget results.}\label{fig:restored-nw}
+\end{subfigure}
+\caption{\textbf{Mechanism evidence and a positive PDE benchmark are complementary.} (a) A newly executed reproduction of the earlier overshoot diagnostic, using scaled reference quadrature: each curve fixes $M$ and varies the valid radius. It is not the original random sample or a digitized plot. (b) The original two-budget, 30-run Neufeld--Wu result is retained unchanged, with 47.5--71.4\% MAE reduction over raw MLP. Samplewise/Batch-IR ties in later experiments do not erase this positive comparison against raw MLP.}
+\label{fig:restored-mechanism}
+\end{figure*}
+
+The original Neufeld--Wu experiment in Figure~\ref{fig:restored-nw} shows gains over raw MLP at all six dimension--budget pairs (Table~\ref{tab:nw-extra}). This is distinct from comparing two feasible corrections. The older HJB geometry comparison remains in Figure~\ref{fig:benchmarks}(a), and the funding budget envelope remains in Figure~\ref{fig:finance-budget}. A recovered funding ablation reaches $n=5$ and retains the coordinate-box baseline (Appendix~\ref{app:recovered-benchmarks}); it is not replaced by the new three-method study.
+
+\subsection{Ties, Structural Checks, and Negative Controls}
+\paragraph{Thresholded Neufeld--Wu driver.}
+At $n=M=2$, 30 runs at each of $d=100,200,300$ give Samplewise IR and Batch-IR identical MAEs of $0.02131$, $0.01682$, and $0.01737$, versus raw errors $0.06066$, $0.03878$, and $0.04039$. Both corrections keep the driver inactive, as in the earlier $n=M=3$ comparison. These are ties, not batchwise wins (Table~\ref{tab:extended-nw}). The implementation retains a finite-step forward approximation, so these are not exact-time convergence measurements.
+
+\paragraph{Batchwise structural sanity check.}
+A separate 512-replica study at $n=m=3$ tests $z_i\mapsto\alpha_BQ_dz_i$ for $d=10,100,1000$. Corrected \emph{value} outputs agree realization by realization, with maximum discrepancy zero and value RMSE $0.110083$. The batch scale activates in $58.98\%$ of tested groups. Equality therefore reflects generator compatibility, not an inactive correction. The batch implementation does not project its returned root gradient; this test is not a verification of equal full-state MSE (Appendix~\ref{app:extended-sanity}).
+
+\paragraph{Negative controls and mean preservation.}
+The repository's paired Batch-IR controls confirm exact value-output overlap in Allen--Cahn and credit risk when constraints are inactive. In linear convection--diffusion, batch correction activates in 100\%, 97\%, and 8.5\% of recorded groups at the three budgets, yet the value remains unchanged because $f=0$ (Appendix~\ref{app:restored-negative}). The earlier panels and mean-preserving comparisons remain in Figures~\ref{fig:allen-control} and~\ref{fig:batch-tradeoff}. A controlled surrogate-quality study, including cases where IR loses to raw defect MLP, is retained in Appendix~\ref{app:surrogate-diagnostic}; it is not a trained-SCaSML comparison.
+
+\section{What the Experiments Establish}
+The counterexample separates a structural claim from a statistical design choice. The structural claim is that recursive infeasibility can create a spurious nonlinear source, and that a generator-compatible certificate can remove it exactly. The statistical choice is how to move noisy samples into the feasible set. Equation~\eqref{eq:pyth} favors nearest-point projection for one-state Euclidean error; Figures~\ref{fig:extended-outcomes} and~\ref{fig:batch-tradeoff} show that a common batch scale can nevertheless be better after nonlinear recursion. This is not a contradiction: two complete recursive schemes generate different later states, and batch coupling changes the mean, dispersion, and cross-sibling dependence. The new diagnostics support lower generator MSE and averaged-correction variance, not uniform reduction of every variance statistic.
+
+A mean-preserving batch diagnostic sharpens the point. When the raw batch mean is feasible, shrinking deviations around that mean can improve final error without changing the empirical mean. When the batch mean itself is outside a convex feasible set, no all-feasible mean-preserving correction exists, because the mean of feasible points must be feasible. Thus low-budget high-dimensional failure can affect the batch center as well as isolated outliers.
+
+\section{Limitations}
+The exact rescue uses known PDE structure rather than discovering an active subspace, and its collapsed estimator equals reduced Monte Carlo. Approximate or learned regions need a separate misspecification analysis. Feasibility preserves the intended solution, but does not alone prove consistency or order the final errors of two different recursive solvers. Samplewise inheritance still requires the regularity, moment, norm, and dimension-scaling assumptions of the cited MLP theorem. Batch-IR changes dependence and finite-sample bias; its sharp consistency and cost-to-accuracy theory remain future work. The finance envelope also requires the additional justification noted in Appendix~\ref{app:certificates}. The extension uses 10 HJB repetitions on fixed test sets and matrices, 100 funding estimates against a numerical reference, and finite-step Neufeld--Wu dynamics. These finite-budget comparisons do not prove universal dominance over MLP or trained surrogate solvers.
+
+\section{Conclusion}
+MLP can amplify Monte Carlo noise when infeasible intermediate states are passed through nonlinear generators. Constraint-aware MLP inserts a certified retraction exactly at that interface. The strongest result is structural: on a published dimensionality counterexample, enforcing the PDE-certified active subspace removes all nonlinear corrections pathwise and changes the error from ambient-dimension dependent to the exact dimension-free rate $(4-2/\pi)/N$. Beyond that example, paired 100--160D HJB and deeper funding experiments favor Batch-IR, while thresholded-driver ties and inactive-constraint controls delimit the gain. Matched diagnostics isolate lower generator MSE and averaged-correction variance without claiming lower individual-increment variance everywhere. The central contribution is the link between certified value--gradient geometry and the nonlinear feedback it removes, supported by an exact rescue theorem and paired evidence on separable versus batch-coupled corrections.
+
+\label{sec:main-end}
+\FloatBarrier
+
+\section*{Impact Statement}
+This work develops stochastic PDE solvers. Its broader impacts arise through scientific and financial simulation; no application-specific societal impact is singled out here.
+
+\begin{thebibliography}{10}
+
+\bibitem[Beck et~al.(2020)Beck, Hornung, Hutzenthaler, Jentzen, and Kruse]{Beck2020}
+C.~Beck, F.~Hornung, M.~Hutzenthaler, A.~Jentzen, and T.~Kruse.
+\newblock Overcoming the curse of dimensionality in the numerical approximation of Allen--Cahn partial differential equations via truncated full-history recursive multilevel Picard approximations.
+\newblock \emph{Journal of Numerical Mathematics}, 28(4):197--222, 2020.
+\newblock doi: \href{https://doi.org/10.1515/jnma-2019-0074}{\nolinkurl{10.1515/jnma-2019-0074}}.
+
+\bibitem[E et~al.(2021)E, Hutzenthaler, Jentzen, and Kruse]{E2021}
+W.~E, M.~Hutzenthaler, A.~Jentzen, and T.~Kruse.
+\newblock Multilevel Picard iterations for solving smooth semilinear parabolic heat equations.
+\newblock \emph{Partial Differential Equations and Applications}, 2:80, 2021.
+\newblock doi: \href{https://doi.org/10.1007/s42985-021-00089-5}{\nolinkurl{10.1007/s42985-021-00089-5}}.
+
+\bibitem[Fan et~al.(2026)Fan, Sun, Yang, and Lu]{Fan2026}
+Z.~Fan, Y.~Sun, S.~Yang, and Y.~Lu.
+\newblock Physics-Informed Inference Time Scaling for Solving High-Dimensional Partial Differential Equations.
+\newblock In \emph{International Conference on Learning Representations}, 2026.
+
+\bibitem[Hutzenthaler et~al.(2022)Hutzenthaler, Jentzen, and Kruse]{HutzenthalerJentzenKruse2022}
+M.~Hutzenthaler, A.~Jentzen, and T.~Kruse.
+\newblock Overcoming the curse of dimensionality in the numerical approximation of parabolic partial differential equations with gradient-dependent nonlinearities.
+\newblock \emph{Foundations of Computational Mathematics}, 22:905--966, 2022.
+\newblock doi: \href{https://doi.org/10.1007/s10208-021-09514-y}{\nolinkurl{10.1007/s10208-021-09514-y}}.
+
+\bibitem[Hutzenthaler and Kruse(2020)]{HutzenthalerKruse2020}
+M.~Hutzenthaler and T.~Kruse.
+\newblock Multilevel Picard approximations of high-dimensional semilinear parabolic differential equations with gradient-dependent nonlinearities.
+\newblock \emph{SIAM Journal on Numerical Analysis}, 58(2):929--961, 2020.
+\newblock doi: \href{https://doi.org/10.1137/17M1157015}{\nolinkurl{10.1137/17M1157015}}.
+
+\bibitem[Hutzenthaler and Nguyen(2025)]{HutzenthalerNguyen2025}
+M.~Hutzenthaler and T.~A.~Nguyen.
+\newblock Full history recursive multilevel Picard approximations suffer from the curse of dimensionality for the Hamilton--Jacobi--Bellman equation of a stochastic control problem.
+\newblock arXiv:2506.23969, 2025.
+
+
+\bibitem[Kremsner et~al.(2020)Kremsner, Steinicke, and Sz\"olgyenyi]{Kremsner2020}
+S.~Kremsner, A.~Steinicke, and M.~Sz\"olgyenyi.
+\newblock A Deep Neural Network Algorithm for Semilinear Elliptic PDEs with Applications in Insurance Mathematics.
+\newblock \emph{Risks}, 8(4):136, 2020.
+\newblock doi: \href{https://doi.org/10.3390/risks8040136}{\nolinkurl{10.3390/risks8040136}}.
+
+\bibitem[Min and Azizan(2025)]{MinAzizan2025}
+Y.~Min and N.~Azizan.
+\newblock HardNet: Hard-Constrained Neural Networks with Universal Approximation Guarantees.
+\newblock arXiv:2410.10807, version~4, 2025.
+
+\bibitem[Neufeld et~al.(2025)Neufeld, Nguyen, and Wu]{NeufeldNguyenWu2025}
+A.~Neufeld, T.~A.~Nguyen, and S.~Wu.
+\newblock Multilevel Picard approximations overcome the curse of dimensionality in the numerical approximation of general semilinear PDEs with gradient-dependent nonlinearities.
+\newblock \emph{Journal of Complexity}, 90:101946, 2025.
+\newblock doi: \href{https://doi.org/10.1016/j.jco.2025.101946}{\nolinkurl{10.1016/j.jco.2025.101946}}.
+
+\bibitem[Neufeld and Wu(2025)]{NeufeldWu2025}
+A.~Neufeld and S.~Wu.
+\newblock Multilevel Picard algorithm for general semilinear parabolic PDEs with gradient-dependent nonlinearities.
+\newblock \emph{Journal of Numerical Mathematics}, 2025.
+\newblock doi: \href{https://doi.org/10.1515/jnma-2024-0074}{\nolinkurl{10.1515/jnma-2024-0074}}.
+
+\bibitem[Zhong(2025)]{Zhong2025}
+Y.~Zhong.
+\newblock Multilevel Picard scheme for solving high-dimensional drift control problems with state constraints.
+\newblock arXiv:2510.21607, 2025.
+
+\end{thebibliography}
+
+\clearpage
+\appendix
+\makeatletter
+\setlength{\@fptop}{0pt}
+\setlength{\@fpsep}{16pt}
+\setlength{\@fpbot}{0pt plus 1fil}
+\makeatother
+\onecolumn
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{A\arabic{figure}}
+
+\section{Samplewise Convergence Inheritance}
+\label{app:convergence}
+This appendix records a conditional value--gradient version of the modified-driver argument already used for scalar truncated MLP by \citet[Eq.~(76), Lemma~3.2]{Beck2020}. It supplies a correctness check for the specified insertion point, not a new full-history convergence analysis.
+
+For each $(t,x)$ let $\mathcal C(t,x)$ be nonempty, closed, and convex, let $\Pi_{t,x}$ be its metric projector, and define
+\begin{equation}
+\bar f(t,x,y)=f(t,x,\Pi_{t,x}y).
+\label{eq:barf}
+\end{equation}
+Assume $(t,x,y)\mapsto\Pi_{t,x}y$ is measurable, the exact state $Y^\star(t,x)$ is feasible, $f$ is uniformly $L$-Lipschitz on $\mathcal C(t,x)$ in its state argument, and the remaining coefficient, terminal-data, moment, and random-time assumptions of the chosen gradient-dependent MLP theorem hold for $\bar f$.
+
+\begin{proposition}[Inheritance for pointwise Samplewise IR]
+Under these assumptions, $\bar f$ is globally $L$-Lipschitz in $y$, the intended feasible solution also solves the PDE with $f$ replaced by $\bar f$, and the recursion that projects each child only immediately before a driver call is pathwise identical to ordinary MLP applied to $\bar f$ on the same random tree. Hence the corresponding published convergence and complexity bounds apply to Samplewise IR under their remaining assumptions.
+\end{proposition}
+\begin{proof}
+Metric projection is nonexpansive, so
+\begin{align*}
+|\bar f(t,x,y)-\bar f(t,x,y')|
+&\le L\norm{\Pi_{t,x}y-\Pi_{t,x}y'}\\
+&\le L\norm{y-y'}.
+\end{align*}
+Feasibility gives $\Pi_{t,x}Y^\star=Y^\star$, hence $\bar f(t,x,Y^\star)=f(t,x,Y^\star)$. Finally, at every finite MLP depth, replacing a child $Y$ by $\Pi_{t,x}Y$ before evaluating $f$ produces exactly the call $\bar f(t,x,Y)$. Induction on depth gives pathwise identity with ordinary MLP for $\bar f$, after which the existing theorem applies \citep{HutzenthalerKruse2020,HutzenthalerJentzenKruse2022,NeufeldWu2025,NeufeldNguyenWu2025}.
+\end{proof}
+
+This argument does \emph{not} cover Batch-IR because $\alpha_B$ depends jointly on siblings. It also does not cover a different algorithm that first projects samples and then averages them into a new state estimator: for nonlinear $\Pi$, generally $\E[\Pi(Y)]\neq\Pi(\E Y)$. Fixed affine/subspace projections are special because they commute with averaging. A diagonal-normalized ellipsoid uses a weighted metric, not necessarily the Euclidean metric; applying an inheritance theorem additionally requires its norm, regularity, and dimension-dependent bounds to be checked in the same coordinates. Euclidean nonexpansiveness alone does not establish the dimension-uniform coordinate or maximum-norm bounds required by a particular complexity theorem.
+
+\section{Counterexample Details and Ablations}
+\label{app:counter}
+\subsection{Source lower bound and certification}
+Let $U^d_{n,m}$ denote the source full-history recursion and set $Y_d^\star=(u_d,\nabla u_d)$. \citet{HutzenthalerNguyen2025} show that for every $p\ge0$ and every integer $n>2p$,
+\[
+\liminf_{d\to\infty}d^{-p}
+\left(\E\norm{U^d_{n,n}(0,0)-Y_d^\star(0,0)}^2\right)^{1/2}
+=\infty.
+\]
+This is a depth-dependent asymptotic statement, not a claim that one fixed depth grows faster than every polynomial.
+
+For any translation $a$ with $a_1=0$, $u_d(t,x+a)$ has the same PDE and terminal data as $u_d(t,x)$. Uniqueness gives invariance in coordinates $2{:}d$, hence $\partial_{x_j}u_d=0$ for $j\ge2$. The PDE reduces to the heat equation and
+\[
+u_d(t,x)=\E|x_1+\sqrt{1-t}\,G|,
+\qquad G\sim\mathcal N(0,1).
+\]
+
+\subsection{Ablations}
+If subspace projection is used only inside the generator but not on the returned gradient, nonlinear corrections still vanish, but the inactive final-gradient coordinates remain. At the origin,
+\[
+\E\norm{\widehat Y_{\rm gen-only}-Y^\star}^2
+=\frac{d+3-2/\pi}{N}.
+\]
+If projection is applied only at the final state, the value component is unchanged realization by realization from raw MLP, because all earlier generator calls are identical.
+
+For the first terminal block,
+\begin{align*}
+\E\norm{V_{\perp,N}}^2&=\frac{d-1}{N},\qquad
+\E f_d(V_N)^2=\frac{d-1}{N},\\
+f_d(Q_dV_N)&=0.
+\end{align*}
+This quantifies the first conversion of centered inactive-gradient noise into a positive nonlinear source.
+
+\subsection{Independent Validation and Depth Sweep}
+Figure~\ref{fig:validation} deliberately separates two different checks. The left panel uses 65,536 fresh Gaussian replicas per terminal sample count, independently of the full MLP sweep. Its error bars are normal-approximation 95\% intervals for empirical MSE. The right panel uses the 512 replicas of the main paired MLP experiment and reports RMSE as a function of depth. They should not be described as the same experiment.
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[t]{.475\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/counterexample_independent_mse.pdf}
+\caption{Independent Gaussian-moment MSE check.}\label{fig:independent-mse}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{.475\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/counterexample_exact_rmse.pdf}
+\caption{Exact versus primary-sweep RMSE.}\label{fig:primary-rmse}
+\end{subfigure}
+\caption{\textbf{Two validations of the rescue theorem.} (a) The empirical MSE differs from $(4-2/\pi)/N$ by less than $0.56\%$ at each of $N\in\{1,4,27,256\}$; small intervals reflect the larger replicate count. (b) The original 512-replica RMSE comparison is retained separately. Common active-coordinate streams make this second curve identical across tested ambient dimensions.}
+\label{fig:validation}
+\end{figure}
+
+Figure~\ref{fig:depth} retains all four raw-MLP depth curves across all nine tested dimensions. At $d=1000,n=m=4$, raw full-state RMSE is $239406.128$, compared with $0.117464$ for recursive subspace IR. The plot is a finite-depth diagnostic. The source lower bound above, rather than an extrapolated fit, supplies the asymptotic statement.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.68\textwidth]{figures/counterexample_depth_sweep.pdf}
+\caption{\textbf{Full finite-depth counterexample sweep.} Increasing depth steepens the dimensional deterioration of the raw recursion over the tested range. The source theorem quantifies depth as $n>2p$ for each polynomial exponent $p$; this plot does not assert that one fixed depth grows faster than every polynomial. All plotted vertices are retained from the archived vector figure.}
+\label{fig:depth}
+\end{figure}
+\begin{table}[htbp]
+\caption{Full-state RMSE at $n=m=3$ ($N=27$).}
+\label{tab:counter}
+\centering\small
+\begin{tabular}{rrrrr}
+\toprule
+$d$ & Raw MLP & Final only & Unit ball & Subspace IR\\
+\midrule
+2&1.196&0.939&0.776&0.356\\
+10&12.767&5.412&1.358&0.356\\
+100&504.759&66.088&1.427&0.356\\
+1000&16995.683&697.972&1.434&0.356\\
+\bottomrule
+\end{tabular}
+\end{table}
+\FloatBarrier
+
+
+\section{Certificates Used in the Broader Benchmarks}
+\label{app:certificates}
+\paragraph{Rosenbrock HJB.}
+For $u_t+\Delta u-\norm{\nabla u}^2=0$ and $g(x)=\log((1+x^\top Ax)/2)$,
+\[
+\nabla g(x)=\frac{2Ax}{1+x^\top Ax},\qquad
+\norm{\nabla g(x)}\le\sqrt{\lambda_{\max}(A)}.
+\]
+The Hopf--Cole representation carries the same envelope backward in time. With the benchmark convention $z=\sqrt2\nabla u$ and coefficient range giving $\lambda_{\max}(A)\le7.5$, we use $\norm z\le\sqrt{15}$.
+
+\paragraph{Neufeld--Wu.}
+The public example has linear drift $\mu(x)=0.06x$, additive diffusion, a 1-Lipschitz terminal payoff, and a thresholded driver proportional to $(\norm z_\infty-25)_+$. Flow sensitivity gives $\norm{\nabla u(t,\cdot)}\le e^{0.06(T-t)}\le e^{0.015}$ over the benchmark horizon, well below the activation threshold.
+
+\paragraph{Nonlinear funding.}
+For the 100D borrowing/lending benchmark, a model-derived delta envelope yields
+\[
+\sum_{i=1}^d\left(\frac{z_i}{\sigma x_i}\right)^2
+\le \exp(\sigma^2(T-t)),
+\]
+which defines a state-dependent ellipsoid in normalized delta coordinates. This is a model-derived envelope; a complete viscosity-solution justification for this particular finance bound remains future work. The implementation performs a Euclidean ball projection after delta normalization, equivalently a weighted-metric correction in the original gradient state.
+
+\section{Additional Experimental Results}
+\label{app:experiments}
+Code, aggregate results, validation scripts, and project notes are maintained in the project repository. The counterexample implementation uses the source random-time law and matched random trees; the HJB tables use the corrected scaled Gauss--Laguerre reference rather than the superseded unscaled high-dimensional quadrature.
+
+\subsection{High-Dimensional Summary Values}
+Tables~\ref{tab:hjb-extra} and~\ref{tab:nw-extra} give the values underlying Figure~\ref{fig:benchmarks}. The protocol uses 10 paired HJB repetitions over 1,000 interior and 200 boundary points, and 30 runs for the Neufeld--Wu benchmark.
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[t]{.485\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/hjb_corrected.pdf}
+\caption{Rosenbrock HJB, $d=100$--$160$.}\label{fig:hjb-main}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{.485\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/neufeld_wu.pdf}
+\caption{Neufeld--Wu, $d=100$--$300$.}\label{fig:nw-main}
+\end{subfigure}
+\caption{\textbf{High-dimensional outcomes beyond the subspace example.} (a) The uniform $\sqrt{15}$ ball and exact-matrix ball outperform the heuristic and coordinate-box controls. All HJB errors use the corrected, scaled Hopf--Cole reference. (b) The independent gradient-dependent benchmark compares raw and projected MLP at two sampling budgets over 30 runs. The panels use different metrics and should be compared within, not across, panels.}
+\label{fig:benchmarks}
+\end{figure}
+
+\begin{table}[htbp]
+\caption{Corrected HJB--Rosenbrock mean relative $L_2$ error.}\label{tab:hjb-extra}
+\centering\small
+\begin{tabular}{rrrrr}
+\toprule
+$d$&heur.&exact ball&$\sqrt{15}$ ball&box\\
+\midrule
+100&2.080&0.561&0.634&1.110\\
+120&2.277&0.555&0.641&1.117\\
+140&2.414&0.547&0.635&1.121\\
+160&2.492&0.565&0.643&1.121\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\caption{Neufeld--Wu benchmark, 30 runs.}\label{tab:nw-extra}
+\centering\small
+\begin{tabular}{rrrrr}
+\toprule
+$d$&$M$&raw MAE&IR MAE&reduction\\
+\midrule
+100&2&0.05687&0.01888&66.8\%\\
+100&3&0.01637&0.00469&71.4\%\\
+200&2&0.04989&0.01505&69.8\%\\
+200&3&0.01103&0.00580&47.5\%\\
+300&2&0.03813&0.01887&50.5\%\\
+300&3&0.01397&0.00668&52.2\%\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\FloatBarrier
+\subsection{Earlier HJB Mechanism Diagnostics}
+Figure~\ref{fig:hjbdiag} preserves the original two-method generator-MSE and nonlinear-correction-variance plots. These values come from the earlier experiment, whereas Figure~\ref{fig:extended-mechanism} compares all three methods within one newly paired experiment. No Batch-IR series is spliced into the old curves.
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[t]{.485\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/hjb_generator_mse.pdf}
+\caption{Generator mean squared error.}\label{fig:generator}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{.485\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/hjb_correction_variance.pdf}
+\caption{Variance of the nonlinear level correction.}\label{fig:variance}
+\end{subfigure}
+\caption{\textbf{The mechanism is visible inside the HJB recursion.} Using the non-oracle $\sqrt{15}$ ball, (a) generator MSE against a stable reference gradient falls by $98.9$--$99.6\%$; (b) the variance across paired runs of the actual Monte Carlo level correction falls by $98.8$--$99.7\%$. The second panel is not the variance of a single gradient coordinate or only of an individual generator sample.}
+\label{fig:hjbdiag}
+\end{figure}
+\FloatBarrier
+\subsection{Funding Error Versus Work}
+Figure~\ref{fig:finance-budget} preserves the earlier full funding budget curve rather than showing only two representative settings. The vertical axis is the best observed MAE at or below the given budget, so the curve is a cumulative budget envelope, not the error of a single fixed-depth solver at every horizontal coordinate. The horizontal axis counts nonlinear-generator evaluations, not end-to-end wall time.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.82\textwidth]{figures/finance_budget_curve.png}
+\caption{\textbf{Archived 100D funding error--work curve.} The entire recorded budget envelope is retained, including intermediate settings omitted from the concise main-text examples. Results are shown against nonlinear-generator evaluation count; this is not a wall-clock speedup claim.}
+\label{fig:finance-budget}
+\end{figure}
+
+\subsection{The Batchwise Tradeoff in Numbers}
+The comparison in Figure~\ref{fig:batch-tradeoff} is summarized in Table~\ref{tab:batch}. The mean-preserving diagnostic coincides with raw output when its feasibility condition fails; the funding plot additionally shows its nontrivial behavior at larger budgets.
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[t]{.485\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/batch_hjb.pdf}
+\caption{Quadratic HJB, $n=2$, $M=6$.}\label{fig:batch-hjb}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{.485\textwidth}
+\centering\includegraphics[width=\linewidth]{figures/batch_funding.pdf}
+\caption{100D nonlinear funding.}\label{fig:batch-funding}
+\end{subfigure}
+\caption{\textbf{Two feasible retractions, different finite-budget behavior.} Corrections precede the generator; the final root value is not clipped. (a) The mean-preserving diagnostic coincides with raw MLP when the raw batch mean is infeasible. (b) Its benefit becomes visible at larger funding budgets; Batch-IR is strongest throughout this paired sweep. The HJB panel reports relative $L_2$ error, while the funding panel reports MAE. The panels show a finite-budget tradeoff, not universal dominance or a batchwise consistency theorem.}
+\label{fig:batch-tradeoff}
+\end{figure}
+\begin{table}[htbp]
+\caption{Paired Samplewise IR vs. Batch-IR. Lower is better.}
+\label{tab:batch}
+\centering\small
+\begin{tabular}{llrrr}
+\toprule
+problem & setting & raw & sample & batch\\
+\midrule
+HJB & $d=20,M=6$ &314.136&0.2412&\textbf{0.0966}\\
+HJB & $d=40,M=6$ &1034.262&0.1993&\textbf{0.0833}\\
+Funding & $M=10$ &1.4042&0.5102&\textbf{0.4807}\\
+Funding & $M=20$ &0.8848&0.2965&\textbf{0.2539}\\
+Funding & $M=40$ &0.5221&0.1993&\textbf{0.1486}\\
+\bottomrule
+\end{tabular}
+\end{table}
+\FloatBarrier
+\subsection{Constraint Activity and Negative Controls}
+Figure~\ref{fig:violation} retains the archived first-level HJB violation-rate diagnostic. It measures constraint activity before correction, which does not require the subsequently corrected numerical reference solution. In contrast, the older high-dimensional error curves based on unscaled reference quadrature are superseded by Figure~\ref{fig:benchmarks}(a).
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.82\textwidth]{figures/hjb_violation_rate_panel.png}
+\caption{\textbf{The HJB constraint is active at finite budget.} The archived pre-projection violation rate increases across the tested dimensions. This is a state-feasibility diagnostic, not a reference-solution error curve and not the separate overshoot-energy/radius sweep.}
+\label{fig:violation}
+\end{figure}
+
+The separate 36-setting overshoot diagnostic is now reproduced in Figure~\ref{fig:restored-mechanism}(a), with its companion violation-frequency plot and complete protocol in Appendix~\ref{app:overshoot}. The fresh run gives descriptive correlations $0.886$ and $0.995$, compared with $0.889$ and $0.996$ in the older corrected-reference report. These are different Monte Carlo draws; neither series is reconstructed from image coordinates.
+
+For the Allen--Cahn control, $d=100$, $n=3$, and 100 paired seeds are used. The $[0,1]$ invariant interval is never violated at the tested budgets. Figure~\ref{fig:allen-control} therefore shows overlapping error curves, not merely similar averages: the recorded baseline and IR outputs are identical because the projection never activates.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.58\textwidth]{figures/allen_cahn_control.pdf}
+\caption{\textbf{An inactive constraint is a negative control.} Relative MAE is $3.30\%$, $1.96\%$, and $1.42\%$ at $M=2,3,4$ for both methods, with zero recorded violations. This figure is re-typeset from the archived summary values, not from a new experiment. Distinct markers expose the exact overlap.}
+\label{fig:allen-control}
+\end{figure}
+\FloatBarrier
+
+\input{sections/92_batchwise_extended.tex}
+
+\input{sections/93_restored_evidence.tex}
+
+\end{document}
