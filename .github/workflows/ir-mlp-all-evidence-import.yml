@@ -20,7 +20,7 @@ jobs:
           for x in "$T"/text_payload.part*.b64; do base64 -d "$x"; done > /tmp/ir_mlp_text_payload.tar.xz
           for x in "$T"/finance_budget_curve.png.part*.b64; do base64 -d "$x"; done > /tmp/finance_budget_curve.png
           for x in "$T"/hjb_violation_rate_panel.png.part*.b64; do base64 -d "$x"; done > /tmp/hjb_violation_rate_panel.png
-          echo "4121d875df8795e9f8650128c97797fdcc72b48ec2ff3dcd1292f66455ff548b  /tmp/ir_mlp_text_payload.tar.xz" | sha256sum -c -
+          echo "9d504f342df7105cf1f993fa5248b5598b541a2c3a46c4a389bb120e816b605c  /tmp/ir_mlp_text_payload.tar.xz" | sha256sum -c -
           echo "11aa02be6407e24fda565ef86f8c582bc1f90828fccde0eb5e3d79f3ce505f76  /tmp/finance_budget_curve.png" | sha256sum -c -
           echo "e66ea02b21372417b0309630603b8fb676ac026fd98f9ecb2ff280b1e0ee4b02  /tmp/hjb_violation_rate_panel.png" | sha256sum -c -
           rm -rf invariant_region_mlp/paper/icml2026
