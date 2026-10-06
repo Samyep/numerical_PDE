@@ -1,0 +1,69 @@
+{
+  "created_utc": "2026-10-06T16:16:42.324690+00:00",
+  "elapsed_seconds": 16.904528400162235,
+  "equation": {
+    "T": 1.0,
+    "certified_radius": 3.872983346207417,
+    "coefficient_sha256": "85f137a4e1b92299339a5247502edf50feb830f613d808396b135690eb28eafd",
+    "d": 100,
+    "driver": "-0.5*||z||^2",
+    "jax_version": "0.11.2",
+    "lambda_max": 6.383491595137865,
+    "matrix_construction": "jax.random.PRNGKey(0/1), uniform[0.5,1.5), float32 then cast float64",
+    "problem": "Rosenbrock HJB",
+    "reference": "stable scaled Hopf--Cole / Gauss--Laguerre quadrature",
+    "sigma": 1.4142135623730951,
+    "time_distribution": "Uniform(0,1), matching validated headline",
+    "trace_A": 304.8856089115143
+  },
+  "max_absolute_difference": 0.0,
+  "protocol": {
+    "M": 10,
+    "chunk_size": 96,
+    "d": 100,
+    "n": 2,
+    "points": 1200,
+    "quadrature_nodes": 32,
+    "repetitions": 10,
+    "seed_schedule": "910000 + d*100 + rep"
+  },
+  "rows": [
+    {
+      "absolute_difference": 0.0,
+      "archived_mean": 2.2799487622119137,
+      "method": "raw",
+      "relative_l2_mean": 2.2799487622119137,
+      "relative_l2_values": [
+        2.2734870239055556,
+        2.2829139920826758,
+        2.3132780990491946,
+        2.2282555615142137,
+        2.2907300087219995,
+        2.3315483454489145,
+        2.305813772788733,
+        2.2877291037324747,
+        2.235234705711631,
+        2.250497009163747
+      ]
+    },
+    {
+      "absolute_difference": 0.0,
+      "archived_mean": 0.6207713181675171,
+      "method": "samplewise",
+      "relative_l2_mean": 0.6207713181675171,
+      "relative_l2_values": [
+        0.6206740105355947,
+        0.6182644933647568,
+        0.623574917359029,
+        0.6212983794862059,
+        0.6225083310453399,
+        0.6174205579098042,
+        0.6215427134558762,
+        0.623899876797892,
+        0.6199365910272653,
+        0.6185933106934065
+      ]
+    }
+  ],
+  "schema_version": 1
+}
