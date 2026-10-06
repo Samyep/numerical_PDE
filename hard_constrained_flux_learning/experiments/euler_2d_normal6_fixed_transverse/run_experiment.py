@@ -54,6 +54,7 @@ def train_model(
     validation_interval: int,
     device: torch.device,
     data: Path,
+    statistics_archive: Path | None = None,
 ) -> dict[str, Any]:
     train_archive = R.load_npz(data / "train.npz")
     validation_archive = R.load_npz(data / "validation.npz")
@@ -61,7 +62,19 @@ def train_model(
     validation = torch.from_numpy(validation_archive["q"]).float()
     family_names = validation_archive["family_names"]
     times = validation_archive["times"]
-    mean, std, conserved_std, primitive_std = B.training_statistics(training)
+    statistics_path = (
+        data / "train.npz"
+        if statistics_archive is None
+        else statistics_archive.resolve()
+    )
+    statistics_training = (
+        training
+        if statistics_path == (data / "train.npz").resolve()
+        else torch.from_numpy(R.load_npz(statistics_path)["q"]).float()
+    )
+    mean, std, conserved_std, primitive_std = B.training_statistics(
+        statistics_training
+    )
 
     B.seed_everything(95100 + 100 * seed)
     model = T.make_model(mean, std).to(device)
@@ -257,6 +270,7 @@ def train_model(
         "uses_low_order_flux_during_training": False,
         "uses_low_order_flux_only_in_deployment_safety_wrapper": True,
         "train_data_sha256": R._sha256(data / "train.npz"),
+        "normalization_statistics_sha256": R._sha256(statistics_path),
         "validation_data_sha256": R._sha256(data / "validation.npz"),
         "checkpoint": checkpoint_path.name,
     }
@@ -349,9 +363,17 @@ def learned_flux_audit(
 
 @torch.no_grad()
 def evaluate(
-    seeds: list[int], device: torch.device, data: Path
+    seeds: list[int],
+    device: torch.device,
+    data: Path,
+    metric_scale_archive: Path | None = None,
 ) -> dict[str, Any]:
-    training = torch.from_numpy(R.load_npz(data / "train.npz")["q"]).float()
+    scale_path = (
+        data / "train.npz"
+        if metric_scale_archive is None
+        else metric_scale_archive.resolve()
+    )
+    training = torch.from_numpy(R.load_npz(scale_path)["q"]).float()
     scale = C.primitive_scale(training)
     archive = R.load_npz(data / "test.npz")
     reference = torch.from_numpy(archive["q"]).float()
@@ -433,6 +455,7 @@ def evaluate(
         ),
         "reference_fine_cells": R._metadata(archive)["fine_cells"],
         "test_data_sha256": R._sha256(data / "test.npz"),
+        "metric_scale_data_sha256": R._sha256(scale_path),
         "accuracy": R.summarize(rows),
         "safety": safety,
         "learned_flux_audit": learned_flux,

@@ -1,0 +1,300 @@
+{
+  "best_update": [
+    6000,
+    6500,
+    1500
+  ],
+  "best_validation_nmae": [
+    0.018327008483238684,
+    0.018129766418847358,
+    0.018426131796681986
+  ],
+  "checks": {
+    "all_runs_validation_plateau_stopped": true,
+    "all_test_states_positive": true,
+    "all_test_trajectories_completed": true,
+    "conservation_closure_below_1e-7": true,
+    "data_audit_passed": true,
+    "fully_discrete_entropy_balance_within_5e-7_tolerance": true,
+    "hard_projection_residual_below_1e-6": true,
+    "normalization_and_metric_scales_frozen": true,
+    "positivity_fallback_unused": true,
+    "validation_hash_unchanged": true
+  },
+  "data_audit": {
+    "baseline_training_sha256": "a99ffa2bae301902a14792406dcbbf0b599c375a4989580e19e7ca05fa559f4f",
+    "checks": {
+      "all_densities_positive": true,
+      "all_pressures_positive": true,
+      "all_values_finite": true,
+      "metadata_declares_no_method_change": true,
+      "original_training_prefix_is_byte_exact": true,
+      "saved_times_unchanged": true,
+      "test_file_unchanged": true,
+      "validation_file_unchanged": true
+    },
+    "family_counts": {
+      "colliding_waves": 32,
+      "contact_shear": 32,
+      "corrugated_contact": 32,
+      "crossed_riemann": 32,
+      "double_blast": 32,
+      "four_way_collision": 32,
+      "oblique_quadrant": 32,
+      "oblique_riemann": 32,
+      "radial_interface": 32,
+      "shock_contact_triple": 32,
+      "shock_vortex": 32,
+      "smooth_packet": 32
+    },
+    "maximum_density": 9.442492485046387,
+    "maximum_pressure": 17.177295684814453,
+    "metadata": {
+      "base_count": 192,
+      "base_training_archive": "/base/train.npz",
+      "base_training_sha256": "a99ffa2bae301902a14792406dcbbf0b599c375a4989580e19e7ca05fa559f4f",
+      "coarse_cells": 64,
+      "count": 384,
+      "extra_archives": [
+        {
+          "metadata": {
+            "base_generator_sha256": "260b59c86b299e2d31b82ae946ad3e0935e369c7651df900b2dd1a5c6a766c09",
+            "boundary": "constant_extrapolation",
+            "clawpack_version": "5.10.0",
+            "coarse_cells": 64,
+            "count": 32,
+            "family": "crossed_riemann",
+            "fine_cells": 512,
+            "gamma": 1.4,
+            "generator_sha256": "93a2568857c70ccb03dcbbccb53a7c4b747bc7b5e185219ef3e44b8a7d741805",
+            "output_intervals": 20,
+            "purpose": "training-only genuinely two-dimensional data enrichment",
+            "restriction": "conservative_block_average_of_conserved_variables",
+            "seed": 96001,
+            "solver": "classic_pyclaw_euler_4wave_2D",
+            "tfinal": 0.1,
+            "transverse_waves": 2
+          },
+          "path": "/workspace/hard_constrained_flux_learning/experiments/euler_2d_normal6_data_enrichment/data/shards/crossed_riemann.npz",
+          "sha256": "cb5aba5beb503f353b64e1370c4f6bc4c7d729d0c1cbf271b46c7bbf566bc555"
+        },
+        {
+          "metadata": {
+            "base_generator_sha256": "260b59c86b299e2d31b82ae946ad3e0935e369c7651df900b2dd1a5c6a766c09",
+            "boundary": "constant_extrapolation",
+            "clawpack_version": "5.10.0",
+            "coarse_cells": 64,
+            "count": 32,
+            "family": "corrugated_contact",
+            "fine_cells": 512,
+            "gamma": 1.4,
+            "generator_sha256": "93a2568857c70ccb03dcbbccb53a7c4b747bc7b5e185219ef3e44b8a7d741805",
+            "output_intervals": 20,
+            "purpose": "training-only genuinely two-dimensional data enrichment",
+            "restriction": "conservative_block_average_of_conserved_variables",
+            "seed": 96001,
+            "solver": "classic_pyclaw_euler_4wave_2D",
+            "tfinal": 0.1,
+            "transverse_waves": 2
+          },
+          "path": "/workspace/hard_constrained_flux_learning/experiments/euler_2d_normal6_data_enrichment/data/shards/corrugated_contact.npz",
+          "sha256": "a95cb23187d1486d65755275f4e5df01e3279f507608a81463f44e2c15d190cc"
+        },
+        {
+          "metadata": {
+            "base_generator_sha256": "260b59c86b299e2d31b82ae946ad3e0935e369c7651df900b2dd1a5c6a766c09",
+            "boundary": "constant_extrapolation",
+            "clawpack_version": "5.10.0",
+            "coarse_cells": 64,
+            "count": 32,
+            "family": "shock_contact_triple",
+            "fine_cells": 512,
+            "gamma": 1.4,
+            "generator_sha256": "93a2568857c70ccb03dcbbccb53a7c4b747bc7b5e185219ef3e44b8a7d741805",
+            "output_intervals": 20,
+            "purpose": "training-only genuinely two-dimensional data enrichment",
+            "restriction": "conservative_block_average_of_conserved_variables",
+            "seed": 96001,
+            "solver": "classic_pyclaw_euler_4wave_2D",
+            "tfinal": 0.1,
+            "transverse_waves": 2
+          },
+          "path": "/workspace/hard_constrained_flux_learning/experiments/euler_2d_normal6_data_enrichment/data/shards/shock_contact_triple.npz",
+          "sha256": "e724fbc8cc8da07c80065465135dc1e85d8e2017e57d9036ad260f8abe6a8986"
+        },
+        {
+          "metadata": {
+            "base_generator_sha256": "260b59c86b299e2d31b82ae946ad3e0935e369c7651df900b2dd1a5c6a766c09",
+            "boundary": "constant_extrapolation",
+            "clawpack_version": "5.10.0",
+            "coarse_cells": 64,
+            "count": 32,
+            "family": "shock_vortex",
+            "fine_cells": 512,
+            "gamma": 1.4,
+            "generator_sha256": "93a2568857c70ccb03dcbbccb53a7c4b747bc7b5e185219ef3e44b8a7d741805",
+            "output_intervals": 20,
+            "purpose": "training-only genuinely two-dimensional data enrichment",
+            "restriction": "conservative_block_average_of_conserved_variables",
+            "seed": 96001,
+            "solver": "classic_pyclaw_euler_4wave_2D",
+            "tfinal": 0.1,
+            "transverse_waves": 2
+          },
+          "path": "/workspace/hard_constrained_flux_learning/experiments/euler_2d_normal6_data_enrichment/data/shards/shock_vortex.npz",
+          "sha256": "95aa54d50e13dac98c370b695a792640bf920a1b1e5a25566bbeb0c29fbd9baa"
+        },
+        {
+          "metadata": {
+            "base_generator_sha256": "260b59c86b299e2d31b82ae946ad3e0935e369c7651df900b2dd1a5c6a766c09",
+            "boundary": "constant_extrapolation",
+            "clawpack_version": "5.10.0",
+            "coarse_cells": 64,
+            "count": 32,
+            "family": "double_blast",
+            "fine_cells": 512,
+            "gamma": 1.4,
+            "generator_sha256": "93a2568857c70ccb03dcbbccb53a7c4b747bc7b5e185219ef3e44b8a7d741805",
+            "output_intervals": 20,
+            "purpose": "training-only genuinely two-dimensional data enrichment",
+            "restriction": "conservative_block_average_of_conserved_variables",
+            "seed": 96001,
+            "solver": "classic_pyclaw_euler_4wave_2D",
+            "tfinal": 0.1,
+            "transverse_waves": 2
+          },
+          "path": "/workspace/hard_constrained_flux_learning/experiments/euler_2d_normal6_data_enrichment/data/shards/double_blast.npz",
+          "sha256": "3b8f066a767b153d9e186410514d169e9a993a4ec0a2db4842da856286da00d3"
+        },
+        {
+          "metadata": {
+            "base_generator_sha256": "260b59c86b299e2d31b82ae946ad3e0935e369c7651df900b2dd1a5c6a766c09",
+            "boundary": "constant_extrapolation",
+            "clawpack_version": "5.10.0",
+            "coarse_cells": 64,
+            "count": 32,
+            "family": "four_way_collision",
+            "fine_cells": 512,
+            "gamma": 1.4,
+            "generator_sha256": "93a2568857c70ccb03dcbbccb53a7c4b747bc7b5e185219ef3e44b8a7d741805",
+            "output_intervals": 20,
+            "purpose": "training-only genuinely two-dimensional data enrichment",
+            "restriction": "conservative_block_average_of_conserved_variables",
+            "seed": 96001,
+            "solver": "classic_pyclaw_euler_4wave_2D",
+            "tfinal": 0.1,
+            "transverse_waves": 2
+          },
+          "path": "/workspace/hard_constrained_flux_learning/experiments/euler_2d_normal6_data_enrichment/data/shards/four_way_collision.npz",
+          "sha256": "dee670252c5fb64d19ca2a2f44eed8fff2a11804bd675934e6c3d7fee8f9bdbe"
+        }
+      ],
+      "extra_count": 192,
+      "family_counts": {
+        "colliding_waves": 32,
+        "contact_shear": 32,
+        "corrugated_contact": 32,
+        "crossed_riemann": 32,
+        "double_blast": 32,
+        "four_way_collision": 32,
+        "oblique_quadrant": 32,
+        "oblique_riemann": 32,
+        "radial_interface": 32,
+        "shock_contact_triple": 32,
+        "shock_vortex": 32,
+        "smooth_packet": 32
+      },
+      "fine_cells": 512,
+      "model_loss_optimizer_changed": false,
+      "output_intervals": 20,
+      "purpose": "data-only enrichment ablation",
+      "restriction": "conservative_block_average_of_conserved_variables",
+      "test_sha256": "ed877ba706a48d10266790da9919cf2d5b102bb55dd9a5cc696871aaad8bdea0",
+      "tfinal": 0.1,
+      "validation_and_test_unchanged": true,
+      "validation_sha256": "7e449077c17a113b8930abed3bb1a249ea147a525ab9023a618b810236f3225c"
+    },
+    "minimum_density": 0.14307859539985657,
+    "minimum_pressure": 0.09486761689186096,
+    "passed": true,
+    "shape": [
+      384,
+      21,
+      64,
+      64,
+      4
+    ],
+    "test_sha256": "ed877ba706a48d10266790da9919cf2d5b102bb55dd9a5cc696871aaad8bdea0",
+    "training_sha256": "f9b1ee213e03858e859b9c8e3e4fdd642a8a057e56cdd837b936fdc1dfc4f298",
+    "validation_sha256": "7e449077c17a113b8930abed3bb1a249ea147a525ab9023a618b810236f3225c"
+  },
+  "enriched_primitive_mae": {
+    "density_mae": 0.008754268851837173,
+    "pressure_mae": 0.006035075763007728,
+    "x_velocity_mae": 0.0054287593816202025,
+    "y_velocity_mae": 0.005090365038618597
+  },
+  "enriched_signed_density_tv_error": 0.132474970700816,
+  "enriched_test_nmae": 0.014972288734575793,
+  "enriched_training_trajectories": 384,
+  "original_primitive_mae": {
+    "density_mae": 0.008597268683769031,
+    "pressure_mae": 0.005929141915279009,
+    "x_velocity_mae": 0.005191931973438583,
+    "y_velocity_mae": 0.0048844418118216
+  },
+  "original_signed_density_tv_error": 0.11068729398794248,
+  "original_test_nmae": 0.014507726237454874,
+  "original_training_trajectories": 192,
+  "paired_nmae": {
+    "bootstrap_95_percent_interval": [
+      3.990370118724314e-05,
+      0.0009228972863648426
+    ],
+    "enriched_case_wins_out_of_36": 12,
+    "mean_difference_enriched_minus_original": 0.0004645624971209219
+  },
+  "paired_primitive_mae": {
+    "density_mae": {
+      "bootstrap_95_percent_interval": [
+        -8.755098402271307e-05,
+        0.00040361614580370367
+      ],
+      "enriched_case_wins_out_of_36": 10,
+      "mean_difference_enriched_minus_original": 0.00015700016806813772
+    },
+    "pressure_mae": {
+      "bootstrap_95_percent_interval": [
+        -7.836525356142187e-05,
+        0.00028434145448310715
+      ],
+      "enriched_case_wins_out_of_36": 11,
+      "mean_difference_enriched_minus_original": 0.00010593384772871834
+    },
+    "x_velocity_mae": {
+      "bootstrap_95_percent_interval": [
+        3.857301287742519e-05,
+        0.0005017023151810307
+      ],
+      "enriched_case_wins_out_of_36": 14,
+      "mean_difference_enriched_minus_original": 0.00023682740818161825
+    },
+    "y_velocity_mae": {
+      "bootstrap_95_percent_interval": [
+        3.769766236179225e-05,
+        0.00038988816579377424
+      ],
+      "enriched_case_wins_out_of_36": 9,
+      "mean_difference_enriched_minus_original": 0.0002059232267969977
+    }
+  },
+  "passed": true,
+  "relative_primitive_mae_change": {
+    "density_mae": 0.01826163329808983,
+    "pressure_mae": 0.017866640610462614,
+    "x_velocity_mae": 0.04561450523489241,
+    "y_velocity_mae": 0.042159009100816824
+  },
+  "relative_test_nmae_change": 0.032021730319224506,
+  "validation_and_test_unchanged": true
+}
