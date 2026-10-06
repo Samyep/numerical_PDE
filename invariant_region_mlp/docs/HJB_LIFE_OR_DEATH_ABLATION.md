@@ -10,24 +10,24 @@ The existing headline protocol uses
 - dimensions 100, 120, 140, 160,
 - \(n=2, M=10\),
 - 1000 interior unit-ball + 200 unit-sphere test points,
-- 10 paired repetitions,
+- 10 repetitions,
 - certified radius \(R_0=\sqrt{15}\),
 - final value never clipped.
 
-We add the deliberately structure-violating baseline \(f\equiv0\), i.e. delete the nonlinear correction and retain only the root terminal Monte Carlo block. We also sweep constant drivers \(f\equiv-\kappa\), \(\kappa\in\{0,0.25,\ldots,7.5\}\).
+We add the deliberately structure-violating baseline \(f\equiv0\), i.e. delete the nonlinear correction and retain only the root terminal Monte Carlo block. The rerun advances the random-number generator through the same unused child draws as the headline implementation, so the root terminal blocks remain aligned with the archived headline random-tree stream. We also sweep constant drivers \(f\equiv-\kappa\), \(\kappa\in\{0,0.25,\ldots,7.5\}\).
 
 ## Main result
 
 | d | Raw | Samplewise \(R_0\) | Batch \(R_0\) | \(f\equiv0\) |
 |---:|---:|---:|---:|---:|
-|100|2.27995|0.62077|0.26530|**0.004188 ± 0.000082**|
-|120|2.66715|0.62851|0.25586|**0.003587 ± 0.000080**|
-|140|3.09462|0.62791|0.24556|**0.003128 ± 0.000059**|
-|160|3.47939|0.64044|0.24287|**0.002747 ± 0.000034**|
+|100|2.27995|0.62077|0.26530|**0.004231 ± 0.000060**|
+|120|2.66715|0.62851|0.25586|**0.003562 ± 0.000074**|
+|140|3.09462|0.62791|0.24556|**0.003167 ± 0.000071**|
+|160|3.47939|0.64044|0.24287|**0.002752 ± 0.000065**|
 
-The zero-driver baseline is 63x, 71x, 79x, and 88x lower-error than Batch-IR at d=100,120,140,160 respectively.
+The zero-driver baseline is approximately 63x, 72x, 78x, and 88x lower-error than Batch-IR at d=100,120,140,160 respectively.
 
-The constant-driver sweep selects \(\kappa=0\) in all four dimensions. Thus even the best constant correction in the tested range is the zero nonlinear correction.
+The constant-driver sweep selects \(\kappa=0\) in all four dimensions. Thus the best constant correction in the tested range is the zero nonlinear correction.
 
 ## Small-radius diagnostic
 
