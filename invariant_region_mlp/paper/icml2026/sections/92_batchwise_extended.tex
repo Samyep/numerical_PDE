@@ -1,0 +1,113 @@
+\clearpage
+\section{Extended Batchwise Experiments}
+\label{app:extended}
+This appendix integrates the archived extended Batch-IR suite. It does not replace the preceding experiments or pool different runs into one comparison. The companion source package records the repository revision, source paths, and extracted numbers in \texttt{data/batchwise\_extended/PROVENANCE.json}. HJB means, sample standard deviations, paired differences, win counts, and paired tests are independently checked from the archived repetition-level values; funding uncertainty is limited to what is recorded in its summary.
+
+\subsection{Headline HJB: Protocol and Paired Results}
+\label{app:extended-hjb}
+The script \texttt{hjb\_batchwise\_headline.py} uses
+\[
+ u_t+\Delta u-\norm{\nabla u}_2^2=0,\qquad
+ g(x)=\log\!\left(\frac{1+x^\top A x}{2}\right),\qquad T=1,
+\]
+with the positive semidefinite Rosenbrock matrix described in Appendix~\ref{app:certificates}. Each dimension has a fixed matrix and a fixed test set of 1,000 points sampled inside the unit ball and 200 on the unit sphere. Every point is assigned a time sampled uniformly in $[0,1]$. The experiment uses $n=2$, $M=10$, ten paired repetitions, and the same certified radius $\sqrt{15}$ in all four dimensions. No neural surrogate is trained or evaluated.
+
+For a parent $(t,x)$, the value uses $M^2$ terminal samples and an $M$-sample nonlinear correction. Each child gradient uses $M$ centered terminal samples. For $h=T-s$, $X_T=X_s+\sqrt{2h}\,G$, the child estimator is
+\[
+ \widehat z_1(s,X_s)=\frac1M\sum_{k=1}^M
+ [g(X_T^{(k)})-g(X_s)]\frac{G_k}{\sqrt h},
+ \qquad z=\sqrt2\nabla u.
+\]
+Sibling child gradients are projected independently or rescaled by one common factor for each parent. Only $z$ is corrected; the root value and terminal blocks are unchanged. The HJB implementation samples the child time uniformly. Its centered terminal differences regularize these particular gradient estimates; this protocol is not a substitution of uniform times into the general gradient-dependent MLP convergence theorem. The implementation floors time intervals inside square roots at $10^{-14}$ for numerical arithmetic.
+
+The value and gradient references use 32-node Gauss--Laguerre quadrature with the scaled variable
+\[
+ c=1+x^\top A x+2(T-t)\operatorname{tr}(A),\qquad r=cs,
+\]
+and log-sum-exp evaluation. These are numerical references, not exact closed-form values. The same references and test points are used by all three methods. Each repetition supplies one relative $L_2$ error over the entire 1,200-point set; the 1,200 points are not treated as 1,200 independent repetitions.
+
+\input{tables/extended_hjb.tex}
+
+All four 10/10 win counts are within-dimension comparisons on fixed matrices and test sets, not forty independent problem instances. Table~\ref{tab:extended-hjb} reports descriptive two-sided paired $t$-tests without multiple-comparison adjustment. These tests concern the sampled repetitions of this fixed benchmark, not generalization over PDE instances. In particular, the new \emph{Raw} column means no correction at all; the earlier \emph{heuristic} column in Table~\ref{tab:hjb-extra} uses clipping and must remain a separate baseline. The different raw and corrected values across old and new studies are not paired observations.
+
+\subsection{Matched Generator and Correction Diagnostics}
+\label{app:extended-diag}
+For each repetition, the script retains complete sibling groups for the first 64 parent points. Ten children per parent and ten repetitions yield 6,400 diagnostic child states. The retained parent subset consists of interior test points. For a method $a$, let $\widetilde z_{rji}^{a}$ denote its corrected child gradient at the sampled point $S_{rji}$, and let $z_{\rm ref}(S_{rji})$ be the quadrature reference. The generator diagnostic is
+\[
+ \widehat{\operatorname{MSE}}_f^{a}
+ =\frac1{10\cdot64\cdot10}
+ \sum_{r=1}^{10}\sum_{j=1}^{64}\sum_{i=1}^{10}
+ \bigl[f(\widetilde z_{rji}^{a})-f(z_{\rm ref}(S_{rji}))\bigr]^2.
+\]
+The outer correction is evaluated at \emph{all} $J=1200$ fixed parent points:
+\[
+ C_{rj}^{a}=\frac{T-t_j}{M}\sum_{i=1}^{M}f(\widetilde z_{rji}^{a}),\qquad
+ \overline C_j^{a}=\frac1R\sum_{r=1}^{R}C_{rj}^{a},
+\]
+\[
+ \widehat V_{\rm corr}^{a}
+ =\frac1J\sum_{j=1}^J\frac1{R-1}
+ \sum_{r=1}^R(C_{rj}^{a}-\overline C_j^{a})^2,
+ \qquad R=10.
+\]
+This is the across-repetition variance of the actual averaged nonlinear correction, followed by an average over test points. It is neither the variance of a single gradient coordinate nor the variance of the entire root value.
+
+\input{tables/extended_mechanism.tex}
+
+For comparison, the script also computes the sample variance of the individual $f(\widetilde z)$ values pooled across the 6,400 diagnostic states. That statistic mixes variation across parent locations, child times, sibling draws, and repetitions. It should not be interpreted as a pointwise Monte Carlo variance or as the variance of an average with independent terms. Table~\ref{tab:extended-increments} deliberately retains the unfavorable cases: Batch-IR has larger pooled individual-increment variance than Samplewise IR in three dimensions, despite lower averaged-correction variance in all four. The two statistics also use different parent sets.
+
+\input{tables/extended_increments.tex}
+
+The common factor is active in almost every headline HJB sibling batch. Table~\ref{tab:extended-activity} reports the recorded rate of $\alpha_B<1$ and the mean factor, aggregated over 1,200 parent batches per repetition. The lower final errors therefore do not demonstrate that the retraction becomes negligible. We do not infer a bias estimate, a vanishing-correction limit, or general Batch-IR consistency from these activity statistics.
+
+\input{tables/extended_activity.tex}
+\FloatBarrier
+
+\subsection{Deeper 100D Funding Recursions}
+\label{app:extended-funding}
+The script \texttt{funding\_batchwise\_deep.py} uses $d=100$, $T=0.5$, volatility $\sigma=0.2$, drift $\mu=0.06$, lending rate $R_l=0.04$, borrowing rate $R_b=0.06$, and initial asset prices $x_i=100$. Its payoff and driver are
+\[
+ g(x)=(\max_i x_i-120)_+-2(\max_i x_i-150)_+,
+\]
+\[
+ f(y,z)=-R_l y-\frac{\mu-R_l}{\sigma}\sum_i z_i
+ +(R_b-R_l)\left(\frac{\sum_i z_i}{\sigma}-y\right)_+.
+\]
+The geometric-Brownian increments are simulated directly. Random times use $r\sim\operatorname{Beta}(1/2,1)$ with inverse-density weights; the high and low branches use separate child random draws while the three methods share those draws. Each completed child is normalized to delta coordinates $\Delta_i=z_i/(\sigma x_i)$. For siblings at distinct times $s_i$, the batch factor is
+\[
+ \alpha_B=\min\left\{1,\min_i
+ \frac{\exp(\sigma^2(T-s_i)/2)}{\norm{\widehat\Delta_i}_2}\right\},
+\]
+with the usual no-shrinkage convention for zero norm. The implementation then maps back to $z$ and evaluates the driver without changing $y$. This uses the model-derived envelope whose remaining analytic justification is stated in Appendix~\ref{app:certificates}; the new experiments do not upgrade it into a new certificate theorem.
+
+Each $(n,M)$ configuration uses 100 paired root estimates, computed in blocks of ten. A block is a computational grouping of roots, not the sibling group used to calculate $\alpha_B$. The value reference is the recorded numerical value 21.299. All reported MAEs and pairwise win fractions are measured against that reference.
+
+\input{tables/extended_funding.tex}
+
+The smaller Batch-IR MAE survives at $n=3$ and $n=4$. Because $M$ changes across rows, the table is not evidence that raising depth alone reduces error. The imported summary records a 100\% batch activation rate at all three settings and mean common factors of $0.1632$, $0.1748$, and $0.1218$. The paired $p$-values in Table~\ref{tab:extended-funding} are carried from the repository summary. The imported funding results do not include the per-replica arrays needed to recompute confidence intervals or those tests, so no uncertainty bars have been reconstructed from aggregate MAEs.
+\FloatBarrier
+
+\subsection{Neufeld--Wu at the Smallest Extended Budget}
+\label{app:extended-nw}
+The script \texttt{neufeld\_batch\_m2.py} uses $n=M=2$, 30 repetitions at each of $d=100,200,300$, linear drift $0.06x$, additive diffusion $0.2I$, $T=0.25$, and the max-asset call-spread payoff with strikes 95 and 120. The driver is $(10/d)(\norm{z}_\infty-25)_+$, where this implementation's gradient coordinate is $\nabla u$, rather than $\sigma^\top\nabla u$. It uses a 12-step Euler forward approximation and $\operatorname{Beta}(1/2,1/2)$ random times. The reference is numerical integration of the maximum-of-Gaussians payoff under the continuous linear diffusion; consequently the errors include the implementation's forward/time-discretization effects. They are not exact-time MLP asymptotics.
+
+\input{tables/extended_neufeld.tex}
+
+Both corrections map the offending gradients well below the threshold 25, so the same spurious nonlinear source is removed. The archived summary gives identical Samplewise/Batch-IR MAEs, with zero reported discrepancy; these ties must not be counted as wins or losses. Its recorded 20\% activation rate includes calls on trivial zero-depth child states in the denominator and is not the violation rate among nontrivial gradients. The earlier $n=M=3$ batch study likewise ties, with corrected MAEs $0.00665$, $0.00711$, and $0.00679$. It uses a different budget and sample realization, so the two studies are reported separately rather than pooled.
+\FloatBarrier
+
+\subsection{Batchwise Structural Sanity Check}
+\label{app:extended-sanity}
+The script \texttt{counterexample\_batchwise\_sanity.py} uses $n=m=3$, 512 repetitions, and $d=10,100,1000$. Within each sibling group it first applies the certified $Q_d$ and then uses
+\[
+ \alpha_B=\min\{1,1/\max_i |(Q_dz_i)_1|\},\qquad
+ \widetilde z_i=\alpha_B Q_dz_i.
+\]
+Since $f_d$ vanishes on $S_d$, the nonlinear terms are zero even when $\alpha_B<1$. Random time and active-coordinate streams are shared across dimensions; inactive-coordinate randomness is separate. The observed corrected value RMSE is consequently identical across the dimensions, as expected from this coupling.
+
+\input{tables/extended_sanity.tex}
+
+The recorded activation rate is $0.58984375$ and mean common factor is $0.77601904$ at all three dimensions. The maximum paired value discrepancy is zero. This is a value-output identity check in a separate run, not a replacement for the primary counterexample sweep or independent Gaussian-moment test in Figures~\ref{fig:counter} and~\ref{fig:validation}.
+
+\textbf{Root-gradient distinction.} The code projects returned gradients in the samplewise subspace mode, but applies $\alpha_BQ_d$ only inside the batch mode's generator calls. It does not project the batch mode's final returned gradient. Thus its exact value equality cannot establish equal full-state MSE or the constant $(4-2/\pi)/N$ for that unprojected batch output. The structural part of Theorem~\ref{thm:rescue} is what this sanity check tests. Pure common radial scaling without $Q_d$ is not an exact-rescue method.
+\FloatBarrier

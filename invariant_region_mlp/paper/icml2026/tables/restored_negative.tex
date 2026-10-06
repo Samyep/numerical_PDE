@@ -1,0 +1,21 @@
+\begin{table}[htbp]
+\centering\small
+\caption{Recorded paired negative controls. All three methods have the same error and zero maximum value discrepancy. Allen--Cahn reports relative MAE in percent; the other rows report absolute MAE. Activity columns refer to the constrained state and the Batch-IR implementation.}\label{tab:restored-negative}
+\begin{tabular}{lrrrrrr}
+\toprule
+Problem & $n$ & $M$ & Common error & Violation (\%) & Batch active (\%) & Max $\Delta u$ \\
+\midrule
+Allen--Cahn & 3 & 2 & 3.303465 & 0.00 & 0.00 & 0 \\
+Allen--Cahn & 3 & 3 & 1.959025 & 0.00 & 0.00 & 0 \\
+Allen--Cahn & 3 & 4 & 1.421529 & 0.00 & 0.00 & 0 \\
+\midrule
+Credit risk & 2 & 10 & 0.450018 & 0.00 & 0.00 & 0 \\
+Credit risk & 3 & 6 & 0.297810 & 0.00 & 0.00 & 0 \\
+Credit risk & 4 & 3 & 0.516940 & 0.00 & 0.00 & 0 \\
+\midrule
+Linear & 2 & 4 & 0.114882 & 100.00 & 100.00 & 0 \\
+Linear & 2 & 8 & 0.050744 & 97.00 & 97.00 & 0 \\
+Linear & 2 & 16 & 0.026660 & 8.50 & 8.50 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}

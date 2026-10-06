@@ -1,0 +1,13 @@
+\begin{table}[htbp]
+\centering\small
+\caption{Separate batchwise structural sanity check: value RMSE over 512 paired replicas at $n=m=3$. Maximum discrepancy compares paired values, not gradients or full states.}\label{tab:extended-sanity}
+\begin{tabular}{@{}rrrrr@{}}
+\toprule
+$d$ & Raw & Subspace IR & Batch structural & Max. paired discrepancy\\
+\midrule
+10 & 3.595016 & 0.110083 & 0.110083 & 0\\
+100 & 39.121427 & 0.110083 & 0.110083 & 0\\
+1000 & 396.591466 & 0.110083 & 0.110083 & 0\\
+\bottomrule
+\end{tabular}
+\end{table}
