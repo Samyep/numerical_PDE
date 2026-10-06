@@ -1,0 +1,135 @@
+{
+  "checks": {
+    "all_consistent_test_trajectories_completed": true,
+    "all_training_runs_validation_stopped": true,
+    "data_audit_passed": true,
+    "fully_discrete_entropy_within_tolerance": true,
+    "interface_projection_residual_below_5e-6": true,
+    "learned_multiplier_change_is_nonzero": true,
+    "positive_density_and_pressure": true,
+    "relative_conservation_closure_below_1e-7": true,
+    "roe_multipliers_nonnegative_and_bounded": true
+  },
+  "entropy_fallback_activations": 2.0,
+  "entropy_fallback_rate_per_batch_substep": 0.00022593764121102577,
+  "learned_flux_audit": {
+    "Central + nonnegative Roe-18 seed 0": {
+      "maximum_roe_multiplier": 1.8803246021270752,
+      "mean_absolute_multiplier_change_from_one": 0.7919640744594459,
+      "mean_roe_multiplier": 0.20895663216000512,
+      "minimum_roe_multiplier": 0.009724259376525879,
+      "multiplier_change_fraction_above_1e-3": 0.9999879436728395,
+      "raw_proposal_change_from_standard_roe_l1_ratio": 0.007090523110853638,
+      "raw_proposal_entropy_violation_fraction": 0.052766065917107585,
+      "relative_transverse_multiplier_response": 0.008368369238690882
+    },
+    "Central + nonnegative Roe-18 seed 1": {
+      "maximum_roe_multiplier": 1.9761607646942139,
+      "mean_absolute_multiplier_change_from_one": 0.8218281168996552,
+      "mean_roe_multiplier": 0.18223137704152909,
+      "minimum_roe_multiplier": 0.0035449862480163574,
+      "multiplier_change_fraction_above_1e-3": 0.9999810543430335,
+      "raw_proposal_change_from_standard_roe_l1_ratio": 0.007138395750387119,
+      "raw_proposal_entropy_violation_fraction": 0.05864886463844797,
+      "relative_transverse_multiplier_response": 0.0116963544578918
+    },
+    "Central + nonnegative Roe-18 seed 2": {
+      "maximum_roe_multiplier": 1.9762325286865234,
+      "mean_absolute_multiplier_change_from_one": 0.8045782032046579,
+      "mean_roe_multiplier": 0.19883290800468,
+      "minimum_roe_multiplier": 0.0032404661178588867,
+      "multiplier_change_fraction_above_1e-3": 0.9999784708443563,
+      "raw_proposal_change_from_standard_roe_l1_ratio": 0.0072063740365924545,
+      "raw_proposal_entropy_violation_fraction": 0.057979910714285716,
+      "relative_transverse_multiplier_response": 0.010098934533660247
+    }
+  },
+  "maximum_fully_discrete_entropy_balance": -1.5024779713712633e-05,
+  "maximum_interface_projection_residual": 1.4236983362364564e-07,
+  "maximum_relative_conservation_closure": 3.385810189048466e-09,
+  "minimum_entropy_fallback_beta": 0.0,
+  "paired_comparisons": {
+    "HLLC + signed Roe-18": {
+      "bootstrap_95_percent_interval": [
+        -0.0008569926889305139,
+        -6.304559413715938e-05
+      ],
+      "candidate_case_wins_out_of_36": 21,
+      "mean_paired_nmae_difference": -0.0004475975678570278
+    },
+    "HLLC-64": {
+      "bootstrap_95_percent_interval": [
+        -0.011067343994129694,
+        -0.007139496247784787
+      ],
+      "candidate_case_wins_out_of_36": 35,
+      "mean_paired_nmae_difference": -0.009059029314663262
+    },
+    "PyClaw Roe-64": {
+      "bootstrap_95_percent_interval": [
+        0.0022834930491176767,
+        0.004716817614407474
+      ],
+      "candidate_case_wins_out_of_36": 8,
+      "mean_paired_nmae_difference": 0.003449618918757439
+    }
+  },
+  "passed": true,
+  "positivity_fallback_activations": 0.0,
+  "relative_nmae_change_consistent_vs_pyclaw_roe": 0.3057534961242636,
+  "relative_nmae_change_consistent_vs_signed": -0.029486841768484134,
+  "test_component_mae": {
+    "Central + nonnegative Roe-18": {
+      "density_mae": 0.008613777146227356,
+      "pressure_mae": 0.005983526458858589,
+      "x_velocity_mae": 0.00534238907929728,
+      "y_velocity_mae": 0.004980759334231138
+    },
+    "HLLC + signed Roe-18": {
+      "density_mae": 0.00859245121200729,
+      "pressure_mae": 0.006267733092901532,
+      "x_velocity_mae": 0.005576971146241881,
+      "y_velocity_mae": 0.005164819109788289
+    },
+    "HLLC-64": {
+      "density_mae": 0.013757643278399376,
+      "pressure_mae": 0.009598370197424327,
+      "x_velocity_mae": 0.008761147094452774,
+      "y_velocity_mae": 0.00803924424779464
+    },
+    "PyClaw Roe-64": {
+      "density_mae": 0.007117870231958375,
+      "pressure_mae": 0.0042585752794871545,
+      "x_velocity_mae": 0.004034732737212751,
+      "y_velocity_mae": 0.0037594954941731246
+    }
+  },
+  "test_nmae": {
+    "Central + nonnegative Roe-18": 0.014731972064297461,
+    "Central + nonnegative Roe-18 between-seed std": 0.00017792042278470723,
+    "Central + nonnegative Roe-18 seed means": [
+      0.014490662544253173,
+      0.014790895131342411,
+      0.014914358517296796
+    ],
+    "HLLC + signed Roe-18": 0.015179569632154487,
+    "HLLC + signed Roe-18 between-seed std": 0.00012109098164485997,
+    "HLLC + signed Roe-18 seed means": [
+      0.015023542414096834,
+      0.01519645903016619,
+      0.015318707452200438
+    ],
+    "HLLC-64": 0.023791001378960716,
+    "PyClaw Roe-64": 0.011282353145540018
+  },
+  "validation_best_nmae": [
+    0.018005001668057685,
+    0.01777658404800931,
+    0.017915012394193772
+  ],
+  "validation_best_update": [
+    500,
+    1000,
+    1000
+  ]
+}

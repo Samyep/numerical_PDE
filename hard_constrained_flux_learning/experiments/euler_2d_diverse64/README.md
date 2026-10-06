@@ -48,3 +48,41 @@ plus directly comparable absolute-error heatmaps.
 
 Large generated `.npz` files are reproducible and ignored by Git.  Selected
 checkpoints, scalar curves, audits, and the final report are retained.
+
+## Method-consistent extension
+
+The original `flat18` model above is retained as a controlled
+HLLC-plus-signed-correction ablation.  The paper-method extension keeps the
+same 18-cell input, 10,804-parameter budget, data splits, minibatch stream,
+optimizer schedule, hard entropy projection, feasibility weight, and
+deployment safety wrapper, but changes the learned proposal to
+
+```text
+central physical flux
+- 0.5 * Roe eigenvectors
+      * ((1 + tanh(network output)) * entropy-fixed |eigenvalues|
+         * Roe wave strengths).
+```
+
+Thus all learned Roe dissipation multipliers are in `[0, 2]`, and a zero
+network output is exactly the standard entropy-fixed Roe flux.  The
+feasibility penalty is evaluated on the raw proposal while the trajectory is
+advanced with the hard-projected flux.  HLL is not used during training; it
+remains only in the common deployment safety wrapper.
+
+```text
+python run_consistent64.py audit-data
+python run_consistent64.py reference-audit
+python run_consistent64.py train --seed 0
+python run_consistent64.py train --seed 1
+python run_consistent64.py train --seed 2
+python run_consistent64.py evaluate --seeds 0 1 2
+python summarize_consistent.py
+python plot_consistent_heatmaps.py
+```
+
+`summarize_consistent.py` audits all three validation-stopped runs and reports
+held-out NMAE together with density, velocity, and pressure MAE, density-TV,
+constraint activations, conservation closure, and learned-multiplier
+diagnostics.  `plot_consistent_heatmaps.py` again uses seed 0 and the first
+held-out case from every family, fixed before seeing test errors.

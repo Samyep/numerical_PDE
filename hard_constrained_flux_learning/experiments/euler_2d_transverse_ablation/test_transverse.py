@@ -47,12 +47,15 @@ def test_parameter_budgets_are_matched() -> None:
     normal = M.make_model(MEAN, STD, "normal6wide")
     flat = M.make_model(MEAN, STD, "flat18")
     gated = M.make_model(MEAN, STD, "gated18")
+    consistent = M.make_model(MEAN, STD, M.CONSISTENT_VARIANT)
     normal_count = C.parameter_count(normal)
     flat_count = C.parameter_count(flat)
     gated_count = C.parameter_count(gated)
+    consistent_count = C.parameter_count(consistent)
     assert normal_count == 10804
     assert flat_count == 10804
     assert gated_count == 10872
+    assert consistent_count == 10804
     assert abs(flat_count - gated_count) / flat_count < 0.01
 
 
@@ -79,9 +82,27 @@ def test_flat_model_receives_real_transverse_information() -> None:
     assert not torch.allclose(coefficients, centre_only)
 
 
+def test_central_nonnegative_zero_network_is_standard_roe() -> None:
+    state = random_state((2, 7, 10), seed=5)
+    model = M.make_model(MEAN, STD, M.CONSISTENT_VARIANT)
+    multipliers, centre_only, _ = model.flux_net.multiplier_details(state)
+    assert torch.equal(multipliers, torch.ones_like(multipliers))
+    assert torch.equal(centre_only, torch.ones_like(centre_only))
+    proposal = model.flux_net.forward_oriented(state)
+    expected = model.flux_net.standard_roe_faces_oriented(state)
+    assert torch.equal(proposal, expected)
+
+    with torch.no_grad():
+        for parameter in model.parameters():
+            parameter.uniform_(-0.2, 0.2)
+    multipliers = model.flux_net.multipliers(state)
+    assert bool((multipliers >= 0.0).all())
+    assert bool((multipliers <= 2.0).all())
+
+
 def test_hard_projection_and_conservation_for_both_variants() -> None:
     state = random_state((2, 9, 11), seed=4)
-    for variant in M.MODEL_TYPES:
+    for variant in (*M.MODEL_TYPES, M.CONSISTENT_VARIANT):
         model = M.make_model(MEAN, STD, variant)
         with torch.no_grad():
             for parameter in model.parameters():
@@ -111,6 +132,7 @@ if __name__ == "__main__":
         test_parameter_budgets_are_matched,
         test_gated_model_has_exact_one_dimensional_reduction,
         test_flat_model_receives_real_transverse_information,
+        test_central_nonnegative_zero_network_is_standard_roe,
         test_hard_projection_and_conservation_for_both_variants,
     ]
     for test in tests:

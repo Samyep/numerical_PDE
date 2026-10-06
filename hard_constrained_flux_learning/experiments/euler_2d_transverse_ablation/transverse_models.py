@@ -1,10 +1,15 @@
-"""Transverse-aware conservative face models for the 2-D Euler ablation.
+"""Transverse-aware conservative face models for the 2-D Euler ablations.
 
 Both variants use an oriented 3-by-6 primitive-variable patch for every face.
 The ``flat18`` model is deliberately unstructured: it must learn for itself
 which transverse information matters.  The ``gated18`` model separates the
 existing normal six-cell mapping from a transverse residual and reduces
 exactly to its normal branch when the three rows agree.
+
+``central_nonnegative18`` is the direct 2-D extension of the retained 1-D
+HCFL method: central physical flux plus entropy-fixed Roe dissipation whose
+four wave multipliers are constrained to ``(0, 2)``.  It retains the same
+oriented 18-cell input and the same shared network for x and y faces.
 """
 
 from __future__ import annotations
@@ -24,6 +29,7 @@ import euler_2d_common as C  # noqa: E402
 
 TRANSVERSE_VARIANTS = ("flat18", "gated18")
 MODEL_TYPES = ("normal6wide", *TRANSVERSE_VARIANTS)
+CONSISTENT_VARIANT = "central_nonnegative18"
 # Backward-compatible name used by the first running flat18 process.
 VARIANTS = TRANSVERSE_VARIANTS
 NORMAL_SHIFTS = (-3, -2, -1, 0, 1, 2)
@@ -164,6 +170,84 @@ class DirectionalPatchHLLCRoeCorrection(nn.Module):
         return torch.cat((base[..., :1, :], interior, base[..., -1:, :]), dim=-2)
 
 
+class DirectionalPatchCentralNonnegativeRoe(nn.Module):
+    """Central physical flux with nonnegative learned Roe dissipation.
+
+    A zero network output gives multiplier one for every Roe wave, hence the
+    standard entropy-fixed Roe flux rather than HLLC.  The construction is
+    the four-wave 2-D analogue of ``CentralRoeUpwindFlux`` used by the
+    retained 1-D Euler experiments.
+    """
+
+    def __init__(
+        self,
+        mean: np.ndarray,
+        std: np.ndarray,
+        width: int = 72,
+    ) -> None:
+        super().__init__()
+        self.net = _mlp(3 * 6 * 4, width)
+        self.register_buffer("mean", torch.tensor(mean, dtype=torch.float32))
+        self.register_buffer("std", torch.tensor(std, dtype=torch.float32))
+
+    def normalized_patch(self, state: torch.Tensor) -> torch.Tensor:
+        patch = oriented_primitive_patch(state)
+        return (patch - self.mean) / self.std
+
+    def multiplier_details(
+        self, state: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return full-patch, centre-only, and transverse-gate diagnostics."""
+
+        patch = self.normalized_patch(state)
+        centre = patch[..., 1, :, :]
+        features = patch.flatten(start_dim=-3)
+        repeated = torch.stack((centre, centre, centre), dim=-3)
+        multipliers = 1.0 + torch.tanh(self.net(features))
+        centre_only = 1.0 + torch.tanh(
+            self.net(repeated.flatten(start_dim=-3))
+        )
+        difference = torch.cat(
+            (
+                (centre - patch[..., 0, :, :]).flatten(start_dim=-2),
+                (patch[..., 2, :, :] - centre).flatten(start_dim=-2),
+            ),
+            dim=-1,
+        )
+        gate = torch.tanh(difference.abs().mean(dim=-1))
+        return multipliers, centre_only, gate
+
+    def multipliers(self, state: torch.Tensor) -> torch.Tensor:
+        return self.multiplier_details(state)[0]
+
+    @staticmethod
+    def _assemble_oriented(
+        state: torch.Tensor, multipliers: torch.Tensor
+    ) -> torch.Tensor:
+        left = state[..., :-1, :]
+        right = state[..., 1:, :]
+        matrix, strengths, speeds = C.roe_waves_oriented(left, right)
+        dissipation = torch.einsum(
+            "...ij,...j->...i",
+            matrix,
+            multipliers * speeds * strengths,
+        )
+        physical = C.physical_flux_oriented(state)
+        central = 0.5 * (physical[..., :-1, :] + physical[..., 1:, :])
+        interior = central - 0.5 * dissipation
+        return torch.cat(
+            (physical[..., :1, :], interior, physical[..., -1:, :]), dim=-2
+        )
+
+    def standard_roe_faces_oriented(self, state: torch.Tensor) -> torch.Tensor:
+        shape = (*state.shape[:-2], state.shape[-2] - 1, 4)
+        multipliers = torch.ones(shape, dtype=state.dtype, device=state.device)
+        return self._assemble_oriented(state, multipliers)
+
+    def forward_oriented(self, state: torch.Tensor) -> torch.Tensor:
+        return self._assemble_oriented(state, self.multipliers(state))
+
+
 class HCFL2DTransverse(C.HCFL2DEuler):
     """HCFL wrapper retaining the original hard projections and safety path."""
 
@@ -179,6 +263,16 @@ class HCFL2DTransverse(C.HCFL2DEuler):
         self.stencil_cells = 18
 
 
+class HCFL2DCentralNonnegative(C.HCFL2DEuler):
+    """Retained 1-D HCFL flux design extended to oriented 2-D faces."""
+
+    def __init__(self, mean: np.ndarray, std: np.ndarray) -> None:
+        nn.Module.__init__(self)
+        self.flux_net = DirectionalPatchCentralNonnegativeRoe(mean, std)
+        self.variant = CONSISTENT_VARIANT
+        self.stencil_cells = 18
+
+
 def make_model(
     mean: np.ndarray,
     std: np.ndarray,
@@ -188,4 +282,6 @@ def make_model(
         # w^2 + 30w + 4 parameters for a 24-w-w-4 MLP; w=90 gives
         # exactly 10,804 parameters, matching flat18 exactly.
         return C.HCFL2DEuler(mean, std, width=90, stencil_cells=6)
+    if variant == CONSISTENT_VARIANT:
+        return HCFL2DCentralNonnegative(mean, std)
     return HCFL2DTransverse(mean, std, variant)
