@@ -1,0 +1,318 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,booktabs}
+\usepackage[hidelinks]{hyperref}
+
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}[lemma]{Proposition}
+\newtheorem{corollary}[lemma]{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}[lemma]{Remark}
+\theoremstyle{definition}
+\newtheorem{assumption}{Assumption}
+
+\newcommand{\E}{\mathbb E}
+\newcommand{\R}{\mathbb R}
+\newcommand{\norm}[1]{\lVert #1\rVert}
+\newcommand{\zh}{\widehat z}
+\newcommand{\zpar}{\widehat z_{\parallel}}
+\newcommand{\zperp}{\widehat z_{\perp}}
+\newcommand{\Pperp}{P_{\perp}}
+\newcommand{\Proj}{\Pi}
+
+\title{How gradient noise becomes generator bias in multilevel Picard,\\
+and what a certified gradient retraction does:\\ a one-step analysis}
+\author{Draft for the constraint-aware MLP project}
+\date{2026-10-07}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We analyse a single generator evaluation inside a multilevel Picard (MLP) recursion for
+semilinear parabolic PDEs whose solution has ridge structure.
+For the centred terminal-block gradient estimator we show that the estimation noise
+orthogonal to the ridge direction has trace exactly $(d-1)c_h/M$, with $c_h$
+independent of the dimension $d$ (Lemma~\ref{lem:perp}).
+Passed through a quadratic generator, this noise produces a deterministic bias equal to
+$-\tfrac{\lambda}{2}(d-1)c_h/M$ (Proposition~\ref{prop:quad}); through a norm
+generator it produces a bias of order $\sqrt{d/M}$ (Proposition~\ref{prop:norm}).
+Retracting the gradient onto a PDE-certified set before the generator bounds the
+generator error by a $d$-independent constant, and when the set lies in the ridge
+direction it makes the law of the corrected generator value exactly independent of $d$
+(Proposition~\ref{prop:cert}).
+For generators that are linear in the gradient along the ridge direction, the orthogonal
+noise never reaches the generator (Proposition~\ref{prop:linear}), which explains why
+the certified retraction does not improve equal-cost accuracy in that class.
+The analysis concerns one generator call (equivalently one Picard level); how deeper
+levels amplify the effect is documented empirically, not proved here.
+\end{abstract}
+
+\section{Setting}
+
+Consider $\partial_t u+\mathcal L u+f(t,x,u,z)=0$, $u(T,\cdot)=g$, with
+$z=\sigma\nabla_x u$ for a scalar $\sigma>0$ and
+$\mathcal L u=b\cdot\nabla u+\tfrac{\sigma^2}{2}\Delta u$ for a constant drift
+$b\in\R^d$. Fix a unit vector $w\in\R^d$, write $\Pperp=I-ww^\top$, and use the following
+assumptions.
+
+\begin{assumption}[Ridge structure]\label{ass:ridge}
+(i) $g(x)=\varphi(w\cdot x)$ with $\varphi:\R\to\R$ Lipschitz with constant $L_\varphi$;
+(ii) $b=\beta w$ for some $\beta\in\R$;
+(iii) the exact solution is a ridge function, $u^\star(t,x)=\psi(t,w\cdot x)$, so that
+$z^\star(t,x)=\sigma\,\partial_s\psi(t,w\cdot x)\,w$.
+\end{assumption}
+
+Assumption~\ref{ass:ridge}(iii) holds whenever $f$ depends on $z$ only through
+$\norm{z}$ or through $w\cdot z$ and the PDE has a unique solution in the relevant class
+(translation invariance in the directions orthogonal to $w$). It covers the ridge
+log-sum-exp HJB (P1), the norm-driver HJB (P4), the counterexample of
+Hutzenthaler and Nguyen~\cite{HN2025} ($w=e_1$), and the viscous-Burgers family
+$u^\star=\mathrm{sigmoid}(at+\sum_i x_i)$ (P2/P3, $w=d^{-1/2}\mathbf 1$).
+
+\paragraph{The estimator.}
+At a child point $(\tau,x)$ with $h=T-\tau>0$, MLP estimates the gradient by Monte Carlo.
+We analyse the centred terminal block
+\begin{equation}\label{eq:zhat}
+\zh=\frac1M\sum_{k=1}^M \Delta_k\,\frac{G_k}{\sqrt h},\qquad
+\Delta_k=g\bigl(x+\beta h\,w+\sigma\sqrt h\,G_k\bigr)-g(x),\qquad G_k\stackrel{\rm iid}{\sim}\mathcal N(0,I_d).
+\end{equation}
+This is the complete child gradient at the first Picard level and the terminal
+contribution at every deeper level. It is also the noise source used in the lower-bound
+argument of~\cite{HN2025}.
+Write $s=w\cdot x$, $\xi_k=w\cdot G_k$, $G_{\perp,k}=\Pperp G_k$, so that
+$\Delta_k=\varphi(s+\beta h+\sigma\sqrt h\,\xi_k)-\varphi(s)$ depends on $G_k$ only
+through $\xi_k$. Define
+\[
+\zpar=w\cdot\zh,\qquad \zperp=\Pperp\zh,\qquad
+Q_M=\frac1{Mh}\sum_{k=1}^M\Delta_k^2,\qquad c_h(s)=\E Q_M=\frac{\E\Delta_1^2}{h}.
+\]
+
+\section{The orthogonal noise}
+
+\begin{lemma}[Orthogonal noise is isotropic, mean zero, and scales with $d-1$]\label{lem:perp}
+Under Assumption~\ref{ass:ridge}(i)--(ii):
+\begin{enumerate}
+\item[(i)] $\E\zperp=0$ and $\E\zh=\bigl(\E\zpar\bigr)w$;
+\item[(ii)] the law of $\zpar$ and of $Q_M$ does not depend on $d$;
+\item[(iii)] conditionally on $(\xi_1,\dots,\xi_M)$,
+$\zperp\sim\mathcal N\bigl(0,\tfrac{Q_M}{M}\Pperp\bigr)$;
+\item[(iv)] $\E\norm{\zperp}^2=(d-1)\,c_h(s)/M$, and
+$c_h(s)\le 2L_\varphi^2(\sigma^2+\beta^2h)$;
+\item[(v)] $\E\norm{\zperp}=\E\bigl[\sqrt{Q_M}\bigr]\,\E\chi_{d-1}/\sqrt M
+\ \ge\ \E\bigl[\sqrt{Q_M}\bigr]\,\dfrac{d-1}{\sqrt{(d+1)M}}$,
+where $\chi_{d-1}$ denotes a chi random variable with $d-1$ degrees of freedom.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+Because $G_k$ is standard Gaussian and $w\perp\operatorname{range}\Pperp$, the scalar
+$\xi_k$ and the vector $G_{\perp,k}\sim\mathcal N(0,\Pperp)$ are independent, and the
+pairs are independent across $k$. Since $\Delta_k$ is a function of $\xi_k$,
+$\zpar=(M\sqrt h)^{-1}\sum_k\Delta_k\xi_k$ and $Q_M$ are functions of
+$(\xi_1,\dots,\xi_M)$, whose law does not involve $d$; this gives (ii).
+Conditionally on the $\xi$'s, $\zperp=(M\sqrt h)^{-1}\sum_k\Delta_k G_{\perp,k}$ is a
+linear combination of independent $\mathcal N(0,\Pperp)$ vectors with fixed
+coefficients, hence Gaussian with mean zero and covariance
+$(M^2h)^{-1}\sum_k\Delta_k^2\,\Pperp=(Q_M/M)\Pperp$; this gives (iii) and the first part
+of (i). The second part of (i) follows from $\zh=\zpar w+\zperp$.
+For (iv), $\E[\norm{\zperp}^2\mid\xi]=\operatorname{tr}\bigl((Q_M/M)\Pperp\bigr)
+=(d-1)Q_M/M$; take expectations. The bound on $c_h$ follows from
+$|\Delta_k|\le L_\varphi(|\beta|h+\sigma\sqrt h|\xi_k|)$ and $(a+b)^2\le 2a^2+2b^2$.
+For (v), conditionally on $\xi$, $\norm{\zperp}=\sqrt{Q_M/M}\;\chi_{d-1}$ with
+$\chi_{d-1}$ independent of $\xi$. For a nonnegative random variable $X$, Hölder's
+inequality with exponents $3/2$ and $3$ applied to $X^2=X^{2/3}X^{4/3}$ gives
+$\E X^2\le(\E X)^{2/3}(\E X^4)^{1/3}$, that is
+$\E X\ge(\E X^2)^{3/2}(\E X^4)^{-1/2}$. With $\E\chi_k^2=k$ and
+$\E\chi_k^4=k(k+2)$ this yields $\E\chi_k\ge k/\sqrt{k+2}$; take $k=d-1$.
+\end{proof}
+
+Under Assumption~\ref{ass:ridge}(iii) the exact gradient has no orthogonal component,
+$\Pperp z^\star=0$. Every unit of $\E\norm{\zperp}^2$ is therefore pure estimation noise,
+and it grows linearly in $d$ at fixed $M$.
+
+\section{What a curved generator does with this noise}
+
+\begin{proposition}[Quadratic generator: exact Jensen bias]\label{prop:quad}
+Let $f(z)=-\tfrac\lambda2\norm{z}^2$, $\lambda>0$. Under Assumption~\ref{ass:ridge}(i)--(ii),
+\[
+\E f(\zh)-f(\E\zh)=-\frac\lambda2\Bigl(\operatorname{Var}(\zpar)+\frac{(d-1)\,c_h(s)}{M}\Bigr).
+\]
+If in addition Assumption~\ref{ass:ridge}(iii) holds, then
+$\E f(\zh)-f(z^\star)=A_M(s)-\tfrac\lambda2(d-1)c_h(s)/M$, where
+$A_M(s)=f(\E\zh)-f(z^\star)-\tfrac\lambda2\operatorname{Var}(\zpar)$ does not depend on $d$.
+\end{proposition}
+
+\begin{proof}
+Since $\zperp\perp w$, $\norm{\zh}^2=\zpar^2+\norm{\zperp}^2$, so
+$\E f(\zh)=-\tfrac\lambda2\bigl((\E\zpar)^2+\operatorname{Var}(\zpar)+\E\norm{\zperp}^2\bigr)$.
+By Lemma~\ref{lem:perp}(i), $f(\E\zh)=-\tfrac\lambda2(\E\zpar)^2$, and (iv) gives the
+result. Under (iii), $z^\star=(w\cdot z^\star)w$ and $w\cdot z^\star$ depends only on
+$(\tau,s)$; together with Lemma~\ref{lem:perp}(ii) this makes $A_M$ independent of $d$.
+\end{proof}
+
+\begin{proposition}[Norm generator: bias of order $\sqrt{d/M}$]\label{prop:norm}
+Let $f(z)=-\lambda\norm{z}$, $\lambda>0$. Under Assumption~\ref{ass:ridge}(i)--(ii),
+\[
+\E\bigl[\sqrt{Q_M}\bigr]\frac{d-1}{\sqrt{(d+1)M}}\ \le\ \E\norm{\zh}\ \le\
+\sqrt{(\E\zpar)^2+\operatorname{Var}(\zpar)+\frac{(d-1)c_h(s)}{M}}.
+\]
+Consequently, under Assumption~\ref{ass:ridge}(iii),
+$f(z^\star)-\E f(\zh)\ \ge\ \lambda\Bigl(\E\bigl[\sqrt{Q_M}\bigr]\tfrac{d-1}{\sqrt{(d+1)M}}-\norm{z^\star}\Bigr)$,
+where $\E\sqrt{Q_M}$ and $\norm{z^\star}$ do not depend on $d$.
+\end{proposition}
+
+\begin{proof}
+The lower bound uses $\norm{\zh}\ge\norm{\zperp}$ and Lemma~\ref{lem:perp}(v); the upper
+bound is Jensen's inequality $\E\norm{\zh}\le(\E\norm{\zh}^2)^{1/2}$ with the
+decomposition used in Proposition~\ref{prop:quad}.
+\end{proof}
+
+\begin{remark}[The Hutzenthaler--Nguyen counterexample]
+In~\cite{HN2025}, $f_d(z)=\norm{\Pperp z}$ with $w=e_1$, $\sigma=1$, $\beta=0$ and
+$g(x)=|x_1|$. Then $f_d(\zh)=\norm{\zperp}$ exactly, so
+$\E f_d(\zh)^2=(d-1)c_h/M$ and $\E f_d(\zh)\ge \E[\sqrt{Q_M}]\,(d-1)/\sqrt{(d+1)M}$,
+while $f_d(z^\star)=0$. At the origin $c_h=\E[(\sqrt h|\xi|)^2]/h=1$, which recovers the
+identity $\E f_d(V_N)^2=(d-1)/N$ used in Appendix~B of the manuscript. The counterexample
+is thus the special case in which the generator sees \emph{only} the orthogonal noise.
+\end{remark}
+
+\section{What a certified retraction does}
+
+Let $\mathcal C(\tau,x)\subseteq\R^d$ be closed and convex with
+$z^\star(\tau,x)\in\mathcal C(\tau,x)$ (a valid certificate), and let $f$ be
+$L_{\mathcal C}$-Lipschitz on $\mathcal C$.
+
+\begin{proposition}[Certified retraction caps the generator error]\label{prop:cert}
+\begin{enumerate}
+\item[(a)] For every realisation,
+$\bigl|f(\Proj_{\mathcal C}\zh)-f(z^\star)\bigr|\le
+L_{\mathcal C}\min\bigl(\norm{\zh-z^\star},\operatorname{diam}\mathcal C\bigr)$.
+\item[(b)] If $\mathcal C\subseteq\operatorname{span}(w)$, write
+$\mathcal C=\{cw:c\in I\}$ for a closed interval $I$ and let $\pi_I$ be the projection
+onto $I$. Then $\Proj_{\mathcal C}\zh=\pi_I(\zpar)\,w$, so
+$\norm{\Proj_{\mathcal C}\zh-z^\star}=|\pi_I(\zpar)-w\cdot z^\star|\le|\zpar-w\cdot z^\star|$.
+Under Assumption~\ref{ass:ridge}, if $I$ depends only on $(\tau,w\cdot x)$ and
+$f(cw)=F(c)$ for a function $F$ that does not depend on $d$, the law of
+$f(\Proj_{\mathcal C}\zh)$ does not depend on $d$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(a) $z^\star=\Proj_{\mathcal C}z^\star$, both projections lie in $\mathcal C$, and metric
+projection onto a closed convex set is nonexpansive; also
+$\norm{\Proj_{\mathcal C}\zh-z^\star}\le\operatorname{diam}\mathcal C$.
+(b) For $y\in\R^d$ and $c\in\mathcal C\subseteq\operatorname{span}(w)$,
+$\norm{y-c}^2=\norm{\Pperp y}^2+\norm{(w\cdot y)w-c}^2$, so the minimiser over
+$\mathcal C$ depends on $y$ only through $w\cdot y$; for $y=\zh$ it is
+$\pi_I(\zpar)w$. The law statement follows from Lemma~\ref{lem:perp}(ii).
+\end{proof}
+
+\begin{remark}[Which component of the certificate does what]
+Part (b) shows that the subspace component removes the $d$-dependence: the orthogonal
+noise is discarded exactly. Part (a) shows that the magnitude component bounds the
+generator error by $L_{\mathcal C}\operatorname{diam}\mathcal C$. Both are needed in a
+recursion with an unbounded generator. Projecting onto $\operatorname{span}(w)$ alone
+removes the $d$-growth but leaves the heavy tails of $\zpar^2$ to be amplified at deeper
+levels; this matches the round-1 ablation on P1, where the span-only correction has mean
+skill $573$ (median $2.35$) while the box certificate has $0.17$. For P1 the segment,
+its box hull and the ball all have diameters independent of $d$, so (a) gives a
+$d$-independent bound for each of them.
+\end{remark}
+
+\begin{corollary}[One averaged nonlinear correction]\label{cor:onelevel}
+Fix a parent $(t,x)$. Let child times $\tau_i\in[t,T)$ be i.i.d., child positions
+$X_i=x+\beta(\tau_i-t)w+\sigma W_{\tau_i-t}$, and let $\zh_i$ be the estimator
+\eqref{eq:zhat} at $(\tau_i,X_i)$ with fresh samples. For nonnegative weights $a(\tau)$
+consider $\widehat C=K^{-1}\sum_{i=1}^K a(\tau_i)f(\zh_i)$ and
+$\widehat C_{\mathcal C}=K^{-1}\sum_{i=1}^K a(\tau_i)f(\Proj_{\mathcal C}\zh_i)$.
+Under Assumption~\ref{ass:ridge}, with $C^\star=\E[a(\tau)f(z^\star(\tau,X))]$:
+\begin{enumerate}
+\item[(i)] for $f=-\tfrac\lambda2\norm z^2$,
+$\E\widehat C-C^\star=B_0-\tfrac\lambda2\,(d-1)\,\E[a(\tau)c_{T-\tau}(w\cdot X)]/M$
+with $B_0$ independent of $d$;
+\item[(ii)] in the setting of Proposition~\ref{prop:cert}(b),
+$|\E\widehat C_{\mathcal C}-C^\star|\le L_{\mathcal C}\,
+\E\bigl[a(\tau)\min(|\zpar-w\cdot z^\star|,|I|)\bigr]$, a quantity independent of $d$.
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}
+The law of $w\cdot X_i=s+\beta(\tau_i-t)+\sigma\,w\cdot W_{\tau_i-t}$ does not depend on
+$d$. Condition on $(\tau_i,X_i)$ and apply Proposition~\ref{prop:quad} for (i) and
+Proposition~\ref{prop:cert} for (ii).
+\end{proof}
+
+\section{The boundary: generators linear in the gradient along the ridge}
+
+\begin{proposition}[Orthogonal noise is invisible to ridge-linear generators]\label{prop:linear}
+Let $f(u,z)=A(u)+B(u)\,(v\cdot z)$ with $v\in\operatorname{span}(w)$. Then
+$f(\widehat u,\zh)=A(\widehat u)+B(\widehat u)\,(v\cdot w)\,\zpar$ for any value
+estimate $\widehat u$; in particular $f(\widehat u,\zh)$ does not depend on $\zperp$, and
+conditionally on $\widehat u$ the generator is affine in $\zh$, so the gradient noise
+produces no Jensen gap. Any remaining bias enters through the dependence between
+$\widehat u$ and $\zpar$.
+\end{proposition}
+
+\begin{proof}
+$v\cdot\zperp=0$ because $v\in\operatorname{span}(w)$ and $\zperp\perp w$.
+\end{proof}
+
+The viscous-Burgers family has $f(u,z)=\sigma u\sum_iz_i=\sigma\sqrt d\,u\,(w\cdot z)$
+with $w=d^{-1/2}\mathbf 1$, so Proposition~\ref{prop:linear} applies. This is consistent
+with three empirical findings: the certified box does not win at equal cost on P2/P3,
+its benefit is confined to deep and under-sampled configurations, and the oracle
+decomposition attributes part of the P2 error to the correlation between $u$- and
+$z$-noise rather than to the gradient channel alone.
+
+\section{Scope}
+
+\begin{itemize}
+\item The results are exact statements about one generator evaluation (and one averaged
+correction) with the terminal-block estimator. At deeper Picard levels the child gradient
+also contains nonlinear-correction terms; we do not prove how these propagate. The
+empirical oracle decomposition and the $d$-sweeps in the mechanism suites are the
+evidence for the recursive picture.
+\item The ridge assumption is what makes the statements exact. It is also the regime in
+which nonlinearity matters in high dimension for our benchmarks: when the terminal
+condition depends on many directions, concentration of measure makes the nonlinear
+correction nearly independent of $x$ (Rosenbrock HJB, multi-direction log-sum-exp).
+\item All statements about the retraction require a valid certificate. Retractions that
+are not the identity at $z^\star$ (illegal tighter sets, shrinkage towards a centre)
+change the generator at the solution and are not covered.
+\end{itemize}
+
+\section{Numerical check}
+
+The script \texttt{experiments/theory\_onestep/verify\_onestep\_theory.py} samples
+\eqref{eq:zhat} by brute force in $\R^d$ (it does not use the conditional law of
+Lemma~\ref{lem:perp}) at $s=0.3$, $h=0.2$, for the P1 terminal
+$\varphi(s)=-\log\tfrac13\sum_k e^{\lambda_k s}$, $\lambda=(0.5,1.5,3)$,
+$\sigma=\sqrt2$, $f=-\tfrac12\norm z^2$, certificate
+$I=[-3\sqrt2,-0.5\sqrt2]$, and for the P4 terminal $\varphi(s)=\beta^{-1}\log\cosh(\beta s)$,
+$\beta=2$, $\sigma=\sqrt2$, $f=-\norm z/\sqrt2$, certificate $I=[-\sqrt2,\sqrt2]$.
+It uses $20{,}000$ replicates for $d\le200$ and $6{,}000$ for $d=1000$.
+Full output, including $M=4$, is in
+\texttt{results/theory\_onestep/onestep\_theory\_check.md}.
+The ``certified'' columns use the projected generator minus $f$ evaluated at the
+projected mean gradient of the linear problem, a common reference across $d$.
+
+\input{onestep_check_table.tex}
+
+In every row the orthogonal trace and the quadratic Jensen gap agree with
+Lemma~\ref{lem:perp}(iv) and Proposition~\ref{prop:quad} within Monte Carlo error, the
+norm expectation lies between the bounds of Proposition~\ref{prop:norm}, the raw
+generator bias grows linearly (quadratic) or like $\sqrt d$ (norm), and the
+distribution of the certified generator value is unchanged from $d=10$ to $d=1000$, as
+Proposition~\ref{prop:cert}(b) predicts.
+
+\begin{thebibliography}{1}
+\bibitem{HN2025}
+M.~Hutzenthaler and T.~A.~Nguyen.
+\newblock Full history recursive multilevel Picard approximations suffer from the curse
+of dimensionality for the Hamilton--Jacobi--Bellman equation of a stochastic control
+problem.
+\newblock arXiv:2506.23969, 2025.
+\end{thebibliography}
+
+\end{document}
