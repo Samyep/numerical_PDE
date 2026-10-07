@@ -623,11 +623,12 @@ def plot_e2(e2: pd.DataFrame) -> None:
         list(legend.values()),
         list(legend.keys()),
         loc="upper center",
+        bbox_to_anchor=(0.5, 0.955),
         ncol=min(6, len(legend)),
         fontsize=8,
     )
-    fig.suptitle("E2 one-shot dose response (no recursive feedback)", y=1.01)
-    fig.tight_layout()
+    fig.suptitle("E2 one-shot dose response (no recursive feedback)", y=0.995)
+    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.90))
     fig.savefig(FIGURE_ROOT / "e2_dose_response.png", bbox_inches="tight")
     plt.close(fig)
 
@@ -672,11 +673,12 @@ def plot_e2_raw_all_dimensions(e2: pd.DataFrame) -> None:
         list(legend.values()),
         list(legend.keys()),
         loc="upper center",
+        bbox_to_anchor=(0.5, 0.955),
         ncol=min(4, len(legend)),
         fontsize=8,
     )
-    fig.suptitle("E2 raw z-dose curves used for C1 monotonicity", y=1.04)
-    fig.tight_layout()
+    fig.suptitle("E2 raw z-dose curves used for C1 monotonicity", y=0.995)
+    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.90))
     fig.savefig(
         FIGURE_ROOT / "e2_raw_dose_all_dimensions.png", bbox_inches="tight"
     )
