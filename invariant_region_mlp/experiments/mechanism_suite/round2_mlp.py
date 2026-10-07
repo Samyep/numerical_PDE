@@ -28,7 +28,7 @@ from .round2_certificate import p4_derivative_bounds_cached
 from .mechanism_mlp import MethodSpec  # noqa: E402
 
 
-ROUND2_IMPLEMENTATION_REVISION = "mechanism_suite_r2_v1"
+ROUND2_IMPLEMENTATION_REVISION = "mechanism_suite_r2_v2"
 ROUND2_PREREGISTRATION_COMMIT = "f83ce81fbeaff6b7c12aeec90906fc6e6124a71e"
 
 TIGHT_SEGMENT = MethodSpec("tight_segment", "tight_segment", 1.0)

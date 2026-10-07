@@ -62,6 +62,9 @@ FULL_HISTORY_SOURCE = HERE.parent / "active_vb_high_budget" / "vb_mlp_methods.py
 RESULTS_ROOT = PACKAGE_ROOT / "results" / "mechanism_suite_r2"
 RAW_ROOT = RESULTS_ROOT / "raw"
 CONTAINMENT_PATH = RESULTS_ROOT / "r3_containment.json"
+CONTAINMENT_INITIAL_AUDIT_PATH = (
+    RESULTS_ROOT / "audit_history" / "r3_containment_initial_four_grid.json"
+)
 POINT_COUNT = 1200
 ROUND2_CONFIGS = ((3, 6), (3, 10), (4, 3), (4, 6))
 R1_DEEP_CONFIGS = ((4, 3), (4, 4), (4, 6), (5, 2))
@@ -548,6 +551,11 @@ def run_r3_gate(*, dry_run: bool) -> bool:
             "scipy": scipy.__version__,
             "cpu_count": os.cpu_count(),
             "bound_cache": cache_metadata,
+            "prior_failed_audit": (
+                CONTAINMENT_INITIAL_AUDIT_PATH.relative_to(RESULTS_ROOT).as_posix()
+                if CONTAINMENT_INITIAL_AUDIT_PATH.exists()
+                else None
+            ),
         }
     )
     _write_json_atomic(CONTAINMENT_PATH, payload)

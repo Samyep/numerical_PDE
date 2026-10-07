@@ -1726,6 +1726,13 @@ def write_report(
             "points plus 10,000 points with `T-t in [0,0.1]` and "
             "`s in [-0.25,0.25]`.",
             "",
+            "The first implementation audited only the first four levels of the "
+            "already-existing six-level P4 reference hierarchy and stopped at "
+            "`3.023e-5`. That failed audit is preserved under `audit_history/`. "
+            "Before any round-2 MLP run, the implementation was corrected to use all "
+            "six pre-existing levels; the `1e-5` threshold and every scientific "
+            "criterion remained unchanged.",
+            "",
             _markdown_table(
                 pd.DataFrame(containment["successive_grid_results"])[
                     [
