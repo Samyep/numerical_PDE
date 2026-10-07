@@ -28,3 +28,26 @@ The supplied task attachment referred to a `reference_code/` directory, but
 that directory was not present.  The implementation therefore follows the
 written equations directly; N3 is explicitly recorded as a canonical
 reconstruction of the specified multi-direction Hopf--Cole problem.
+
+## Confirmatory round 2
+
+The post-round-1 correction is frozen verbatim in
+`ROUND2_PREREGISTRATION.md`.  It uses base seed 20261107, new point sets and a
+new validation split, and writes only to `results/mechanism_suite_r2/`:
+
+```powershell
+python -m invariant_region_mlp.experiments.mechanism_suite.run_round2 --stage r3 --workers 8
+python -m invariant_region_mlp.experiments.mechanism_suite.run_round2 --stage r2 --workers 8
+python -m invariant_region_mlp.experiments.mechanism_suite.run_round2 --stage r1 --workers 8
+python -m invariant_region_mlp.experiments.mechanism_suite.run_round2 --stage r4 --workers 8
+python -m invariant_region_mlp.experiments.mechanism_suite.run_round2 --stage r6 --workers 8
+python -m invariant_region_mlp.experiments.mechanism_suite.run_round2 --stage r5 --workers 8
+python -m invariant_region_mlp.experiments.mechanism_suite.run_round2 --stage r7 --workers 8
+python -m invariant_region_mlp.experiments.mechanism_suite.analyze_round2
+```
+
+`--stage all` follows that exact order. R3 first constructs the 80-node
+Gauss--Hermite P4 bound cache and applies the four-grid containment gate. If
+the violation does not decrease under refinement or remains at least `1e-5`
+on the finest fixed grid, the runner stops before any confirmatory P4 MLP
+work. R5 and R7 reuse R1 data exactly where specified.
