@@ -1,0 +1,187 @@
+{
+  "accepted_reference_check": {
+    "maximum_violation": 1.4661551752420676e-05,
+    "positive_violation_count": 199,
+    "reference_metadata": {
+      "T": 0.5,
+      "beta": 2.0,
+      "combined_reference_error_bound": 8.188921007956651e-08,
+      "domain": [
+        -12.0,
+        12.0
+      ],
+      "lambda_f": 1.0,
+      "levels": [
+        {
+          "n_space": 2401,
+          "n_steps": 512
+        },
+        {
+          "n_space": 4801,
+          "n_steps": 1024
+        },
+        {
+          "n_space": 9601,
+          "n_steps": 2048
+        },
+        {
+          "n_space": 19201,
+          "n_steps": 4096
+        },
+        {
+          "n_space": 38401,
+          "n_steps": 8192
+        },
+        {
+          "n_space": 76801,
+          "n_steps": 16384
+        }
+      ],
+      "raw_finest_pair_max_difference": 2.37586451971028e-05,
+      "reference": "common-node third Richardson extrapolation of the four finest monotone refinements",
+      "refinement_passed": true,
+      "refinement_threshold": 1e-06,
+      "richardson_refinement_max_difference": 8.188921007956651e-08,
+      "schema_version": 2,
+      "scheme": "monotone backward Euler; first-order upwind for |psi_s| on even half-line",
+      "storage_spline_max_difference": 0.0,
+      "storage_spline_passed": true,
+      "storage_spline_threshold": 9.181107899204334e-07,
+      "storage_stride": 1,
+      "stored_space_points": 9601,
+      "stored_time_points": 513
+    },
+    "violation_q999": 9.180519232599214e-10
+  },
+  "base_seed": 20261107,
+  "bound_cache": {
+    "audit_maximum_absolute_error": 5.446833031830245e-08,
+    "audit_passed": true,
+    "audit_points": 25000,
+    "audit_threshold": 2e-06,
+    "beta": 2.0,
+    "definition": "E[tanh(beta*(y+sqrt(2*tau)*xi))]",
+    "gauss_hermite_nodes": 80,
+    "interpolation": "odd cubic RectBivariateSpline",
+    "location_interval": [
+      0.0,
+      12.0
+    ],
+    "nonnegative_location_points": 6001,
+    "schema_version": 1,
+    "tau_interval": [
+      0.0,
+      0.5
+    ],
+    "tau_points": 257
+  },
+  "code_commit": "421c4dbd33a9dce9af2088f83db4fb05f3135953",
+  "cpu_count": 16,
+  "dtype": "float64",
+  "finest_grid_below_threshold": true,
+  "finest_grid_threshold": 1e-05,
+  "git_branch": "ir-mlp-mechanism-suite-r2",
+  "implementation_revision": "mechanism_suite_r2_v2",
+  "implemented_cached_interval_check": {
+    "maximum_endpoint_difference_from_direct_gh80": 9.832383585095528e-08,
+    "maximum_reference_violation": 1.4707293507054686e-05,
+    "positive_violation_count": 413,
+    "reference_violation_below_1e-5": false,
+    "violation_q999": 1.0463333270484466e-08
+  },
+  "numpy": "2.3.4",
+  "preregistration_commit": "f83ce81fbeaff6b7c12aeec90906fc6e6124a71e",
+  "prior_failed_audit": "audit_history/r3_containment_initial_four_grid.json",
+  "proceed": true,
+  "python": "3.12.11",
+  "quadrature": {
+    "nodes": 80,
+    "rule": "Gauss-Hermite transformed for a standard normal"
+  },
+  "sample": {
+    "near_terminal_near_zero_points": 10000,
+    "near_terminal_tau_interval": [
+      0.0,
+      0.1
+    ],
+    "near_zero_s_interval": [
+      -0.25,
+      0.25
+    ],
+    "tau_s_sha256": "5437260644e0d3fa26f8a70851ef7b5cde691211accfd55672c8c89ff81b20a3",
+    "test_distribution_points": 100000
+  },
+  "schema_version": 1,
+  "scipy": "1.18.1",
+  "spot_checks_at_s_zero": [
+    {
+      "s": 0.0,
+      "tau": 0.1,
+      "v_minus": -0.1285913827150431,
+      "v_plus": 0.12859138271504308
+    },
+    {
+      "s": 0.0,
+      "tau": 0.25,
+      "v_minus": -0.23637707301493457,
+      "v_plus": 0.23637707301493457
+    },
+    {
+      "s": 0.0,
+      "tau": 0.5,
+      "v_minus": -0.35234274149078687,
+      "v_plus": 0.35234274149078687
+    }
+  ],
+  "strictly_decreasing_under_refinement": true,
+  "successive_grid_results": [
+    {
+      "ds": 0.005,
+      "maximum_violation": 0.00028513573959887406,
+      "n_space": 2401,
+      "n_steps": 512,
+      "positive_violation_count": 4191,
+      "violation_q999": 0.00027688156568699533
+    },
+    {
+      "ds": 0.0025,
+      "maximum_violation": 0.00013371624794322745,
+      "n_space": 4801,
+      "n_steps": 1024,
+      "positive_violation_count": 3669,
+      "violation_q999": 0.00012953727926535424
+    },
+    {
+      "ds": 0.00125,
+      "maximum_violation": 6.32373985839374e-05,
+      "n_space": 9601,
+      "n_steps": 2048,
+      "positive_violation_count": 3270,
+      "violation_q999": 6.059653510874693e-05
+    },
+    {
+      "ds": 0.000625,
+      "maximum_violation": 3.0230171842893228e-05,
+      "n_space": 19201,
+      "n_steps": 4096,
+      "positive_violation_count": 2916,
+      "violation_q999": 2.8657296977801346e-05
+    },
+    {
+      "ds": 0.0003125,
+      "maximum_violation": 1.483664200641055e-05,
+      "n_space": 38401,
+      "n_steps": 8192,
+      "positive_violation_count": 2607,
+      "violation_q999": 1.382652089198024e-05
+    },
+    {
+      "ds": 0.00015625,
+      "maximum_violation": 7.639928406910634e-06,
+      "n_space": 76801,
+      "n_steps": 16384,
+      "positive_violation_count": 2376,
+      "violation_q999": 6.966680024451446e-06
+    }
+  ]
+}
