@@ -538,7 +538,7 @@ def run_r3_gate(*, dry_run: bool) -> bool:
         )
     print(f"building/auditing P4 bound cache: {BOUND_CACHE_PATH}", flush=True)
     cache_metadata = ensure_p4_bound_cache()
-    print("running R3 four-grid sharp-bound containment audit", flush=True)
+    print("running R3 six-level sharp-bound containment audit", flush=True)
     payload = run_p4_containment_audit(P4_REFERENCE)
     payload.update(
         {

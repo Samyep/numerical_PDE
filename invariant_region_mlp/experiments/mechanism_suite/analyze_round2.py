@@ -1162,6 +1162,9 @@ def plot_r5(frame: pd.DataFrame) -> None:
     ax.set_ylabel("selected soft skill - hard-box skill")
     ax.set_title("R5 paired mean differences and bootstrap 95% intervals")
     ax.grid(axis="y", alpha=0.2)
+    ax.scatter([], [], color="tab:blue", label="deep")
+    ax.scatter([], [], color="tab:orange", label="shallow")
+    ax.legend(title="stratum")
     fig.tight_layout()
     fig.savefig(FIGURE_ROOT / "r5_soft_vs_hard.png")
     plt.close(fig)
@@ -1634,6 +1637,23 @@ def write_report(
     persistence = r7_verdict[
         "repetition_averaged_fraction_of_per_rep_gap"
     ]
+    if persistence <= 1.0:
+        r7_averaging_interpretation = (
+            f"Repetition averaging retains {persistence:.3f} of the aggregate "
+            "gap. The persistent part is consistent with systematic child-state/"
+            "generator error, while the part that closes under averaging is "
+            "consistent with Monte Carlo variation."
+        )
+    else:
+        r7_averaging_interpretation = (
+            f"The repetition-averaged gap is {persistence:.3f} times the mean "
+            "per-repetition gap, so averaging does not close the gap; it enlarges "
+            f"it by {(persistence - 1.0) * 100.0:.1f}%. Because normalised RMSE is "
+            "nonlinear, these two gaps are not an additive bias--variance "
+            "decomposition. Their persistence under averaging nevertheless supports "
+            "a mainly systematic, bias-like residual rather than one dominated by "
+            "Monte Carlo variation."
+        )
     content: list[str] = [
         "# Mechanism suite, round 2: confirmatory re-run",
         "",
@@ -1826,10 +1846,7 @@ def write_report(
             f"{r7_verdict['mean_per_rep_box_minus_oracle_skill']:.4g}; the mean "
             f"gap after averaging the ten predictions is "
             f"{r7_verdict['mean_repetition_averaged_box_minus_oracle_skill']:.4g}. "
-            f"Thus {persistence:.3f} of the signed aggregate gap remains after "
-            "repetition averaging. That persistent component is systematic child-state/"
-            "generator error left or introduced by the box projection; the reduction "
-            "under averaging is the Monte Carlo-variance component. The mean signed "
+            f"{r7_averaging_interpretation} The mean signed "
             f"child-generator errors are {r7_verdict['mean_box_generator_signed_error']:.4g} "
             f"for box and {r7_verdict['mean_oracle_generator_signed_error']:.4g} for "
             "oracle_state. These numbers answer the question descriptively without "

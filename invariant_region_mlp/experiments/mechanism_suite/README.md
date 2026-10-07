@@ -47,7 +47,7 @@ python -m invariant_region_mlp.experiments.mechanism_suite.analyze_round2
 ```
 
 `--stage all` follows that exact order. R3 first constructs the 80-node
-Gauss--Hermite P4 bound cache and applies the four-grid containment gate. If
+Gauss--Hermite P4 bound cache and applies the six-level containment gate. If
 the violation does not decrease under refinement or remains at least `1e-5`
 on the finest fixed grid, the runner stops before any confirmatory P4 MLP
 work. R5 and R7 reuse R1 data exactly where specified.
