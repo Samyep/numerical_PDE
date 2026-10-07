@@ -123,7 +123,17 @@ class ProductionCubicHJB(ExactEquation):
     def exact_u(self, t: np.ndarray | float, x: np.ndarray) -> np.ndarray:
         tau, scalar = self._tau_s(t, x)
         spline, _ = _load_c3_spline(self.reference_path)
-        return spline.ev(tau.reshape(-1), scalar.reshape(-1)).reshape(np.shape(scalar))
+        result = spline.ev(
+            tau.reshape(-1), scalar.reshape(-1)
+        ).reshape(np.shape(scalar))
+        at_terminal = np.abs(tau) <= 8.0 * np.finfo(np.float64).eps
+        if np.any(at_terminal):
+            result = np.where(
+                at_terminal,
+                terminal_profile(scalar, A=self.A, beta=self.beta),
+                result,
+            )
+        return result
 
     def exact_z(self, t: np.ndarray | float, x: np.ndarray) -> np.ndarray:
         tau, scalar = self._tau_s(t, x)
@@ -131,6 +141,13 @@ class ProductionCubicHJB(ExactEquation):
         derivative = spline.ev(
             tau.reshape(-1), scalar.reshape(-1), dx=0, dy=1
         ).reshape(np.shape(scalar))
+        at_terminal = np.abs(tau) <= 8.0 * np.finfo(np.float64).eps
+        if np.any(at_terminal):
+            derivative = np.where(
+                at_terminal,
+                self.A * np.tanh(self.beta * scalar),
+                derivative,
+            )
         return self.sigma * derivative[..., None] * self.w
 
     def terminal(self, x: np.ndarray) -> np.ndarray:
@@ -373,4 +390,3 @@ def make_equation(pde_id: str, d: int) -> ExactEquation:
     if kind == "lqg":
         return LQGEquation(d=d)
     raise ValueError(pde_id)
-

@@ -64,6 +64,9 @@ FULL_HISTORY_SOURCE = (
     HERE.parent / "active_vb_high_budget" / "vb_mlp_methods.py"
 )
 ROUND1_GATES = PACKAGE_ROOT / "results" / "mechanism_suite" / "gates.json"
+INITIAL_GATES_AUDIT = (
+    RESULTS_ROOT / "audit_history" / "gates_initial_c3_terminal_spline.json"
+)
 
 
 def _git(*args: str) -> str | None:
@@ -465,6 +468,9 @@ def run_s0(*, workers: int, dry_run: bool) -> None:
         print("C3 production reference failed; stopping C3 before MLP S0", flush=True)
         tasks = [task for task in tasks if task["pde_id"] != "C3"]
     run_tasks(tasks, workers=workers, dry_run=False, label="S0")
+    if GATES_PATH.exists() and not INITIAL_GATES_AUDIT.exists():
+        INITIAL_GATES_AUDIT.parent.mkdir(parents=True, exist_ok=True)
+        INITIAL_GATES_AUDIT.write_bytes(GATES_PATH.read_bytes())
     payload = finalize_gates(analytic)
     for pde_id, summary in payload["candidates"].items():
         print(

@@ -89,6 +89,13 @@ class Round3Tests(unittest.TestCase):
             )
             equation = ProductionCubicHJB(d=20, reference_path=str(path))
             points = make_points(equation, pde_id="C3", n_points=32)
+            self.assertLessEqual(
+                float(np.max(np.abs(
+                    equation.exact_u(equation.T, points["x"])
+                    - equation.terminal(points["x"])
+                ))),
+                1e-14,
+            )
             state = equation.exact_state(points["t"], points["x"])
             perturbed = state.copy()
             perturbed[:, 1:] += 50.0
@@ -129,4 +136,3 @@ class Round3Tests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
