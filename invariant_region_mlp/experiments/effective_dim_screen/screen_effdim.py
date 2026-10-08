@@ -49,7 +49,7 @@ def lse(Z):
 
 
 def screen(name, k, s, T, seed=0):
-    rng = np.random.default_rng(np.random.SeedSequence([seed, k, {"rand": 1, "cross": 2, "simplex": 3}[name]]))
+    rng = np.random.default_rng(np.random.SeedSequence([seed, k, {"rand": 1, "cross": 2, "simplex": 3, "rand_min": 4}[name]]))
     B = s * family(name, k, rng)                              # (K, k)
     K = len(B); logc = -math.log(K) * np.ones(K)
     Q, _ = np.linalg.qr(rng.standard_normal((D, k)))
