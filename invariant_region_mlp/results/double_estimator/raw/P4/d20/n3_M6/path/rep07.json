@@ -1,0 +1,223 @@
+{
+  "M": 6,
+  "all_skill": 0.8026541168344201,
+  "aux_seed_scheme": "primary seed parts + [0xD0B1E], spawned recursively",
+  "auxiliary_draw_fingerprint": null,
+  "auxiliary_recursive_calls": 0,
+  "base_seed": 20261201,
+  "chunk_size": 8,
+  "code_commit": "1b977ef411776da391e57cfe62d6f63830baaaf6",
+  "dimension": 20,
+  "dtype": "float64",
+  "equation": {
+    "T": 0.5,
+    "beta": 2.0,
+    "certificate_labels": {
+      "ball": "PDE-derived: Euclidean hull of the certified segment",
+      "box": "PDE-derived: coordinatewise hull of the certified segment",
+      "segment": "PDE-derived: Lipschitz preservation |psi_s|<=sup|g'|=1",
+      "span": "PDE-derived: translation invariance orthogonal to w"
+    },
+    "certificate_parameters": {
+      "ball_radius": 1.4142135623730951,
+      "box_high": [
+        0.05502146340740537,
+        0.2789068417226931,
+        0.12388107271799391,
+        0.2764742555236341,
+        0.030915190727097405,
+        0.4214157120064735,
+        0.6830132043184421,
+        0.2577496923551671,
+        0.14348294253502825,
+        0.15904889889736432,
+        0.3506891973313254,
+        0.4899554904528411,
+        0.31955326608348156,
+        0.4868810710153769,
+        0.2995379678601919,
+        0.030586451003755365,
+        0.2331630663493495,
+        0.043106630875202015,
+        0.10940866765424231,
+        0.4571296716463957
+      ],
+      "box_low": [
+        -0.05502146340740537,
+        -0.2789068417226931,
+        -0.12388107271799391,
+        -0.2764742555236341,
+        -0.030915190727097405,
+        -0.4214157120064735,
+        -0.6830132043184421,
+        -0.2577496923551671,
+        -0.14348294253502825,
+        -0.15904889889736432,
+        -0.3506891973313254,
+        -0.4899554904528411,
+        -0.31955326608348156,
+        -0.4868810710153769,
+        -0.2995379678601919,
+        -0.030586451003755365,
+        -0.2331630663493495,
+        -0.043106630875202015,
+        -0.10940866765424231,
+        -0.4571296716463957
+      ],
+      "gradient_cache_max_difference": 3.1598831876582896e-08,
+      "gradient_cache_threshold": 1e-06,
+      "gradient_evaluator": "cubic interpolation of the value-spline derivative sampled on the reference grid",
+      "reference_metadata": {
+        "T": 0.5,
+        "beta": 2.0,
+        "combined_reference_error_bound": 8.188921007956651e-08,
+        "domain": [
+          -12.0,
+          12.0
+        ],
+        "lambda_f": 1.0,
+        "levels": [
+          {
+            "n_space": 2401,
+            "n_steps": 512
+          },
+          {
+            "n_space": 4801,
+            "n_steps": 1024
+          },
+          {
+            "n_space": 9601,
+            "n_steps": 2048
+          },
+          {
+            "n_space": 19201,
+            "n_steps": 4096
+          },
+          {
+            "n_space": 38401,
+            "n_steps": 8192
+          },
+          {
+            "n_space": 76801,
+            "n_steps": 16384
+          }
+        ],
+        "raw_finest_pair_max_difference": 2.37586451971028e-05,
+        "reference": "common-node third Richardson extrapolation of the four finest monotone refinements",
+        "refinement_passed": true,
+        "refinement_threshold": 1e-06,
+        "richardson_refinement_max_difference": 8.188921007956651e-08,
+        "schema_version": 2,
+        "scheme": "monotone backward Euler; first-order upwind for |psi_s| on even half-line",
+        "storage_spline_max_difference": 0.0,
+        "storage_spline_passed": true,
+        "storage_spline_threshold": 9.181107899204334e-07,
+        "storage_stride": 1,
+        "stored_space_points": 9601,
+        "stored_time_points": 513
+      },
+      "reference_path": "invariant_region_mlp/results/mechanism_suite/reference_cache/norm_hjb_beta2_lambda1_T0p5.npz",
+      "segment_coefficients": [
+        -1.0,
+        1.0
+      ],
+      "w_seed": 20261006,
+      "w_sha256": "522e8bfdb55159ad08483426c9166ae56260045a2322e8822ff28b3c46301e9c"
+    },
+    "dimension": 20,
+    "dtype": "float64",
+    "family": "norm_hjb",
+    "lambda_f": 1.0,
+    "mu": 0.0,
+    "name": "P4_norm_driver_hjb",
+    "sigma": 1.4142135623730951,
+    "state_convention": "z=sigma*grad(u)"
+  },
+  "extra_diagnostics": {
+    "child_u_z_noise": {
+      "correlation": 0.0015963184825615005,
+      "count": 100800,
+      "mean_coordinate_z_noise": -1.108748480862284e-05,
+      "mean_u_noise": 0.0717639183320378
+    },
+    "dose_normal_variates": 0,
+    "generator_bias_by_s_bin": [
+      {
+        "bias": -0.02355791986047466,
+        "count": 487,
+        "high": -2.0,
+        "low": -Infinity,
+        "mae": 0.02671715003840851
+      },
+      {
+        "bias": -0.057202369465164736,
+        "count": 7881,
+        "high": -1.0,
+        "low": -2.0,
+        "mae": 0.08232378557695123
+      },
+      {
+        "bias": -0.10085346125331789,
+        "count": 27318,
+        "high": -0.25,
+        "low": -1.0,
+        "mae": 0.16221427761999324
+      },
+      {
+        "bias": -0.1430060915751547,
+        "count": 28477,
+        "high": 0.25,
+        "low": -0.25,
+        "mae": 0.17361519873198247
+      },
+      {
+        "bias": -0.09927204586952765,
+        "count": 27830,
+        "high": 1.0,
+        "low": 0.25,
+        "mae": 0.16025285186788638
+      },
+      {
+        "bias": -0.05793967455305098,
+        "count": 8252,
+        "high": 2.0,
+        "low": 1.0,
+        "mae": 0.08137615798611093
+      },
+      {
+        "bias": -0.022124771140299496,
+        "count": 555,
+        "high": Infinity,
+        "low": 2.0,
+        "mae": 0.022873481535800672
+      }
+    ]
+  },
+  "family": "norm_hjb",
+  "generator_calls": 100800,
+  "generator_rmse": 0.2210315340814305,
+  "gradient_relative_l2": 1.7337615622107128,
+  "implementation_revision": "double_generator_v1",
+  "mean_generator_bias": -0.10459248396800025,
+  "method": "path",
+  "n": 3,
+  "nonfinite_generator_count": 0,
+  "nonfinite_state_count": 0,
+  "pde_id": "P4",
+  "point_count": 1200,
+  "point_fingerprint": "18b49e5dee1ec43fecfec57f169fe8ffc946055532046d3e4e4752006188c869",
+  "primary_draw_fingerprint": null,
+  "recursive_calls": 750,
+  "recursively_evaluated_states": 102000,
+  "repetition": 7,
+  "schema_version": 1,
+  "seed_scheme": "SeedSequence([20261201,d,n,M,rep,chunk_index])",
+  "skill": 0.7938297185366113,
+  "terminal_samples": 1080000,
+  "transition_samples": 93600,
+  "validation_skill": 0.8411745194971698,
+  "value_bias": -0.09725945990894094,
+  "value_relative_l2": 0.3644884008569154,
+  "value_rmse": 0.13792352699277552,
+  "wall_time_seconds": 10.704076899914071
+}
