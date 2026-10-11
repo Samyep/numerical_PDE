@@ -330,6 +330,12 @@ def _report(
                 f"All {item['checks']}/{item['expected_checks']} checks were evaluated; maximum relative error {_number(item['max_relative_error'])} against threshold {_number(item['threshold'])}."
             )
             lines.append("")
+        if key == "G-1" and validation.get("G-1"):
+            item = validation["G-1"]
+            lines.append(
+                f"All {item['checks']} equation checks passed; maximum relative error {_number(item['max_relative_error'])} against threshold {_number(item['threshold'])}."
+            )
+            lines.append("")
         if key == "G-3" and not agreement_frame.empty:
             lines.extend(
                 [
@@ -396,10 +402,13 @@ def _report(
             "",
             f"- Frozen preregistration commit: `{prereg_commit}`.",
             f"- Analysis code commit: `{analysis_commit}`.",
+            f"- Solver/run code commit: `{environment.get('code_commit', 'NA')}`.",
             f"- GPU: {environment.get('gpu_name', 'none')}; driver {environment.get('nvidia_driver', 'NA')}; CUDA {environment.get('cuda_runtime', 'NA')}; PyTorch {environment.get('torch', 'NA')}.",
             f"- FP64 throughput class: {environment.get('fp64_throughput_class', 'NA')}.",
             f"- CPU timing host: {int(speed.cpu_logical_cores.iloc[0]) if not speed.empty and 'cpu_logical_cores' in speed else 'NA'} logical cores; NumPy timings use the same machine as the GPU timings.",
             f"- G-3 rows: CPU {agreement_summary['cpu_rows']}/960, GPU {agreement_summary['gpu_rows']}/960.",
+            f"- G-4 timing rows: {len(speed)}/5; G-5 rows: {int(n4_summary.repetitions.sum()) if not n4_summary.empty else 0}/360 across {len(n4_summary)}/36 summary cells.",
+            "- Pairing: GPU methods within a cell share the preregistered device seed; GPU and CPU G-3 rows are intentionally unpaired. G-2 replayed every recorded primary and auxiliary NumPy draw.",
             "- Arithmetic: float64 only; point sets are the frozen 1,200 points and verdicts use the frozen 960-point test split.",
             "",
             "## Figures",

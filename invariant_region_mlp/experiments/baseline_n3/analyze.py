@@ -553,6 +553,7 @@ def _report(
     levels: pd.DataFrame,
     predictions: dict[str, Any],
     fingerprint_audit: dict[str, Any],
+    environment: dict[str, Any],
     prereg_commit: str,
     analysis_commit: str,
 ) -> None:
@@ -635,8 +636,9 @@ def _report(
 
     lines.extend(["", "## Predictions (reported, no verdict)", ""])
     oracle = predictions["oracle"]
+    oracle_ratios = [item["oracle_over_baseline"] for item in oracle]
     lines.append(
-        f"- `path_base_oracle <= path_base`: {sum(item['prediction_met'] for item in oracle)}/{len(oracle)} cells."
+        f"- `path_base_oracle <= path_base`: {sum(item['prediction_met'] for item in oracle)}/{len(oracle)} cells; the oracle was instead {_number(np.min(oracle_ratios))}–{_number(np.max(oracle_ratios))}x the baseline skill (lower is better)."
     )
     variance = predictions["root_level1_variance"]
     if variance:
@@ -670,7 +672,9 @@ def _report(
             "",
             f"- Frozen preregistration commit: `{prereg_commit}`.",
             f"- Analysis code commit: `{analysis_commit}`.",
+            f"- Solver/run code commit: `{environment.get('code_commit', 'NA')}`.",
             "- Parent path-frontier commit: `a42e2c5cf3b3ad78ba702d42f3de6ab559150f0d`.",
+            f"- Environment: {environment.get('platform', 'NA')}; Python {environment.get('python', 'NA')}; NumPy {environment.get('numpy', 'NA')}; {environment.get('logical_cpus', 'NA')} logical CPUs, {environment.get('workers', 'NA')} workers.",
             f"- Rows: {len(rows)} / {EXPECTED_ROWS}; repetitions: {REPETITIONS} per cell.",
             f"- Reused rows: {int((rows.source_result != 'baseline_n3').sum()) if not rows.empty else 0}; new rows: {int((rows.source_result == 'baseline_n3').sum()) if not rows.empty else 0}.",
             f"- Primary-draw fingerprint audit: {'PASS' if fingerprint_audit.get('passed') else 'FAIL'}; {int(fingerprint_audit.get('pairs', 0))} paired chunks, {int(fingerprint_audit.get('mismatches', 0))} mismatches; records SHA-256 `{fingerprint_audit.get('records_sha256', 'NA')}`.",
@@ -712,6 +716,8 @@ def analyze() -> dict[str, Any]:
     analysis_commit = _git("rev-parse", "HEAD")
     audit_path = RESULTS_ROOT / "fingerprint_audit.json"
     audit = json.loads(audit_path.read_text(encoding="utf-8")) if audit_path.is_file() else {"passed": False, "pairs": 0}
+    environment_path = RESULTS_ROOT / "environment.json"
+    environment = json.loads(environment_path.read_text(encoding="utf-8")) if environment_path.is_file() else {}
     payload = {
         "criteria": criteria,
         "cell_detail": cell_detail,
@@ -724,6 +730,7 @@ def analyze() -> dict[str, Any]:
         "preregistration_commit": prereg_commit,
         "analysis_code_commit": analysis_commit,
         "fingerprint_audit": audit,
+        "environment": environment,
     }
     (RESULTS_ROOT / "analysis_summary.json").write_text(
         json.dumps(payload, indent=2, sort_keys=True, allow_nan=True) + "\n",
@@ -732,7 +739,7 @@ def analyze() -> dict[str, Any]:
     if not summary.empty:
         _plot_skill(summary)
         _plot_frontiers(frontier)
-    _report(rows, criteria, cell_detail, levels, predictions, audit, prereg_commit, analysis_commit)
+    _report(rows, criteria, cell_detail, levels, predictions, audit, environment, prereg_commit, analysis_commit)
     print(json.dumps(payload, indent=2, sort_keys=True, allow_nan=True))
     return payload
 
