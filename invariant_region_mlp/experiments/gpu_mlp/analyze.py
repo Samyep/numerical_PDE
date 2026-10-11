@@ -38,7 +38,9 @@ CRITERIA = {
         "**G-1 (implementation):** PyTorch (or JAX), **float64 only**, breadth-first batched like the numpy code, supporting "
         "`raw`, `path`, `double`, `double_path`, `path_base`, `double_path_base` for P1 and MR; points processed in chunks to fit "
         "memory. Re-implement the equations; verify terminal, exact state and generator against the numpy equations to relative "
-        "1e-12 on random inputs."
+        "1e-12 on random inputs. Seeding: a device generator seeded from "
+        "`SeedSequence([20261201, d, n, M, rep, chunk_index]).generate_state(2)`, identical for all methods of a cell, so GPU "
+        "methods are paired with each other (they are not paired with CPU rows; say so)."
     ),
     "G-2": (
         "**G-2 (exactness, verdict):** with a draw-tape interface, record every primary and auxiliary draw of the numpy solver "
@@ -396,6 +398,7 @@ def _report(
             f"- Analysis code commit: `{analysis_commit}`.",
             f"- GPU: {environment.get('gpu_name', 'none')}; driver {environment.get('nvidia_driver', 'NA')}; CUDA {environment.get('cuda_runtime', 'NA')}; PyTorch {environment.get('torch', 'NA')}.",
             f"- FP64 throughput class: {environment.get('fp64_throughput_class', 'NA')}.",
+            f"- CPU timing host: {int(speed.cpu_logical_cores.iloc[0]) if not speed.empty and 'cpu_logical_cores' in speed else 'NA'} logical cores; NumPy timings use the same machine as the GPU timings.",
             f"- G-3 rows: CPU {agreement_summary['cpu_rows']}/960, GPU {agreement_summary['gpu_rows']}/960.",
             "- Arithmetic: float64 only; point sets are the frozen 1,200 points and verdicts use the frozen 960-point test split.",
             "",

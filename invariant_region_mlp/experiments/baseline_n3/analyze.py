@@ -552,6 +552,7 @@ def _report(
     cell_detail: list[dict[str, Any]],
     levels: pd.DataFrame,
     predictions: dict[str, Any],
+    fingerprint_audit: dict[str, Any],
     prereg_commit: str,
     analysis_commit: str,
 ) -> None:
@@ -672,6 +673,7 @@ def _report(
             "- Parent path-frontier commit: `a42e2c5cf3b3ad78ba702d42f3de6ab559150f0d`.",
             f"- Rows: {len(rows)} / {EXPECTED_ROWS}; repetitions: {REPETITIONS} per cell.",
             f"- Reused rows: {int((rows.source_result != 'baseline_n3').sum()) if not rows.empty else 0}; new rows: {int((rows.source_result == 'baseline_n3').sum()) if not rows.empty else 0}.",
+            f"- Primary-draw fingerprint audit: {'PASS' if fingerprint_audit.get('passed') else 'FAIL'}; {int(fingerprint_audit.get('pairs', 0))} paired chunks, {int(fingerprint_audit.get('mismatches', 0))} mismatches; records SHA-256 `{fingerprint_audit.get('records_sha256', 'NA')}`.",
             f"- Non-finite state values: {int(rows.nonfinite_state_count.sum()) if not rows.empty else 0}; non-finite generator values: {int(rows.nonfinite_generator_count.sum()) if not rows.empty else 0}.",
             "- Test points: frozen 1,200 points with the frozen 20% validation split; all criteria use the 960 test points.",
             "- Arithmetic: float64; bootstrap: 1,000 paired repetition draws with seed 20261201.",
@@ -730,7 +732,7 @@ def analyze() -> dict[str, Any]:
     if not summary.empty:
         _plot_skill(summary)
         _plot_frontiers(frontier)
-    _report(rows, criteria, cell_detail, levels, predictions, prereg_commit, analysis_commit)
+    _report(rows, criteria, cell_detail, levels, predictions, audit, prereg_commit, analysis_commit)
     print(json.dumps(payload, indent=2, sort_keys=True, allow_nan=True))
     return payload
 
