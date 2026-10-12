@@ -1,6 +1,6 @@
 # B1 Stage 0 correctness report
 
-**Verdict:** reference construction PASS; MLP draw replay deferred (reference-only invocation).
+**Verdict:** reference construction PASS; MLP draw replay PASS (3/3 exact-draw checks).
 
 The pre-method analytic calibration selected coefficient scale **2**. The rule and all rejected candidate metrics are saved before solver evaluation.
 
@@ -12,7 +12,7 @@ The pre-method analytic calibration selected coefficient scale **2**. The rule a
 - Dense coefficient affine rank and active Hessian rank.
 - `k=1` exactly reproduces the established P1 direction and coefficients.
 - Diffusion and gradient-state convention: `sigma=sqrt(2)`, `z=sqrt(2) grad u`.
-- CPU/Torch recursion on identical draws: deferred (reference-only invocation).
+- CPU/Torch recursion on identical draws: PASS (3/3 exact-draw checks).
 
 ## Calibration
 
