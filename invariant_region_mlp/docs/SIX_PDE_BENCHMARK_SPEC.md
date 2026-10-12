@@ -26,13 +26,13 @@ A \(k\)-ridge solution means \(u(t,x)=v(t,B^\top x)\) for fixed \(B\in\mathbb R^
 | ID | Equation / test | Geometry | Ground truth | Present status |
 | --- | --- | --- | --- | --- |
 | B1 | Coupled multi-ridge quadratic HJ, \(f(z)=-\|z\|^2/2\) | \(k=1,5,10,20,40\), \(d=100,400\) | **Analytic** Hopf–Cole exponential sum, value and gradient | Extends P1/MR; new coupled \(k>1\) inputs needed |
-| B2 | **Hutzenthaler--Nguyen (2025) original counterexample**, \(H(z)=\|z_{2:d}\|_2\) | Ambient \(d=100,400\), exact active dimension \(k=1\) | **Exact** 1D Gaussian absolute-value expectation and gradient | Original benchmark; reproduce source recursion / joint-state error before modifications |
+| B2 | **HN (2025) original counterexample + analytic \(k\)-dimensional extension**, \(H_{d,k}(z)=\|z_{k+1:d}\|_2\) | \(k=1,10,30,50\); \(d=50,100,200,400\); \(k=d=50\) negative control | **Exact** sum of Gaussian absolute-value expectations and gradients | \(k=1\) published original; \(k>1\) new extension, original HN lower bound not automatically inherited |
 | B3 | Smooth cubic, \(f(z)=-\kappa(\|z\|/\sqrt2)^3\) | Radial \(k=10,20\), \(d=100,400\) | Independently refined **1D radial** PDE, not yet produced | Existing C3 has only \(k=1\) reference |
 | B4 | **Fully nonlinear** controlled-volatility HJB | Hessian-dependent, \(k=2\)–5 active coordinates | Independently refined **1D component** PDEs, not yet produced | **Outside** current \((u,z)\)-only MLP; conditional extension |
 | B5 | Two-actor zero-sum Isaacs LQ game | Coupled \(k=10,20\) subspace with two control blocks | **Analytic** finite-horizon matrix Riccati | Existing C2 uses \(k=1\); new coupled game needed |
 | B6 | Full-rank, nonseparable quadratic HJ | \(k=d=100,400\) | **Analytic** Hopf–Cole exponential sum | New terminal/gradient and cost calibration needed |
 
-**Scope warning:** B2 is the original published HN counterexample, with a different diffusion convention from the other benchmarks. B1 and B6 have the *same differential operator* and different terminal geometries; these are six distinct **benchmark instances**, not six mathematically distinct PDE operators. B4 does **not** support a claim that existing gradient-only full-history MLP already solves general fully nonlinear HJBs.
+**Scope warning:** B2 at \(k=1\) is the original published HN counterexample; \(k>1\) is our analytic generalization, not a published HN theorem. It uses a different diffusion convention from the other benchmarks. B1 and B6 have the *same differential operator* and different terminal geometries; these are six distinct **benchmark instances**, not six mathematically distinct PDE operators. B4 does **not** support a claim that existing gradient-only full-history MLP already solves general fully nonlinear HJBs.
 
 ## B1 — Coupled multi-ridge quadratic HJ (principal controlled-\(k\) benchmark)
 
@@ -72,55 +72,92 @@ If \(b_m\) affinely span \(\mathbb R^k\), this has rank \(k\) at every finite \(
 
 **Calibration before looking at method results:** seed and scale of \(b_m\), training/test distribution, and \(T\) must be frozen *after checking reference-only properties* (nontrivial heat-only correction; nontrivial spatial variation of \(f(z^*)\); gradient-covariance effective rank not collapsing to 1; no runaway exponential weights). Parameter changes motivated by MLP outcomes would violate the intended design.
 
-## B2 — Hutzenthaler--Nguyen (2025): canonical full-history MLP dimensional failure
+## B2 — Hutzenthaler--Nguyen (2025) and an analytic multi-active-dimensional extension
 
-**Exact source benchmark (do not replace with the previous P4 norm family):** M. Hutzenthaler and T. A. Nguyen, *Full history recursive multilevel Picard approximations suffer from the curse of dimensionality for the Hamilton--Jacobi--Bellman equation of a stochastic control problem* (2025), arXiv:2506.23969, https://arxiv.org/abs/2506.23969.
+**Original published source:** M. Hutzenthaler and T. A. Nguyen, *Full history recursive multilevel Picard approximations suffer from the curse of dimensionality for the Hamilton--Jacobi--Bellman equation of a stochastic control problem* (2025), arXiv:2506.23969, https://arxiv.org/abs/2506.23969.
 
-Preserve the original diffusion and gradient normalization:
+### Frozen experiment grid
+
+Use **effective dimensions** \(k\in\{1,10,30,50\}\) and **ambient dimensions** \(d\in\{50,100,200,400\}\). Keep *all* 16 combinations in reporting; classify the corner \(k=d=50\) separately as a **degenerate \(f\equiv0\) negative control** rather than a successful nonlinear-failure repair. There are 15 nondegenerate \(k<d\) cells.
+
+| effective \(k\) / ambient \(d\) | 50 | 100 | 200 | 400 |
+| --- | --- | --- | --- | --- |
+| 1 | original HN | original HN | original HN | original HN |
+| 10 | extension | extension | extension | extension |
+| 30 | extension | extension | extension | extension |
+| 50 | **\(k=d\), null-driver negative control** | extension | extension | extension |
+
+### PDE and terminal condition
+
+**Preserve HN's original normalization:** \(T=1\), diffusion generator \(\frac12\Delta\), \(\sigma=I_d\), and state \(z=\nabla_x u\). For any \(1\le k\le d\), define
 
 \[
+\boxed{
 \begin{aligned}
-\partial_t u(t,x)+\tfrac12\Delta_x u(t,x)
-+\Big(\sum_{j=2}^{d}|\partial_{x_j}u(t,x)|^2\Big)^{1/2}&=0,\\
-u(1,x)&=|x_1|,\qquad x\in\mathbb R^d.
-\end{aligned}
+\partial_t u_{d,k}(t,x)+\tfrac12\Delta_x u_{d,k}(t,x)
++\left(\sum_{j=k+1}^{d}|\partial_{x_j}u_{d,k}(t,x)|^2\right)^{1/2}&=0,\\
+u_{d,k}(1,x)&=g_k(x)=\frac{1}{\sqrt{k}}\sum_{j=1}^k|x_j|.
+\end{aligned}}
 \]
 
-Here \(T=1\), \(\sigma=I_d\), and \(z=\nabla_x u\), **not** \(\sqrt{2}\nabla_x u\). The Hamiltonian is **convex and non-smooth** at \(z_{2:d}=0\):
+The Euclidean norm of an empty coordinate block is defined to be zero (so \(k=d\) gives \(H_{d,d}\equiv0\)). When **\(k=1\)** this *exactly* reduces to the original HN PDE and terminal condition \(g(x)=|x_1|\). **Only these \(k=1\) runs are replications of the published HN counterexample/theorem.** For \(k>1\), this is our newly constructed extension; the published HN lower bound is not claimed to hold without a new proof.
+
+The Hamiltonian is
 
 \[
-H(z)=\|z_{2:d}\|_2
-=\sup_{\substack{a_1=0\\\|a\|_2\le1}}a^\top z.
+H_{d,k}(z)=\|z_{k+1:d}\|_2
+=\sup_{\substack{a_{1:k}=0\\\|a\|_2\le1}}a^\top z.
 \]
 
-At \(z_{2:d}\ne0\), \(a^*(z)=(0,z_{2:d}/\|z_{2:d}\|)\); at the true solution \(z_{2:d}=0\), every admissible control is pointwise optimal, **including the zero actor**. Thus B2 is an especially strong *published MLP failure-and-repair sanity check* but **not evidence that a trained actor is necessary**.
+It is convex and globally 1-Lipschitz for \(k<d\), and nondifferentiable where \(z_{k+1:d}=0\). Any admissible actor is pointwise optimal on the true solution; in particular \(a\equiv0\) is exact. Consequently B2 tests **MLP's intrinsic noise-to-bias amplification**, not whether a learned actor is needed to solve this intrinsically reduced problem.
 
-**Exact solution and gradient.** For \(\tau=1-t>0\) and \(G\sim N(0,1)\),
+### Exact analytic value, gradient, and simple checks
+
+Let \(\tau=1-t>0\), \(G\sim\mathcal N(0,1)\), and write
 
 \[
-u^*(t,x)=\mathbb E|x_1+\sqrt{\tau}G|
-=\sqrt{\frac{2\tau}{\pi}}e^{-x_1^2/(2\tau)}
-+x_1\left(2\Phi(x_1/\sqrt{\tau})-1\right).
+\psi_\tau(s)=\mathbb E|s+\sqrt{\tau}G|
+=\sqrt{\frac{2\tau}{\pi}}\exp\left(-\frac{s^2}{2\tau}\right)
++s\left(2\Phi\left(\frac{s}{\sqrt{\tau}}\right)-1\right).
 \]
 
-Its gradient is
+Since \(u^*_{d,k}\) depends only on \(x_1,\ldots,x_k\), the nonlinear Hamiltonian vanishes **on the true solution**, and the exact solution is
 
 \[
-\nabla_xu^*(t,x)
-=\left(2\Phi(x_1/\sqrt{\tau})-1\right)e_1,\qquad t<1,
+u^*_{d,k}(t,x)=\frac1{\sqrt{k}}\sum_{j=1}^k\psi_{1-t}(x_j).
 \]
 
-so the true Hamiltonian vanishes identically: \(H(\nabla u^*)=0\), while raw full-history MLP can turn pure noise in coordinates \(2{:}d\) into a positive recursive driver. At terminal time, \(g=|x_1|\) is non-differentiable on \(x_1=0\); a Gaussian-terminal pathwise estimator can use its a.e. derivative \(\operatorname{sgn}(X_{T,1})e_1\), subject to the usual integrability/continuous-law justification, **not** a claim that \(g\) is globally differentiable.
+For \(t<1\), its gradient is
 
-**Protocol and interpretation:**
+\[
+\partial_{x_j}u^*_{d,k}(t,x)=
+\begin{cases}
+\displaystyle\frac{2\Phi(x_j/\sqrt{1-t})-1}{\sqrt{k}},&1\le j\le k,\\
+0,&k<j\le d.
+\end{cases}
+\]
 
-1. Reproduce the source paper's **specified** full-history recursion and its dimension/depth scaling (including source parameter choice \(M=n\) when testing the theorem); never claim that the original theorem applies verbatim to a modified estimator or a different scaling of the PDE.
-2. Compare raw MLP with **one complete repaired MLP**, paired seeds and matched work; report both the **value error and the full-state \((u,\nabla u)\) error**, because the source lower bound concerns the joint value--gradient state.
-3. Include \(a\equiv0\) (or an exact active-subspace projection) as an intentionally strong, structure-aware comparator; an actor success on B2 alone cannot justify learning. Actor-vs-double is not a required B2 ablation because the norm Hamiltonian is not quadratic.
-4. Test \(d\in\{100,400\}\) for a shared experimental suite and larger dimensions if feasible. Keep the original \(k=1\); multi-active-dimensional norm tests belong to a **different** future benchmark and are not the published HN counterexample.
-5. At \((t,x)=(0,0)\), verify the exact value \(\sqrt{2/\pi}\) and true gradient \(0\). Compute reference values analytically over the whole test distribution. Distinguish Monte Carlo statistical bias from Picard truncation and terminal nonsmoothness.
+The \(k\times k\) active Hessian is diagonal with strictly positive entries for \(t<1\), hence has rank \(k\). This extension is **additively separable** (not a general coupled \(k\)-dimensional solution), while the original \(k=1\) is an actual 1D ridge.
 
-This benchmark directly connects to the paper's motivation: the published failure occurs despite a globally Lipschitz Hamiltonian and an intrinsically one-dimensional exact solution. Do not re-label it as a strongly curved, smooth quadratic case; its local error mechanism may scale as \(\sqrt{d/M}\), not \(d/M\).
+At the origin,
+\[
+u^*_{d,k}(0,0)=\sqrt{\frac{2k}{\pi}},
+\qquad\nabla u^*_{d,k}(0,0)=0.
+\]
+The \(k=1\) value is \(\sqrt{2/\pi}\). At terminal time the absolute-value payoff is not differentiable at zero coordinates, but Gaussian terminal points avoid those kinks almost surely; for terminal pathwise estimates use the a.e. gradient
+\(\nabla g_k(x)=k^{-1/2}(\operatorname{sgn}(x_1),\ldots,\operatorname{sgn}(x_k),0,\ldots,0)\), with an explicit convention on the null set.
+
+### Quantities to report and numerical interpretation
+
+1. **Reproduce the published result for \(k=1\):** compare against the source's specified full-history recursion and scaling, including its joint-state \((u,\nabla u)\) error. When checking the original theorem use its published sampling schedule (e.g. \(M=n\)), not just the convenient \(n,M\) values of our GPU runs. Do not claim the original theorem for the \(k>1\) family.
+2. **Main experimental comparison:** unmodified full-history MLP against **one complete repaired MLP**, across the frozen \(4\times4\) grid at comparable depth/sampling and matched computational work, with paired RNG and repeated roots. The \(k=d=50\) run is reported as a diagnostic negative control, not a nonlinearity-repair success.
+3. **Error metrics:** value absolute RMSE and value RMSE normalized by the standard deviation of the exact value over fixed test points; report the **full gradient RMSE** and a joint-state RMSE to match HN's theorem, without promising that a value-only correction repairs every output gradient component.
+4. **Potential confounding when \(k\) changes:** the normalization \(k^{-1/2}\) keeps \(\|\nabla g_k\|_2=1\) almost everywhere, **but does not keep the terminal value scale fixed**: \(u^*_{d,k}(0,0)=\sqrt{2k/\pi}\). Standard BEL gradient-label variances can consequently vary with \(k\) for reasons beyond the dimension \(d-k\). Report the empirical first-layer score variance and terminal mean/variance per \(k\); do not attribute every observed \(k\) trend to recursion alone. Use the same normalized terminal family for all methods, and never retune after inspecting method results.
+5. **Comparators:** the known exact active-subspace projection and \(a\equiv0\) are legitimate, extremely strong structure-aware negative controls. A learned actor achieving \(a\approx0\) here does not demonstrate neural prediction skill. Double's polynomial-specific guarantee does not apply directly to this norm Hamiltonian.
+6. **Scientific scope:** distinguish *full-history MLP failure on a formally high-dimensional PDE* from *high intrinsic solution complexity*. Since \(H(\nabla u^*)=0\), the problem is an exact noise-amplification stress test rather than an example with an active nonlinear contribution along the true solution. The multi-\(k\) extension remains analytically solvable.
+
+The B2 protocol is separate from the unchanged B1/B3/B4/B5/B6 specifications and from ongoing actor/nonridge experiments.
+
 
 ## B3 — Smooth, nonquadratic cubic driver with radial \(k\)-dimensional gradients
 
@@ -226,7 +263,7 @@ If \(\{b_m\}\) affinely span \(\mathbb R^d\), the Hessian \(-\mathrm{Cov}_\pi(b_
 
 - **First:** B1 coupled \(k\)-ridge with analytic formula; use the P1 code shape, extending vectors to a \(K\times k\) coefficient matrix and \(d\times k\) orthonormal basis. Verify \(k=1\) exactly reproduces P1 on matched inputs. Do *not* overwrite current P1/MR results.
 - **Second:** B5 analytic coupled game (Riccati) and B6 full-rank nonseparable LSE, with nonlinearity-strength calibration.
-- **Third:** reproduce HN 2025 B2 exactly with its \(T=1\), \(\frac12\Delta\) convention and full-state metric; separately build the B3 stable radial reference for \(k=10,20\). Add new GPU PDE families without modifying frozen baselines.
+- **Third:** reproduce HN 2025 at \(k=1\), then evaluate its frozen \(k\in\{1,10,30,50\}\), \(d\in\{50,100,200,400\}\) analytic extension (\(k=d=50\) is a null-driver control), preserving \(T=1\), \(\tfrac12\Delta\), and joint-state error. Independently build B3's radial reference for \(k=10,20\). Add new GPU PDE families without modifying frozen baselines.
 - **Last / conditional:** B4 controlled-volatility / Hessian extension; do not make the current semilinear paper's correctness depend on this stretch benchmark.
 
 Related in-repository code: `experiments/mechanism_suite/equations.py` (P1), `experiments/mechanism_suite/norm_hjb.py` (legacy P4, **not** B2), `experiments/candidate_screen/candidates.py` (C2/C3), `experiments/double_estimator/equations.py` (MR/game registry), `experiments/gpu_mlp/solver.py` (GPU).
