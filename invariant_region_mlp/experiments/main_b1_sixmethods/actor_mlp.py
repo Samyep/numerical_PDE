@@ -206,9 +206,12 @@ def actor_linearization_identity(
     rng = np.random.default_rng(seed)
     t = torch.as_tensor(rng.uniform(0.0, equation.T, 32), dtype=torch.float32, device=device)
     x = torch.as_tensor(rng.standard_normal((32, equation.d)), dtype=torch.float32, device=device)
-    z = torch.as_tensor(rng.standard_normal((32, equation.d)), dtype=torch.float32, device=device)
+    z = torch.as_tensor(rng.standard_normal((32, equation.d)), dtype=torch.float64, device=device)
     with torch.no_grad():
-        q = actor.predict(t, x, equation.T)
+        # The recursive solver converts actor output to float64 before its
+        # dot products.  Check the identity in that same arithmetic; separate
+        # float32 reductions can differ by several ulps when d=400.
+        q = actor.predict(t, x, equation.T).to(torch.float64)
         actor_driver = -torch.sum(q * z, dim=-1) + 0.5 * torch.sum(q.square(), dim=-1)
         original = -0.5 * torch.sum(z.square(), dim=-1)
         expected = 0.5 * torch.sum((z - q).square(), dim=-1)
