@@ -389,6 +389,9 @@ def make_report(accounting_path: Path | None = None) -> dict[str, Any]:
         "MLP-family methods use `n=3, M=16` and 10 evaluation seeds. Neural baselines "
         "use five independent training seeds. Values are RMSE with a 95% normal-approximation "
         "interval across seed-level RMSEs.",
+        "Ours trains the one frozen actor per `(d,k)` required by the protocol, then uses 10 "
+        "independent recursive evaluation seeds. Its interval therefore measures MLP evaluation "
+        "variation conditional on that actor; it does not measure actor-retraining variation.",
         "",
         "## Main Table 1 — accuracy",
         "",
