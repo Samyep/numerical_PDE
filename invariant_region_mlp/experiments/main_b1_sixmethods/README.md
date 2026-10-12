@@ -28,6 +28,22 @@ python -m invariant_region_mlp.experiments.main_b1_sixmethods.run_stage_a --all
 python -m invariant_region_mlp.experiments.main_b1_sixmethods.run_stage_b --all
 ```
 
+The final DPI table uses the frozen resource-adapted profile in
+`dpi_final_config.json`. It retains the authors' four-hidden-layer width-512
+ELU HJB architecture and a maximum of 5,120 optimizer steps, with 8 Picard
+rounds and 32/128 training/validation Monte Carlo samples per label to fit the
+fixed allocation. Run its archival and resumable replacement pass with:
+
+```bash
+export B1_DPI_PROFILE_PATH="$PWD/invariant_region_mlp/experiments/main_b1_sixmethods/dpi_final_config.json"
+python -m invariant_region_mlp.experiments.main_b1_sixmethods.run_final_dpi
+```
+
+The command copies the preliminary 4x128 tanh artifacts under
+`results/main_b1_sixmethods/superseded/dpi_initial_stage_b/` before replacing
+them. Checkpoints are reused only when their complete training signature
+matches the final profile.
+
 Every method-cell writes an atomic JSON record and a compressed prediction
 archive, and neural methods checkpoint each training seed. Repeating a command
 resumes by skipping completed records and loading existing checkpoints.
