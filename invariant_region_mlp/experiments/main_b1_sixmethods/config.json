@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "pde": {
+    "T": 0.25,
+    "sigma": 1.4142135623730951,
+    "dimensions": [100, 200, 400],
+    "effective_dimensions": [1, 5, 10, 20, 40],
+    "basis_seed": 20261006,
+    "coefficient_seed": 20261012,
+    "coefficient_scale_candidates": [1.0, 1.5, 2.0, 2.5, 3.0],
+    "frozen_coefficient_scale": 2.0,
+    "scale_selection_rule": "largest candidate with normalized softmax entropy >=0.55 and mean Hessian effective-rank ratio >=0.30 for every k>=5; ties favor smaller scale"
+  },
+  "stage_a": {
+    "cells": [[100, 1], [100, 10], [100, 20]],
+    "test_points": 128,
+    "mlp_seeds": 3,
+    "neural_seeds": 1,
+    "mlp_n": 3,
+    "mlp_M": 8
+  },
+  "stage_b": {
+    "test_points": 960,
+    "mlp_seeds": 10,
+    "neural_seeds": 5,
+    "mlp_n": 3,
+    "mlp_M": 16
+  },
+  "actor": {
+    "hidden_width": 128,
+    "hidden_layers": 2,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "batch_size": 256,
+    "max_steps": 1000,
+    "validation_every": 25,
+    "early_stopping_patience": 8,
+    "label_n": 2,
+    "label_M": 8,
+    "training_points": 4096,
+    "validation_points": 1024
+  },
+  "dpi": {
+    "width": 128,
+    "depth": 4,
+    "activation": "tanh",
+    "learning_rate": 0.001,
+    "batch_size": 128,
+    "mc_samples": 16,
+    "validation_points": 256,
+    "validation_mc_samples": 32,
+    "gradient_loss_weight": 0.1,
+    "stage_a_picard_rounds": 3,
+    "stage_a_steps_per_round": 300,
+    "stage_b_picard_rounds": 4,
+    "stage_b_steps_per_round": 600,
+    "validation_every": 50,
+    "early_stopping_patience": 4
+  },
+  "deep_bsde": {
+    "width": 128,
+    "depth": 3,
+    "activation": "tanh",
+    "time_steps": 16,
+    "learning_rate": 0.001,
+    "batch_size": 256,
+    "validation_size": 512,
+    "stage_a_steps": 600,
+    "stage_b_steps": 1500,
+    "validation_every": 50,
+    "early_stopping_patience": 8,
+    "gradient_clip": 10.0,
+    "z_output_bound": 8.0
+  },
+  "sdgd_pinn": {
+    "width": 256,
+    "depth": 4,
+    "activation": "tanh",
+    "learning_rate": 0.001,
+    "batch_size": 128,
+    "coordinate_budget": 16,
+    "validation_points": 256,
+    "stage_a_steps": 600,
+    "stage_b_steps": 2000,
+    "validation_every": 50,
+    "early_stopping_patience": 8,
+    "gradient_clip": 10.0,
+    "terminal_loss_weight": 1.0
+  },
+  "external_sources": {
+    "dpi": {
+      "url": "https://github.com/DeepOptimalControl/DeepPicardIteration",
+      "commit": "e8616c2f531c9f95299b246a13c1180b8f02822a",
+      "paper": "https://arxiv.org/abs/2409.08526"
+    },
+    "deep_bsde": {
+      "url": "https://github.com/frankhan91/DeepBSDE",
+      "commit": "e76fed80b1995daf4a0dd6d3e2cf64a0931dabda",
+      "paper": "https://doi.org/10.1073/pnas.1718942115"
+    },
+    "sdgd_pinn": {
+      "url": "https://github.com/zheyuanhu01/SDGD_PINN",
+      "commit": "c597cc4fe9caac0b3ca118ea84453405f25ff833",
+      "paper": "https://arxiv.org/abs/2307.12306"
+    }
+  }
+}
