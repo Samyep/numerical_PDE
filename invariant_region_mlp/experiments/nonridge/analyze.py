@@ -593,7 +593,7 @@ def _report(
     lines.extend(["", "## Calibration (reported, no verdict)", ""])
     if not calibration.empty:
         lines.extend([
-            "| PDE | d | std u* | mean f(z*) | std f(z*) | RMS |z*| | |mean z*| | heat skill | z var outside top-1 | outside top-10 | Hessian Fro | Hessian eff. rank |",
+            "| PDE | d | std u* | mean f(z*) | std f(z*) | RMS norm(z*) | norm(mean z*) | heat skill | z var outside top-1 | outside top-10 | Hessian Fro | Hessian eff. rank |",
             "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
         ])
         for _, item in calibration.iterrows():
