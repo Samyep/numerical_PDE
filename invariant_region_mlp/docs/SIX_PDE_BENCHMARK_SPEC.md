@@ -8,31 +8,71 @@ Prepared 2026-10-11. Source baseline: branch `ir-mlp-baseline-gpu`; read-only ex
 
 **Target:** Repair *full-history MLP's own* nonlinear noise-to-bias amplification for gradient-dependent semilinear PDEs. The primary main-table comparison is **unmodified full-history MLP vs one complete repaired MLP**. Pathwise terminal estimator, level-matched source baseline, double estimator and learned actor appear primarily in mechanism/ablation experiments. Actor is a candidate principal replacement for double, **not yet empirically validated**.
 
-For B1, B3, B4, B5, and B6, use the existing convention
+For all six main-table benchmarks, use the existing convention
 
 \[
 u_t+\Delta_x u+f(u,z)=0,\qquad z=\sqrt{2}\nabla_x u,\quad
 u(T,x)=g(x),\quad x\in\mathbb R^d.
 \]
 
-**B2 deliberately reproduces the original Hutzenthaler--Nguyen (2025) counterexample unchanged**: it uses \(\sigma=1\), \(\tfrac12\Delta\), \(T=1\), and \(z=\nabla u\), rather than the \(\sigma=\sqrt2\) convention above. A code adapter may rescale it, but published-benchmark reproduction must validate mathematical equivalence and explicitly report any rescaling.
+**The Hutzenthaler--Nguyen (2025) counterexample is an introduction-only motivating diagnostic, not B2 and not a main-table benchmark.** It deliberately preserves its different diffusion convention; see below.
 
 Experiment axes: ambient dimension \(d\in\{100,400\}\), effective dimension \(k\), Picard depth \(n\), sampling parameter \(M\), and *the same* total-work accounting as current experiments (generator calls, Gaussian-coordinate work, and wall time, including actor training when used). Do **not** infer full-rank difficulty solely from a syntactically full-rank terminal. Before comparing solvers report the heat-only \(f=0\) discrepancy, spatial variability of \(f(u^*,z^*)\), gradient covariance effective rank, and Hessian effective rank.
 
 A \(k\)-ridge solution means \(u(t,x)=v(t,B^\top x)\) for fixed \(B\in\mathbb R^{d\times k}\), \(B^\top B=I_k\). Multi-ridge with \(k=10\) or 20 is **still ridge**, but not one-dimensional; compare it alongside genuinely full-rank tests. Full rank need not imply a hard benchmark: high-dimensional concentration can make the nonlinear correction nearly spatially constant.
+
+## Introduction motivating example (not part of the six main PDE benchmarks)
+
+**Hutzenthaler--Nguyen (2025)**, *Full history recursive multilevel Picard approximations suffer from the curse of dimensionality for the Hamilton--Jacobi--Bellman equation of a stochastic control problem*, arXiv:2506.23969, https://arxiv.org/abs/2506.23969.
+
+The published counterexample is
+
+\[
+\begin{aligned}
+u_t+\tfrac12\Delta u+\|\nabla_{x_{2:d}}u\|_2&=0,\qquad T=1,\\
+g(x)=u(1,x)&=|x_1|.
+\end{aligned}
+\]
+
+With \(\tau=1-t>0\), the **exact** value and gradient are
+
+\[
+\begin{aligned}
+u^*(t,x)
+&=\sqrt{\frac{2\tau}{\pi}}e^{-x_1^2/(2\tau)}
++x_1\bigl(2\Phi(x_1/\sqrt\tau)-1\bigr),\\
+\nabla_xu^*(t,x)&=\bigl(2\Phi(x_1/\sqrt\tau)-1\bigr)e_1.
+\end{aligned}
+\]
+
+Thus \(H(\nabla u^*)=0\), yet vanilla BEL-based full-history MLP can generate spurious positive norm-driver evaluations from its \(d-1\) irrelevant Gaussian-gradient components. Preserve the source's \(\frac12\Delta\), \(\sigma=1\) and \(z=\nabla u\) rather than silently using the other benchmarks' \(\Delta\), \(\sigma=\sqrt2\).
+
+**Compact introduction-only experiment:** use the *original \(k=1\) problem*, a modest dimension scan \(d\in\{50,100,200,400\}\), a pre-fixed shallow \(n,M\) pair (for example \(n=3,M=3\), subject to run-time feasibility) and independently repeated seeds. Compare the **published-style raw full-history MLP** against the corrected estimator, and record value and **full-state** errors and runtime. A separate pathwise-only trace can diagnose the terminal-noise mechanism; it should not be portrayed as the learned actor's independent contribution. Report explicitly that the known terminal gradient has no components in directions \(2{:}d\) and that a zero actor is optimal; a small experiment here motivates the failure and confirms a mechanism, **not** the generality of neural actors. Do not claim reproduction of the original asymptotic theorem from a shallow finite-budget dimension scan. The introductory chart should show method error against \(d\), with the analytic solution as reference.
+
+**Deferred analytic extension, not an active experimental grid:** earlier candidate \(k\in\{1,10,30,50\}\), \(d\in\{50,100,200,400\}\) used
+\[
+u_t+\tfrac12\Delta u+\|\nabla_{x_{k+1:d}}u\|=0,\qquad
+g_k(x)=k^{-1/2}\sum_{j=1}^k|x_j|.
+\]
+This has the exact solution
+\[
+u^*_{d,k}(t,x)=k^{-1/2}\sum_{j=1}^k\mathbb E|x_j+\sqrt{1-t}G|,
+\]
+with inactive gradients exactly zero. Its \(k=d=50\) corner has \(f\equiv0\). **The older 4-by-4 grid is superseded by the small introduction-only experiment and should not be run by default.** It may be revisited as supplementary mechanism analysis, not as evidence that the neural actor is essential or that true nonlinearity is active.
+
 
 ## Benchmark overview
 
 | ID | Equation / test | Geometry | Ground truth | Present status |
 | --- | --- | --- | --- | --- |
 | B1 | Coupled multi-ridge quadratic HJ, \(f(z)=-\|z\|^2/2\) | \(k=1,5,10,20,40\), \(d=100,400\) | **Analytic** Hopf–Cole exponential sum, value and gradient | Extends P1/MR; new coupled \(k>1\) inputs needed |
-| B2 | **HN (2025) original counterexample + analytic \(k\)-dimensional extension**, \(H_{d,k}(z)=\|z_{k+1:d}\|_2\) | \(k=1,10,30,50\); \(d=50,100,200,400\); \(k=d=50\) negative control | **Exact** sum of Gaussian absolute-value expectations and gradients | \(k=1\) published original; \(k>1\) new extension, original HN lower bound not automatically inherited |
+| B2 | **Nonsmooth concave norm driver**, \(f(z)=-\lambda\|z\|_2/\sqrt2\) | Radial effective \(k=10,20\), ambient \(d=100,400\) | Independently refined **1D radial** PDE reference (not yet built) | Generalizes legacy P4, whose current reference is only \(k=1\) |
 | B3 | Smooth cubic, \(f(z)=-\kappa(\|z\|/\sqrt2)^3\) | Radial \(k=10,20\), \(d=100,400\) | Independently refined **1D radial** PDE, not yet produced | Existing C3 has only \(k=1\) reference |
 | B4 | **Fully nonlinear** controlled-volatility HJB | Hessian-dependent, \(k=2\)–5 active coordinates | Independently refined **1D component** PDEs, not yet produced | **Outside** current \((u,z)\)-only MLP; conditional extension |
 | B5 | Two-actor zero-sum Isaacs LQ game | Coupled \(k=10,20\) subspace with two control blocks | **Analytic** finite-horizon matrix Riccati | Existing C2 uses \(k=1\); new coupled game needed |
 | B6 | Full-rank, nonseparable quadratic HJ | \(k=d=100,400\) | **Analytic** Hopf–Cole exponential sum | New terminal/gradient and cost calibration needed |
 
-**Scope warning:** B2 at \(k=1\) is the original published HN counterexample; \(k>1\) is our analytic generalization, not a published HN theorem. It uses a different diffusion convention from the other benchmarks. B1 and B6 have the *same differential operator* and different terminal geometries; these are six distinct **benchmark instances**, not six mathematically distinct PDE operators. B4 does **not** support a claim that existing gradient-only full-history MLP already solves general fully nonlinear HJBs.
+**Scope warning:** The HN counterexample is kept as a concise introduction motivating check, separate from the six main benchmarks. B1 and B6 have the *same differential operator* and different terminal geometries; these are six distinct **benchmark instances**, not six mathematically distinct PDE operators. B4 does **not** support a claim that existing gradient-only full-history MLP already solves general fully nonlinear HJBs.
 
 ## B1 — Coupled multi-ridge quadratic HJ (principal controlled-\(k\) benchmark)
 
@@ -72,92 +112,39 @@ If \(b_m\) affinely span \(\mathbb R^k\), this has rank \(k\) at every finite \(
 
 **Calibration before looking at method results:** seed and scale of \(b_m\), training/test distribution, and \(T\) must be frozen *after checking reference-only properties* (nontrivial heat-only correction; nontrivial spatial variation of \(f(z^*)\); gradient-covariance effective rank not collapsing to 1; no runaway exponential weights). Parameter changes motivated by MLP outcomes would violate the intended design.
 
-## B2 — Hutzenthaler--Nguyen (2025) and an analytic multi-active-dimensional extension
+## B2 — Nonsmooth concave norm driver with multiple active directions
 
-**Original published source:** M. Hutzenthaler and T. A. Nguyen, *Full history recursive multilevel Picard approximations suffer from the curse of dimensionality for the Hamilton--Jacobi--Bellman equation of a stochastic control problem* (2025), arXiv:2506.23969, https://arxiv.org/abs/2506.23969.
+The second **main-table** benchmark extends the legacy P4 norm Hamiltonian beyond a one-dimensional ridge, and is **not** Hutzenthaler--Nguyen's published counterexample.
 
-### Frozen experiment grid
-
-Use **effective dimensions** \(k\in\{1,10,30,50\}\) and **ambient dimensions** \(d\in\{50,100,200,400\}\). Keep *all* 16 combinations in reporting; classify the corner \(k=d=50\) separately as a **degenerate \(f\equiv0\) negative control** rather than a successful nonlinear-failure repair. There are 15 nondegenerate \(k<d\) cells.
-
-| effective \(k\) / ambient \(d\) | 50 | 100 | 200 | 400 |
-| --- | --- | --- | --- | --- |
-| 1 | original HN | original HN | original HN | original HN |
-| 10 | extension | extension | extension | extension |
-| 30 | extension | extension | extension | extension |
-| 50 | **\(k=d\), null-driver negative control** | extension | extension | extension |
-
-### PDE and terminal condition
-
-**Preserve HN's original normalization:** \(T=1\), diffusion generator \(\frac12\Delta\), \(\sigma=I_d\), and state \(z=\nabla_x u\). For any \(1\le k\le d\), define
+Choose \(B\in\mathbb R^{d\times k}\) with \(B^\top B=I_k\), \(k\in\{10,20\}\), \(d\in\{100,400\}\), \(y=B^\top x\), \(r=\|y\|_2\), and write
 
 \[
-\boxed{
 \begin{aligned}
-\partial_t u_{d,k}(t,x)+\tfrac12\Delta_x u_{d,k}(t,x)
-+\left(\sum_{j=k+1}^{d}|\partial_{x_j}u_{d,k}(t,x)|^2\right)^{1/2}&=0,\\
-u_{d,k}(1,x)&=g_k(x)=\frac{1}{\sqrt{k}}\sum_{j=1}^k|x_j|.
-\end{aligned}}
+u_t+\Delta u-\frac{\lambda}{\sqrt2}\|z\|_2&=0,\qquad
+z=\sqrt2\nabla_xu,\\
+u(T,x)&=\frac A\beta\log\cosh(\beta r).
+\end{aligned}
 \]
 
-The Euclidean norm of an empty coordinate block is defined to be zero (so \(k=d\) gives \(H_{d,d}\equiv0\)). When **\(k=1\)** this *exactly* reduces to the original HN PDE and terminal condition \(g(x)=|x_1|\). **Only these \(k=1\) runs are replications of the published HN counterexample/theorem.** For \(k>1\), this is our newly constructed extension; the published HN lower bound is not claimed to hold without a new proof.
-
-The Hamiltonian is
+Initial proposed parameters follow legacy P4 (\(\lambda=1,A=1,\beta=2,T=0.25\)), pending **reference-only, pre-method** calibration. The \(k\)-dimensional rotational symmetry yields \(u(t,x)=v(t,r)\), where
 
 \[
-H_{d,k}(z)=\|z_{k+1:d}\|_2
-=\sup_{\substack{a_{1:k}=0\\\|a\|_2\le1}}a^\top z.
+v_t+v_{rr}+\frac{k-1}{r}v_r-\lambda|v_r|=0,
+\quad
+v(T,r)=\frac A\beta\log\cosh(\beta r),
+\quad v_r(t,0)=0.
 \]
 
-It is convex and globally 1-Lipschitz for \(k<d\), and nondifferentiable where \(z_{k+1:d}=0\). Any admissible actor is pointwise optimal on the true solution; in particular \(a\equiv0\) is exact. Consequently B2 tests **MLP's intrinsic noise-to-bias amplification**, not whether a learned actor is needed to solve this intrinsically reduced problem.
+Interpret the radial Laplacian at \(r=0\) through the smooth limit \(k v_{rr}(t,0)\). An independently refined monotone radial solver must produce and audit value/gradient references for each \(k\); **do not reuse P4's \(k=1\) reference for \(k>1\)**. The solution is reducible to one radial coordinate, but gradients at varying points occupy varying directions in the \(k\)-dimensional active subspace. Clearly disclose radial symmetry, so that the benchmark is not described as generally nonseparable.
 
-### Exact analytic value, gradient, and simple checks
-
-Let \(\tau=1-t>0\), \(G\sim\mathcal N(0,1)\), and write
+Actor representation:
 
 \[
-\psi_\tau(s)=\mathbb E|s+\sqrt{\tau}G|
-=\sqrt{\frac{2\tau}{\pi}}\exp\left(-\frac{s^2}{2\tau}\right)
-+s\left(2\Phi\left(\frac{s}{\sqrt{\tau}}\right)-1\right).
+-\frac{\lambda}{\sqrt2}\|z\|_2
+=\min_{\|a\|\le\lambda/\sqrt2}a^\top z.
 \]
 
-Since \(u^*_{d,k}\) depends only on \(x_1,\ldots,x_k\), the nonlinear Hamiltonian vanishes **on the true solution**, and the exact solution is
-
-\[
-u^*_{d,k}(t,x)=\frac1{\sqrt{k}}\sum_{j=1}^k\psi_{1-t}(x_j).
-\]
-
-For \(t<1\), its gradient is
-
-\[
-\partial_{x_j}u^*_{d,k}(t,x)=
-\begin{cases}
-\displaystyle\frac{2\Phi(x_j/\sqrt{1-t})-1}{\sqrt{k}},&1\le j\le k,\\
-0,&k<j\le d.
-\end{cases}
-\]
-
-The \(k\times k\) active Hessian is diagonal with strictly positive entries for \(t<1\), hence has rank \(k\). This extension is **additively separable** (not a general coupled \(k\)-dimensional solution), while the original \(k=1\) is an actual 1D ridge.
-
-At the origin,
-\[
-u^*_{d,k}(0,0)=\sqrt{\frac{2k}{\pi}},
-\qquad\nabla u^*_{d,k}(0,0)=0.
-\]
-The \(k=1\) value is \(\sqrt{2/\pi}\). At terminal time the absolute-value payoff is not differentiable at zero coordinates, but Gaussian terminal points avoid those kinks almost surely; for terminal pathwise estimates use the a.e. gradient
-\(\nabla g_k(x)=k^{-1/2}(\operatorname{sgn}(x_1),\ldots,\operatorname{sgn}(x_k),0,\ldots,0)\), with an explicit convention on the null set.
-
-### Quantities to report and numerical interpretation
-
-1. **Reproduce the published result for \(k=1\):** compare against the source's specified full-history recursion and scaling, including its joint-state \((u,\nabla u)\) error. When checking the original theorem use its published sampling schedule (e.g. \(M=n\)), not just the convenient \(n,M\) values of our GPU runs. Do not claim the original theorem for the \(k>1\) family.
-2. **Main experimental comparison:** unmodified full-history MLP against **one complete repaired MLP**, across the frozen \(4\times4\) grid at comparable depth/sampling and matched computational work, with paired RNG and repeated roots. The \(k=d=50\) run is reported as a diagnostic negative control, not a nonlinearity-repair success.
-3. **Error metrics:** value absolute RMSE and value RMSE normalized by the standard deviation of the exact value over fixed test points; report the **full gradient RMSE** and a joint-state RMSE to match HN's theorem, without promising that a value-only correction repairs every output gradient component.
-4. **Potential confounding when \(k\) changes:** the normalization \(k^{-1/2}\) keeps \(\|\nabla g_k\|_2=1\) almost everywhere, **but does not keep the terminal value scale fixed**: \(u^*_{d,k}(0,0)=\sqrt{2k/\pi}\). Standard BEL gradient-label variances can consequently vary with \(k\) for reasons beyond the dimension \(d-k\). Report the empirical first-layer score variance and terminal mean/variance per \(k\); do not attribute every observed \(k\) trend to recursion alone. Use the same normalized terminal family for all methods, and never retune after inspecting method results.
-5. **Comparators:** the known exact active-subspace projection and \(a\equiv0\) are legitimate, extremely strong structure-aware negative controls. A learned actor achieving \(a\approx0\) here does not demonstrate neural prediction skill. Double's polynomial-specific guarantee does not apply directly to this norm Hamiltonian.
-6. **Scientific scope:** distinguish *full-history MLP failure on a formally high-dimensional PDE* from *high intrinsic solution complexity*. Since \(H(\nabla u^*)=0\), the problem is an exact noise-amplification stress test rather than an example with an active nonlinear contribution along the true solution. The multi-\(k\) extension remains analytically solvable.
-
-The B2 protocol is separate from the unchanged B1/B3/B4/B5/B6 specifications and from ongoing actor/nonridge experiments.
-
+The Hamiltonian is nonsmooth at zero; an unqualified global **second-order actor-regret guarantee does not apply** there. Track whether the actor stabilization beats the unmodified full-history MLP with the actual nonzero nonlinear correction.
 
 ## B3 — Smooth, nonquadratic cubic driver with radial \(k\)-dimensional gradients
 
@@ -252,10 +239,10 @@ If \(\{b_m\}\) affinely span \(\mathbb R^d\), the Hessian \(-\mathrm{Cov}_\pi(b_
 
 ## Cross-benchmark checks and evaluation rules
 
-1. **Before algorithms:** verify terminal match, PDE residual, analytic or independently refined reference, and gradient via independent finite differences. Log all seeds, \(d,k\), basis generation, terminal coefficients and time horizon. For B3 radial references check convergence near \(r=0\) and at the outer boundary; report reference uncertainty separately from solver error. B2 instead uses an analytic Gaussian-absolute-value reference and requires a faithful reproduction of the original HN full-history recursion.
+1. **Before algorithms:** verify terminal match, PDE residual, analytic or independently refined reference, and gradient via independent finite differences. Log all seeds, \(d,k\), basis generation, terminal coefficients and time horizon. For B2/B3 radial references, check convergence near \(r=0\) and at the outer boundary and report reference uncertainty separately from solver error. The HN introduction-only diagnostic uses its analytic Gaussian-absolute-value reference.
 2. **Avoid the easy-benchmark trap:** report \(\|u^*-u_{\mathrm{heat}}\|\), spatial standard deviation of \(f(z^*)\), \(\|\nabla u^*\|\), gradient-covariance effective rank, Hessian effective rank, and any exact symmetries. Examine whether the driver is nearly constant in space.
 3. **Primary comparison:** vanilla full-history MLP versus **one complete corrected MLP** under matched \(n,M,d,k\), repeated seeds and matched wall time/operation counts. Do not fill the main benchmark table with separate path/baseline/double/actor variants. Explain actor training overhead; do not compare a trained method on inference-only cost against an untrained baseline.
-4. **Ablations:** remove pathwise, remove level-matched baseline, remove actor, and compare actor versus double *when the Hamiltonian admits the double estimator*. Double is not a universal default for B2/B3; B2 additionally needs a published-recurrence and full-state error comparison. Report directly measured value bias and variance over independent repetitions, not just a slope-based inference.
+4. **Ablations:** remove pathwise, remove level-matched baseline, remove actor, and compare actor versus double *when the Hamiltonian admits the double estimator*. Double is not a universal default for B2/B3. The HN introduction-only example instead needs a faithful published-recurrence and full-state error comparison. Report directly measured value bias and variance over independent repetitions, not just a slope-based inference.
 5. **Targets are hypotheses:** \(n=3\) beating the finite-depth \(n=2\) accuracy floor; strong performance as \(k\) rises; dimension robustness when \(d-k\) is large; and actor's additional benefit beyond already strong path+baseline. No result is claimed ahead of experiments.
 6. **Qualification:** B1/B2/B3/B5/B6 are semilinear in the highest-order term and are the primary scope. B4 is explicitly conditional pending a new fully nonlinear algorithm and should never be used as evidence for an unimplemented feature.
 
@@ -263,7 +250,7 @@ If \(\{b_m\}\) affinely span \(\mathbb R^d\), the Hessian \(-\mathrm{Cov}_\pi(b_
 
 - **First:** B1 coupled \(k\)-ridge with analytic formula; use the P1 code shape, extending vectors to a \(K\times k\) coefficient matrix and \(d\times k\) orthonormal basis. Verify \(k=1\) exactly reproduces P1 on matched inputs. Do *not* overwrite current P1/MR results.
 - **Second:** B5 analytic coupled game (Riccati) and B6 full-rank nonseparable LSE, with nonlinearity-strength calibration.
-- **Third:** reproduce HN 2025 at \(k=1\), then evaluate its frozen \(k\in\{1,10,30,50\}\), \(d\in\{50,100,200,400\}\) analytic extension (\(k=d=50\) is a null-driver control), preserving \(T=1\), \(\tfrac12\Delta\), and joint-state error. Independently build B3's radial reference for \(k=10,20\). Add new GPU PDE families without modifying frozen baselines.
+- **Third:** run only the compact HN 2025 introduction diagnostic at \(k=1\), \(d\in\{50,100,200,400\}\), keeping source normalization and full-state error. Build and independently refine the radial references for **main PDEs B2 and B3** at \(k=10,20\); extend the GPU equation adapters without modifying frozen baselines. Do not launch the superseded 4-by-4 HN extension grid by default.
 - **Last / conditional:** B4 controlled-volatility / Hessian extension; do not make the current semilinear paper's correctness depend on this stretch benchmark.
 
-Related in-repository code: `experiments/mechanism_suite/equations.py` (P1), `experiments/mechanism_suite/norm_hjb.py` (legacy P4, **not** B2), `experiments/candidate_screen/candidates.py` (C2/C3), `experiments/double_estimator/equations.py` (MR/game registry), `experiments/gpu_mlp/solver.py` (GPU).
+Related in-repository code: `experiments/mechanism_suite/equations.py` (P1), `experiments/mechanism_suite/norm_hjb.py` (legacy \(k=1\) P4, **starting point for B2**), `experiments/candidate_screen/candidates.py` (C2/C3), `experiments/double_estimator/equations.py` (MR/game registry), `experiments/gpu_mlp/solver.py` (GPU).
