@@ -56,8 +56,8 @@ def profile_second(y: np.ndarray) -> np.ndarray:
     logits = values[..., None] * PROFILE_SLOPES
     weights = np.exp(logits - logsumexp(logits, axis=-1, keepdims=True))
     first = np.sum(weights * PROFILE_SLOPES, axis=-1)
-    second = np.sum(weights * PROFILE_SLOPES.square(), axis=-1)
-    return -(second - first.square())
+    second = np.sum(weights * PROFILE_SLOPES**2, axis=-1)
+    return -(second - first**2)
 
 
 @dataclass(frozen=True)

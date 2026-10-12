@@ -74,6 +74,15 @@ def test_special_case_is_closed_form_p1() -> None:
     assert np.max(np.abs(derivative[:, 1:])) == 0.0
 
 
+def test_terminal_hessian_is_full_rank_and_finite() -> None:
+    equation = make_equation("S0", 100)
+    x = np.zeros((3, 100), dtype=np.float64)
+    eigenvalues = equation.terminal_hessian_eigenvalues(x)
+    assert eigenvalues.shape == x.shape
+    assert np.all(np.isfinite(eigenvalues))
+    assert np.all(eigenvalues != 0.0)
+
+
 @pytest.mark.parametrize("pde_id", ["S0", "S05", "S1"])
 def test_torch_equation_matches_numpy(pde_id: str) -> None:
     equation = make_equation(pde_id, 20)
