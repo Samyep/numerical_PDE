@@ -1,0 +1,7 @@
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{figure1_hn_failure_repair.pdf}
+\caption{\textbf{A minimal failure-and-repair illustration for full-history MLP.}
+For the Hutzenthaler--Nguyen (2025) HJB counterexample, the exact solution depends only on the first coordinate and the true nonlinear Hamiltonian vanishes. Nevertheless, the source-style centered-BEL MLP feeds spurious gradient components into the norm driver, leading to dimension-dependent value and joint value--gradient error. Replacing only the terminal gradient estimator with its pathwise counterpart eliminates all nonlinear driver evaluations and keeps error nearly dimension-independent. Results use $n=M=3$, 64 paired seeds per dimension, and report 95\% bootstrap intervals. This is a mechanism illustration on a one-dimensional intrinsic problem, not evidence that learned actors are necessary.}
+\label{fig:hn-intro}
+\end{figure*}
