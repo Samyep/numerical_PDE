@@ -285,10 +285,17 @@ def make_report(accounting_path: Path | None = None) -> dict[str, Any]:
                 "parameter_count": row["parameter_count"],
                 "peak_gpu_bytes": row["peak_gpu_bytes"],
                 "optimizer_steps_total": row.get("optimizer_steps_total", ""),
+                "training_parent_samples": row.get("training_parent_samples", ""),
+                "validation_parent_samples": row.get("validation_parent_samples", ""),
+                "actor_label_parent_points": row.get("actor_label_parent_points", ""),
                 "terminal_samples": row.get("terminal_samples", ""),
                 "transition_samples": row.get("transition_samples", ""),
                 "generator_calls": row.get("generator_calls", ""),
                 "gaussian_coordinate_work": row.get("gaussian_coordinate_work", ""),
+                "sdgd_coordinate_second_derivatives": row.get(
+                    "sdgd_coordinate_second_derivatives", ""
+                ),
+                "bsde_time_steps_simulated": row.get("bsde_time_steps_simulated", ""),
             }
         )
     _write_csv(RESULTS_DIR / "main_cost_table.csv", cost_rows)

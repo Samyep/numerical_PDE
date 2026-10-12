@@ -40,6 +40,7 @@ def aggregate(stage: str) -> dict[str, Any]:
         ]
     )
     all_rows: list[dict[str, Any]] = []
+    shared_by_cell: dict[tuple[int, int, str], dict[str, Any]] = {}
     missing: list[dict[str, Any]] = []
     for d, k in cells:
         for method in METHODS:
@@ -50,6 +51,7 @@ def aggregate(stage: str) -> dict[str, Any]:
             with path.open() as handle:
                 payload = json.load(handle)
             all_rows.extend(payload["rows"])
+            shared_by_cell[(d, k, method)] = payload.get("shared", {})
 
     summaries: list[dict[str, Any]] = []
     costs: list[dict[str, Any]] = []
@@ -135,6 +137,97 @@ def aggregate(stage: str) -> dict[str, Any]:
             else:
                 training_total = sum(training_values)
             inference_total = sum(float(row["inference_seconds"]) for row in selected)
+            optimizer_steps = int(
+                sum(int(row.get("optimizer_steps") or 0) for row in selected)
+            )
+            terminal_samples = int(
+                sum(int(row.get("cost_terminal_samples") or 0) for row in selected)
+            )
+            transition_samples = int(
+                sum(int(row.get("cost_transition_samples") or 0) for row in selected)
+            )
+            generator_calls = int(
+                sum(int(row.get("cost_generator_calls") or 0) for row in selected)
+            )
+            gaussian_coordinate_work = int(
+                sum(int(row.get("cost_gaussian_coordinate_work") or 0) for row in selected)
+            )
+            training_parent_samples = 0
+            validation_parent_samples = 0
+            actor_label_parent_points = 0
+            sdgd_coordinate_second_derivatives = 0
+            bsde_time_steps_simulated = 0
+            shared = shared_by_cell.get((d, k, method), {})
+
+            if method == "actor_mlp":
+                actor = shared.get("actor", {})
+                optimizer_steps = int(actor.get("steps_executed") or 0)
+                training_parent_samples = optimizer_steps * int(
+                    config["actor"]["batch_size"]
+                )
+                validation_parent_samples = len(actor.get("history", [])) * int(
+                    actor.get("validation_points") or 0
+                )
+                actor_label_parent_points = int(actor.get("training_points") or 0) + int(
+                    actor.get("validation_points") or 0
+                )
+                for label_name in ("train_label_cost", "valid_label_cost"):
+                    label_cost = actor.get(label_name, {})
+                    terminal_samples += int(label_cost.get("terminal_samples") or 0)
+                    transition_samples += int(label_cost.get("transition_samples") or 0)
+                    generator_calls += int(label_cost.get("generator_calls") or 0)
+                    gaussian_coordinate_work += int(
+                        label_cost.get("gaussian_coordinate_work") or 0
+                    )
+            elif method == "dpi":
+                for metadata in shared.values():
+                    signature = metadata.get("training_config", config["dpi"])
+                    batch_size = int(signature["batch_size"])
+                    mc_samples = int(signature["mc_samples"])
+                    validation_points = int(signature["validation_points"])
+                    validation_mc = int(signature["validation_mc_samples"])
+                    for round_row in metadata.get("round_history", []):
+                        parents = int(round_row["steps_executed"]) * batch_size
+                        training_parent_samples += parents
+                        validation_parent_samples += validation_points
+                        terminal_samples += (
+                            parents * mc_samples + validation_points * validation_mc
+                        )
+                        if int(round_row["picard_round"]) > 1:
+                            transition_samples += (
+                                parents * mc_samples + validation_points * validation_mc
+                            )
+            elif method == "pinn_sdgd":
+                for metadata in shared.values():
+                    parents = int(metadata["optimizer_steps"]) * int(
+                        config["sdgd_pinn"]["batch_size"]
+                    )
+                    validation_parents = (
+                        len(metadata.get("history", []))
+                        * int(config["sdgd_pinn"]["validation_points"])
+                        * 4
+                    )
+                    coordinate_budget = int(metadata["coordinate_budget"])
+                    training_parent_samples += parents
+                    validation_parent_samples += validation_parents
+                    sdgd_coordinate_second_derivatives += (
+                        parents + validation_parents
+                    ) * 2 * coordinate_budget
+            elif method == "deep_bsde":
+                for metadata in shared.values():
+                    parents = int(metadata["optimizer_steps"]) * int(
+                        config["deep_bsde"]["batch_size"]
+                    )
+                    validation_parents = len(metadata.get("history", [])) * int(
+                        config["deep_bsde"]["validation_size"]
+                    )
+                    path_steps = (parents + validation_parents) * int(
+                        metadata["time_steps"]
+                    )
+                    training_parent_samples += parents
+                    validation_parent_samples += validation_parents
+                    transition_samples += path_steps
+                    bsde_time_steps_simulated += path_steps
             costs.append(
                 {
                     "stage": stage,
@@ -149,21 +242,16 @@ def aggregate(stage: str) -> dict[str, Any]:
                         int(row.get("peak_gpu_bytes") or row.get("cost_peak_gpu_bytes") or 0)
                         for row in selected
                     ),
-                    "optimizer_steps_total": int(
-                        sum(int(row.get("optimizer_steps") or 0) for row in selected)
-                    ),
-                    "terminal_samples": int(
-                        sum(int(row.get("cost_terminal_samples") or 0) for row in selected)
-                    ),
-                    "transition_samples": int(
-                        sum(int(row.get("cost_transition_samples") or 0) for row in selected)
-                    ),
-                    "generator_calls": int(
-                        sum(int(row.get("cost_generator_calls") or 0) for row in selected)
-                    ),
-                    "gaussian_coordinate_work": int(
-                        sum(int(row.get("cost_gaussian_coordinate_work") or 0) for row in selected)
-                    ),
+                    "optimizer_steps_total": optimizer_steps,
+                    "training_parent_samples": training_parent_samples,
+                    "validation_parent_samples": validation_parent_samples,
+                    "actor_label_parent_points": actor_label_parent_points,
+                    "terminal_samples": terminal_samples,
+                    "transition_samples": transition_samples,
+                    "generator_calls": generator_calls,
+                    "gaussian_coordinate_work": gaussian_coordinate_work,
+                    "sdgd_coordinate_second_derivatives": sdgd_coordinate_second_derivatives,
+                    "bsde_time_steps_simulated": bsde_time_steps_simulated,
                 }
             )
     _write_csv(RESULTS_DIR / f"{stage}_results.csv", summaries)
