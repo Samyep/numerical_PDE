@@ -5,9 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import math
 from pathlib import Path
-import shutil
 from typing import Any
 
 import matplotlib
@@ -340,6 +338,14 @@ def make_report(accounting_path: Path | None = None) -> dict[str, Any]:
     _write_csv(RESULTS_DIR / "main_cost_summary.csv", cost_summary_rows)
     actor_rows = _load_actor_rows()
     _write_csv(RESULTS_DIR / "actor_training.csv", actor_rows)
+    actor_gradient_rmse_median = float(
+        np.median([float(row["actor_gradient_rmse"]) for row in actor_rows])
+    )
+    actor_label_rmse_median = float(
+        np.median([float(row["training_label_rmse_against_exact"]) for row in actor_rows])
+    )
+    actor_total_seconds = sum(float(row["total_actor_seconds"]) for row in actor_rows)
+    nonfinite_total = sum(int(row["nonfinite_count"]) for row in accuracy)
 
     method_configs = {
         "experiment_config": config,
@@ -442,9 +448,22 @@ def make_report(accounting_path: Path | None = None) -> dict[str, Any]:
         "Analytic values and gradients were used only for Stage 0 and held-out diagnostics/evaluation. "
         "They were not training targets, regularizers, or checkpoint-selection signals.",
         "",
+        "## Supplementary diagnostics",
+        "",
+        f"All six methods completed all 15 cells; total non-finite value predictions: "
+        f"{nonfinite_total}. The median held-out actor gradient RMSE is "
+        f"{actor_gradient_rmse_median:.4g}; the median noisy training-label RMSE against the "
+        f"post-training analytic diagnostic is {actor_label_rmse_median:.4g}. Across 15 cells, "
+        f"actor label generation plus training took {actor_total_seconds:.3f} GPU seconds.",
+        "",
+        "`stage_b_results.csv` records normalized value RMSE, gradient RMSE, relative gradient "
+        "error, value bias with intervals, value variation across runs, and non-finite counts for "
+        "every method-cell.",
+        "",
         "## Artifacts",
         "",
-        "- `main_accuracy_table.csv`, `main_cost_table.csv`, and `main_cost_summary.csv`",
+        "- `stage_b_results.csv`, `main_accuracy_table.csv`, `main_cost_table.csv`, and "
+        "`main_cost_summary.csv`",
         "- `actor_training.csv` and `pde_calibration.csv`",
         "- `figures/accuracy_vs_effective_dimension.*`",
         "- `figures/accuracy_vs_total_compute.*`",
