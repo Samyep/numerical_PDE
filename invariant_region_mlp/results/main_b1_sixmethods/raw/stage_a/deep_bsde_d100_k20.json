@@ -1,0 +1,126 @@
+{
+  "d": 100,
+  "device": "cuda",
+  "elapsed_seconds": 11.126143012894318,
+  "k": 20,
+  "method": "deep_bsde",
+  "reference_only_used_after_training": true,
+  "rows": [
+    {
+      "K": 41,
+      "coefficient_scale": 2.0,
+      "d": 100,
+      "gradient_bias_norm": 0.22812946988278823,
+      "gradient_nonfinite": 0,
+      "gradient_rmse": 1.2390126669431512,
+      "inference_seconds": 0.0007941829971969128,
+      "k": 20,
+      "method": "deep_bsde",
+      "normalized_value_rmse": 1.0610680954063005,
+      "optimizer_steps": 600,
+      "parameter_count": 105061,
+      "peak_gpu_bytes": 88732160,
+      "relative_gradient_error": 0.7550555384245319,
+      "repetition": 0,
+      "stage": "stage_a",
+      "test_distribution": "x~N(0,I_d)",
+      "test_point_sha256": "dff4dde3df876d9fcff903336b742fa70b9cd1e9b4ccb07ee9f92c3a019a8484",
+      "test_points": 128,
+      "test_time": 0.0,
+      "training_seconds": 11.113937095040455,
+      "value_bias": 0.19409811658709475,
+      "value_mae": 0.586671784178019,
+      "value_nonfinite": 0,
+      "value_rmse": 0.7624919838697861
+    }
+  ],
+  "schema_version": 1,
+  "shared": {
+    "seed_0": {
+      "analytic_reference_used_for_checkpoint_selection": false,
+      "analytic_reference_used_for_training": false,
+      "architecture": "u0(x) and shared z(t,x), each 3x128 tanh",
+      "best_step": 550,
+      "best_validation_terminal_loss": 0.39969563484191895,
+      "bsde_sign": "dY=+0.5*|Z|^2 dt + Z dW",
+      "d": 100,
+      "full_seed": 3224769235,
+      "history": [
+        {
+          "step": 50,
+          "training_terminal_loss": 0.8919514417648315,
+          "validation_terminal_loss": 0.7969303131103516
+        },
+        {
+          "step": 100,
+          "training_terminal_loss": 0.5433005690574646,
+          "validation_terminal_loss": 0.6068687438964844
+        },
+        {
+          "step": 150,
+          "training_terminal_loss": 0.5966744422912598,
+          "validation_terminal_loss": 0.502030611038208
+        },
+        {
+          "step": 200,
+          "training_terminal_loss": 0.43207746744155884,
+          "validation_terminal_loss": 0.49676284193992615
+        },
+        {
+          "step": 250,
+          "training_terminal_loss": 0.48854634165763855,
+          "validation_terminal_loss": 0.4589262008666992
+        },
+        {
+          "step": 300,
+          "training_terminal_loss": 0.36161309480667114,
+          "validation_terminal_loss": 0.4336391091346741
+        },
+        {
+          "step": 350,
+          "training_terminal_loss": 0.47617846727371216,
+          "validation_terminal_loss": 0.43137964606285095
+        },
+        {
+          "step": 400,
+          "training_terminal_loss": 0.350521057844162,
+          "validation_terminal_loss": 0.43304815888404846
+        },
+        {
+          "step": 450,
+          "training_terminal_loss": 0.37889906764030457,
+          "validation_terminal_loss": 0.4156883955001831
+        },
+        {
+          "step": 500,
+          "training_terminal_loss": 0.3742075562477112,
+          "validation_terminal_loss": 0.41257837414741516
+        },
+        {
+          "step": 550,
+          "training_terminal_loss": 0.4288673400878906,
+          "validation_terminal_loss": 0.39969563484191895
+        },
+        {
+          "step": 600,
+          "training_terminal_loss": 0.3554953336715698,
+          "validation_terminal_loss": 0.40541017055511475
+        }
+      ],
+      "k": 20,
+      "method": "deep_bsde",
+      "optimizer_steps": 600,
+      "parameter_count": 105061,
+      "peak_gpu_bytes": 88732160,
+      "protocol": "global/amortized over x0~N(0,I_d)",
+      "seed": 0,
+      "source_commit": "e76fed80b1995daf4a0dd6d3e2cf64a0931dabda",
+      "stage": "stage_a",
+      "time_steps": 16,
+      "training_seconds": 11.113937095040455,
+      "z_protocol": "learned independently; not constrained to sqrt(2)*grad(u0)"
+    }
+  },
+  "stage": "stage_a",
+  "status": "complete"
+}

@@ -1,0 +1,139 @@
+{
+  "d": 100,
+  "device": "cuda",
+  "elapsed_seconds": 37.51760396081954,
+  "k": 20,
+  "method": "pinn_sdgd",
+  "reference_only_used_after_training": true,
+  "rows": [
+    {
+      "K": 41,
+      "coefficient_scale": 2.0,
+      "d": 100,
+      "gradient_bias_norm": 0.04304737995491661,
+      "gradient_nonfinite": 0,
+      "gradient_rmse": 0.2598553535286803,
+      "inference_seconds": 0.0016591798048466444,
+      "k": 20,
+      "method": "pinn_sdgd",
+      "normalized_value_rmse": 0.18489901724699068,
+      "optimizer_steps": 600,
+      "parameter_count": 223745,
+      "peak_gpu_bytes": 384087552,
+      "relative_gradient_error": 0.15835610813823675,
+      "repetition": 0,
+      "stage": "stage_a",
+      "test_distribution": "x~N(0,I_d)",
+      "test_point_sha256": "dff4dde3df876d9fcff903336b742fa70b9cd1e9b4ccb07ee9f92c3a019a8484",
+      "test_points": 128,
+      "test_time": 0.0,
+      "training_seconds": 37.50152114289813,
+      "value_bias": 0.08075220020412632,
+      "value_mae": 0.09627899280250278,
+      "value_nonfinite": 0,
+      "value_rmse": 0.13286990635812737
+    }
+  ],
+  "schema_version": 1,
+  "shared": {
+    "seed_0": {
+      "analytic_reference_used_for_checkpoint_selection": false,
+      "analytic_reference_used_for_training": false,
+      "architecture": "hard-terminal PINN 4x256 tanh",
+      "best_step": 400,
+      "best_validation_residual_product_abs": 0.1402003038674593,
+      "coordinate_budget": 16,
+      "coordinate_sampling": "uniform without replacement; two independent subsets",
+      "d": 100,
+      "full_seed": 3672370658,
+      "history": [
+        {
+          "step": 50,
+          "training_objective": 2.6404967308044434,
+          "training_physics_proxy": 1.3202483654022217,
+          "validation_residual_product": 0.9514652788639069
+        },
+        {
+          "step": 100,
+          "training_objective": 0.7288719415664673,
+          "training_physics_proxy": 0.36443597078323364,
+          "validation_residual_product": 0.48391883820295334
+        },
+        {
+          "step": 150,
+          "training_objective": 0.6223258972167969,
+          "training_physics_proxy": 0.31116294860839844,
+          "validation_residual_product": 0.19046318903565407
+        },
+        {
+          "step": 200,
+          "training_objective": 0.48358961939811707,
+          "training_physics_proxy": 0.24179480969905853,
+          "validation_residual_product": 0.26208119839429855
+        },
+        {
+          "step": 250,
+          "training_objective": 0.369754821062088,
+          "training_physics_proxy": 0.184877410531044,
+          "validation_residual_product": 0.16344701033085585
+        },
+        {
+          "step": 300,
+          "training_objective": 0.0895765945315361,
+          "training_physics_proxy": 0.04478829726576805,
+          "validation_residual_product": 0.15121882734820247
+        },
+        {
+          "step": 350,
+          "training_objective": 0.4485708773136139,
+          "training_physics_proxy": 0.22428543865680695,
+          "validation_residual_product": 0.2554243616759777
+        },
+        {
+          "step": 400,
+          "training_objective": 0.4081798195838928,
+          "training_physics_proxy": 0.2040899097919464,
+          "validation_residual_product": 0.1402003038674593
+        },
+        {
+          "step": 450,
+          "training_objective": 0.2674552798271179,
+          "training_physics_proxy": 0.13372763991355896,
+          "validation_residual_product": 0.16319839656352997
+        },
+        {
+          "step": 500,
+          "training_objective": 0.2930622100830078,
+          "training_physics_proxy": 0.1465311050415039,
+          "validation_residual_product": 0.22172012366354465
+        },
+        {
+          "step": 550,
+          "training_objective": 0.5023806095123291,
+          "training_physics_proxy": 0.25119030475616455,
+          "validation_residual_product": 0.15269183460623026
+        },
+        {
+          "step": 600,
+          "training_objective": 0.14256608486175537,
+          "training_physics_proxy": 0.07128304243087769,
+          "validation_residual_product": 0.21451424434781075
+        }
+      ],
+      "k": 20,
+      "laplacian_scale": 6.25,
+      "method": "pinn_sdgd",
+      "optimizer_steps": 600,
+      "parameter_count": 223745,
+      "peak_gpu_bytes": 384087552,
+      "seed": 0,
+      "source_commit": "c597cc4fe9caac0b3ca118ea84453405f25ff833",
+      "stage": "stage_a",
+      "terminal_condition": "hard-enforced; residual also measured",
+      "training_objective": "independent-product unbiased gradient of squared full residual",
+      "training_seconds": 37.50152114289813
+    }
+  },
+  "stage": "stage_a",
+  "status": "complete"
+}

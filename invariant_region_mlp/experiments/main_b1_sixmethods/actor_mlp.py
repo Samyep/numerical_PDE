@@ -169,8 +169,8 @@ def evaluate_actor_mlp(
         with torch.no_grad():
             result = solver.solve(
                 n,
-                torch.as_tensor(times[start:stop], dtype=torch.float64, device=device),
-                torch.as_tensor(states[start:stop], dtype=torch.float64, device=device),
+                torch.tensor(times[start:stop], dtype=torch.float64, device=device),
+                torch.tensor(states[start:stop], dtype=torch.float64, device=device),
             )
         output[start:stop] = result.cpu().numpy()
         for key in total_stats:

@@ -23,9 +23,12 @@ def main() -> None:
         return
     config = load_config()
     if args.all:
-        for d in config["pde"]["dimensions"]:
-            for k in config["pde"]["effective_dimensions"]:
-                for method in METHODS:
+        # Preserve the specified method-wise execution order so every MLP
+        # cell is checkpointed before actor training, followed by DPI, SDGD,
+        # and the amortized Deep BSDE baseline.
+        for method in METHODS:
+            for d in config["pde"]["dimensions"]:
+                for k in config["pde"]["effective_dimensions"]:
                     run_method("stage_b", method, d, k, force=args.force)
     elif args.method is not None and args.d is not None and args.k is not None:
         run_method("stage_b", args.method, args.d, args.k, force=args.force)

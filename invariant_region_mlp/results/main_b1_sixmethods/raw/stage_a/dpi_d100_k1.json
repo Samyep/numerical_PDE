@@ -1,0 +1,81 @@
+{
+  "d": 100,
+  "device": "cuda",
+  "elapsed_seconds": 4.387812857981771,
+  "k": 1,
+  "method": "dpi",
+  "reference_only_used_after_training": true,
+  "rows": [
+    {
+      "K": 3,
+      "coefficient_scale": null,
+      "d": 100,
+      "gradient_bias_norm": 0.2360002833577687,
+      "gradient_nonfinite": 0,
+      "gradient_rmse": 0.7278253605877772,
+      "inference_seconds": 0.0011615639086812735,
+      "k": 1,
+      "method": "dpi",
+      "normalized_value_rmse": 0.14762648920728963,
+      "optimizer_steps": 900,
+      "parameter_count": 62721,
+      "peak_gpu_bytes": 111385088,
+      "relative_gradient_error": 0.2085127547608037,
+      "repetition": 0,
+      "stage": "stage_a",
+      "test_distribution": "x~N(0,I_d)",
+      "test_point_sha256": "87e100ac6f1e038c544c5735a3992a98fe51354deef5e7c293eb8080831db71b",
+      "test_points": 128,
+      "test_time": 0.0,
+      "training_seconds": 4.376861779019237,
+      "value_bias": 0.17805101158713452,
+      "value_mae": 0.24772113225892464,
+      "value_nonfinite": 0,
+      "value_rmse": 0.31783882865644164
+    }
+  ],
+  "schema_version": 1,
+  "shared": {
+    "seed_0": {
+      "analytic_reference_used_for_checkpoint_selection": false,
+      "analytic_reference_used_for_training": false,
+      "architecture": "4-layer-style value MLP 4x128 tanh",
+      "d": 100,
+      "full_seed": 2996474952,
+      "gradient_loss_weight": 0.1,
+      "k": 1,
+      "mc_samples_per_label": 16,
+      "method": "dpi",
+      "optimizer_steps": 900,
+      "parameter_count": 62721,
+      "peak_gpu_bytes": 111385088,
+      "picard_rounds": 3,
+      "round_history": [
+        {
+          "best_step": 300,
+          "best_validation_label_loss": 0.11335589736700058,
+          "picard_round": 1,
+          "steps_executed": 300
+        },
+        {
+          "best_step": 250,
+          "best_validation_label_loss": 0.11367005854845047,
+          "picard_round": 2,
+          "steps_executed": 300
+        },
+        {
+          "best_step": 250,
+          "best_validation_label_loss": 0.10353976488113403,
+          "picard_round": 3,
+          "steps_executed": 300
+        }
+      ],
+      "seed": 0,
+      "source_commit": "e8616c2f531c9f95299b246a13c1180b8f02822a",
+      "stage": "stage_a",
+      "training_seconds": 4.376861779019237
+    }
+  },
+  "stage": "stage_a",
+  "status": "complete"
+}
