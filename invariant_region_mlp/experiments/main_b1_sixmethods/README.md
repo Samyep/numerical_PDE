@@ -44,6 +44,20 @@ The command copies the preliminary 4x128 tanh artifacts under
 them. Checkpoints are reused only when their complete training signature
 matches the final profile.
 
+After all scheduler jobs are terminal, validate and build the compact final
+artifacts in this order:
+
+```bash
+python -m invariant_region_mlp.experiments.main_b1_sixmethods.validate_stage_b
+python -m invariant_region_mlp.experiments.main_b1_sixmethods.aggregate --stage stage_b
+python -m invariant_region_mlp.experiments.main_b1_sixmethods.scheduler_accounting \
+  --job timing=123456 --job stage_b=123457 \
+  --output invariant_region_mlp/results/main_b1_sixmethods/execution_accounting.json
+python -m invariant_region_mlp.experiments.main_b1_sixmethods.make_report \
+  --accounting invariant_region_mlp/results/main_b1_sixmethods/execution_accounting.json
+python -m invariant_region_mlp.experiments.main_b1_sixmethods.artifact_manifest
+```
+
 Every method-cell writes an atomic JSON record and a compressed prediction
 archive, and neural methods checkpoint each training seed. Repeating a command
 resumes by skipping completed records and loading existing checkpoints.
