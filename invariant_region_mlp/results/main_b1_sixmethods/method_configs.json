@@ -1,0 +1,197 @@
+{
+  "experiment_config": {
+    "actor": {
+      "batch_size": 256,
+      "early_stopping_patience": 8,
+      "hidden_layers": 2,
+      "hidden_width": 128,
+      "label_M": 8,
+      "label_n": 2,
+      "learning_rate": 0.001,
+      "max_steps": 1000,
+      "training_points": 4096,
+      "validation_every": 25,
+      "validation_points": 1024,
+      "weight_decay": 0.0001
+    },
+    "deep_bsde": {
+      "activation": "tanh",
+      "batch_size": 256,
+      "depth": 3,
+      "early_stopping_patience": 8,
+      "gradient_clip": 10.0,
+      "learning_rate": 0.001,
+      "stage_a_steps": 600,
+      "stage_b_steps": 1500,
+      "time_steps": 16,
+      "validation_every": 50,
+      "validation_size": 512,
+      "width": 128,
+      "z_output_bound": 8.0
+    },
+    "dpi": {
+      "activation": "tanh",
+      "batch_size": 128,
+      "depth": 4,
+      "early_stopping_patience": 4,
+      "gradient_loss_weight": 0.1,
+      "learning_rate": 0.001,
+      "mc_samples": 16,
+      "stage_a_picard_rounds": 3,
+      "stage_a_steps_per_round": 300,
+      "stage_b_picard_rounds": 4,
+      "stage_b_steps_per_round": 600,
+      "validation_every": 50,
+      "validation_mc_samples": 32,
+      "validation_points": 256,
+      "width": 128
+    },
+    "external_sources": {
+      "deep_bsde": {
+        "commit": "e76fed80b1995daf4a0dd6d3e2cf64a0931dabda",
+        "paper": "https://doi.org/10.1073/pnas.1718942115",
+        "url": "https://github.com/frankhan91/DeepBSDE"
+      },
+      "dpi": {
+        "commit": "e8616c2f531c9f95299b246a13c1180b8f02822a",
+        "paper": "https://arxiv.org/abs/2409.08526",
+        "url": "https://github.com/DeepOptimalControl/DeepPicardIteration"
+      },
+      "sdgd_pinn": {
+        "commit": "c597cc4fe9caac0b3ca118ea84453405f25ff833",
+        "paper": "https://arxiv.org/abs/2307.12306",
+        "url": "https://github.com/zheyuanhu01/SDGD_PINN"
+      }
+    },
+    "pde": {
+      "T": 0.25,
+      "basis_seed": 20261006,
+      "coefficient_scale_candidates": [
+        1.0,
+        1.5,
+        2.0,
+        2.5,
+        3.0
+      ],
+      "coefficient_seed": 20261012,
+      "dimensions": [
+        100,
+        200,
+        400
+      ],
+      "effective_dimensions": [
+        1,
+        5,
+        10,
+        20,
+        40
+      ],
+      "frozen_coefficient_scale": 2.0,
+      "scale_selection_rule": "largest candidate with normalized softmax entropy >=0.55 and mean Hessian effective-rank ratio >=0.30 for every k>=5; ties favor smaller scale",
+      "sigma": 1.4142135623730951
+    },
+    "schema_version": 1,
+    "sdgd_pinn": {
+      "activation": "tanh",
+      "batch_size": 128,
+      "coordinate_budget": 16,
+      "depth": 4,
+      "early_stopping_patience": 8,
+      "gradient_clip": 10.0,
+      "learning_rate": 0.001,
+      "stage_a_steps": 600,
+      "stage_b_steps": 2000,
+      "terminal_loss_weight": 1.0,
+      "validation_every": 50,
+      "validation_points": 256,
+      "width": 256
+    },
+    "stage_a": {
+      "cells": [
+        [
+          100,
+          1
+        ],
+        [
+          100,
+          10
+        ],
+        [
+          100,
+          20
+        ]
+      ],
+      "mlp_M": 8,
+      "mlp_n": 3,
+      "mlp_seeds": 3,
+      "neural_seeds": 1,
+      "test_points": 128
+    },
+    "stage_b": {
+      "mlp_M": 16,
+      "mlp_n": 3,
+      "mlp_seeds": 10,
+      "neural_seeds": 5,
+      "test_points": 960
+    }
+  },
+  "external_source_commits": {
+    "deep_bsde": {
+      "commit": "e76fed80b1995daf4a0dd6d3e2cf64a0931dabda",
+      "paper": "https://doi.org/10.1073/pnas.1718942115",
+      "url": "https://github.com/frankhan91/DeepBSDE"
+    },
+    "dpi": {
+      "commit": "e8616c2f531c9f95299b246a13c1180b8f02822a",
+      "paper": "https://arxiv.org/abs/2409.08526",
+      "url": "https://github.com/DeepOptimalControl/DeepPicardIteration"
+    },
+    "sdgd_pinn": {
+      "commit": "c597cc4fe9caac0b3ca118ea84453405f25ff833",
+      "paper": "https://arxiv.org/abs/2307.12306",
+      "url": "https://github.com/zheyuanhu01/SDGD_PINN"
+    }
+  },
+  "final_dpi_profile": {
+    "adaptation": "The final run preserves the published 4x512 ELU value-network architecture and maximum total of 5120 optimizer steps. Picard rounds and label Monte Carlo work are reduced to fit all 75 independent trainings in the fixed allocation; the initial 4x128 tanh pass is archived and excluded from final tables.",
+    "frozen_at": "2026-10-12T12:30:57-05:00",
+    "published_hjb_configuration": {
+      "activation": "elu",
+      "batch_size": 512,
+      "depth": 4,
+      "mc_samples_per_label": 4096,
+      "picard_rounds": 40,
+      "total_optimizer_steps": 5120,
+      "width": 512
+    },
+    "resource_adapted_final_configuration": {
+      "activation": "elu",
+      "batch_size": 256,
+      "depth": 4,
+      "early_stopping_patience": 5,
+      "gradient_loss_weight": 0.1,
+      "learning_rate": 0.001,
+      "mc_samples": 32,
+      "profile": "published-hjb-architecture-resource-adapted",
+      "stage_b_picard_rounds": 8,
+      "stage_b_steps_per_round": 640,
+      "validation_every": 64,
+      "validation_mc_samples": 128,
+      "validation_points": 512,
+      "width": 512
+    },
+    "selection_basis": "Authors' public HJB configuration, the independent Stage A timing pilot, the shorter T=0.25 horizon, and the fixed 14 GH200-hour allocation; held-out Stage B errors are not checkpoint or configuration selection signals.",
+    "source_commit": "e8616c2f531c9f95299b246a13c1180b8f02822a",
+    "source_config": "scripts/hjb/base_100d_T1.0_w0.1_0.yaml"
+  },
+  "method_names": {
+    "actor_mlp": "Ours",
+    "deep_bsde": "Deep BSDE",
+    "double_mlp": "Double",
+    "dpi": "DPI",
+    "pinn_sdgd": "PINN+SDGD",
+    "vanilla_mlp": "MLP"
+  },
+  "state_convention": "z=sqrt(2)*grad(u)",
+  "test_distribution": "t=0, x~N(0,I_d), 960 frozen points per cell"
+}

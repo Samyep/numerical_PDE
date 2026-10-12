@@ -167,16 +167,28 @@ def _compute_figure(
                     alpha=0.85,
                 )
         axis.set_title(f"d = {d}")
-        axis.set_xlabel("measured total GPU seconds")
         axis.set_xscale("log")
         axis.set_yscale("log")
         axis.grid(True, which="both", alpha=0.25)
     axes[0].set_ylabel("value RMSE")
     handles, labels = axes[-1].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncol=6, frameon=False)
-    fig.tight_layout(rect=(0, 0, 1, 0.9))
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.98),
+        ncol=6,
+        frameon=False,
+    )
+    fig.supxlabel("measured total GPU seconds", y=0.035)
+    fig.subplots_adjust(left=0.07, right=0.99, bottom=0.16, top=0.80, wspace=0.06)
     for suffix in ("png", "pdf"):
-        fig.savefig(FIGURES_DIR / f"accuracy_vs_total_compute.{suffix}", dpi=220)
+        fig.savefig(
+            FIGURES_DIR / f"accuracy_vs_total_compute.{suffix}",
+            dpi=220,
+            bbox_inches="tight",
+            pad_inches=0.08,
+        )
     plt.close(fig)
 
 

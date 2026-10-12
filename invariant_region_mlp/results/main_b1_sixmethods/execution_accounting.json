@@ -1,0 +1,105 @@
+{
+  "includes_failed_and_superseded_allocations": true,
+  "jobs": [
+    {
+      "alloc_tres": "billing=1000,cpu=8,gres/gpu=1,mem=64G,node=1",
+      "elapsed_seconds": 15,
+      "exit_code": "1:0",
+      "gpu_count": 1,
+      "gpu_seconds": 15,
+      "job_id": 3367243,
+      "job_name": "b1_actor_time",
+      "node": "gh128",
+      "role": "timing_failed",
+      "state": "FAILED"
+    },
+    {
+      "alloc_tres": "billing=1000,cpu=8,gres/gpu=1,mem=64G,node=1",
+      "elapsed_seconds": 36,
+      "exit_code": "0:0",
+      "gpu_count": 1,
+      "gpu_seconds": 36,
+      "job_id": 3367257,
+      "job_name": "b1_six_time",
+      "node": "gh026",
+      "role": "timing",
+      "state": "COMPLETED"
+    },
+    {
+      "alloc_tres": "billing=1000,cpu=8,gres/gpu=1,mem=64G,node=1",
+      "elapsed_seconds": 37,
+      "exit_code": "1:0",
+      "gpu_count": 1,
+      "gpu_seconds": 37,
+      "job_id": 3367398,
+      "job_name": "b1_stage0",
+      "node": "gh010",
+      "role": "stage0_failed",
+      "state": "FAILED"
+    },
+    {
+      "alloc_tres": "billing=1000,cpu=8,gres/gpu=1,mem=64G,node=1",
+      "elapsed_seconds": 36,
+      "exit_code": "0:0",
+      "gpu_count": 1,
+      "gpu_seconds": 36,
+      "job_id": 3367403,
+      "job_name": "b1_stage0",
+      "node": "gh010",
+      "role": "stage0",
+      "state": "COMPLETED"
+    },
+    {
+      "alloc_tres": "billing=1000,cpu=8,gres/gpu=1,mem=96G,node=1",
+      "elapsed_seconds": 175,
+      "exit_code": "0:0",
+      "gpu_count": 1,
+      "gpu_seconds": 175,
+      "job_id": 3367432,
+      "job_name": "b1_stage_a",
+      "node": "gh065",
+      "role": "stage_a",
+      "state": "COMPLETED"
+    },
+    {
+      "alloc_tres": "billing=1000,cpu=8,gres/gpu=1,mem=96G,node=1",
+      "elapsed_seconds": 134,
+      "exit_code": "1:0",
+      "gpu_count": 1,
+      "gpu_seconds": 134,
+      "job_id": 3367458,
+      "job_name": "b1_stage_b",
+      "node": "gh004",
+      "role": "stage_b_failed",
+      "state": "FAILED"
+    },
+    {
+      "alloc_tres": "billing=1000,cpu=8,gres/gpu=1,mem=96G,node=1",
+      "elapsed_seconds": 9998,
+      "exit_code": "0:0",
+      "gpu_count": 1,
+      "gpu_seconds": 9998,
+      "job_id": 3367470,
+      "job_name": "b1_stage_b",
+      "node": "gh034",
+      "role": "stage_b",
+      "state": "COMPLETED"
+    },
+    {
+      "alloc_tres": "billing=1000,cpu=8,gres/gpu=1,mem=96G,node=1",
+      "elapsed_seconds": 2154,
+      "exit_code": "0:0",
+      "gpu_count": 1,
+      "gpu_seconds": 2154,
+      "job_id": 3367534,
+      "job_name": "b1_final_dpi",
+      "node": "gh010",
+      "role": "final_dpi",
+      "state": "COMPLETED"
+    }
+  ],
+  "schema_version": 1,
+  "source": "Slurm sacct top-level allocation records",
+  "total_actual_gpu_hours": 3.495833333333333,
+  "total_actual_gpu_seconds": 12585
+}
