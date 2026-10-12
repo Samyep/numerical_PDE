@@ -284,6 +284,11 @@ def make_report(accounting_path: Path | None = None) -> dict[str, Any]:
                 "total_gpu_seconds": row["total_gpu_seconds"],
                 "parameter_count": row["parameter_count"],
                 "peak_gpu_bytes": row["peak_gpu_bytes"],
+                "optimizer_steps_total": row.get("optimizer_steps_total", ""),
+                "terminal_samples": row.get("terminal_samples", ""),
+                "transition_samples": row.get("transition_samples", ""),
+                "generator_calls": row.get("generator_calls", ""),
+                "gaussian_coordinate_work": row.get("gaussian_coordinate_work", ""),
             }
         )
     _write_csv(RESULTS_DIR / "main_cost_table.csv", cost_rows)
@@ -320,7 +325,7 @@ def make_report(accounting_path: Path | None = None) -> dict[str, Any]:
     )
     answer += (
         f"it beats Vanilla in {pairwise_wins['vanilla_mlp']}/15 and Double in "
-        f"{pairwise_wins['double_mlp']}/15, but the strongest external baseline wins "
+        f"{pairwise_wins['double_mlp']}/15. The best of the other five methods wins "
         f"{15 - ours_best}/15 cells. Total measured experiment use is {total_actual_hours:.3f} GH200 h."
     )
 
@@ -362,9 +367,9 @@ def make_report(accounting_path: Path | None = None) -> dict[str, Any]:
         "warm-started Picard rounds. PINN+SDGD uses two independent coordinate subsets, giving an "
         "unbiased gradient for the squared full residual, and hard-enforces the terminal condition.",
         "",
-        "The compute plot is a measured cap-feasible comparison: each displayed validation-selected "
-        "checkpoint falls below the maximum observed per-cell allowance. The methods do not consume "
-        "equal time, so this is not presented as an equal-spend frontier.",
+        "The compute plot compares the measured cost and accuracy of the frozen primary configurations. "
+        "The methods do not consume equal time, and no additional budget sweep was run, so this is not "
+        "presented as an equal-spend frontier.",
         "",
         "## Correctness and calibration",
         "",

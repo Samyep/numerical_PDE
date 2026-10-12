@@ -69,6 +69,15 @@ def aggregate(stage: str) -> dict[str, Any]:
             ]
             n = len(rmse)
             ci = 1.96 * float(np.std(rmse, ddof=1)) / math.sqrt(n) if n > 1 else None
+            biases = [float(row["value_bias"]) for row in selected]
+            bias_ci = (
+                1.96 * float(np.std(biases, ddof=1)) / math.sqrt(n) if n > 1 else None
+            )
+            gradient_ci = (
+                1.96 * float(np.std(gradient, ddof=1)) / math.sqrt(len(gradient))
+                if len(gradient) > 1
+                else None
+            )
             prediction_path = (
                 RESULTS_DIR / "raw" / stage / f"{method}_d{d}_k{k}_predictions.npz"
             )
@@ -99,6 +108,7 @@ def aggregate(stage: str) -> dict[str, Any]:
                 "gradient_rmse": (
                     float(np.sqrt(np.mean(np.square(gradient)))) if gradient else None
                 ),
+                "per_seed_gradient_rmse_ci95": gradient_ci,
                 "relative_gradient_error": (
                     float(
                         np.sqrt(
@@ -113,6 +123,7 @@ def aggregate(stage: str) -> dict[str, Any]:
                     else None
                 ),
                 "value_bias": _mean([row["value_bias"] for row in selected]),
+                "value_bias_ci95": bias_ci,
                 "value_std_across_runs": value_std_across_runs,
                 "nonfinite_count": int(sum(row["value_nonfinite"] for row in selected)),
             }
@@ -137,6 +148,21 @@ def aggregate(stage: str) -> dict[str, Any]:
                     "peak_gpu_bytes": max(
                         int(row.get("peak_gpu_bytes") or row.get("cost_peak_gpu_bytes") or 0)
                         for row in selected
+                    ),
+                    "optimizer_steps_total": int(
+                        sum(int(row.get("optimizer_steps") or 0) for row in selected)
+                    ),
+                    "terminal_samples": int(
+                        sum(int(row.get("cost_terminal_samples") or 0) for row in selected)
+                    ),
+                    "transition_samples": int(
+                        sum(int(row.get("cost_transition_samples") or 0) for row in selected)
+                    ),
+                    "generator_calls": int(
+                        sum(int(row.get("cost_generator_calls") or 0) for row in selected)
+                    ),
+                    "gaussian_coordinate_work": int(
+                        sum(int(row.get("cost_gaussian_coordinate_work") or 0) for row in selected)
                     ),
                 }
             )

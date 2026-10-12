@@ -274,7 +274,7 @@ def predict_dpi(
     device: torch.device,
 ) -> tuple[np.ndarray, np.ndarray, float]:
     started = time.perf_counter()
-    state = torch.as_tensor(x, dtype=torch.float32, device=device).requires_grad_(True)
+    state = torch.tensor(x, dtype=torch.float32, device=device).requires_grad_(True)
     t = torch.zeros(len(state), dtype=torch.float32, device=device)
     value, z = value_and_z(model, t, state, T=equation.T, create_graph=False)
     if device.type == "cuda":

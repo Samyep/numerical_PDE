@@ -282,7 +282,7 @@ def predict_sdgd_pinn(
     device: torch.device,
 ) -> tuple[np.ndarray, np.ndarray, float]:
     started = time.perf_counter()
-    state = torch.as_tensor(x, dtype=torch.float32, device=device).requires_grad_(True)
+    state = torch.tensor(x, dtype=torch.float32, device=device).requires_grad_(True)
     t = torch.zeros(len(state), dtype=torch.float32, device=device)
     value = model.value(equation, t, state)
     gradient = torch.autograd.grad(value.sum(), state, create_graph=False)[0]

@@ -229,7 +229,7 @@ def predict_deep_bsde(
     device: torch.device,
 ) -> tuple[np.ndarray, np.ndarray, float]:
     started = time.perf_counter()
-    state = torch.as_tensor(x, dtype=torch.float32, device=device)
+    state = torch.tensor(x, dtype=torch.float32, device=device)
     t = torch.zeros(len(state), dtype=torch.float32, device=device)
     with torch.no_grad():
         value = model.initial_value(state)
