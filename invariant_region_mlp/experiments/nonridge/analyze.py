@@ -486,7 +486,13 @@ def _plots(summary: pd.DataFrame, frontier: pd.DataFrame) -> None:
     plt.close(fig)
 
     for cost_axis, xlabel in (("generator_calls", "mean generator calls"), ("gaussian_coordinates", "mean Gaussian coordinates")):
-        fig, axes = plt.subplots(len(families), 2, figsize=(11, 3.8 * len(families)), squeeze=False)
+        fig, axes = plt.subplots(
+            len(families),
+            2,
+            figsize=(13, 4.2 * len(families)),
+            squeeze=False,
+            constrained_layout=True,
+        )
         for row_index, family in enumerate(families):
             for column, d in enumerate((100, 400)):
                 axis = axes[row_index, column]
@@ -498,15 +504,31 @@ def _plots(summary: pd.DataFrame, frontier: pd.DataFrame) -> None:
                 ].sort_values("mean_cost")
                 if not data.empty:
                     axis.plot(data.mean_cost, data.mean_skill, marker="o")
+                    x_middle = math.sqrt(
+                        float(data.mean_cost.min()) * float(data.mean_cost.max())
+                    )
+                    y_middle = math.sqrt(
+                        float(data.mean_skill.min()) * float(data.mean_skill.max())
+                    )
                     for _, item in data.iterrows():
-                        axis.annotate(f"n{int(item.n)} M{int(item.M)}\n{item.method}", (item.mean_cost, item.mean_skill), fontsize=6)
+                        right = float(item.mean_cost) >= x_middle
+                        high = float(item.mean_skill) >= y_middle
+                        axis.annotate(
+                            f"n{int(item.n)} M{int(item.M)}\n{item.method}",
+                            (item.mean_cost, item.mean_skill),
+                            xytext=(-4 if right else 4, -4 if high else 4),
+                            textcoords="offset points",
+                            ha="right" if right else "left",
+                            va="top" if high else "bottom",
+                            fontsize=6,
+                        )
                 axis.set_xscale("log")
                 axis.set_yscale("log")
+                axis.margins(x=0.08, y=0.12)
                 axis.set_title(f"{family}, d={d}")
                 axis.set_xlabel(xlabel)
                 axis.set_ylabel("mean test skill")
                 axis.grid(True, which="both", alpha=0.25)
-        fig.tight_layout()
         fig.savefig(FIGURES_ROOT / f"frontier_{cost_axis}.png", dpi=180)
         plt.close(fig)
 
