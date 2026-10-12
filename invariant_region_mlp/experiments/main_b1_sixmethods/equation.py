@@ -170,6 +170,27 @@ class B1Equation:
     def exact_generator(self, t: np.ndarray | float, x: np.ndarray) -> np.ndarray:
         return self.generator(self.exact_u(t, x), self.exact_z(t, x))
 
+    @property
+    def box_low(self) -> np.ndarray:
+        return np.min(-self.sigma * self.A, axis=0)
+
+    @property
+    def box_high(self) -> np.ndarray:
+        return np.max(-self.sigma * self.A, axis=0)
+
+    @property
+    def z_ball_radius(self) -> float:
+        # Every exact z is a convex combination of these vertices.
+        return self.sigma * float(np.sqrt(np.max(self.n2)))
+
+    @property
+    def z_center(self) -> np.ndarray:
+        return 0.5 * (self.box_low + self.box_high)
+
+    @property
+    def dose_scale(self) -> float:
+        return float(np.mean(0.5 * (self.box_high - self.box_low)))
+
     def exact_active_hessian(
         self, t: np.ndarray | float, x: np.ndarray
     ) -> np.ndarray:
