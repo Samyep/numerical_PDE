@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 import hashlib
 import math
 from pathlib import Path
@@ -425,6 +426,19 @@ def gpu_chunk_size(
     return max(1, min(64, target_coordinates // root_coordinates))
 
 
+@lru_cache(maxsize=None)
+def _reference_data(
+    pde_id: str, d: int
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Cache immutable points and the quadrature truth within one run process."""
+
+    equation = make_equation(pde_id, d)
+    t, x, is_validation = fixed_points(pde_id, d)
+    truth = equation.exact_state(t, x)
+    truth.setflags(write=False)
+    return t, x, is_validation, truth
+
+
 def run_gpu_task(
     task: dict[str, Any],
     *,
@@ -436,8 +450,7 @@ def run_gpu_task(
     n, M = int(task["n"]), int(task["M"])
     repetition, method = int(task["repetition"]), str(task["method"])
     equation = make_equation(pde_id, d)
-    t, x, is_validation = fixed_points(pde_id, d)
-    truth = equation.exact_state(t, x)
+    t, x, is_validation, truth = _reference_data(pde_id, d)
     prediction = np.empty_like(truth)
     root_variance = np.full(len(t), np.nan, dtype=np.float64)
     chunk = chunk_override or gpu_chunk_size(d, n, M)
@@ -458,8 +471,12 @@ def run_gpu_task(
                 seed_sequence=np.random.SeedSequence(seed_parts),
                 aux_seed_sequence=np.random.SeedSequence(seed_parts + [0xD0B1E]),
             )
-            tt = torch.as_tensor(t[begin:end], dtype=torch.float64, device=device_object)
-            xx = torch.as_tensor(x[begin:end], dtype=torch.float64, device=device_object)
+            tt = torch.tensor(
+                t[begin:end].copy(), dtype=torch.float64, device=device_object
+            )
+            xx = torch.tensor(
+                x[begin:end].copy(), dtype=torch.float64, device=device_object
+            )
             result = solver.solve(n, tt, xx, collect_root=True)
             prediction[begin:end] = result.cpu().numpy()
             if solver.root_level1_integrand_variance is not None:
