@@ -8,7 +8,7 @@ Prepared 2026-10-11. Source baseline: branch `ir-mlp-baseline-gpu`; read-only ex
 
 **Target:** Repair *full-history MLP's own* nonlinear noise-to-bias amplification for gradient-dependent semilinear PDEs. The primary main-table comparison is **unmodified full-history MLP vs one complete repaired MLP**. Pathwise terminal estimator, level-matched source baseline, double estimator and learned actor appear primarily in mechanism/ablation experiments. Actor is a candidate principal replacement for double, **not yet empirically validated**.
 
-For B1, B3, B5, and B6, use the existing convention
+For B1, B3, B4, B5, and B6, use the existing convention
 
 \[
 u_t+\Delta_x u+f(u,z)=0,\qquad z=\sqrt{2}\nabla_x u,\quad
