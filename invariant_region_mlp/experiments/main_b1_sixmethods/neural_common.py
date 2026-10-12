@@ -23,7 +23,12 @@ class DenseNet(nn.Module):
         output_bound: float | None = None,
     ) -> None:
         super().__init__()
-        activation_class = {"tanh": nn.Tanh, "silu": nn.SiLU, "relu": nn.ReLU}[activation]
+        activation_class = {
+            "elu": nn.ELU,
+            "tanh": nn.Tanh,
+            "silu": nn.SiLU,
+            "relu": nn.ReLU,
+        }[activation]
         layers: list[nn.Module] = []
         previous = input_dim
         for _ in range(depth):

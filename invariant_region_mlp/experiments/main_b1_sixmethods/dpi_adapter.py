@@ -115,6 +115,27 @@ def dpi_checkpoint_path(root: Path, equation: B1Equation, seed: int, stage: str)
     return root / f"dpi_{stage}_d{equation.d}_k{equation.k}_s{seed}.pt"
 
 
+def dpi_training_signature(config: dict[str, Any], stage: str) -> dict[str, Any]:
+    """Return every setting that changes a saved DPI model or its validation."""
+
+    return {
+        "profile": config.get("profile", "unspecified"),
+        "width": int(config["width"]),
+        "depth": int(config["depth"]),
+        "activation": str(config["activation"]),
+        "learning_rate": float(config["learning_rate"]),
+        "batch_size": int(config["batch_size"]),
+        "mc_samples": int(config["mc_samples"]),
+        "validation_points": int(config["validation_points"]),
+        "validation_mc_samples": int(config["validation_mc_samples"]),
+        "gradient_loss_weight": float(config["gradient_loss_weight"]),
+        "picard_rounds": int(config[f"{stage}_picard_rounds"]),
+        "steps_per_round": int(config[f"{stage}_steps_per_round"]),
+        "validation_every": int(config["validation_every"]),
+        "early_stopping_patience": int(config["early_stopping_patience"]),
+    }
+
+
 def train_dpi(
     equation: B1Equation,
     *,
@@ -127,14 +148,16 @@ def train_dpi(
     config = load_config()["dpi"]
     rounds = int(config[f"{stage}_picard_rounds"])
     steps_per_round = int(config[f"{stage}_steps_per_round"])
+    training_config = dpi_training_signature(config, stage)
     if checkpoint_path.is_file() and not force:
         payload = torch.load(checkpoint_path, map_location=device, weights_only=False)
-        model = DPINet(
-            equation.d, config["width"], config["depth"], config["activation"]
-        ).to(device)
-        model.load_state_dict(payload["state_dict"])
-        model.eval()
-        return model, payload["metadata"]
+        if payload.get("metadata", {}).get("training_config") == training_config:
+            model = DPINet(
+                equation.d, config["width"], config["depth"], config["activation"]
+            ).to(device)
+            model.load_state_dict(payload["state_dict"])
+            model.eval()
+            return model, payload["metadata"]
 
     full_seed = stable_seed("B1", "dpi", equation.d, equation.k, seed, stage)
     seed_everything(full_seed)
@@ -258,6 +281,7 @@ def train_dpi(
         "training_seconds": elapsed,
         "peak_gpu_bytes": peak,
         "round_history": round_history,
+        "training_config": training_config,
         "analytic_reference_used_for_training": False,
         "analytic_reference_used_for_checkpoint_selection": False,
         "source_commit": load_config()["external_sources"]["dpi"]["commit"],
