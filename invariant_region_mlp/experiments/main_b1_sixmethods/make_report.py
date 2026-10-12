@@ -223,6 +223,14 @@ def make_report(accounting_path: Path | None = None) -> dict[str, Any]:
     accuracy = _read_csv(RESULTS_DIR / "stage_b_results.csv")
     costs = _read_csv(RESULTS_DIR / "stage_b_costs.csv")
     config = load_config()
+    dpi_profile_path = (
+        PROJECT_DIR
+        / "experiments"
+        / "main_b1_sixmethods"
+        / "dpi_final_config.json"
+    )
+    with dpi_profile_path.open() as handle:
+        dpi_final_profile = json.load(handle)
     expected = 15 * len(METHODS)
     if len(accuracy) != expected:
         raise RuntimeError(f"need {expected} complete method-cells, found {len(accuracy)}")
@@ -299,6 +307,37 @@ def make_report(accounting_path: Path | None = None) -> dict[str, Any]:
             }
         )
     _write_csv(RESULTS_DIR / "main_cost_table.csv", cost_rows)
+    cost_summary_rows: list[dict[str, Any]] = []
+    cost_markdown_rows: list[str] = []
+    for method in METHODS:
+        selected = [row for row in cost_rows if row["method"] == DISPLAY[method]]
+        training_seconds = sum(float(row["training_seconds"]) for row in selected)
+        evaluation_seconds = sum(
+            float(row["full_evaluation_seconds"]) for row in selected
+        )
+        parameters = sorted({int(row["parameter_count"]) for row in selected})
+        parameter_text = (
+            f"{parameters[0]:,}"
+            if len(parameters) == 1
+            else f"{parameters[0]:,}–{parameters[-1]:,}"
+        )
+        peak_gib = max(int(row["peak_gpu_bytes"]) for row in selected) / 2**30
+        summary_row = {
+            "method": DISPLAY[method],
+            "training_gpu_hours": training_seconds / 3600.0,
+            "full_evaluation_gpu_hours": evaluation_seconds / 3600.0,
+            "total_gpu_hours": (training_seconds + evaluation_seconds) / 3600.0,
+            "parameter_count_range": parameter_text,
+            "peak_gpu_memory_gib": peak_gib,
+        }
+        cost_summary_rows.append(summary_row)
+        cost_markdown_rows.append(
+            f"| {DISPLAY[method]} | {training_seconds / 3600.0:.4f} | "
+            f"{evaluation_seconds / 3600.0:.4f} | "
+            f"{(training_seconds + evaluation_seconds) / 3600.0:.4f} | "
+            f"{parameter_text} | {peak_gib:.2f} |"
+        )
+    _write_csv(RESULTS_DIR / "main_cost_summary.csv", cost_summary_rows)
     actor_rows = _load_actor_rows()
     _write_csv(RESULTS_DIR / "actor_training.csv", actor_rows)
 
@@ -308,6 +347,7 @@ def make_report(accounting_path: Path | None = None) -> dict[str, Any]:
         "state_convention": "z=sqrt(2)*grad(u)",
         "test_distribution": "t=0, x~N(0,I_d), 960 frozen points per cell",
         "external_source_commits": config["external_sources"],
+        "final_dpi_profile": dpi_final_profile,
     }
     atomic_json(RESULTS_DIR / "method_configs.json", method_configs)
 
@@ -364,6 +404,10 @@ def make_report(accounting_path: Path | None = None) -> dict[str, Any]:
         "",
         "## Cost and protocol",
         "",
+        "| Method | Training GPU h | Full-test GPU h | Total GPU h | Parameters | Peak GiB |",
+        "|---|---:|---:|---:|---:|---:|",
+        *cost_markdown_rows,
+        "",
         f"Summed measured method-cell work is {total_seconds / 3600.0:.3f} GPU h. "
         f"Scheduler-accounted total experiment use is {total_actual_hours:.3f} GH200 h. "
         "`main_cost_table.csv` separates training and full-test inference. Actor label generation "
@@ -373,6 +417,13 @@ def make_report(accounting_path: Path | None = None) -> dict[str, Any]:
         "its `Z(t,x)` is learned independently. DPI uses control-variate BEL gradient labels and "
         "warm-started Picard rounds. PINN+SDGD uses two independent coordinate subsets, giving an "
         "unbiased gradient for the squared full residual, and hard-enforces the terminal condition.",
+        "",
+        "The final DPI pass retains the authors' HJB value-network architecture (four width-512 ELU "
+        "hidden layers) and at most 5,120 optimizer steps. Under the fixed allocation it uses 8 rather "
+        "than 40 Picard rounds and 32/128 rather than 4,096 training/validation Monte Carlo samples per "
+        "label. This profile was frozen from the public configuration and Stage A timing, without using "
+        "held-out Stage B error. The preliminary 4x128 tanh pass is archived under `superseded/` and is "
+        "excluded from all final tables.",
         "",
         "The compute plot compares the measured cost and accuracy of the frozen primary configurations. "
         "The methods do not consume equal time, and no additional budget sweep was run, so this is not "
@@ -390,7 +441,7 @@ def make_report(accounting_path: Path | None = None) -> dict[str, Any]:
         "",
         "## Artifacts",
         "",
-        "- `main_accuracy_table.csv` and `main_cost_table.csv`",
+        "- `main_accuracy_table.csv`, `main_cost_table.csv`, and `main_cost_summary.csv`",
         "- `actor_training.csv` and `pde_calibration.csv`",
         "- `figures/accuracy_vs_effective_dimension.*`",
         "- `figures/accuracy_vs_total_compute.*`",
