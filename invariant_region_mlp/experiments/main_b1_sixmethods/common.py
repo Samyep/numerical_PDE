@@ -25,7 +25,13 @@ CONFIG_PATH = PACKAGE_DIR / "config.json"
 
 def load_config() -> dict[str, Any]:
     with CONFIG_PATH.open() as handle:
-        return json.load(handle)
+        config = json.load(handle)
+    dpi_profile_path = os.environ.get("B1_DPI_PROFILE_PATH")
+    if dpi_profile_path:
+        with Path(dpi_profile_path).open() as handle:
+            profile = json.load(handle)
+        config["dpi"].update(profile["resource_adapted_final_configuration"])
+    return config
 
 
 def ensure_result_dirs() -> None:
