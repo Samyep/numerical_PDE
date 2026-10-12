@@ -2,7 +2,7 @@
 
 Status: **research design / proposed benchmark suite**; not a claim that all six have already been implemented or solved. This file is a specification, not experimental results.
 
-Prepared 2026-10-11. Source baseline: branch \`ir-mlp-baseline-gpu\`; read-only existing implementations under \`experiments/mechanism_suite/\`, \`experiments/candidate_screen/\`, \`experiments/double_estimator/\`, and \`experiments/gpu_mlp/\`. The separately running non-ridge and actor jobs must not be modified.
+Prepared 2026-10-11. Source baseline: branch `ir-mlp-baseline-gpu`; read-only existing implementations under `experiments/mechanism_suite/`, `experiments/candidate_screen/`, `experiments/double_estimator/`, and `experiments/gpu_mlp/`. The separately running non-ridge and actor jobs must not be modified.
 
 ## Research question and scope
 
@@ -202,4 +202,4 @@ If \(\{b_m\}\) affinely span \(\mathbb R^d\), the Hessian \(-\mathrm{Cov}_\pi(b_
 - **Third:** B2/B3 stable radial reference builders for \(k=10,20\), then add new GPU PDE families without modifying frozen baselines.
 - **Last / conditional:** B4 controlled-volatility / Hessian extension; do not make the current semilinear paper's correctness depend on this stretch benchmark.
 
-Related in-repository code: \`experiments/mechanism_suite/equations.py\` (P1), \`experiments/mechanism_suite/norm_hjb.py\` (P4), \`experiments/candidate_screen/candidates.py\` (C2/C3), \`experiments/double_estimator/equations.py\` (MR/game registry), \`experiments/gpu_mlp/solver.py\` (GPU).
+Related in-repository code: `experiments/mechanism_suite/equations.py` (P1), `experiments/mechanism_suite/norm_hjb.py` (P4), `experiments/candidate_screen/candidates.py` (C2/C3), `experiments/double_estimator/equations.py` (MR/game registry), `experiments/gpu_mlp/solver.py` (GPU).
