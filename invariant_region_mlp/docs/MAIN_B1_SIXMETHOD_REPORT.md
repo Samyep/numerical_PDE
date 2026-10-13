@@ -1,5 +1,7 @@
 # Main B1 six-method benchmark report
 
+> **2026-10-13 follow-up:** This frozen table uses the original small actor. After increasing actor label quality and training to cross-budget convergence, Actor--MLP is best for value prediction in 12/15 cells and all 12 cells with `k >= 5`. Gradient prediction does not match the best neural gradient baseline. See [the matched follow-up benchmark](MAIN_B1_CONVERGED_ACTOR_VS_BASELINES.md). The original table below is retained for provenance.
+
 **Numerical answer:** No. Complete Actor--MLP is best in 0/15 cells; it beats Vanilla in 15/15 and Double in 13/15. The best of the other five methods wins 15/15 cells. Total measured experiment use is 3.496 GH200 h.
 
 All entries below are actual held-out results at `t=0`, `x~N(0,I_d)`. MLP-family methods use `n=3, M=16` and 10 evaluation seeds. Neural baselines use five independent training seeds. Values are RMSE with a 95% normal-approximation interval across seed-level RMSEs.

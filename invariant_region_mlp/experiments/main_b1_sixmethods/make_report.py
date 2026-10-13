@@ -401,6 +401,13 @@ def make_report(accounting_path: Path | None = None) -> dict[str, Any]:
     report = [
         "# Main B1 six-method benchmark report",
         "",
+        "> **2026-10-13 follow-up:** This frozen table uses the original small actor. "
+        "After increasing actor label quality and training to cross-budget convergence, "
+        "Actor--MLP is best for value prediction in 12/15 cells and all 12 cells with "
+        "`k >= 5`. Gradient prediction does not match the best neural gradient baseline. See "
+        "[the matched follow-up benchmark](MAIN_B1_CONVERGED_ACTOR_VS_BASELINES.md). "
+        "The original table below is retained for provenance.",
+        "",
         f"**Numerical answer:** {answer}",
         "",
         "All entries below are actual held-out results at `t=0`, `x~N(0,I_d)`. "
