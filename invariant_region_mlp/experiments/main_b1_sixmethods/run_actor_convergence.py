@@ -602,8 +602,13 @@ def main() -> None:
             cells = _ordered_cells(args.pilot)
         results = [run_cell(d, k, force=args.force) for d, k in cells]
         statuses = {f"d{item['d']}_k{item['k']}": item["status"] for item in results}
+        status_name = (
+            f"cell_status_d{args.d}_k{args.k}.json"
+            if args.d is not None and args.k is not None
+            else ("pilot_status.json" if args.pilot else "run_status.json")
+        )
         atomic_json(
-            PROTOCOL_DIR / ("pilot_status.json" if args.pilot else "run_status.json"),
+            PROTOCOL_DIR / status_name,
             {"schema_version": 1, "cells": statuses},
         )
         print(json.dumps({"cells": statuses}, indent=2), flush=True)
