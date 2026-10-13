@@ -7,7 +7,12 @@ import torch
 
 from .actor import ActorNet
 from .actor_iteration import (
+    coarsen_normals,
+    evaluate_policy_mc,
+    evaluate_policy_mc_with_martingale_cv,
+    policy_payoffs_with_martingale_from_normals,
     policy_value_and_z_from_normals,
+    refine_antithetic_normals,
     terminal_pathwise_labels,
     torch_terminal,
     torch_terminal_z,
@@ -124,3 +129,96 @@ def test_terminal_pathwise_labels_are_finite_and_correctly_shaped() -> None:
     assert metadata["terminal_samples"] == 56
     assert metadata["nonterminal_mlp_used"] is False
     assert metadata["nonterminal_exact_gradient_used"] is False
+
+
+def test_martingale_cv_has_zero_variance_for_linear_terminal_policy() -> None:
+    class LinearTerminalEquation:
+        d = 4
+        T = 0.25
+        sigma = float(np.sqrt(2.0))
+        A = np.asarray([[0.4, -0.2, 0.1, 0.3]], dtype=np.float64)
+        logc = np.zeros(1, dtype=np.float64)
+
+    equation = LinearTerminalEquation()
+    probe = torch.zeros((1, equation.d))
+    exact_policy = torch_terminal_z(equation, probe)[0]
+    actor = _constant_actor(equation.d, exact_policy)
+    t = torch.tensor([0.03, 0.11], dtype=torch.float32)
+    x = torch.randn(2, equation.d, generator=torch.Generator().manual_seed(21))
+    normals = torch.randn(
+        2,
+        64,
+        8,
+        equation.d,
+        generator=torch.Generator().manual_seed(22),
+    )
+    raw, corrected, martingale = policy_payoffs_with_martingale_from_normals(
+        equation, actor, t, x, normals
+    )
+    assert torch.max(torch.var(raw, dim=1)) > 1.0e-4
+    assert torch.max(torch.var(corrected, dim=1)) < 2.0e-12
+    torch.testing.assert_close(raw - corrected, martingale)
+    direction = torch.as_tensor(equation.A[0], dtype=torch.float32)
+    expected = -x @ direction - (equation.T - t) * torch.sum(
+        direction.square()
+    )
+    torch.testing.assert_close(
+        corrected.mean(dim=1), expected, rtol=2.0e-6, atol=2.0e-6
+    )
+    assert all(parameter.grad is None for parameter in actor.parameters())
+
+
+def test_brownian_bridge_refinement_preserves_coarse_antithetic_paths() -> None:
+    coarse_generator = torch.Generator().manual_seed(31)
+    bridge_generator = torch.Generator().manual_seed(32)
+    coarse = torch.randn(3, 4, 5, 2, generator=coarse_generator)
+    coarse[:, 2:] = -coarse[:, :2]
+    fine = refine_antithetic_normals(
+        coarse, 4, generator=bridge_generator
+    )
+    recovered = coarsen_normals(fine, 5)
+    torch.testing.assert_close(recovered, coarse, rtol=2.0e-6, atol=2.0e-6)
+    torch.testing.assert_close(fine[:, 2:], -fine[:, :2])
+    assert coarsen_normals(fine, 10).shape == (3, 4, 10, 2)
+
+
+def test_paired_cv_evaluator_reuses_paths_and_zero_actor_is_unchanged() -> None:
+    equation = B1Equation(d=4, k=2)
+    actor = _constant_actor(equation.d, torch.zeros(equation.d))
+    rng = np.random.default_rng(41)
+    t = rng.uniform(0.0, equation.T, 5)
+    x = rng.standard_normal((5, equation.d))
+    raw, corrected, raw_variance, corrected_variance, metadata = (
+        evaluate_policy_mc_with_martingale_cv(
+            equation,
+            actor,
+            t,
+            x,
+            time_steps=16,
+            paths=8,
+            repetition=0,
+            seed_namespace="actor_iteration_direct_test",
+            device=torch.device("cpu"),
+            parent_batch_size=3,
+            path_chunk_size=4,
+        )
+    )
+    np.testing.assert_array_equal(raw, corrected)
+    np.testing.assert_array_equal(raw_variance, corrected_variance)
+    assert metadata["raw_and_corrected_share_paths"] is True
+    assert metadata["additional_actor_calls_for_control_variate"] == 0
+    legacy, _, _ = evaluate_policy_mc(
+        equation,
+        actor,
+        t,
+        x,
+        time_steps=16,
+        paths=8,
+        repetition=0,
+        seed_namespace="actor_iteration_direct_test",
+        device=torch.device("cpu"),
+        parent_batch_size=3,
+        path_chunk_size=4,
+        compute_z=False,
+    )
+    np.testing.assert_array_equal(raw, legacy)
