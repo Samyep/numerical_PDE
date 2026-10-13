@@ -34,6 +34,7 @@ def test_budget_label_work_and_data_are_strictly_increasing() -> None:
     assert BUDGET_LEVELS[5].reuse_labels_from == "level_5"
     assert BUDGET_LEVELS[6].reuse_labels_from == "level_5"
     assert BUDGET_LEVELS[7].reuse_labels_from == "level_5"
+    assert BUDGET_LEVELS[8].reuse_labels_from == "level_5"
     protocol = budget_protocol()
     assert protocol["nonterminal_oracle_reference_used_for_training"] is False
     assert protocol["nonterminal_oracle_reference_used_for_selection"] is False
