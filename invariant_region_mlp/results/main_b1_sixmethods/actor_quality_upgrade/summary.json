@@ -1,0 +1,105 @@
+{
+  "actors": {
+    "converged_actor": {
+      "analytic_policy_gap_rms": 0.09255781680961095,
+      "corrected_value_bias": 0.05455520248668378,
+      "corrected_value_ci95": 0.0031487346296443096,
+      "corrected_value_rmse": 0.09482449131271468,
+      "direct_actor_gradient_rmse": 0.5261760938497844,
+      "mean_analytic_policy_gap": 0.05338976005983164,
+      "mean_identity_residual": 0.001165442426852145,
+      "raw_value_ci95": 0.000943164187667685,
+      "raw_value_rmse": 0.10016324577918743,
+      "variance_reduction_factor": 3.2647418242561246
+    },
+    "teacher_free_q1": {
+      "analytic_policy_gap_rms": 0.14240901117998317,
+      "corrected_value_bias": 0.12914657502131646,
+      "corrected_value_ci95": 0.0010778021137054139,
+      "corrected_value_rmse": 0.14613730327397081,
+      "direct_actor_gradient_rmse": 0.8690291083561736,
+      "mean_analytic_policy_gap": 0.12696619262989972,
+      "mean_identity_residual": 0.0021803823914167395,
+      "raw_value_ci95": 0.0013586575104764548,
+      "raw_value_rmse": 0.14755998410590757,
+      "variance_reduction_factor": 1.8041880413300238
+    },
+    "upgraded_q1": {
+      "analytic_policy_gap_rms": 0.0717489486044805,
+      "corrected_value_bias": 0.06491074774628201,
+      "corrected_value_ci95": 0.000493254040470272,
+      "corrected_value_rmse": 0.07558171849179413,
+      "direct_actor_gradient_rmse": 0.5899411227836906,
+      "mean_analytic_policy_gap": 0.06346447380637982,
+      "mean_identity_residual": 0.0014462739399021833,
+      "raw_value_ci95": 0.0014293601664786874,
+      "raw_value_rmse": 0.0812102731453652,
+      "variance_reduction_factor": 3.350516167927422
+    }
+  },
+  "baselines": {
+    "converged_actor_mlp_value_rmse": 0.08087294308704639,
+    "oracle_actor_mlp_value_rmse": 0.030665353290722525,
+    "pinn_sdgd_value_rmse": 0.08700384002677489
+  },
+  "headline": {
+    "ceiling_gate_relative_improvement": 0.3511274042402265,
+    "upgrade_cv_beats_converged_actor_mlp": true,
+    "upgrade_cv_beats_pinn": true,
+    "upgrade_raw_beats_converged_actor_mlp": false,
+    "upgrade_relative_improvement_over_converged_actor_mlp": 0.06542638852103022,
+    "upgrade_relative_improvement_over_converged_direct_policy": 0.20293040916466654,
+    "upgrade_relative_improvement_over_old_q1": 0.48280338559349667,
+    "upgrade_relative_improvement_over_pinn": 0.13128295867706152
+  },
+  "scheduler_accounting": {
+    "ceiling": {
+      "cpus": 8,
+      "elapsed": "00:01:09",
+      "elapsed_seconds": 69,
+      "exit_code": "0:0",
+      "failed_runs": 0,
+      "gpus": 1,
+      "job_id": 3375449,
+      "job_name": "b1_actor_ceiling",
+      "memory": "128G",
+      "memory_failures": 0,
+      "nan_failures": 0,
+      "node": "gh131",
+      "schema_version": 1,
+      "source_commit": "91040e8240323ef1e74c7e68127e6fdbb16bbceb",
+      "state": "COMPLETED",
+      "workload_elapsed_seconds": 58,
+      "workload_max_rss": "1307840K"
+    },
+    "upgrade": {
+      "cpus": 8,
+      "elapsed": "00:02:24",
+      "elapsed_seconds": 144,
+      "exit_code": "0:0",
+      "failed_runs": 0,
+      "gpus": 1,
+      "job_id": 3375455,
+      "job_name": "b1_actor_upgrade",
+      "memory": "128G",
+      "memory_failures": 0,
+      "nan_failures": 0,
+      "node": "gh116",
+      "schema_version": 1,
+      "source_commit": "41f62e7c8a2d62acaf22e4aadda98116a0ddc80d",
+      "state": "COMPLETED",
+      "workload_elapsed_seconds": 132,
+      "workload_max_rss": "1740608K"
+    }
+  },
+  "schema_version": 1,
+  "status": "PASS",
+  "training": {
+    "actor_training_seconds": 12.832497559953481,
+    "best_step": 6000,
+    "label_generation_seconds": 84.14983247802593,
+    "optimizer_converged": false,
+    "steps_executed": 6000,
+    "stopping_reason": "maximum_steps"
+  }
+}
