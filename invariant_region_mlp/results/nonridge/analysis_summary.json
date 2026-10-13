@@ -1,7 +1,68 @@
 {
-  "analysis_code_commit": "8505a5aa51d3722582ea60da274b372d4a000cd7",
-  "completed_rows": 440,
-  "extended_floors": [],
+  "analysis_code_commit": "9b5c86f9d1bb7b83e2421c181758f4130e8f1a5f",
+  "completed_rows": 900,
+  "extended_floors": [
+    {
+      "dimension": 100,
+      "extended_floor_M": 512,
+      "extended_met": true,
+      "extended_n3_M": 32,
+      "extended_n3_method": "double_path_base",
+      "extended_ratio": 0.5554407167669654,
+      "family": "S0",
+      "initial_ratio": 0.623096082927747
+    },
+    {
+      "dimension": 400,
+      "extended_floor_M": 512,
+      "extended_met": true,
+      "extended_n3_M": 32,
+      "extended_n3_method": "double_path_base",
+      "extended_ratio": 0.7029777328551287,
+      "family": "S0",
+      "initial_ratio": 0.7213713399250982
+    },
+    {
+      "dimension": 100,
+      "extended_floor_M": 512,
+      "extended_met": true,
+      "extended_n3_M": 32,
+      "extended_n3_method": "double_path_base",
+      "extended_ratio": 0.3237732396837939,
+      "family": "S05",
+      "initial_ratio": 0.4262531855817391
+    },
+    {
+      "dimension": 400,
+      "extended_floor_M": 512,
+      "extended_met": true,
+      "extended_n3_M": 32,
+      "extended_n3_method": "double_path_base",
+      "extended_ratio": 0.4257579650686997,
+      "family": "S05",
+      "initial_ratio": 0.5209441698136708
+    },
+    {
+      "dimension": 100,
+      "extended_floor_M": 512,
+      "extended_met": true,
+      "extended_n3_M": 32,
+      "extended_n3_method": "double_path_base",
+      "extended_ratio": 0.19285418638610496,
+      "family": "S1",
+      "initial_ratio": 0.2411688553454097
+    },
+    {
+      "dimension": 400,
+      "extended_floor_M": 512,
+      "extended_met": true,
+      "extended_n3_M": 32,
+      "extended_n3_method": "double_path_base",
+      "extended_ratio": 0.1972618659803589,
+      "family": "S1",
+      "initial_ratio": 0.24072681384884295
+    }
+  ],
   "preregistration_commit": "43cda1b3b5bbbb1dff8d6ddb7dbe47e76cc38f88",
   "ratio_comparisons": [
     {
@@ -34,6 +95,22 @@
       "double_base_over_double_M16": 0.2033186327401323,
       "family": "S05",
       "path_base_over_path_M16": 0.004677520657404931,
+      "source": "nonridge GPU"
+    },
+    {
+      "best_n3_over_n2_floor": 0.2411688553454097,
+      "dimension": 100,
+      "double_base_over_double_M16": 0.3575208941643025,
+      "family": "S1",
+      "path_base_over_path_M16": 0.027501759281321574,
+      "source": "nonridge GPU"
+    },
+    {
+      "best_n3_over_n2_floor": 0.24072681384884295,
+      "dimension": 400,
+      "double_base_over_double_M16": 0.19478849163969753,
+      "family": "S1",
+      "path_base_over_path_M16": 0.02433454234448734,
       "source": "nonridge GPU"
     },
     {
@@ -75,133 +152,151 @@
       "rows": [
         {
           "M": 64,
-          "complete": false,
+          "complete": true,
           "dimension": 100,
           "family": "S1",
-          "met": false,
+          "met": true,
           "n": 2,
-          "path_over_raw": NaN
+          "path_over_raw": 0.12098589170266444
         },
         {
           "M": 16,
-          "complete": false,
+          "complete": true,
           "dimension": 100,
           "family": "S1",
-          "met": false,
+          "met": true,
           "n": 3,
-          "path_over_raw": NaN
+          "path_over_raw": 0.01270946874369409
         },
         {
           "M": 64,
-          "complete": false,
+          "complete": true,
           "dimension": 400,
           "family": "S1",
-          "met": false,
+          "met": true,
           "n": 2,
-          "path_over_raw": NaN
+          "path_over_raw": 0.027152396175360135
         },
         {
           "M": 16,
-          "complete": false,
+          "complete": true,
           "dimension": 400,
           "family": "S1",
-          "met": false,
+          "met": true,
           "n": 3,
-          "path_over_raw": NaN
+          "path_over_raw": 0.0009099203866840395
         }
       ],
       "total": 4,
-      "verdict": "NOT EVALUATED (COMPUTE)",
-      "wins": 0
+      "verdict": "PASS",
+      "wins": 4
     },
     "N-2": {
       "required": 2,
       "rows": [
         {
-          "baseline_over_path": NaN,
-          "complete": false,
+          "baseline_over_path": 0.027501759281321574,
+          "complete": true,
           "dimension": 100,
           "family": "S1",
-          "met": false
+          "met": true
         },
         {
-          "baseline_over_path": NaN,
-          "complete": false,
+          "baseline_over_path": 0.02433454234448734,
+          "complete": true,
           "dimension": 400,
           "family": "S1",
-          "met": false
+          "met": true
         }
       ],
       "total": 2,
-      "verdict": "NOT EVALUATED (COMPUTE)",
-      "wins": 0
+      "verdict": "PASS",
+      "wins": 2
     },
     "N-3": {
       "required": 4,
       "rows": [
         {
           "M": 16,
-          "baseline_over_double": NaN,
-          "complete": false,
+          "baseline_over_double": 0.3575208941643025,
+          "complete": true,
           "dimension": 100,
           "family": "S1",
-          "met": false
+          "met": true
         },
         {
           "M": 24,
-          "baseline_over_double": NaN,
-          "complete": false,
+          "baseline_over_double": 0.42585215828397177,
+          "complete": true,
           "dimension": 100,
           "family": "S1",
-          "met": false
+          "met": true
         },
         {
           "M": 16,
-          "baseline_over_double": NaN,
-          "complete": false,
+          "baseline_over_double": 0.19478849163969753,
+          "complete": true,
           "dimension": 400,
           "family": "S1",
-          "met": false
+          "met": true
         },
         {
           "M": 24,
-          "baseline_over_double": NaN,
-          "complete": false,
+          "baseline_over_double": 0.2564609277674995,
+          "complete": true,
           "dimension": 400,
           "family": "S1",
-          "met": false
+          "met": true
         }
       ],
       "total": 4,
-      "verdict": "NOT EVALUATED (COMPUTE)",
-      "wins": 0
+      "verdict": "PASS",
+      "wins": 4
     },
     "N-4": {
       "required": 1,
       "rows": [
         {
-          "complete": false,
+          "best_n3_M": 24,
+          "best_n3_method": "double_path_base",
+          "best_n3_over_floor": 0.24072681384884295,
+          "best_n3_skill": 0.017382550230267767,
+          "complete": true,
           "dimension": 400,
           "family": "S1",
-          "met": false
+          "floor_M": 256,
+          "floor_skill": 0.07220861669852287,
+          "met": true
         }
       ],
       "total": 1,
-      "verdict": "NOT EVALUATED (COMPUTE)",
-      "wins": 0
+      "verdict": "PASS",
+      "wins": 1
     },
     "N-4-all-dimensions": [
       {
-        "complete": false,
+        "best_n3_M": 24,
+        "best_n3_method": "double_path_base",
+        "best_n3_over_floor": 0.2411688553454097,
+        "best_n3_skill": 0.016685851378596496,
+        "complete": true,
         "dimension": 100,
         "family": "S1",
-        "met": false
+        "floor_M": 256,
+        "floor_skill": 0.06918742204377298,
+        "met": true
       },
       {
-        "complete": false,
+        "best_n3_M": 24,
+        "best_n3_method": "double_path_base",
+        "best_n3_over_floor": 0.24072681384884295,
+        "best_n3_skill": 0.017382550230267767,
+        "complete": true,
         "dimension": 400,
         "family": "S1",
-        "met": false
+        "floor_M": 256,
+        "floor_skill": 0.07220861669852287,
+        "met": true
       }
     ],
     "N-5": {
@@ -209,22 +304,22 @@
       "rows": [
         {
           "M": 16,
-          "complete": false,
-          "d400_over_d100": NaN,
+          "complete": true,
+          "d400_over_d100": 1.0243108017783233,
           "family": "S1",
-          "met": false
+          "met": true
         },
         {
           "M": 24,
-          "complete": false,
-          "d400_over_d100": NaN,
+          "complete": true,
+          "d400_over_d100": 1.041753868943418,
           "family": "S1",
-          "met": false
+          "met": true
         }
       ],
       "total": 2,
-      "verdict": "NOT EVALUATED (COMPUTE)",
-      "wins": 0
+      "verdict": "PASS",
+      "wins": 2
     }
   },
   "stage_a": {
@@ -536,7 +631,10 @@
     }
   },
   "stage_counts": {
-    "stage_a": 440
+    "stage_a": 440,
+    "stage_b_extension": 180,
+    "stage_b_n4": 60,
+    "stage_b_s1": 220
   },
   "v1_slopes": [
     {
@@ -549,6 +647,12 @@
       "family": "S05",
       "log_intercept": -2.824370222118189,
       "log_log_slope": 0.9172656028232604,
+      "points": 4
+    },
+    {
+      "family": "S1",
+      "log_intercept": -3.2199105936859103,
+      "log_log_slope": 1.0660432305428185,
       "points": 4
     }
   ],

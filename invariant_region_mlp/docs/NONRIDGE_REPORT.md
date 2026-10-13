@@ -5,7 +5,7 @@
 | Block | N-1 | N-2 | N-3 | N-4 | N-5 |
 |---|---|---|---|---|---|
 | Stage A: S0 + S05 | PASS | PASS | PASS | PASS | PASS |
-| Stage B: S1 | NOT EVALUATED (COMPUTE) | NOT EVALUATED (COMPUTE) | NOT EVALUATED (COMPUTE) | NOT EVALUATED (COMPUTE) | NOT EVALUATED (COMPUTE) |
+| Stage B: S1 | PASS | PASS | PASS | PASS | PASS |
 
 ## Stage A criteria (verbatim)
 
@@ -98,11 +98,22 @@
 
 The same N-1 through N-5 inequalities and thresholds are applied to S1 alone; N-3 requires all 4 S1 comparisons.
 
-- **N-1: NOT EVALUATED (COMPUTE)** (0/4; required 4).
-- **N-2: NOT EVALUATED (COMPUTE)** (0/2; required 2).
-- **N-3: NOT EVALUATED (COMPUTE)** (0/4; required 4).
-- **N-4: NOT EVALUATED (COMPUTE)** (0/1; required 1).
-- **N-5: NOT EVALUATED (COMPUTE)** (0/2; required 2).
+- **N-1: PASS** (4/4; required 4).
+- **N-2: PASS** (2/2; required 2).
+- **N-3: PASS** (4/4; required 4).
+- **N-4: PASS** (1/1; required 1).
+- **N-5: PASS** (2/2; required 2).
+
+## Extended M=32 / M=512 floor re-evaluation
+
+| family | d | initial ratio | extended ratio | extended attaining cells | <= 0.9 |
+|---|---:|---:|---:|---|---|
+| S0 | 100 | 0.623096 | 0.555441 | n2 M=512; n3 double_path_base M=32 | yes |
+| S0 | 400 | 0.721371 | 0.702978 | n2 M=512; n3 double_path_base M=32 | yes |
+| S05 | 100 | 0.426253 | 0.323773 | n2 M=512; n3 double_path_base M=32 | yes |
+| S05 | 400 | 0.520944 | 0.425758 | n2 M=512; n3 double_path_base M=32 | yes |
+| S1 | 100 | 0.241169 | 0.192854 | n2 M=512; n3 double_path_base M=32 | yes |
+| S1 | 400 | 0.240727 | 0.197262 | n2 M=512; n3 double_path_base M=32 | yes |
 
 ## Calibration (reported, no verdict)
 
@@ -145,6 +156,8 @@ The GPU rotation uses the Makhoul FFT DCT. Timings are for one 1,024-point forwa
 | S0 | 400 | nonridge GPU | 0.00308496 | 0.206381 | 0.721371 |
 | S05 | 100 | nonridge GPU | 0.0129164 | 0.331338 | 0.426253 |
 | S05 | 400 | nonridge GPU | 0.00467752 | 0.203319 | 0.520944 |
+| S1 | 100 | nonridge GPU | 0.0275018 | 0.357521 | 0.241169 |
+| S1 | 400 | nonridge GPU | 0.0243345 | 0.194788 | 0.240727 |
 | P1 | 100 | Study F CPU; ratios only, unpaired | 0.0442866 | 0.376181 | 0.2125 |
 | P1 | 400 | Study F CPU; ratios only, unpaired | 0.0438045 | 0.221509 | 0.215155 |
 | MR | 100 | Study F CPU; ratios only, unpaired | 0.0873141 | 0.323269 | 0.243863 |
@@ -154,6 +167,18 @@ The GPU rotation uses the Makhoul FFT DCT. Timings are for one 1,024-point forwa
 
 - S0: slope 0.7722 from 4 available points.
 - S05: slope 0.917266 from 4 available points.
+- S1: slope 1.06604 from 4 available points.
+
+## Exploratory n=4 results (no verdict)
+
+| family | d | M | skill | generator calls | Gaussian coordinates | GPU seconds |
+|---|---:|---:|---:|---:|---:|---:|
+| S0 | 400 | 6 | 0.0184328 | 2.982e+06 | 1.90627e+10 | 45.0919 |
+| S0 | 400 | 10 | 0.00740477 | 1.25532e+07 | 1.39925e+11 | 332.102 |
+| S05 | 400 | 6 | 0.0214743 | 2.982e+06 | 1.90627e+10 | 45.0813 |
+| S05 | 400 | 10 | 0.00901484 | 1.25532e+07 | 1.39925e+11 | 332.138 |
+| S1 | 400 | 6 | 0.057643 | 2.982e+06 | 1.90627e+10 | 45.0852 |
+| S1 | 400 | 10 | 0.0246092 | 1.25532e+07 | 1.39925e+11 | 332.121 |
 
 ## Equal-cost frontiers (reported, no verdict)
 
@@ -169,12 +194,12 @@ Attaining cells for both generator-call and Gaussian-coordinate lower envelopes 
 ## Provenance
 
 - Frozen preregistration commit: `43cda1b3b5bbbb1dff8d6ddb7dbe47e76cc38f88`.
-- Analysis code commit: `8505a5aa51d3722582ea60da274b372d4a000cd7`.
-- Solver/run commits represented in rows: `ad4121678bbfd1929ce7ca07d43bd558f22d3c77`, `dbcb22b9a598d4f2aa901bde83fd24b2c1f39aac`.
+- Analysis code commit: `9b5c86f9d1bb7b83e2421c181758f4130e8f1a5f`.
+- Solver/run commits represented in rows: `9b5c86f9d1bb7b83e2421c181758f4130e8f1a5f`, `ad4121678bbfd1929ce7ca07d43bd558f22d3c77`, `dbcb22b9a598d4f2aa901bde83fd24b2c1f39aac`.
 - GPU: NVIDIA GeForce RTX 5070 Ti; driver 610.47; CUDA 12.8; PyTorch 2.11.0+cu128; DCT: Makhoul FFT type-II DCT/IDCT in PyTorch.
-- Completed rows: 440; Stage A 440/440; S1 0/220; extension 0/180; n=4 0/60.
+- Completed rows: 900; Stage A 440/440; S1 220/220; extension 180/180; n=4 60/60.
 - Non-finite state values: 0; non-finite generator values: 0.
-- GPU wall time represented by rows: 14734.7 seconds.
+- GPU wall time represented by rows: 81193.5 seconds.
 - Validation: V-1=PASS, V-2=PASS, V-3=PASS, V-4=PASS, V-5=PASS, V-6=PASS.
 - Arithmetic is float64; verdicts use the frozen 960-point test split and 10 repetitions unless the pre-registered >30-minute rule is triggered.
 
