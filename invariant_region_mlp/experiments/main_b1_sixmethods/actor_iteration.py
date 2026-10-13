@@ -160,8 +160,12 @@ def evaluate_policy_mc(
         raise ValueError("paths must be divisible by path_chunk_size")
     if path_chunk_size % 2:
         raise ValueError("path_chunk_size must be even for antithetic sampling")
-    times = np.asarray(t, dtype=np.float64).reshape(-1)
-    states = np.asarray(x, dtype=np.float64).reshape(len(times), equation.d)
+    # ``fixed_test_points`` can return a read-only view.  Own these buffers so
+    # that ``torch.as_tensor`` never exposes PyTorch to non-writable storage.
+    times = np.array(t, dtype=np.float64, copy=True).reshape(-1)
+    states = np.array(x, dtype=np.float64, copy=True, order="C").reshape(
+        len(times), equation.d
+    )
     values = np.empty(len(times), dtype=np.float64)
     gradients = (
         np.empty((len(times), equation.d), dtype=np.float64)
@@ -264,8 +268,10 @@ def terminal_pathwise_labels(
 
     if paths % 2:
         raise ValueError("terminal path count must be even")
-    times = np.asarray(t, dtype=np.float64).reshape(-1)
-    states = np.asarray(x, dtype=np.float64).reshape(len(times), equation.d)
+    times = np.array(t, dtype=np.float64, copy=True).reshape(-1)
+    states = np.array(x, dtype=np.float64, copy=True, order="C").reshape(
+        len(times), equation.d
+    )
     labels = np.empty((len(times), equation.d), dtype=np.float64)
     if device.type == "cuda":
         torch.cuda.synchronize(device)

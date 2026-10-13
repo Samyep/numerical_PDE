@@ -66,6 +66,7 @@ DIRECT_TEST_PATHS = 256
 DIRECT_TEST_SEEDS = 3
 MAX_IMPROVEMENTS = 3
 VALUE_ABSOLUTE_TOLERANCE = 1.0e-3
+PILOT_CELLS = {(100, 10), (400, 40), (400, 1)}
 
 Q0_BUDGET = BudgetLevel(
     "actor_iteration_q0",
@@ -91,9 +92,9 @@ IMPROVEMENT_BUDGET = BudgetLevel(
 )
 
 
-def protocol() -> dict[str, Any]:
+def protocol(d: int, k: int) -> dict[str, Any]:
     return {
-        "cell": {"d": 100, "k": 10},
+        "cell": {"d": d, "k": k},
         "architecture": {
             "hidden_width": ACTOR_WIDTH,
             "hidden_layers": ACTOR_DEPTH,
@@ -564,8 +565,11 @@ def run(d: int, k: int, *, force: bool = False) -> dict[str, Any]:
         if existing.get("status") == "complete":
             print(json.dumps(existing["headline"], indent=2), flush=True)
             return existing
-    if (d, k) != (100, 10):
-        raise ValueError("the initial pilot is frozen to (d,k)=(100,10)")
+    if (d, k) not in PILOT_CELLS:
+        allowed = ", ".join(
+            f"({cell_d},{cell_k})" for cell_d, cell_k in sorted(PILOT_CELLS)
+        )
+        raise ValueError(f"Actor Iteration pilot supports only {allowed}")
 
     config = load_config()
     equation = B1Equation(
@@ -897,7 +901,7 @@ def run(d: int, k: int, *, force: bool = False) -> dict[str, Any]:
         "d": d,
         "k": k,
         "device": str(device),
-        "protocol": protocol(),
+        "protocol": protocol(d, k),
         "label_subspace": subspace_metadata,
         "stopping_decision": stopping_decision,
         "test_point_sha256": test_hash,
