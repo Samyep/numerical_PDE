@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import numpy as np
+import torch
 
 from .actor_convergence import (
     BUDGET_LEVELS,
+    DenoisedActorNet,
     audit_record,
     budget_protocol,
     convergence_decision,
@@ -13,11 +15,12 @@ from .actor_convergence import (
 
 
 def test_budget_label_work_and_data_are_strictly_increasing() -> None:
+    progressive = BUDGET_LEVELS[:5]
     work = [
         (level.M**level.n) * level.replicas * (
             level.training_points + level.validation_points
         )
-        for level in BUDGET_LEVELS
+        for level in progressive
     ]
     assert all(
         right > left for left, right in zip(work[:-1], work[1:], strict=True)
@@ -25,9 +28,11 @@ def test_budget_label_work_and_data_are_strictly_increasing() -> None:
     assert all(
         right.training_points > left.training_points
         for left, right in zip(
-            BUDGET_LEVELS[:-1], BUDGET_LEVELS[1:], strict=True
+            progressive[:-1], progressive[1:], strict=True
         )
     )
+    assert BUDGET_LEVELS[5].reuse_labels_from == "level_5"
+    assert BUDGET_LEVELS[6].reuse_labels_from == "level_5"
     protocol = budget_protocol()
     assert protocol["nonterminal_oracle_reference_used_for_training"] is False
     assert protocol["nonterminal_oracle_reference_used_for_selection"] is False
@@ -109,4 +114,16 @@ def test_noisy_audit_floor_cannot_bypass_prediction_stability() -> None:
         },
     ]
     assert convergence_decision(records)["converged"] is False
+
+
+def test_actor_output_is_confined_to_label_derived_subspace() -> None:
+    generator = np.random.default_rng(31)
+    raw = generator.standard_normal((12, 3))
+    basis, _ = np.linalg.qr(raw)
+    model = DenoisedActorNet(12, basis)
+    t = torch.linspace(0.0, 0.2, 7)
+    x = torch.as_tensor(generator.standard_normal((7, 12)), dtype=torch.float32)
+    prediction = model.predict(t, x).detach().numpy()
+    residual = prediction - (prediction @ basis) @ basis.T
+    assert np.max(np.abs(residual)) < 2.0e-7
 

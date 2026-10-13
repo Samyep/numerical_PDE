@@ -13,7 +13,13 @@ import numpy as np
 import torch
 
 from .actor import ActorNet
-from .common import array_sha256, atomic_json, seed_everything, stable_seed
+from .common import (
+    array_sha256,
+    atomic_json,
+    seed_everything,
+    stable_seed,
+    training_points,
+)
 from .equation import B1Equation
 from .mlp_adapter import evaluate_mlp
 from .neural_common import clone_state_dict, count_parameters
@@ -37,7 +43,11 @@ AUDIT_BANK_REPLICAS = 4
 
 AUDIT_STABILITY_TOLERANCE = 0.05
 PREDICTION_STABILITY_TOLERANCE = 0.05
-PROTOCOL_VERSION = 2
+PROTOCOL_VERSION = 3
+SUBSPACE_POINTS = 4096
+SUBSPACE_N = 1
+SUBSPACE_M = 8
+SUBSPACE_REPLICAS = 2
 
 
 @dataclass(frozen=True)
@@ -50,14 +60,40 @@ class BudgetLevel:
     validation_points: int
     max_steps: int
     minimum_steps: int
+    learning_rate: float
+    reuse_labels_from: str | None = None
 
 
 BUDGET_LEVELS = (
-    BudgetLevel("level_1", 2, 16, 4, 8192, 2048, 6000, 1500),
-    BudgetLevel("level_2", 3, 8, 4, 12288, 3072, 10000, 2000),
-    BudgetLevel("level_3", 3, 12, 6, 16384, 4096, 16000, 2500),
-    BudgetLevel("level_4", 3, 16, 8, 24576, 6144, 24000, 3000),
-    BudgetLevel("level_5", 3, 20, 10, 32768, 8192, 32000, 4000),
+    BudgetLevel("level_1", 2, 16, 4, 8192, 2048, 6000, 1500, 5.0e-4),
+    BudgetLevel("level_2", 3, 8, 4, 12288, 3072, 10000, 2000, 5.0e-4),
+    BudgetLevel("level_3", 3, 12, 6, 16384, 4096, 16000, 2500, 5.0e-4),
+    BudgetLevel("level_4", 3, 16, 8, 24576, 6144, 24000, 3000, 5.0e-4),
+    BudgetLevel("level_5", 3, 20, 10, 32768, 8192, 32000, 4000, 5.0e-4),
+    BudgetLevel(
+        "level_6_confirmation",
+        3,
+        20,
+        10,
+        32768,
+        8192,
+        6000,
+        2000,
+        1.0e-4,
+        "level_5",
+    ),
+    BudgetLevel(
+        "level_7_confirmation",
+        3,
+        20,
+        10,
+        32768,
+        8192,
+        6000,
+        2000,
+        2.5e-5,
+        "level_5",
+    ),
 )
 
 
@@ -70,6 +106,17 @@ def budget_protocol() -> dict[str, Any]:
             "activation": "silu",
             "input": "ambient (t,x)",
             "output": "ambient z",
+            "output_constraint": (
+                "rank-k projection learned only from n=1 pathwise terminal labels"
+            ),
+        },
+        "label_subspace": {
+            "points": SUBSPACE_POINTS,
+            "n": SUBSPACE_N,
+            "M": SUBSPACE_M,
+            "replicas": SUBSPACE_REPLICAS,
+            "rank": "public PDE effective dimension k",
+            "nonterminal_oracle_reference_used": False,
         },
         "optimizer": {
             "name": "AdamW",
@@ -102,8 +149,28 @@ def budget_protocol() -> dict[str, Any]:
     }
 
 
-def make_actor(equation: B1Equation, device: torch.device) -> ActorNet:
-    return ActorNet(equation.d, width=ACTOR_WIDTH, depth=ACTOR_DEPTH).to(device)
+class DenoisedActorNet(ActorNet):
+    """Ambient actor constrained to a label-derived output subspace."""
+
+    def __init__(self, d: int, label_basis: np.ndarray | torch.Tensor) -> None:
+        super().__init__(d, width=ACTOR_WIDTH, depth=ACTOR_DEPTH)
+        basis = torch.as_tensor(label_basis, dtype=torch.float32)
+        if basis.ndim != 2 or basis.shape[0] != d:
+            raise ValueError(f"invalid label basis {tuple(basis.shape)} for d={d}")
+        self.register_buffer("label_basis", basis.clone())
+
+    def predict(
+        self, t: torch.Tensor, x: torch.Tensor, T: float = 0.25
+    ) -> torch.Tensor:
+        raw = super().predict(t, x, T)
+        coefficients = raw @ self.label_basis
+        return coefficients @ self.label_basis.T
+
+
+def make_actor(
+    equation: B1Equation, device: torch.device, label_basis: np.ndarray
+) -> DenoisedActorNet:
+    return DenoisedActorNet(equation.d, label_basis).to(device)
 
 
 def label_chunk_size(d: int, n: int, M: int) -> int:
@@ -237,6 +304,114 @@ def generate_label_ensemble(
     return mean, metadata
 
 
+def project_labels(labels: np.ndarray, basis: np.ndarray) -> np.ndarray:
+    values = np.asarray(labels, dtype=np.float64)
+    directions = np.asarray(basis, dtype=np.float64)
+    return (values @ directions) @ directions.T
+
+
+def learn_label_subspace(
+    equation: B1Equation,
+    *,
+    device: torch.device,
+    cache_dir: Path,
+) -> tuple[np.ndarray, dict[str, Any]]:
+    """Recover the rank-k output space from terminal-pathwise labels only."""
+
+    basis_path = cache_dir / "label_subspace_basis.npz"
+    metadata_path = cache_dir / "label_subspace_basis.json"
+    if basis_path.is_file() and metadata_path.is_file():
+        import json
+
+        with np.load(basis_path, allow_pickle=False) as payload:
+            basis = np.asarray(payload["basis"], dtype=np.float64)
+        metadata = json.loads(metadata_path.read_text())
+        if basis.shape != (equation.d, equation.k):
+            raise RuntimeError(f"invalid cached label basis shape {basis.shape}")
+        np.testing.assert_allclose(
+            basis.T @ basis,
+            np.eye(equation.k),
+            rtol=1.0e-10,
+            atol=1.0e-10,
+        )
+        return basis, metadata
+
+    seed = stable_seed("B1", "actor_convergence", equation.d, equation.k)
+    t, x = training_points(
+        equation.d,
+        equation.k,
+        "actor_convergence_label_subspace",
+        seed,
+        SUBSPACE_POINTS,
+    )
+    labels, label_metadata = generate_label_ensemble(
+        equation,
+        t,
+        x,
+        n=SUBSPACE_N,
+        M=SUBSPACE_M,
+        replicas=SUBSPACE_REPLICAS,
+        repetition_offset=500_000,
+        seed_namespace="actor_convergence_label_subspace",
+        device=device,
+        cache_path=cache_dir / "label_subspace_labels.npz",
+    )
+    covariance = labels.T @ labels / len(labels)
+    eigenvalues, eigenvectors = np.linalg.eigh(covariance)
+    order = np.argsort(eigenvalues)[::-1]
+    eigenvalues = np.maximum(eigenvalues[order], 0.0)
+    basis = eigenvectors[:, order[: equation.k]]
+    # Resolve eigenvector sign ambiguity so cached and recomputed bases agree.
+    for column in range(equation.k):
+        pivot = int(np.argmax(np.abs(basis[:, column])))
+        if basis[pivot, column] < 0.0:
+            basis[:, column] *= -1.0
+    projected = project_labels(labels, basis)
+    residual_rmse = math.sqrt(
+        float(np.mean(np.sum((labels - projected) ** 2, axis=1)))
+    )
+    label_rmse = math.sqrt(float(np.mean(np.sum(labels**2, axis=1))))
+    smallest_retained = float(eigenvalues[equation.k - 1])
+    largest_discarded = (
+        float(eigenvalues[equation.k]) if equation.k < equation.d else 0.0
+    )
+    relative_residual = residual_rmse / max(
+        label_rmse, np.finfo(np.float64).tiny
+    )
+    if smallest_retained <= 1.0e-12 * max(float(eigenvalues[0]), 1.0):
+        raise RuntimeError(
+            f"terminal-label subspace is rank deficient for d={equation.d}, k={equation.k}"
+        )
+    if relative_residual > 1.0e-8:
+        raise RuntimeError(
+            f"terminal-label subspace residual {relative_residual:.3e} exceeds tolerance"
+        )
+    metadata: dict[str, Any] = {
+        "status": "complete",
+        "d": equation.d,
+        "k": equation.k,
+        "rank": equation.k,
+        "points": len(t),
+        "point_sha256": array_sha256(t, x),
+        "basis_sha256": array_sha256(basis),
+        "calibration_labels": label_metadata,
+        "smallest_retained_eigenvalue": smallest_retained,
+        "largest_discarded_eigenvalue": largest_discarded,
+        "retained_to_discarded_ratio": (
+            smallest_retained
+            / max(largest_discarded, np.finfo(np.float64).tiny)
+        ),
+        "relative_projection_residual": relative_residual,
+        "rank_check_passed": True,
+        "source": "n=1 pathwise terminal-gradient labels",
+        "terminal_derivative_used": True,
+        "nonterminal_oracle_reference_used": False,
+    }
+    _atomic_npz(basis_path, basis=basis)
+    atomic_json(metadata_path, metadata)
+    return basis, metadata
+
+
 def predict_actor(
     model: ActorNet,
     t: np.ndarray,
@@ -317,7 +492,7 @@ def train_budget_level(
     }
     optimizer = torch.optim.AdamW(
         model.parameters(),
-        lr=ACTOR_LEARNING_RATE,
+        lr=level.learning_rate,
         weight_decay=ACTOR_WEIGHT_DECAY,
     )
     generator = torch.Generator(device=device).manual_seed(seed)
@@ -441,6 +616,7 @@ def train_budget_level(
         "d": equation.d,
         "k": equation.k,
         "seed": seed,
+        "initial_learning_rate": level.learning_rate,
         "parameter_count": count_parameters(model),
         "best_step": best_step,
         "steps_executed": step,
@@ -541,7 +717,9 @@ def checkpoint_payload(
     return {
         "state_dict": clone_state_dict(model),
         "architecture": {
+            "kind": "ambient_actor_with_label_derived_rank_k_output_projection",
             "d": model.d,
+            "k": int(model.label_basis.shape[1]),
             "width": ACTOR_WIDTH,
             "depth": ACTOR_DEPTH,
             "activation": "silu",
@@ -553,11 +731,8 @@ def checkpoint_payload(
 def load_converged_actor(path: Path, device: torch.device) -> tuple[ActorNet, dict[str, Any]]:
     payload = torch.load(path, map_location=device, weights_only=False)
     architecture = payload["architecture"]
-    model = ActorNet(
-        int(architecture["d"]),
-        width=int(architecture["width"]),
-        depth=int(architecture["depth"]),
-    ).to(device)
+    basis = payload["state_dict"]["label_basis"]
+    model = DenoisedActorNet(int(architecture["d"]), basis).to(device)
     model.load_state_dict(payload["state_dict"])
     model.eval()
     return model, payload["metadata"]

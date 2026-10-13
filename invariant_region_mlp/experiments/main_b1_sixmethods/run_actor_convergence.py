@@ -27,9 +27,11 @@ from .actor_convergence import (
     checkpoint_payload,
     convergence_decision,
     generate_label_ensemble,
+    learn_label_subspace,
     load_converged_actor,
     make_actor,
     predict_actor,
+    project_labels,
     train_budget_level,
 )
 from .actor_mlp import actor_linearization_identity, evaluate_actor_mlp
@@ -50,9 +52,10 @@ from .neural_common import count_parameters
 
 CONVERGENCE_DIR = RESULTS_DIR / "actor_convergence"
 CACHE_DIR = CONVERGENCE_DIR / "cache"
-CHECKPOINT_DIR = CONVERGENCE_DIR / "checkpoints"
-RAW_DIR = CONVERGENCE_DIR / "raw"
-PREDICTION_DIR = CONVERGENCE_DIR / "predictions"
+PROTOCOL_DIR = CONVERGENCE_DIR / "protocol_v3"
+CHECKPOINT_DIR = PROTOCOL_DIR / "checkpoints"
+RAW_DIR = PROTOCOL_DIR / "raw"
+PREDICTION_DIR = PROTOCOL_DIR / "predictions"
 
 
 def _atomic_torch_save(path: Path, payload: dict[str, Any]) -> None:
@@ -93,6 +96,7 @@ def _audit_data(
     equation: B1Equation,
     *,
     device: torch.device,
+    label_basis: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict[str, Any]]:
     seed = stable_seed("B1", "actor_convergence", equation.d, equation.k)
     audit_t, audit_x = training_points(
@@ -127,13 +131,27 @@ def _audit_data(
         device=device,
         cache_path=cell_cache / "audit_bank_b.npz",
     )
+    projected_a = project_labels(bank_a, label_basis)
+    projected_b = project_labels(bank_b, label_basis)
+    raw_disagreement = float(
+        np.sqrt(np.mean(np.sum((bank_a - bank_b) ** 2, axis=1)))
+    )
+    projected_disagreement = float(
+        np.sqrt(np.mean(np.sum((projected_a - projected_b) ** 2, axis=1)))
+    )
     metadata = {
         "point_sha256": array_sha256(audit_t, audit_x),
         "bank_a": metadata_a,
         "bank_b": metadata_b,
+        "label_basis_sha256": array_sha256(label_basis),
+        "raw_bank_disagreement_rmse": raw_disagreement,
+        "projected_bank_disagreement_rmse": projected_disagreement,
+        "projection_disagreement_reduction": (
+            1.0 - projected_disagreement / max(raw_disagreement, np.finfo(np.float64).tiny)
+        ),
         "nonterminal_oracle_reference_used": False,
     }
-    return audit_t, audit_x, bank_a, bank_b, metadata
+    return audit_t, audit_x, projected_a, projected_b, metadata
 
 
 def _level_data(
@@ -141,6 +159,7 @@ def _level_data(
     level_index: int,
     *,
     device: torch.device,
+    label_basis: np.ndarray,
 ) -> tuple[
     np.ndarray,
     np.ndarray,
@@ -151,49 +170,71 @@ def _level_data(
     dict[str, Any],
 ]:
     level = BUDGET_LEVELS[level_index]
+    source_name = level.reuse_labels_from or level.name
+    source_index = next(
+        index
+        for index, candidate in enumerate(BUDGET_LEVELS)
+        if candidate.name == source_name
+    )
+    source_level = BUDGET_LEVELS[source_index]
     seed = stable_seed("B1", "actor_convergence", equation.d, equation.k)
     train_t, train_x = training_points(
         equation.d,
         equation.k,
-        f"actor_convergence_{level.name}_train",
+        f"actor_convergence_{source_name}_train",
         seed,
-        level.training_points,
+        source_level.training_points,
     )
     valid_t, valid_x = training_points(
         equation.d,
         equation.k,
-        f"actor_convergence_{level.name}_valid",
+        f"actor_convergence_{source_name}_valid",
         seed,
-        level.validation_points,
+        source_level.validation_points,
     )
     cell_cache = CACHE_DIR / f"d{equation.d}_k{equation.k}"
     train_y, train_metadata = generate_label_ensemble(
         equation,
         train_t,
         train_x,
-        n=level.n,
-        M=level.M,
-        replicas=level.replicas,
-        repetition_offset=100_000 + 1000 * level_index,
-        seed_namespace=f"actor_convergence_{level.name}_train",
+        n=source_level.n,
+        M=source_level.M,
+        replicas=source_level.replicas,
+        repetition_offset=100_000 + 1000 * source_index,
+        seed_namespace=f"actor_convergence_{source_name}_train",
         device=device,
-        cache_path=cell_cache / f"{level.name}_train.npz",
+        cache_path=cell_cache / f"{source_name}_train.npz",
     )
     valid_y, valid_metadata = generate_label_ensemble(
         equation,
         valid_t,
         valid_x,
-        n=level.n,
-        M=level.M,
-        replicas=level.replicas,
-        repetition_offset=200_000 + 1000 * level_index,
-        seed_namespace=f"actor_convergence_{level.name}_valid",
+        n=source_level.n,
+        M=source_level.M,
+        replicas=source_level.replicas,
+        repetition_offset=200_000 + 1000 * source_index,
+        seed_namespace=f"actor_convergence_{source_name}_valid",
         device=device,
-        cache_path=cell_cache / f"{level.name}_valid.npz",
+        cache_path=cell_cache / f"{source_name}_valid.npz",
+    )
+    raw_train_y = train_y
+    raw_valid_y = valid_y
+    train_y = project_labels(raw_train_y, label_basis)
+    valid_y = project_labels(raw_valid_y, label_basis)
+    train_projection_rmse = float(
+        np.sqrt(np.mean(np.sum((raw_train_y - train_y) ** 2, axis=1)))
+    )
+    valid_projection_rmse = float(
+        np.sqrt(np.mean(np.sum((raw_valid_y - valid_y) ** 2, axis=1)))
     )
     metadata = {
         "train": train_metadata,
         "validation": valid_metadata,
+        "label_source_level": source_name,
+        "labels_reused": level.reuse_labels_from is not None,
+        "label_basis_sha256": array_sha256(label_basis),
+        "train_removed_orthogonal_noise_rmse": train_projection_rmse,
+        "validation_removed_orthogonal_noise_rmse": valid_projection_rmse,
         "nonterminal_oracle_reference_used": False,
     }
     return train_t, train_x, train_y, valid_t, valid_x, valid_y, metadata
@@ -317,15 +358,20 @@ def run_cell(d: int, k: int, *, force: bool = False) -> dict[str, Any]:
         raise RuntimeError("actor convergence study requires an allocated GPU")
     torch.set_float32_matmul_precision("high")
     cell_started = time.perf_counter()
+    label_basis, subspace_metadata = learn_label_subspace(
+        equation,
+        device=device,
+        cache_dir=CACHE_DIR / f"d{equation.d}_k{equation.k}",
+    )
     audit_t, audit_x, audit_a, audit_b, audit_metadata = _audit_data(
-        equation, device=device
+        equation, device=device, label_basis=label_basis
     )
 
     initialization_seed = stable_seed(
         "B1", "actor_convergence_model", equation.d, equation.k
     )
     seed_everything(initialization_seed)
-    model = make_actor(equation, device)
+    model = make_actor(equation, device, label_basis)
     records: list[dict[str, Any]] = []
     previous_prediction: np.ndarray | None = None
     selected_checkpoint: Path | None = None
@@ -350,7 +396,12 @@ def run_cell(d: int, k: int, *, force: bool = False) -> dict[str, Any]:
                 valid_x,
                 valid_y,
                 label_metadata,
-            ) = _level_data(equation, level_index, device=device)
+            ) = _level_data(
+                equation,
+                level_index,
+                device=device,
+                label_basis=label_basis,
+            )
             training_metadata = train_budget_level(
                 model,
                 equation,
@@ -382,6 +433,8 @@ def run_cell(d: int, k: int, *, force: bool = False) -> dict[str, Any]:
                     "validation_points": level.validation_points,
                     "max_steps": level.max_steps,
                     "minimum_steps": level.minimum_steps,
+                    "learning_rate": level.learning_rate,
+                    "reuse_labels_from": level.reuse_labels_from,
                 },
                 "labels": label_metadata,
                 "training": training_metadata,
@@ -410,6 +463,7 @@ def run_cell(d: int, k: int, *, force: bool = False) -> dict[str, Any]:
             "d": d,
             "k": k,
             "protocol": budget_protocol(),
+            "label_subspace": subspace_metadata,
             "audit": audit_metadata,
             "levels": records,
             "decision": decision,
@@ -452,6 +506,8 @@ def run_cell(d: int, k: int, *, force: bool = False) -> dict[str, Any]:
             "width": ACTOR_WIDTH,
             "depth": ACTOR_DEPTH,
             "activation": "silu",
+            "label_basis_sha256": array_sha256(label_basis),
+            "output_projection_rank": k,
         },
         "nonterminal_oracle_reference_used_for_training": False,
         "nonterminal_oracle_reference_used_for_selection": False,
@@ -482,6 +538,7 @@ def run_cell(d: int, k: int, *, force: bool = False) -> dict[str, Any]:
         "selected_level": selected_level,
         "budget_convergence": decision,
         "protocol": budget_protocol(),
+        "label_subspace": subspace_metadata,
         "audit": audit_metadata,
         "levels": records,
         "postselection_exact_diagnostic": exact_diagnostic,
@@ -546,14 +603,14 @@ def main() -> None:
         results = [run_cell(d, k, force=args.force) for d, k in cells]
         statuses = {f"d{item['d']}_k{item['k']}": item["status"] for item in results}
         atomic_json(
-            CONVERGENCE_DIR / ("pilot_status.json" if args.pilot else "run_status.json"),
+            PROTOCOL_DIR / ("pilot_status.json" if args.pilot else "run_status.json"),
             {"schema_version": 1, "cells": statuses},
         )
         print(json.dumps({"cells": statuses}, indent=2), flush=True)
     except Exception as error:
-        CONVERGENCE_DIR.mkdir(parents=True, exist_ok=True)
+        PROTOCOL_DIR.mkdir(parents=True, exist_ok=True)
         atomic_json(
-            CONVERGENCE_DIR / "failure.json",
+            PROTOCOL_DIR / "failure.json",
             {
                 "status": "failed",
                 "error": repr(error),
