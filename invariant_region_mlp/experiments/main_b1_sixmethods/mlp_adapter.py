@@ -38,6 +38,7 @@ def evaluate_mlp(
     repetition: int,
     device: torch.device,
     chunk_size: int | None = None,
+    seed_namespace: str | None = None,
 ) -> tuple[np.ndarray, dict[str, Any]]:
     """Evaluate one established MLP method with independent chunk seeds."""
 
@@ -62,7 +63,15 @@ def evaluate_mlp(
     for chunk_index, start in enumerate(range(0, len(times), chunk)):
         stop = min(start + chunk, len(times))
         seed = stable_seed(
-            "B1", "mlp", method, equation.d, equation.k, n, M, repetition, chunk_index
+            "B1",
+            "mlp",
+            method if seed_namespace is None else seed_namespace,
+            equation.d,
+            equation.k,
+            n,
+            M,
+            repetition,
+            chunk_index,
         )
         bundle = np.random.SeedSequence(seed)
         primary, auxiliary = bundle.spawn(2)
@@ -95,6 +104,7 @@ def evaluate_mlp(
         "n": n,
         "M": M,
         "repetition": repetition,
+        "seed_namespace": method if seed_namespace is None else seed_namespace,
         "dtype": "float64",
         **totals,
         "gaussian_coordinate_work": equation.d
