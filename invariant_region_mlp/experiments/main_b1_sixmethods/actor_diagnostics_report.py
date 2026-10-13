@@ -180,6 +180,7 @@ def _quality_figure(comparisons: list[dict[str, Any]]) -> None:
     axis.set_ylabel("learned / oracle value RMSE")
     axis.grid(True, which="both", alpha=0.25)
     axis.legend(frameon=False)
+    axis.margins(x=0.08, y=0.08)
     fig.tight_layout()
     for suffix in ("png", "pdf"):
         fig.savefig(FIGURE_DIR / f"actor_quality_vs_oracle_gap.{suffix}", dpi=220)
@@ -370,6 +371,56 @@ def aggregate_actor_diagnostics() -> dict[str, Any]:
             float(row["training_seconds"]) + float(row["label_generation_seconds"])
             for row in actor_training_rows
         ),
+        "actor_label_generation_seconds": sum(
+            float(row["label_generation_seconds"]) for row in actor_training_rows
+        ),
+        "actor_network_training_seconds": sum(
+            float(row["training_seconds"]) for row in actor_training_rows
+        ),
+        "actor_training_seconds_per_cell_median": float(
+            np.median([float(row["training_seconds"]) for row in actor_training_rows])
+        ),
+        "actor_training_seconds_per_cell_min": min(
+            float(row["training_seconds"]) for row in actor_training_rows
+        ),
+        "actor_training_seconds_per_cell_max": max(
+            float(row["training_seconds"]) for row in actor_training_rows
+        ),
+        "actor_steps_executed_median": float(
+            np.median([float(row["steps_executed"]) for row in actor_training_rows])
+        ),
+        "actor_steps_executed_min": min(
+            int(row["steps_executed"]) for row in actor_training_rows
+        ),
+        "actor_steps_executed_max": max(
+            int(row["steps_executed"]) for row in actor_training_rows
+        ),
+        "actor_best_step_median": float(
+            np.median([float(row["best_step"]) for row in actor_training_rows])
+        ),
+        "actor_gradient_rmse_median": float(
+            np.median([float(row["actor_gradient_rmse"]) for row in actor_training_rows])
+        ),
+        "actor_relative_gradient_error_median": float(
+            np.median(
+                [
+                    float(row["actor_relative_gradient_error"])
+                    for row in actor_training_rows
+                ]
+            )
+        ),
+        "actor_relative_gradient_error_max": max(
+            float(row["actor_relative_gradient_error"])
+            for row in actor_training_rows
+        ),
+        "training_label_rmse_against_exact_median": float(
+            np.median(
+                [
+                    float(row["training_label_rmse_against_exact"])
+                    for row in actor_training_rows
+                ]
+            )
+        ),
         "learned_actor_inference_seconds": sum(
             float(row["total_inference_seconds"])
             for row in results
@@ -389,6 +440,15 @@ def aggregate_actor_diagnostics() -> dict[str, Any]:
         "paired_seed_namespace": "B1|actor_mlp",
         "oracle_is_diagnostic_only": True,
     }
+    accounting_path = DIAGNOSTIC_RESULTS_DIR / "execution_accounting.json"
+    if accounting_path.is_file():
+        accounting = json.loads(accounting_path.read_text())
+        summary["scheduler_actual_gpu_seconds"] = int(
+            accounting["total_actual_gpu_seconds"]
+        )
+        summary["scheduler_actual_gpu_hours"] = float(
+            accounting["total_actual_gpu_hours"]
+        )
     atomic_json(DIAGNOSTIC_RESULTS_DIR / "summary.json", summary)
     _accuracy_figure(results)
     _quality_figure(comparisons)
@@ -485,6 +545,28 @@ def aggregate_actor_diagnostics() -> dict[str, Any]:
         "`actor_diagnostic_comparison.csv` also reports the implied mean tangent-driver gap "
         "`0.5 * actor_gradient_rmse^2` at the exact gradient.",
         "",
+        "## Training-budget diagnosis",
+        "",
+        f"Across all 15 actors, noisy-label generation took only "
+        f"{summary['actor_label_generation_seconds']:.3f} seconds and network training took "
+        f"{summary['actor_network_training_seconds']:.3f} seconds. Per actor, network training "
+        f"had median {summary['actor_training_seconds_per_cell_median']:.3f} seconds "
+        f"(range {summary['actor_training_seconds_per_cell_min']:.3f}--"
+        f"{summary['actor_training_seconds_per_cell_max']:.3f}) and median "
+        f"{summary['actor_steps_executed_median']:.0f} executed optimizer steps "
+        f"(range {summary['actor_steps_executed_min']}--"
+        f"{summary['actor_steps_executed_max']}); the median selected checkpoint was step "
+        f"{summary['actor_best_step_median']:.0f}.",
+        "",
+        f"The resulting held-out actor gradient RMSE had median "
+        f"{summary['actor_gradient_rmse_median']:.3f}; relative gradient error had median "
+        f"{summary['actor_relative_gradient_error_median']:.3f} and maximum "
+        f"{summary['actor_relative_gradient_error_max']:.3f}. The noisy training labels "
+        f"themselves had median RMSE {summary['training_label_rmse_against_exact_median']:.3f} "
+        "against the post-training exact diagnostic. Together with the oracle gap, these "
+        "measurements show that the current actor data/training allocation is too small for "
+        "the accuracy demanded by the recursive solver.",
+        "",
         "## Measured cost",
         "",
         f"The existing 15 learned actors used {summary['learned_actor_training_seconds']:.3f} "
@@ -494,6 +576,11 @@ def aggregate_actor_diagnostics() -> dict[str, Any]:
         f"seconds; Pathwise + Baseline without Actor used "
         f"{summary['no_actor_inference_seconds']:.3f} seconds. Oracle cost is descriptive only "
         "because exact-gradient access is unavailable in a practical solver.",
+        "",
+        f"The complete diagnostic allocation, including 18 GPU-side correctness tests, report "
+        f"generation, and scheduler overhead, used "
+        f"{summary.get('scheduler_actual_gpu_seconds', 0)} GH200 seconds "
+        f"({summary.get('scheduler_actual_gpu_hours', 0.0):.4f} GH200 hours).",
         "",
         "## Artifacts",
         "",
