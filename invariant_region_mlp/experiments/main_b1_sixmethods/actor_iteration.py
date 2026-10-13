@@ -35,6 +35,28 @@ def torch_terminal_z(equation: B1Equation, x: torch.Tensor) -> torch.Tensor:
     return -equation.sigma * (probabilities @ directions)
 
 
+def torch_exact_z(
+    equation: B1Equation, t: torch.Tensor, x: torch.Tensor
+) -> torch.Tensor:
+    """Evaluate the analytic reference gradient for post-training diagnostics."""
+
+    directions = torch.as_tensor(equation.A, dtype=x.dtype, device=x.device)
+    log_weights = torch.as_tensor(equation.logc, dtype=x.dtype, device=x.device)
+    squared_norms = torch.as_tensor(
+        getattr(equation, "n2", np.sum(np.asarray(equation.A) ** 2, axis=1)),
+        dtype=x.dtype,
+        device=x.device,
+    )
+    time = t.to(dtype=x.dtype, device=x.device)
+    logits = (
+        x @ directions.T
+        + log_weights
+        + (equation.T - time)[..., None] * squared_norms
+    )
+    probabilities = torch.softmax(logits, dim=-1)
+    return -equation.sigma * (probabilities @ directions)
+
+
 @contextmanager
 def frozen_actor(actor: nn.Module) -> Iterator[None]:
     """Freeze parameters while preserving derivatives with respect to states."""
@@ -128,14 +150,16 @@ def coarsen_normals(normals: torch.Tensor, time_steps: int) -> torch.Tensor:
     return reshaped.sum(dim=3) / math.sqrt(block)
 
 
-def policy_payoffs_with_martingale_from_normals(
+def _policy_payoffs_with_diagnostics_from_normals(
     equation: B1Equation,
     actor: ActorNet,
     t: torch.Tensor,
     x: torch.Tensor,
     normals: torch.Tensor,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Return raw, martingale-corrected, and stochastic-integral payoffs."""
+    *,
+    compute_analytic_policy_gap: bool,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor | None]:
+    """Return policy payoffs and optional evaluation-only analytic gap."""
 
     if normals.ndim != 4:
         raise ValueError("normals must have shape (batch, paths, steps, d)")
@@ -159,6 +183,11 @@ def policy_payoffs_with_martingale_from_normals(
         state = initial[:, None, :].expand(batch, paths, equation.d)
         running_cost = torch.zeros((batch, paths), dtype=dtype, device=device)
         martingale = torch.zeros((batch, paths), dtype=dtype, device=device)
+        policy_gap = (
+            torch.zeros((batch, paths), dtype=dtype, device=device)
+            if compute_analytic_policy_gap
+            else None
+        )
         for step in range(steps):
             step_time = times + step * dt
             flat_time = step_time[:, None].expand(batch, paths).reshape(-1)
@@ -173,6 +202,15 @@ def policy_payoffs_with_martingale_from_normals(
             martingale = martingale + torch.sum(
                 policy * brownian_increment, dim=-1
             )
+            if policy_gap is not None:
+                exact_policy = torch_exact_z(
+                    equation, step_time[:, None], state
+                )
+                policy_gap = policy_gap + (
+                    0.5
+                    * torch.sum((policy - exact_policy).square(), dim=-1)
+                    * dt[:, None]
+                )
             state = (
                 state
                 - equation.sigma * policy * dt[:, None, None]
@@ -182,10 +220,59 @@ def policy_payoffs_with_martingale_from_normals(
             )
         raw = torch_terminal(equation, state) + running_cost
         corrected = raw - martingale
-    return raw.detach(), corrected.detach(), martingale.detach()
+    return (
+        raw.detach(),
+        corrected.detach(),
+        martingale.detach(),
+        None if policy_gap is None else policy_gap.detach(),
+    )
 
 
-def evaluate_policy_mc_with_martingale_cv(
+def policy_payoffs_with_martingale_from_normals(
+    equation: B1Equation,
+    actor: ActorNet,
+    t: torch.Tensor,
+    x: torch.Tensor,
+    normals: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Return raw, martingale-corrected, and stochastic-integral payoffs."""
+
+    raw, corrected, martingale, _ = _policy_payoffs_with_diagnostics_from_normals(
+        equation,
+        actor,
+        t,
+        x,
+        normals,
+        compute_analytic_policy_gap=False,
+    )
+    return raw, corrected, martingale
+
+
+def policy_payoffs_with_analytic_gap_from_normals(
+    equation: B1Equation,
+    actor: ActorNet,
+    t: torch.Tensor,
+    x: torch.Tensor,
+    normals: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Return raw/CV payoffs and the exact-gradient policy-gap integral."""
+
+    raw, corrected, martingale, policy_gap = (
+        _policy_payoffs_with_diagnostics_from_normals(
+            equation,
+            actor,
+            t,
+            x,
+            normals,
+            compute_analytic_policy_gap=True,
+        )
+    )
+    if policy_gap is None:
+        raise RuntimeError("analytic policy gap was not computed")
+    return raw, corrected, martingale, policy_gap
+
+
+def _evaluate_policy_mc_with_martingale_cv(
     equation: B1Equation,
     actor: ActorNet,
     t: np.ndarray,
@@ -200,7 +287,8 @@ def evaluate_policy_mc_with_martingale_cv(
     path_chunk_size: int,
     coarse_time_steps: int = 16,
     maximum_time_steps: int = 64,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict[str, Any]]:
+    compute_analytic_policy_gap: bool,
+) -> dict[str, Any]:
     """Evaluate paired raw/CV estimators and antithetic-pair variances.
 
     The returned variances estimate the variance of each finite-path sample
@@ -225,6 +313,16 @@ def evaluate_policy_mc_with_martingale_cv(
     corrected_values = np.empty(len(times), dtype=np.float64)
     raw_estimator_variances = np.empty(len(times), dtype=np.float64)
     corrected_estimator_variances = np.empty(len(times), dtype=np.float64)
+    policy_gap_values = (
+        np.empty(len(times), dtype=np.float64)
+        if compute_analytic_policy_gap
+        else None
+    )
+    policy_gap_estimator_variances = (
+        np.empty(len(times), dtype=np.float64)
+        if compute_analytic_policy_gap
+        else None
+    )
     if device.type == "cuda":
         torch.cuda.synchronize(device)
         torch.cuda.reset_peak_memory_stats(device)
@@ -252,6 +350,21 @@ def evaluate_policy_mc_with_martingale_cv(
         )
         corrected_pair_square_sum = torch.zeros(
             shape, dtype=torch.float64, device=device
+        )
+        policy_gap_sum = (
+            torch.zeros(shape, dtype=torch.float64, device=device)
+            if compute_analytic_policy_gap
+            else None
+        )
+        policy_gap_pair_sum = (
+            torch.zeros(shape, dtype=torch.float64, device=device)
+            if compute_analytic_policy_gap
+            else None
+        )
+        policy_gap_pair_square_sum = (
+            torch.zeros(shape, dtype=torch.float64, device=device)
+            if compute_analytic_policy_gap
+            else None
         )
         coarse_seed = stable_seed(
             "B1",
@@ -292,8 +405,15 @@ def evaluate_policy_mc_with_martingale_cv(
                     coarse, refinement, generator=bridge_generator
                 )
                 normals = coarsen_normals(fine, time_steps)
-            raw, corrected, _ = policy_payoffs_with_martingale_from_normals(
-                equation, actor, batch_t, batch_x, normals
+            raw, corrected, _, policy_gap = (
+                _policy_payoffs_with_diagnostics_from_normals(
+                    equation,
+                    actor,
+                    batch_t,
+                    batch_x,
+                    normals,
+                    compute_analytic_policy_gap=compute_analytic_policy_gap,
+                )
             )
             raw_sum += raw.mean(dim=1).to(torch.float64) * path_chunk_size
             corrected_sum += (
@@ -310,6 +430,22 @@ def evaluate_policy_mc_with_martingale_cv(
             corrected_pair_sum += corrected_pairs.sum(dim=1)
             raw_pair_square_sum += raw_pairs.square().sum(dim=1)
             corrected_pair_square_sum += corrected_pairs.square().sum(dim=1)
+            if policy_gap is not None:
+                if (
+                    policy_gap_sum is None
+                    or policy_gap_pair_sum is None
+                    or policy_gap_pair_square_sum is None
+                ):
+                    raise RuntimeError("policy-gap accumulators were not allocated")
+                policy_gap_sum += (
+                    policy_gap.mean(dim=1).to(torch.float64) * path_chunk_size
+                )
+                policy_gap_pairs = 0.5 * (
+                    policy_gap[:, :half] + policy_gap[:, half:]
+                )
+                policy_gap_pairs = policy_gap_pairs.to(torch.float64)
+                policy_gap_pair_sum += policy_gap_pairs.sum(dim=1)
+                policy_gap_pair_square_sum += policy_gap_pairs.square().sum(dim=1)
 
         raw_mean = raw_sum / paths
         corrected_mean = corrected_sum / paths
@@ -328,6 +464,25 @@ def evaluate_policy_mc_with_martingale_cv(
         corrected_estimator_variances[start:stop] = (
             torch.clamp(corrected_pair_variance, min=0.0) / pair_count
         ).cpu().numpy()
+        if compute_analytic_policy_gap:
+            if (
+                policy_gap_values is None
+                or policy_gap_estimator_variances is None
+                or policy_gap_sum is None
+                or policy_gap_pair_sum is None
+                or policy_gap_pair_square_sum is None
+            ):
+                raise RuntimeError("policy-gap outputs were not allocated")
+            policy_gap_pair_variance = (
+                policy_gap_pair_square_sum
+                - policy_gap_pair_sum.square() / pair_count
+            ) / (pair_count - 1)
+            policy_gap_values[start:stop] = (
+                policy_gap_sum / paths
+            ).cpu().numpy()
+            policy_gap_estimator_variances[start:stop] = (
+                torch.clamp(policy_gap_pair_variance, min=0.0) / pair_count
+            ).cpu().numpy()
 
     if device.type == "cuda":
         torch.cuda.synchronize(device)
@@ -353,16 +508,134 @@ def evaluate_policy_mc_with_martingale_cv(
         "peak_gpu_bytes": peak_gpu_bytes,
         "path_steps": len(times) * paths * time_steps,
         "actor_parameters_frozen": True,
+        "analytic_policy_gap_computed": compute_analytic_policy_gap,
+        "analytic_reference_use": (
+            "post-training diagnostic only"
+            if compute_analytic_policy_gap
+            else "none"
+        ),
     }
-    arrays = (
+    arrays = [
         raw_values,
         corrected_values,
         raw_estimator_variances,
         corrected_estimator_variances,
-    )
+    ]
+    if policy_gap_values is not None:
+        arrays.append(policy_gap_values)
+    if policy_gap_estimator_variances is not None:
+        arrays.append(policy_gap_estimator_variances)
     if not all(np.all(np.isfinite(array)) for array in arrays):
         raise FloatingPointError("nonfinite martingale-CV policy result")
-    return (*arrays, metadata)
+    return {
+        "raw": raw_values,
+        "corrected": corrected_values,
+        "raw_estimator_variance": raw_estimator_variances,
+        "corrected_estimator_variance": corrected_estimator_variances,
+        "policy_gap": policy_gap_values,
+        "policy_gap_estimator_variance": policy_gap_estimator_variances,
+        "metadata": metadata,
+    }
+
+
+def evaluate_policy_mc_with_martingale_cv(
+    equation: B1Equation,
+    actor: ActorNet,
+    t: np.ndarray,
+    x: np.ndarray,
+    *,
+    time_steps: int,
+    paths: int,
+    repetition: int,
+    seed_namespace: str,
+    device: torch.device,
+    parent_batch_size: int,
+    path_chunk_size: int,
+    coarse_time_steps: int = 16,
+    maximum_time_steps: int = 64,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict[str, Any]]:
+    """Evaluate paired raw/CV estimators and antithetic-pair variances."""
+
+    result = _evaluate_policy_mc_with_martingale_cv(
+        equation,
+        actor,
+        t,
+        x,
+        time_steps=time_steps,
+        paths=paths,
+        repetition=repetition,
+        seed_namespace=seed_namespace,
+        device=device,
+        parent_batch_size=parent_batch_size,
+        path_chunk_size=path_chunk_size,
+        coarse_time_steps=coarse_time_steps,
+        maximum_time_steps=maximum_time_steps,
+        compute_analytic_policy_gap=False,
+    )
+    return (
+        result["raw"],
+        result["corrected"],
+        result["raw_estimator_variance"],
+        result["corrected_estimator_variance"],
+        result["metadata"],
+    )
+
+
+def evaluate_policy_mc_with_analytic_gap(
+    equation: B1Equation,
+    actor: ActorNet,
+    t: np.ndarray,
+    x: np.ndarray,
+    *,
+    time_steps: int,
+    paths: int,
+    repetition: int,
+    seed_namespace: str,
+    device: torch.device,
+    parent_batch_size: int,
+    path_chunk_size: int,
+    coarse_time_steps: int = 16,
+    maximum_time_steps: int = 64,
+) -> tuple[
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    dict[str, Any],
+]:
+    """Evaluate raw/CV policy values and the exact-gradient policy gap."""
+
+    result = _evaluate_policy_mc_with_martingale_cv(
+        equation,
+        actor,
+        t,
+        x,
+        time_steps=time_steps,
+        paths=paths,
+        repetition=repetition,
+        seed_namespace=seed_namespace,
+        device=device,
+        parent_batch_size=parent_batch_size,
+        path_chunk_size=path_chunk_size,
+        coarse_time_steps=coarse_time_steps,
+        maximum_time_steps=maximum_time_steps,
+        compute_analytic_policy_gap=True,
+    )
+    policy_gap = result["policy_gap"]
+    policy_gap_variance = result["policy_gap_estimator_variance"]
+    if policy_gap is None or policy_gap_variance is None:
+        raise RuntimeError("analytic policy-gap outputs are missing")
+    return (
+        result["raw"],
+        result["corrected"],
+        policy_gap,
+        result["raw_estimator_variance"],
+        result["corrected_estimator_variance"],
+        policy_gap_variance,
+        result["metadata"],
+    )
 
 
 def policy_value_and_z_from_normals(
