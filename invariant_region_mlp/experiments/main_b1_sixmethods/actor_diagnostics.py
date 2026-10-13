@@ -163,4 +163,3 @@ def evaluate_actor_diagnostic(
         }
     )
     return output, total_stats
-

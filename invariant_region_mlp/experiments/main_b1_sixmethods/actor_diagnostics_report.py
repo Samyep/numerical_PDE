@@ -508,4 +508,3 @@ def aggregate_actor_diagnostics() -> dict[str, Any]:
     summary["report"] = str(REPORT_PATH)
     summary["artifact_count"] = manifest["artifact_count"]
     return summary
-

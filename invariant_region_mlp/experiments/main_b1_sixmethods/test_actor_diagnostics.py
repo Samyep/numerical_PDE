@@ -84,4 +84,3 @@ def test_no_actor_diagnostic_is_exact_path_base_with_paired_seed() -> None:
     np.testing.assert_array_equal(observed, expected)
     assert cost["driver"] == "original quadratic driver"
     assert cost["actor_calls"] == 0
-
