@@ -94,6 +94,18 @@ BUDGET_LEVELS = (
         2.5e-5,
         "level_5",
     ),
+    BudgetLevel(
+        "level_8_confirmation",
+        3,
+        20,
+        10,
+        32768,
+        8192,
+        5000,
+        1500,
+        5.0e-6,
+        "level_5",
+    ),
 )
 
 
