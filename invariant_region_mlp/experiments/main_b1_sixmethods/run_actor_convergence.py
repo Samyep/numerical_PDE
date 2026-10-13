@@ -21,6 +21,7 @@ from .actor_convergence import (
     AUDIT_N,
     AUDIT_POINTS,
     BUDGET_LEVELS,
+    PROTOCOL_VERSION,
     audit_record,
     budget_protocol,
     checkpoint_payload,
@@ -295,7 +296,13 @@ def run_cell(d: int, k: int, *, force: bool = False) -> dict[str, Any]:
     paths = _cell_paths(d, k)
     if paths["result"].is_file() and not force:
         existing = json.loads(paths["result"].read_text())
-        if existing.get("status") == "complete":
+        existing_protocol = existing.get("protocol", {})
+        refreshed_decision = convergence_decision(existing.get("levels", []))
+        if (
+            existing.get("status") == "complete"
+            and existing_protocol.get("protocol_version") == PROTOCOL_VERSION
+            and refreshed_decision["converged"]
+        ):
             print(json.dumps({"status": "skipped_complete", "d": d, "k": k}), flush=True)
             return existing
 

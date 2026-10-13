@@ -37,7 +37,7 @@ AUDIT_BANK_REPLICAS = 4
 
 AUDIT_STABILITY_TOLERANCE = 0.05
 PREDICTION_STABILITY_TOLERANCE = 0.05
-NOISE_FLOOR_FACTOR = 1.10
+PROTOCOL_VERSION = 2
 
 
 @dataclass(frozen=True)
@@ -63,6 +63,7 @@ BUDGET_LEVELS = (
 
 def budget_protocol() -> dict[str, Any]:
     return {
+        "protocol_version": PROTOCOL_VERSION,
         "architecture": {
             "hidden_width": ACTOR_WIDTH,
             "hidden_layers": ACTOR_DEPTH,
@@ -93,7 +94,7 @@ def budget_protocol() -> dict[str, Any]:
             "consecutive_stable_transitions": 2,
             "audit_excess_rmse_relative_change_tolerance": AUDIT_STABILITY_TOLERANCE,
             "prediction_relative_change_tolerance": PREDICTION_STABILITY_TOLERANCE,
-            "noise_floor_factor": NOISE_FLOOR_FACTOR,
+            "noise_floor_is_diagnostic_only": True,
         },
         "levels": [asdict(level) for level in BUDGET_LEVELS],
         "nonterminal_oracle_reference_used_for_training": False,
@@ -503,18 +504,6 @@ def convergence_decision(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
             "reason": "minimum_budget_levels_not_reached",
             "stable_transitions": 0,
         }
-    latest = items[-1]
-    if (
-        bool(latest["optimizer_converged"])
-        and float(latest["audit_target_rmse"])
-        <= NOISE_FLOOR_FACTOR * float(latest["audit_consensus_noise_floor_rmse"])
-    ):
-        return {
-            "converged": True,
-            "reason": "stochastic_audit_noise_floor_reached",
-            "stable_transitions": 0,
-        }
-
     stable: list[bool] = []
     changes: list[float] = []
     for previous, current in zip(items[:-1], items[1:], strict=True):

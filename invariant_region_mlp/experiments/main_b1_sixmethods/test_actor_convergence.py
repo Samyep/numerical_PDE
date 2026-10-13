@@ -83,3 +83,30 @@ def test_convergence_requires_two_label_only_stable_transitions() -> None:
     assert decision["converged"] is True
     assert decision["reason"] == "two_consecutive_budget_plateaus"
 
+
+def test_noisy_audit_floor_cannot_bypass_prediction_stability() -> None:
+    records = [
+        {
+            "optimizer_converged": True,
+            "audit_target_rmse": 1.0,
+            "audit_consensus_noise_floor_rmse": 1.0,
+            "audit_noise_corrected_rmse": 0.0,
+            "prediction_relative_change": None,
+        },
+        {
+            "optimizer_converged": True,
+            "audit_target_rmse": 1.0,
+            "audit_consensus_noise_floor_rmse": 1.0,
+            "audit_noise_corrected_rmse": 0.0,
+            "prediction_relative_change": 1.0,
+        },
+        {
+            "optimizer_converged": True,
+            "audit_target_rmse": 1.0,
+            "audit_consensus_noise_floor_rmse": 1.0,
+            "audit_noise_corrected_rmse": 0.0,
+            "prediction_relative_change": 1.0,
+        },
+    ]
+    assert convergence_decision(records)["converged"] is False
+
