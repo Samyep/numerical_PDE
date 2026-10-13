@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "jobs": [
+    {
+      "job_id": 3374748,
+      "job_name": "b1_actor_iter_pilot",
+      "cells": [[100, 10]],
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "node": "gh122",
+      "gpus": 1,
+      "cpus": 8,
+      "memory": "128G",
+      "elapsed": "00:02:38",
+      "elapsed_seconds": 158,
+      "workload_elapsed_seconds": 106,
+      "workload_max_rss": "1705088K",
+      "source_commit": "3ecaf2d4b01651dc07011003d18c5af8c91d1a00"
+    },
+    {
+      "job_id": 3374780,
+      "job_name": "b1_actor_iter_expand",
+      "cells": [[400, 40], [400, 1]],
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "node": "gh096",
+      "gpus": 1,
+      "cpus": 8,
+      "memory": "128G",
+      "elapsed": "00:03:22",
+      "elapsed_seconds": 202,
+      "workload_steps": [
+        {"cell": [400, 40], "elapsed_seconds": 118, "max_rss": "2301696K"},
+        {"cell": [400, 1], "elapsed_seconds": 75, "max_rss": "2345728K"}
+      ],
+      "source_commit": "3b7da41742e6bb8465b9c315a8b36a424b8ac8e5"
+    }
+  ],
+  "total_gpu_seconds": 360,
+  "total_gpu_hours": 0.1,
+  "failed_runs": 0,
+  "nan_failures": 0,
+  "memory_failures": 0
+}

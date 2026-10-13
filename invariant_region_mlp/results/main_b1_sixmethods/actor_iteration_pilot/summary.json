@@ -1,0 +1,171 @@
+{
+  "analytic_reference_used_for_checkpoint_selection": false,
+  "analytic_reference_used_for_stopping": false,
+  "analytic_reference_used_for_training": false,
+  "cells": [
+    {
+      "converged_actor_gradient_rmse": 0.22761376954375556,
+      "converged_actor_mlp_value_rmse": 0.07110467393211647,
+      "d": 100,
+      "k": 10,
+      "q0_actor_gradient_rmse": 0.6485119353689456,
+      "selected_actor_gradient_rmse": 0.3036929499496725,
+      "selected_actor_mlp_value_rmse": 0.06705670073809136,
+      "selected_direct_policy_value_rmse": 0.056727340893425515,
+      "selected_iteration": 3,
+      "stopping_reason": "two_consecutive_value_plateaus"
+    },
+    {
+      "converged_actor_gradient_rmse": 0.5261990803220853,
+      "converged_actor_mlp_value_rmse": 0.08087294308704639,
+      "d": 400,
+      "k": 40,
+      "q0_actor_gradient_rmse": 0.9276530595204865,
+      "selected_actor_gradient_rmse": 0.8767416471446564,
+      "selected_actor_mlp_value_rmse": 0.14925075097603366,
+      "selected_direct_policy_value_rmse": 0.1514109524269556,
+      "selected_iteration": 3,
+      "stopping_reason": "two_consecutive_value_plateaus"
+    },
+    {
+      "converged_actor_gradient_rmse": 1.049809539423232,
+      "converged_actor_mlp_value_rmse": 0.17862398591555345,
+      "d": 400,
+      "k": 1,
+      "q0_actor_gradient_rmse": 0.964499537134513,
+      "selected_actor_gradient_rmse": 0.5031608370147366,
+      "selected_actor_mlp_value_rmse": 0.16209313843072953,
+      "selected_direct_policy_value_rmse": 0.05258468284406137,
+      "selected_iteration": 2,
+      "stopping_reason": "two_consecutive_value_plateaus"
+    }
+  ],
+  "phase_gpu_seconds": {
+    "actor_mlp_inference_seconds": 33.38586686342023,
+    "actor_training_seconds": 87.0273656740319,
+    "direct_policy_inference_seconds": 36.965556524228305,
+    "label_generation_seconds": 97.36228301771916,
+    "value_validation_seconds": 10.02103383350186
+  },
+  "program_elapsed_seconds": 282.5422641313635,
+  "scheduler_accounting": {
+    "failed_runs": 0,
+    "jobs": [
+      {
+        "cells": [
+          [
+            100,
+            10
+          ]
+        ],
+        "cpus": 8,
+        "elapsed": "00:02:38",
+        "elapsed_seconds": 158,
+        "exit_code": "0:0",
+        "gpus": 1,
+        "job_id": 3374748,
+        "job_name": "b1_actor_iter_pilot",
+        "memory": "128G",
+        "node": "gh122",
+        "source_commit": "3ecaf2d4b01651dc07011003d18c5af8c91d1a00",
+        "state": "COMPLETED",
+        "workload_elapsed_seconds": 106,
+        "workload_max_rss": "1705088K"
+      },
+      {
+        "cells": [
+          [
+            400,
+            40
+          ],
+          [
+            400,
+            1
+          ]
+        ],
+        "cpus": 8,
+        "elapsed": "00:03:22",
+        "elapsed_seconds": 202,
+        "exit_code": "0:0",
+        "gpus": 1,
+        "job_id": 3374780,
+        "job_name": "b1_actor_iter_expand",
+        "memory": "128G",
+        "node": "gh096",
+        "source_commit": "3b7da41742e6bb8465b9c315a8b36a424b8ac8e5",
+        "state": "COMPLETED",
+        "workload_steps": [
+          {
+            "cell": [
+              400,
+              40
+            ],
+            "elapsed_seconds": 118,
+            "max_rss": "2301696K"
+          },
+          {
+            "cell": [
+              400,
+              1
+            ],
+            "elapsed_seconds": 75,
+            "max_rss": "2345728K"
+          }
+        ]
+      }
+    ],
+    "memory_failures": 0,
+    "nan_failures": 0,
+    "schema_version": 1,
+    "total_gpu_hours": 0.1,
+    "total_gpu_seconds": 360
+  },
+  "schema_version": 1,
+  "selected_actor_gradient_improves_over_q0_cells": 3,
+  "selected_actor_gradient_wins_over_converged_actor_cells": 1,
+  "selected_actor_mlp_wins_over_best_five_baseline": 1,
+  "selected_actor_mlp_wins_over_converged_actor_mlp": 2,
+  "selected_actor_mlp_wins_over_original_actor_mlp": 3,
+  "selected_direct_policy_wins_over_best_five_baseline": 2,
+  "selected_direct_policy_wins_over_converged_actor_mlp": 2,
+  "selected_direct_policy_wins_over_original_actor_mlp": 3,
+  "statistically_degraded_value_transitions": [
+    {
+      "ci95": 2.4345175428033165e-05,
+      "d": 100,
+      "iteration": 3,
+      "k": 10,
+      "mean_previous_minus_current": -3.791670314967632e-05
+    },
+    {
+      "ci95": 1.3921348178985265e-05,
+      "d": 400,
+      "iteration": 2,
+      "k": 40,
+      "mean_previous_minus_current": -0.0009837741575514276
+    },
+    {
+      "ci95": 2.5119904913587233e-06,
+      "d": 400,
+      "iteration": 3,
+      "k": 40,
+      "mean_previous_minus_current": -0.00013764154088372985
+    },
+    {
+      "ci95": 7.322365846825037e-05,
+      "d": 400,
+      "iteration": 1,
+      "k": 1,
+      "mean_previous_minus_current": -0.0003611095771323865
+    },
+    {
+      "ci95": 9.013357912278877e-06,
+      "d": 400,
+      "iteration": 2,
+      "k": 1,
+      "mean_previous_minus_current": -0.0006051915681837272
+    }
+  ],
+  "status": "PASS",
+  "validation_value_monotone_within_mc_uncertainty": false
+}

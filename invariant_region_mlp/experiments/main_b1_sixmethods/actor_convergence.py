@@ -444,14 +444,22 @@ def predict_actor(
     device: torch.device,
     batch_size: int = 4096,
 ) -> np.ndarray:
+    times = np.array(t, dtype=np.float64, copy=True).reshape(-1)
+    states = np.array(x, dtype=np.float64, copy=True, order="C").reshape(
+        len(times), model.d
+    )
     pieces: list[np.ndarray] = []
     model.eval()
     with torch.no_grad():
-        for start in range(0, len(t), batch_size):
-            stop = min(start + batch_size, len(t))
+        for start in range(0, len(times), batch_size):
+            stop = min(start + batch_size, len(times))
             prediction = model.predict(
-                torch.as_tensor(t[start:stop], dtype=torch.float32, device=device),
-                torch.as_tensor(x[start:stop], dtype=torch.float32, device=device),
+                torch.as_tensor(
+                    times[start:stop], dtype=torch.float32, device=device
+                ),
+                torch.as_tensor(
+                    states[start:stop], dtype=torch.float32, device=device
+                ),
             )
             pieces.append(prediction.cpu().numpy().astype(np.float64))
     return np.concatenate(pieces, axis=0)
