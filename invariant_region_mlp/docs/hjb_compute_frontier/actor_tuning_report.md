@@ -6,7 +6,7 @@ are tracked separately below.
 
 The ambient-output Actor has no rank projection on either PDE. The declared study compares terminal-pathwise `q0`, one policy improvement `q1`, a matched fresh-label continuation `q1_refresh`, a true `q2`, and a true `q3`. Each controlled-policy label differentiates the full Euler trajectory with the source Actor frozen while preserving its state derivative.
 
-The pilot uses 2,048 terminal-label points for `q0`, then 4,096 points, 256 paths per label, 16 Euler steps, and 4,000 optimizer steps for each subsequent phase. The final preset raises this to 4,096/256/6,000 for `q0` and 8,192/512/32/6,000 for policy-evaluation phases. A targeted high-quality B1 branch declares width 512, 16,384 points, 1,024 paths, 64 steps, and 12,000 optimizer steps for `q1` and matched `q1_refresh`; `q2` and `q3` retain the final-scale 8,192/512/32/6,000 budget. This isolates the value of much better first-update supervision while keeping later-iteration cost controlled. The HJB-Log high branch was cancelled before allocation after the final runs showed that its Value RMSE was already dominated by final MC inference noise.
+The pilot uses 2,048 terminal-label points for `q0`, then 4,096 points, 256 paths per label, 16 Euler steps, and 4,000 optimizer steps for each subsequent phase. The final preset raises this to 4,096/256/6,000 for `q0` and 8,192/512/32/6,000 for policy-evaluation phases. A targeted high-quality B1 branch declares width 512, 16,384 points, 1,024 paths, 64 steps, and 12,000 optimizer steps for `q1`, matched `q1_refresh`, and matched true `q2`; `q3` retains the final-scale 8,192/512/32/6,000 budget. This isolates high-quality continuation from a same-cost policy update before testing one cheaper next iteration. The HJB-Log high branch was cancelled before allocation after the final runs showed that its Value RMSE was already dominated by final MC inference noise.
 
 Per the user's explicit override, Actor candidates are ranked by test Relative L2/RMSE. The report will show both model-path cost and total exploration cost so this oracle selection is not presented as a deployable reference-free procedure. External baselines do not receive the same selection privilege.
 
@@ -124,10 +124,11 @@ selection rule there.
 
 ## Targeted high-quality B1 branch
 
-The targeted branch uses width 512.  It raises both `q1` and matched
-`q1_refresh` to 16,384 training points, 1,024 paths per label, 64 label Euler
-steps, and 12,000 optimizer steps.  Later `q2/q3` phases retain
-8,192/512/32/6,000 to avoid spending the whole budget after an unhelpful
-intermediate update.  The run is phase-resumable; its Slurm results and
+The targeted branch uses width 512.  It raises `q1`, matched `q1_refresh`, and
+matched true `q2` to 16,384 training points, 1,024 paths per label, 64 label
+Euler steps, and 12,000 optimizer steps.  The three phases therefore separate
+better first-update supervision, continued fitting to a refreshed `q0`
+target, and a same-cost true update from `q1`.  A later `q3` retains
+8,192/512/32/6,000.  The run is phase-resumable; its Slurm results and
 single-seed interpretation are appended after completion and are not mixed
 into the frozen multi-seed table.

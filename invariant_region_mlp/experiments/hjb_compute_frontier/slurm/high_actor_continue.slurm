@@ -15,9 +15,9 @@
 
 set -euo pipefail
 
-: "${HJB_ACTOR_HIGH_STAGE:?set HJB_ACTOR_HIGH_STAGE to 1, 2, 3, or 4}"
-if [[ "$HJB_ACTOR_HIGH_STAGE" != "1" && "$HJB_ACTOR_HIGH_STAGE" != "2" && "$HJB_ACTOR_HIGH_STAGE" != "3" && "$HJB_ACTOR_HIGH_STAGE" != "4" ]]; then
-  printf 'HJB_ACTOR_HIGH_STAGE must be 1, 2, 3, or 4, got %s\n' "$HJB_ACTOR_HIGH_STAGE" >&2
+: "${HJB_ACTOR_HIGH_STAGE:?set HJB_ACTOR_HIGH_STAGE to 1, 2, 3, 4, or 5}"
+if [[ "$HJB_ACTOR_HIGH_STAGE" != "1" && "$HJB_ACTOR_HIGH_STAGE" != "2" && "$HJB_ACTOR_HIGH_STAGE" != "3" && "$HJB_ACTOR_HIGH_STAGE" != "4" && "$HJB_ACTOR_HIGH_STAGE" != "5" ]]; then
+  printf 'HJB_ACTOR_HIGH_STAGE must be 1, 2, 3, 4, or 5, got %s\n' "$HJB_ACTOR_HIGH_STAGE" >&2
   exit 2
 fi
 
