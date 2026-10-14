@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=hjbfront_hi_cont
+#SBATCH --job-name=hjbfront_hi_stage
 #SBATCH --account=bgvf-dtai-gh
 #SBATCH --partition=ghx4
 #SBATCH --exclude=gh097
@@ -15,9 +15,9 @@
 
 set -euo pipefail
 
-: "${HJB_ACTOR_HIGH_STAGE:?set HJB_ACTOR_HIGH_STAGE to 2 or 3}"
-if [[ "$HJB_ACTOR_HIGH_STAGE" != "2" && "$HJB_ACTOR_HIGH_STAGE" != "3" ]]; then
-  printf 'HJB_ACTOR_HIGH_STAGE must be 2 or 3, got %s\n' "$HJB_ACTOR_HIGH_STAGE" >&2
+: "${HJB_ACTOR_HIGH_STAGE:?set HJB_ACTOR_HIGH_STAGE to 1, 2, or 3}"
+if [[ "$HJB_ACTOR_HIGH_STAGE" != "1" && "$HJB_ACTOR_HIGH_STAGE" != "2" && "$HJB_ACTOR_HIGH_STAGE" != "3" ]]; then
+  printf 'HJB_ACTOR_HIGH_STAGE must be 1, 2, or 3, got %s\n' "$HJB_ACTOR_HIGH_STAGE" >&2
   exit 2
 fi
 
