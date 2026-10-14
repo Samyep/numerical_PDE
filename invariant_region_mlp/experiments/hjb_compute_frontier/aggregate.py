@@ -347,7 +347,13 @@ def make_plots(frontier: list[dict[str, Any]], profile: str | None) -> None:
             ax.set_ylabel("Value relative L2")
             ax.set_title(title)
             ax.grid(True, which="both", alpha=0.25, linewidth=0.5)
-            ax.legend(frameon=False)
+            ax.legend(
+                loc="upper left",
+                frameon=True,
+                facecolor="white",
+                framealpha=0.92,
+                edgecolor="#cccccc",
+            )
             stem = f"{equation}_{suffix}"
             fig.savefig(FIGURE_DIR / f"{stem}.png")
             fig.savefig(FIGURE_DIR / f"{stem}.pdf")
