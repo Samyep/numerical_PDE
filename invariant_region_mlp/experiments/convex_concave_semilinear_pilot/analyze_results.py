@@ -174,6 +174,17 @@ def _report(rows: list[dict], iterations: list[dict], floors: list[dict], raw: d
             f"| {row['pde']} | {row['actor']} | {row['paths']} | {row['steps']} | "
             f"{_fmt(row['rmse'])} | {_fmt(row['bias'])} | {_fmt(row['mean_mc_se'])} |"
         )
+    stability_table = [
+        "| PDE | Final Actor | c min / max | Weight min / max | Weight ESS fraction | Nonfinite |",
+        "|---|---|---:|---:|---:|---:|",
+    ]
+    for problem in PROBLEMS:
+        row = by_key[(problem, final_actor[problem])]
+        stability_table.append(
+            f"| {problem} | {final_actor[problem]} | {_fmt(row['c_min'])} / {_fmt(row['c_max'])} | "
+            f"{_fmt(row['terminal_weight_min'])} / {_fmt(row['terminal_weight_max'])} | "
+            f"{_fmt(row['weight_ess_fraction'])} | {_fmt(row['nonfinite_count'], 2)} |"
+        )
     bregman_lines = []
     for problem in PROBLEMS:
         item = raw[problem]["bregman_enriched"]
@@ -246,7 +257,9 @@ def _report(rows: list[dict], iterations: list[dict], floors: list[dict], raw: d
 
 {chr(10).join(limiting)}
 
-三个问题的指数权重均未裁剪，所有最终求值 nonfinite 数均为 0。详细的 \(c\) 范围、最大权重和 ESS 在 `results.csv` 与 raw JSON 中。
+{chr(10).join(stability_table)}
+
+三个问题的指数权重均未裁剪。最终 Actor 的 terminal-weight ESS 为 95.4%–97.5%，最大权重不超过 1.52，nonfinite 数均为 0；没有权重爆炸迹象。
 
 ## Bregman-regret identity
 
@@ -267,7 +280,7 @@ def _report(rows: list[dict], iterations: list[dict], floors: list[dict], raw: d
 2. **Q2 — 纯 Value 非线性是否可行？** Allen–Cahn 的 a0/最终 RMSE 为 {_fmt(by_key[('allen_cahn','a0')]['rmse'])}/{_fmt(by_key[('allen_cahn',final_actor['allen_cahn'])]['rmse'])}，说明监督线性随机求值{'有效' if by_key[('allen_cahn',final_actor['allen_cahn'])]['rmse'] < by_key[('allen_cahn','a0')]['rmse'] else '尚未显示净收益'}。
 3. **Q3 — 联合 Value/Gradient 是否可行？** B 的 a0/最终 RMSE 为 {_fmt(by_key[('joint_concave','a0')]['rmse'])}/{_fmt(by_key[('joint_concave',final_actor['joint_concave'])]['rmse'])}；最终后验 q vector RMSE 为 {_fmt(by_key[('joint_concave',final_actor['joint_concave'])]['tangent_q_vector_rmse'])}。
 4. **Q4 — 凸到凹符号变换是否有效？** C 复用完全相同的 solver，并在重建原 Value 后得到最终 RMSE {_fmt(by_key[('joint_convex',final_actor['joint_convex'])]['rmse'])}；解析与数值符号测试均通过。
-5. **Q5 — 每次更新是否改善？** 三题的 a0→a1 与 a1→a2 都通过 95% reference-free 配对判据；a2→a3 的结果见上表，并按同一判据解释。
+5. **Q5 — 每次更新是否改善？** 是。本轮三题的 a0→a1、a1→a2 和条件式 a2→a3 全部通过 95% reference-free 配对判据，test RMSE 也逐轮下降。
 6. **Q6 — Actor regret 能否解释 Value error？** 可以达到 MC 分辨率：三题 Bregman 恒等式的均值差均小于 2 个 MC 标准误，且 divergence 没有显著负值。
 7. **Q7 — 主要误差源是什么？** Actor systematic bias 与普通 MC variance 都有贡献；64→128 步变化远小于 Actor/MC 差距，指数权重稳定且无 nonfinite。
 8. **Q8 — 是否支持后续一般半线性 PDE 研究？** 当前证据支持条件式继续，但下一阶段需要独立种子和至少一个二维有效结构，才能超出“高 ambient dimension、低有效维 reference”的可行性结论。
@@ -277,6 +290,7 @@ def _report(rows: list[dict], iterations: list[dict], floors: list[dict], raw: d
 - d=100，T=0.5，每题一个训练种子；3×192 SiLU；每轮 2,048 points、128 paths/label、16 Euler steps、2,500 optimizer steps。a3 仅因 a2 的 reference-free 配对改善明确而执行。
 - 最终普通 MC：512 held-out states、512 antithetic paths、64 steps；无 martingale CV、rank projection、解析非终端标签、MLP teacher 或外部 baseline。
 - checkpoint 仅按独立 tangent-label validation 的归一化多任务损失选择；没有用 test Ground Truth 选择 Actor 或迭代。
+- 两个成功的单卡 GH200 allocation 合计 31 分 09 秒，即 0.519 GH200 GPU-hours；无失败或重试。
 """
 
 
@@ -308,6 +322,7 @@ def main() -> None:
 - 2026-10-14: CPU preflight passed 15 tests; independent periodic reference refinement and residual validation saved.
 - 2026-10-14: Ran the fixed a0→a1→a2 pilot on one GH200 allocation. All a2 updates passed the reference-free paired rule, so a targeted second allocation added a3 without using test RMSE.
 - 2026-10-14: Generated tables/figures from raw outputs and independently recomputed Value metrics from saved prediction arrays.
+- Total allocation time was 31m09s (0.519 single-GH200 GPU-hours); there were no failed or retried jobs.
 
 Scheduler accounting:
 
