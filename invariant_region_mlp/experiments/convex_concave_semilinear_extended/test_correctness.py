@@ -73,6 +73,8 @@ def test_dense_basis_and_terminal_gradient_span(k: int) -> None:
     assert np.median(np.abs(driver.B)) > 5e-3
     diagnostics = terminal_signal_diagnostics(driver, samples=2048)
     assert diagnostics["ambient_gradient_matrix_rank"] == k
+    assert diagnostics["centered_ambient_gradient_matrix_rank"] == k
+    assert diagnostics["centered_smallest_to_largest_active_singular_ratio"] > 0.8
     assert diagnostics["expected_rank"] == k
 
 

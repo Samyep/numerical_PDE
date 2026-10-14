@@ -420,6 +420,14 @@ def terminal_signal_diagnostics(
     singular = np.linalg.svd(active_coefficients, compute_uv=False)
     tolerance = singular[0] * max(active_coefficients.shape) * np.finfo(np.float64).eps
     rank = int(np.sum(singular > tolerance))
+    centered = active_coefficients - active_coefficients.mean(axis=0, keepdims=True)
+    centered_singular = np.linalg.svd(centered, compute_uv=False)
+    centered_tolerance = (
+        centered_singular[0]
+        * max(centered.shape)
+        * np.finfo(np.float64).eps
+    )
+    centered_rank = int(np.sum(centered_singular > centered_tolerance))
     return {
         "samples": samples,
         "terminal_mean": float(np.mean(values)),
@@ -431,6 +439,11 @@ def terminal_signal_diagnostics(
         "expected_rank": driver.k,
         "leading_gradient_singular_values": singular[: driver.k].tolist(),
         "smallest_to_largest_active_singular_ratio": float(singular[driver.k - 1] / singular[0]),
+        "centered_ambient_gradient_matrix_rank": centered_rank,
+        "centered_gradient_singular_values": centered_singular[: driver.k].tolist(),
+        "centered_smallest_to_largest_active_singular_ratio": float(
+            centered_singular[driver.k - 1] / centered_singular[0]
+        ),
         "basis_max_abs_entry": float(np.max(np.abs(driver.B))),
         "basis_median_abs_entry": float(np.median(np.abs(driver.B))),
     }

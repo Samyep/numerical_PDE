@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from .common import FIGURE_DIR, RESULTS_DIR, atomic_json, write_csv
+from .drivers import make_driver, terminal_signal_diagnostics
 
 
 FAMILIES = ("allen_cahn", "joint_concave", "joint_convex")
@@ -39,6 +40,14 @@ def _configuration_summary(payload: dict[str, Any]) -> dict[str, Any]:
     with np.load(prediction_path) as arrays:
         total_delta = arrays["a3_working_value"] - arrays["a0_working_value"]
     a3 = by_actor["a3"]
+    value_fit = a3["actor_validation_value_rmse"]
+    value_replication = a3["value_label_replication_rmse"]
+    gradient_fit = (
+        a3["actor_validation_gradient_vector_rmse"]
+        if spec["family"] != "allen_cahn"
+        else None
+    )
+    gradient_replication = a3["gradient_label_replication_vector_rmse"]
     phase_seconds = sum(row["label_seconds"] + row["training_seconds"] for row in rows)
     return {
         **spec,
@@ -56,14 +65,24 @@ def _configuration_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "improvement_over_terminal_std": float(
             -np.mean(total_delta) / max(signal["terminal_std"], np.finfo(float).tiny)
         ),
-        "a3_actor_validation_value_rmse": a3["actor_validation_value_rmse"],
-        "a3_actor_validation_gradient_vector_rmse": a3[
-            "actor_validation_gradient_vector_rmse"
-        ],
-        "a3_value_label_replication_rmse": a3["value_label_replication_rmse"],
-        "a3_gradient_label_replication_vector_rmse": a3[
-            "gradient_label_replication_vector_rmse"
-        ],
+        "a3_actor_validation_value_rmse": value_fit,
+        "a3_actor_validation_gradient_vector_rmse": gradient_fit,
+        "a3_value_label_replication_rmse": value_replication,
+        "a3_gradient_label_replication_vector_rmse": gradient_replication,
+        # Two independent label banks differ with variance twice the MC label
+        # variance.  These are descriptive diagnostics, not exact decompositions:
+        # discretization bias and finite validation-bank effects remain.
+        "a3_value_fit_over_label_replication": value_fit
+        / max(value_replication, np.finfo(float).tiny),
+        "a3_value_noise_corrected_fit_proxy": float(
+            np.sqrt(max(value_fit**2 - 0.5 * value_replication**2, 0.0))
+        ),
+        "a3_gradient_fit_over_label_replication": None
+        if gradient_fit is None
+        else gradient_fit / max(gradient_replication, np.finfo(float).tiny),
+        "a3_gradient_noise_corrected_fit_proxy": None
+        if gradient_fit is None
+        else float(np.sqrt(max(gradient_fit**2 - 0.5 * gradient_replication**2, 0.0))),
         "a3_policy_mc_mean_se": a3["reference_free_value_mc_se"],
         "a3_label_weight_ess_fraction": a3["label_weight_ess_fraction"],
         "a3_evaluation_weight_ess_fraction": a3["evaluation_weight_ess_fraction"],
@@ -100,13 +119,21 @@ def _plot_effective_dimension(summaries: list[dict[str, Any]]) -> None:
             )
             gradient = [row["a3_actor_validation_gradient_vector_rmse"] for row in subset]
             if any(value is not None for value in gradient):
-                axes[1, 0].plot(x, gradient, style, label=label)
+                axes[1, 0].plot(
+                    x,
+                    [
+                        value / np.sqrt(2.0 * row["terminal_gradient_energy"])
+                        for value, row in zip(gradient, subset, strict=True)
+                    ],
+                    style,
+                    label=label,
+                )
             axes[1, 1].plot(
                 x, [row["a3_evaluation_weight_ess_fraction"] for row in subset], style, label=label
             )
     axes[0, 0].set_title("Paired a0→a3 improvement / terminal std")
     axes[0, 1].set_title("a3 Value-Actor validation RMSE / terminal std")
-    axes[1, 0].set_title("a3 Gradient-Actor validation vector RMSE")
+    axes[1, 0].set_title("a3 Gradient-Actor RMSE / terminal z RMS")
     axes[1, 1].set_title("a3 evaluation exponential-weight ESS")
     for axis in axes.flat:
         axis.set_xlabel("effective dimension k")
@@ -115,7 +142,7 @@ def _plot_effective_dimension(summaries: list[dict[str, Any]]) -> None:
         axis.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
         axis.grid(alpha=0.25)
     axes[0, 0].axhline(0.0, color="0.4", lw=1)
-    axes[1, 1].set_ylim(0.0, 1.03)
+    axes[1, 1].set_ylim(0.90, 1.005)
     axes[0, 1].legend(frameon=False, fontsize=7, ncol=2)
     figure.tight_layout()
     figure.savefig(FIGURE_DIR / "accuracy_stability_vs_effective_dimension.png", dpi=180)
@@ -225,6 +252,10 @@ def main() -> None:
     if not training_payloads:
         raise RuntimeError("no completed training results")
     iteration_rows = [row for payload in training_payloads for row in payload["iteration_rows"]]
+    for row in iteration_rows:
+        if row["family"] == "allen_cahn":
+            row["actor_validation_gradient_component_rmse"] = None
+            row["actor_validation_gradient_vector_rmse"] = None
     summaries = [_configuration_summary(payload) for payload in training_payloads]
     ground_truth_rows = [row for payload in ground_truth_payloads for row in payload["rows"]]
     bregman_rows = [
@@ -246,6 +277,57 @@ def main() -> None:
     if ground_truth_rows:
         write_csv(RESULTS_DIR / "ground_truth_results.csv", ground_truth_rows)
         write_csv(RESULTS_DIR / "bregman_identity.csv", bregman_rows)
+    reference_path = RESULTS_DIR / "reference_validation.json"
+    if reference_path.exists():
+        with reference_path.open() as handle:
+            references = json.load(handle)
+        write_csv(
+            RESULTS_DIR / "numerical_reference_validation.csv",
+            [{"family": family, **payload} for family, payload in sorted(references.items())],
+        )
+
+    # This is mainly useful for the three-seed nonseparable experiment.  We
+    # retain one-seed groups as an explicit record that they have no seed-level
+    # uncertainty estimate.
+    replicate_rows = []
+    for family, d, k in sorted({(row["family"], row["d"], row["k"]) for row in summaries}):
+        group = [
+            row
+            for row in summaries
+            if row["family"] == family and row["d"] == d and row["k"] == k
+        ]
+        replicate_rows.append(
+            {
+                "family": family,
+                "d": d,
+                "k": k,
+                "training_seeds": len(group),
+                "a3_minus_a0_paired_mean_across_seeds": float(
+                    np.mean([row["a3_minus_a0_paired_mean"] for row in group])
+                ),
+                "a3_minus_a0_paired_sd_across_seeds": None
+                if len(group) == 1
+                else float(np.std([row["a3_minus_a0_paired_mean"] for row in group], ddof=1)),
+                "a3_working_value_mean_across_seeds": float(
+                    np.mean([row["a3_working_value_mean"] for row in group])
+                ),
+                "a3_working_value_sd_across_seeds": None
+                if len(group) == 1
+                else float(np.std([row["a3_working_value_mean"] for row in group], ddof=1)),
+            }
+        )
+    write_csv(RESULTS_DIR / "replicate_summary.csv", replicate_rows)
+    geometry_rows = []
+    for family, d, k in sorted({(row["family"], row["d"], row["k"]) for row in summaries}):
+        geometry_rows.append(
+            {
+                "family": family,
+                "d": d,
+                "k": k,
+                **terminal_signal_diagnostics(make_driver(family, d=d, k=k)),
+            }
+        )
+    write_csv(RESULTS_DIR / "terminal_geometry.csv", geometry_rows)
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     _plot_effective_dimension(summaries)
     _plot_signal(summaries)
@@ -283,6 +365,10 @@ def main() -> None:
             "reference_free_expansion_gate": gate,
             "all_terminal_gradient_ranks_verified": all(
                 row["terminal_gradient_rank"] == row["k"] for row in summaries
+            ),
+            "all_centered_terminal_gradient_ranks_verified": all(
+                row["centered_ambient_gradient_matrix_rank"] == row["k"]
+                for row in geometry_rows
             ),
             "all_rollouts_finite": all(row["all_rollouts_finite"] for row in summaries),
             "plots": sorted(path.name for path in FIGURE_DIR.glob("*.png")),

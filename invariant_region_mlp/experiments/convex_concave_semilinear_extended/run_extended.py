@@ -336,7 +336,11 @@ def run_training_and_reference_free(
         phase = None if index == 0 else phases[index - 1]
         delta = None if index == 0 else values - outputs[index - 1]["working_value"]
         details = metadata[index]
-        gradient_mse = None if phase is None else phase["training"]["best_validation_gradient_mse"]
+        gradient_mse = (
+            None
+            if phase is None or not driver.has_gradient
+            else phase["training"]["best_validation_gradient_mse"]
+        )
         rows.append(
             {
                 "run_id": spec.run_id,
