@@ -1,6 +1,6 @@
 # Frozen external-baseline protocols
 
-Frozen before GPU results: 2026-10-14 (America/New_York).
+Frozen before GPU results: 2026-10-14 (America/Chicago).
 
 This study uses exactly one preset configuration for each external baseline on both PDEs. This follows the user's final instruction that external baselines should not be tuned and should be run once where possible. Checkpoints are retained to form compute curves, but analytic Value or gradient references never choose an external checkpoint. The machine-readable source of truth is `experiments/hjb_compute_frontier/protocol_frozen.json`.
 

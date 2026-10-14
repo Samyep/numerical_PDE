@@ -102,6 +102,29 @@ independent validation reference has test RMSE `0.02398`.  The Actor's
 `RMSE/std(u*)` near `0.21` and its absolute RMSE show that it learns state
 variation rather than merely predicting the mean.
 
+### Frozen-Actor evaluation sensitivity
+
+The five final Actor candidates were subsequently frozen and evaluated with
+two independent budgets.  This diagnostic performs no training.  Candidate
+comparisons within each seed and budget use common Brownian random numbers.
+
+| evaluation | fixed `q0` RMSE | fixed `q3` RMSE | test-oracle actors | oracle RMSE | `q3` inference, 2,048 states |
+|---|---:|---:|---|---:|---:|
+| 256 paths, 64 steps (frozen main) | 0.005017 +/- 0.000051 | 0.004996 +/- 0.000051 | `q3,q0,q3` | 0.004974 +/- 0.000045 | 16.86 s |
+| **1,024 paths, 64 steps** | 0.003233 +/- 0.000037 | **0.003094 +/- 0.000092** | `q3,q3,q3` | **0.003094 +/- 0.000092** | 65.60 s |
+| 256 paths, 128 steps | 0.005067 +/- 0.000155 | 0.004963 +/- 0.000082 | `q2,q1_refresh,q3` | 0.004937 +/- 0.000087 | 32.36 s |
+
+Quadrupling paths lowers fixed-`q3` RMSE by 38.1%, whereas doubling Euler
+steps at fixed path count changes it by only 0.66%.  At 1,024 paths, the
+estimated MC variance still accounts for 51.9% of observed `q3` MSE; the
+variance-subtracted RMSE diagnostic is `0.002147`.  The corresponding fixed
+`q0` values are 46.6% and `0.002361`.  Thus `q3` has a small detectable policy
+benefit under more accurate evaluation, but most of the practical gain comes
+from evaluating a cheap Actor with more paths.  The high-path `q3` RMSE is
+only 4.3% below `q0` despite roughly 75 times more Actor path-training time.
+These more expensive inference points are a sensitivity analysis and are not
+substituted into the frozen four-method compute curves.
+
 ## Computation
 
 These are measured method-internal GH200 wall times, mean +/- sample standard
@@ -204,6 +227,8 @@ records is `1.42e-14`.  Reproducibility artifacts include:
 - [`summary.csv`](../../results/hjb_compute_frontier/summary.csv)
 - [`compute_frontier.csv`](../../results/hjb_compute_frontier/compute_frontier.csv)
 - [`prediction_audit.json`](../../results/hjb_compute_frontier/prediction_audit.json)
+- [`evaluation_sensitivity_summary.csv`](../../results/hjb_compute_frontier/evaluation_sensitivity_summary.csv)
+- [`evaluation_sensitivity_aggregate.json`](../../results/hjb_compute_frontier/evaluation_sensitivity_aggregate.json)
 - [`validation.json`](../../results/hjb_compute_frontier/validation.json)
 - [`scheduler_accounting.json`](../../results/hjb_compute_frontier/scheduler_accounting.json)
 - [`EXPERIMENT_LOG.md`](../../results/hjb_compute_frontier/EXPERIMENT_LOG.md)
