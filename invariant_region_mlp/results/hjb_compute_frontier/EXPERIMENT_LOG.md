@@ -18,4 +18,13 @@ Starting commit: `56f6448e1557118f8cc6e51ed038ff03512c84d2`
 
 ## Slurm jobs
 
-No job submitted yet. The next entry will record the GH200 smoke/profile job ID, script hash, state, and accounting.
+### 3377537 — `hjbfront_smoke`
+
+- Script: `experiments/hjb_compute_frontier/slurm/smoke_profile.slurm`
+- Allocation: one NVIDIA GH200, 8 CPUs, 64 GB host memory, 30-minute limit.
+- State: `FAILED`, exit `1:0`, elapsed 79 GPU-seconds (`0.02194` GPU-hours), MaxRSS 661,312 KB.
+- Completed before failure: B1 PINN+SDGD, Deep BSDE, and DPI smoke runs, including checkpoints and independently recomputed test metrics.
+- Failure: Actor smoke declared 8 paths but inherited a 64-path chunk. The explicit divisibility guard stopped before allocating the invalid tensor. HJB-Log was not started.
+- Diagnosis: configuration plumbing only; no OOM, NaN, or training instability.
+- Fix: every Actor label/evaluation call now passes `path_chunk=min(64, paths)`, with a regression test for the 8-path setting. Focused suite now has 7 passing tests.
+- Recovery script prepared: `experiments/hjb_compute_frontier/slurm/smoke_continue.slurm`; it skips the three completed B1 baseline cells.

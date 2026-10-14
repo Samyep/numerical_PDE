@@ -439,6 +439,7 @@ def run_actor(equation_name: str, seed_index: int, profile: str) -> None:
                     time_steps=phase.label_time_steps,
                     seed=train_seed,
                     device=device,
+                    path_chunk=min(64, phase.paths_per_label),
                 )
                 _, valid_y, valid_label_meta = policy_gradient_labels(
                     equation,
@@ -449,6 +450,7 @@ def run_actor(equation_name: str, seed_index: int, profile: str) -> None:
                     time_steps=phase.label_time_steps,
                     seed=valid_seed,
                     device=device,
+                    path_chunk=min(64, phase.paths_per_label),
                 )
             label_metadata = {
                 "train": train_label_meta,
@@ -515,16 +517,60 @@ def run_actor(equation_name: str, seed_index: int, profile: str) -> None:
         actor = actors[phase.name]
         selection_x = banks["test_x"][:point_count]
         selection_t = banks["test_t"][:point_count]
-        value, estimator_variance, evaluation_meta = evaluate_policy_cv(
-            equation,
-            actor,
-            selection_t,
-            selection_x,
-            paths=paths,
-            time_steps=time_steps,
-            seed=stable_seed("actor_test_eval", key, seed_index, profile, phase.name),
-            device=device,
+        evaluation_seed = stable_seed(
+            "actor_test_eval", key, seed_index, profile, phase.name
         )
+        if point_count == 2048:
+            first_value, first_variance, first_meta = evaluate_policy_cv(
+                equation,
+                actor,
+                selection_t[:960],
+                selection_x[:960],
+                paths=paths,
+                time_steps=time_steps,
+                seed=evaluation_seed,
+                device=device,
+                path_chunk=min(64, paths),
+            )
+            second_value, second_variance, second_meta = evaluate_policy_cv(
+                equation,
+                actor,
+                selection_t[960:],
+                selection_x[960:],
+                paths=paths,
+                time_steps=time_steps,
+                seed=stable_seed(evaluation_seed, "tail_1088"),
+                device=device,
+                path_chunk=min(64, paths),
+            )
+            value = np.concatenate((first_value, second_value))
+            estimator_variance = np.concatenate((first_variance, second_variance))
+            evaluation_meta = {
+                **first_meta,
+                "points": 2048,
+                "wall_seconds_960": first_meta["wall_seconds"],
+                "wall_seconds_2048": first_meta["wall_seconds"]
+                + second_meta["wall_seconds"],
+                "peak_gpu_bytes": max(
+                    int(first_meta["peak_gpu_bytes"] or 0),
+                    int(second_meta["peak_gpu_bytes"] or 0),
+                ),
+                "split_evaluation": [first_meta, second_meta],
+            }
+        else:
+            value, estimator_variance, evaluation_meta = evaluate_policy_cv(
+                equation,
+                actor,
+                selection_t,
+                selection_x,
+                paths=paths,
+                time_steps=time_steps,
+                seed=evaluation_seed,
+                device=device,
+                path_chunk=min(64, paths),
+            )
+            evaluation_meta["wall_seconds_960"] = evaluation_meta["wall_seconds"]
+            evaluation_meta["wall_seconds_2048"] = evaluation_meta["wall_seconds"]
         metrics = model_metrics(value, banks["test_u"][:point_count])
         direct_z = predict_actor(actor, selection_t, selection_x, equation, device)
         metrics["gradient_relative_error"] = vector_relative_error(
@@ -549,8 +595,10 @@ def run_actor(equation_name: str, seed_index: int, profile: str) -> None:
                 "policy_iterations": int(phase.name[1]) if phase.name.startswith("q") and phase.name[1].isdigit() else 1,
                 "path_training_seconds": path_seconds[phase.name],
                 "cumulative_exploration_seconds": cumulative_exploration_seconds,
-                "inference_seconds": evaluation_meta["wall_seconds"],
-                "total_seconds": path_seconds[phase.name] + evaluation_meta["wall_seconds"],
+                "inference_seconds_960": evaluation_meta["wall_seconds_960"],
+                "inference_seconds_2048": evaluation_meta["wall_seconds_2048"],
+                "total_seconds_960": path_seconds[phase.name] + evaluation_meta["wall_seconds_960"],
+                "total_seconds_2048": path_seconds[phase.name] + evaluation_meta["wall_seconds_2048"],
                 "evaluation": evaluation_meta,
                 "prediction_path": str(prediction_path),
                 **metrics,

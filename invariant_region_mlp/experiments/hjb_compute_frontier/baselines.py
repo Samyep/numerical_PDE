@@ -640,7 +640,11 @@ def predict_baseline(
     x: np.ndarray,
     device: torch.device,
 ) -> tuple[np.ndarray, np.ndarray | None, float]:
-    state = torch.as_tensor(np.asarray(x), dtype=torch.float32, device=device)
+    state = torch.as_tensor(
+        np.array(x, dtype=np.float32, copy=True, order="C"),
+        dtype=torch.float32,
+        device=device,
+    )
     t = torch.zeros(len(state), dtype=torch.float32, device=device)
     if device.type == "cuda":
         torch.cuda.synchronize(device)

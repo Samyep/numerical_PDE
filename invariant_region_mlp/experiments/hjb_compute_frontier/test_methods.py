@@ -61,6 +61,27 @@ def test_actor_cv_terminal_and_source_freezing() -> None:
     assert all(parameter.grad is None for parameter in actor.parameters())
 
 
+def test_small_path_budget_uses_matching_chunk() -> None:
+    """Regression test for the 8-path smoke configuration."""
+
+    equation = HJBLogEquation(d=2)
+    actor = _zero_actor(2)
+    value, variance, metadata = evaluate_policy_cv(
+        equation,
+        actor,
+        np.zeros(3),
+        np.zeros((3, 2)),
+        paths=8,
+        time_steps=2,
+        seed=19,
+        device=torch.device("cpu"),
+        parent_batch=3,
+        path_chunk=min(64, 8),
+    )
+    assert value.shape == variance.shape == (3,)
+    assert metadata["paths"] == 8
+
+
 def test_baseline_terminal_constraints_and_sdgd_backward() -> None:
     equation = HJBLogEquation(d=3)
     x = torch.randn(5, 3)
