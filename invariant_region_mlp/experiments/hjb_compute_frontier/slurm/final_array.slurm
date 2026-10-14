@@ -9,7 +9,7 @@
 #SBATCH --mem=64G
 #SBATCH --gpus-per-node=1
 #SBATCH --gpu-bind=verbose,closest
-#SBATCH --time=01:15:00
+#SBATCH --time=00:45:00
 #SBATCH --array=0-23%4
 #SBATCH --output=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/slurm/%x_%A_%a.out
 #SBATCH --error=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/slurm/%x_%A_%a.err

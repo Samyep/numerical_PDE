@@ -63,3 +63,21 @@ Starting commit: `56f6448e1557118f8cc6e51ed038ff03512c84d2`
 - External pilot checkpoints remained reference-free: PINN used full residual, Deep BSDE used terminal mismatch, and DPI used its preset round ceiling.
 - Independent audit: 28/28 prediction artifacts passed, maximum metric discrepancy `2.49e-14`.
 - Total allocation through pilot: 1,262 GPU-seconds (`0.35056` GH200 hours).
+
+### 3377699 — `hjbfront_final` array
+
+- Commits: tasks 0–1 recorded `3d1bb40c`; tasks 2–23 recorded `c3b992ac`. The only intervening commit added the high-budget Slurm launcher and did not change training code.
+- Allocation: 24 one-GH200 tasks for 3 seeds × 2 PDEs × 4 methods, at most four concurrent, 8 CPUs and 64 GB host memory per task.
+- State: all 24 tasks `COMPLETED`, exit `0:0`; no retrials.
+- Aggregate allocation: 21,197 GPU-seconds (`5.88806` GPU-hours). Maximum Python-step MaxRSS was 2,268,288 KB.
+- The first 18 tasks requested 75 minutes. After measured maxima were 32.0 minutes for PINN and 25.3 minutes for Actor, pending tasks 18–23 were safely reduced to 45 minutes to satisfy the group billing-minute scheduler limit. Algorithms and numerical budgets were unchanged.
+- Independent aggregation audited 96 prediction artifacts; maximum recomputed-metric discrepancy was `1.42e-14`.
+- B1 mean RMSE across seeds: Actor `0.06301`, DPI `0.06841`, PINN+SDGD `0.08254`, amortized Deep BSDE `0.31655`.
+- HJB-Log mean RMSE across seeds: Actor `0.004974`, amortized Deep BSDE `0.02035`, DPI `0.06378`, PINN+SDGD `0.84205`.
+- Total allocation through the frozen final study: 22,459 GPU-seconds (`6.23861` GH200 hours), including smoke, recovery, profiling, pilot, and final runs.
+
+### 3377705 — `hjbfront_actorhi` array
+
+- Submitted as two high-quality Actor tasks, one per PDE.
+- HJB-Log task 1 was cancelled while still pending and consumed zero GPU-seconds: the final three-seed study showed RMSE near `0.0050` for every Actor round with per-point MC standard error near `0.0044`, so more Actor training would not address the observed bottleneck.
+- B1 task 0 retained. Its requested wall limit was reduced from 4:00 to 2:10 after profiling and its `q2/q3` phases were kept at the validated final budget; the much larger 16,384-point/1,024-path/64-step/12,000-step budget is concentrated on `q1` and matched `q1_refresh`.
