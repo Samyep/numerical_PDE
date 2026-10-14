@@ -1,0 +1,76 @@
+{
+  "checkpoints": [
+    {
+      "analytic_reference_used_for_training_or_selection": false,
+      "coordinate_budget": 2,
+      "method": "pinn_sdgd",
+      "parameter_count": 38273,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/checkpoints/b1_d400_k40/pinn_sdgd/seed0/smoke/pinn_sdgd_step10.pt",
+      "peak_gpu_bytes": 69592064,
+      "seed": 485402297,
+      "step": 10,
+      "training_seconds": 1.7611553436145186,
+      "validation_full_residual_mse": 15.747183799743652,
+      "validation_laplacian_coordinates": 400,
+      "validation_points": 8
+    },
+    {
+      "analytic_reference_used_for_training_or_selection": false,
+      "coordinate_budget": 2,
+      "method": "pinn_sdgd",
+      "parameter_count": 38273,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/checkpoints/b1_d400_k40/pinn_sdgd/seed0/smoke/pinn_sdgd_step20.pt",
+      "peak_gpu_bytes": 69592064,
+      "seed": 485402297,
+      "step": 20,
+      "training_seconds": 2.2115197964012623,
+      "validation_full_residual_mse": 15.07664680480957,
+      "validation_laplacian_coordinates": 400,
+      "validation_points": 8
+    }
+  ],
+  "equation": "b1_d400_k40",
+  "evaluation": [
+    {
+      "bias": 1.074828758916768,
+      "checkpoint": 10,
+      "gradient_relative_error": 0.15057058254062086,
+      "inference_seconds_2048": 0.0038997838273644447,
+      "inference_seconds_960": 0.0020262422040104866,
+      "prediction_path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/predictions/b1_d400_k40/pinn_sdgd/seed0_smoke_10.npz",
+      "relative_l2": 0.35265879099877856,
+      "rmse": 1.0790531066038551,
+      "rmse_over_truth_std": 1.7672045019681122,
+      "total_seconds_960": 1.7631815858185291,
+      "training_seconds": 1.7611553436145186,
+      "truth_mean": -2.998221515526014,
+      "truth_std": 0.6105988896033979
+    },
+    {
+      "bias": 1.0564951872156902,
+      "checkpoint": 20,
+      "gradient_relative_error": 0.154339145503652,
+      "inference_seconds_2048": 0.0016989875584840775,
+      "inference_seconds_960": 0.0016399500891566277,
+      "prediction_path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/predictions/b1_d400_k40/pinn_sdgd/seed0_smoke_20.npz",
+      "relative_l2": 0.34681372840943603,
+      "rmse": 1.0611685873282648,
+      "rmse_over_truth_std": 1.7379143745536865,
+      "total_seconds_960": 2.213159746490419,
+      "training_seconds": 2.2115197964012623,
+      "truth_mean": -2.998221515526014,
+      "truth_std": 0.6105988896033979
+    }
+  ],
+  "full_seed": 485402297,
+  "git_commit": "dbc83f8773ae0d51135850776130f6148b2c5f12",
+  "gpu_name": "NVIDIA GH200 120GB",
+  "history": [],
+  "method": "pinn_sdgd",
+  "profile": "smoke",
+  "seed": 485402297,
+  "seed_index": 0,
+  "selected_step": 20,
+  "selection_metric": "minimum frozen full-Laplacian squared PDE residual",
+  "test_used_for_selection": false
+}

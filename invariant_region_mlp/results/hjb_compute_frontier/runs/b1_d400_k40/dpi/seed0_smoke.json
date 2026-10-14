@@ -1,0 +1,94 @@
+{
+  "checkpoints": [
+    {
+      "analytic_reference_used_for_training_or_selection": false,
+      "epochs_per_round": 1,
+      "method": "dpi",
+      "parameter_count": 64273,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/checkpoints/b1_d400_k40/dpi/seed0/smoke/dpi_round1.pt",
+      "paths_per_label": 8,
+      "peak_gpu_bytes": 71788032,
+      "round": 1,
+      "seed": 517555489,
+      "training_points_per_round": 32,
+      "training_seconds": 2.7154071861878037,
+      "validation_target_loss": 0.269613116979599
+    },
+    {
+      "analytic_reference_used_for_training_or_selection": false,
+      "epochs_per_round": 1,
+      "method": "dpi",
+      "parameter_count": 64273,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/checkpoints/b1_d400_k40/dpi/seed0/smoke/dpi_round2.pt",
+      "paths_per_label": 8,
+      "peak_gpu_bytes": 72306176,
+      "round": 2,
+      "seed": 517555489,
+      "training_points_per_round": 32,
+      "training_seconds": 2.834466550499201,
+      "validation_target_loss": 0.49755141139030457
+    }
+  ],
+  "equation": "b1_d400_k40",
+  "evaluation": [
+    {
+      "bias": 1.0842479957437112,
+      "checkpoint": 1,
+      "gradient_relative_error": 0.3166158819337994,
+      "inference_seconds_2048": 0.0015157312154769897,
+      "inference_seconds_960": 0.0010847672820091248,
+      "prediction_path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/predictions/b1_d400_k40/dpi/seed0_smoke_1.npz",
+      "relative_l2": 0.3556054247120928,
+      "rmse": 1.088069113984163,
+      "rmse_over_truth_std": 1.7819703450343582,
+      "total_seconds_960": 2.716491953469813,
+      "training_seconds": 2.7154071861878037,
+      "truth_mean": -2.998221515526014,
+      "truth_std": 0.6105988896033979
+    },
+    {
+      "bias": 1.0714719043108138,
+      "checkpoint": 2,
+      "gradient_relative_error": 0.32221017386604117,
+      "inference_seconds_2048": 0.0011195195838809013,
+      "inference_seconds_960": 0.0010151378810405731,
+      "prediction_path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/predictions/b1_d400_k40/dpi/seed0_smoke_2.npz",
+      "relative_l2": 0.3514729704076619,
+      "rmse": 1.0754247739906364,
+      "rmse_over_truth_std": 1.7612622497383785,
+      "total_seconds_960": 2.8354816883802414,
+      "training_seconds": 2.834466550499201,
+      "truth_mean": -2.998221515526014,
+      "truth_std": 0.6105988896033979
+    }
+  ],
+  "full_seed": 517555489,
+  "git_commit": "dbc83f8773ae0d51135850776130f6148b2c5f12",
+  "gpu_name": "NVIDIA GH200 120GB",
+  "history": [
+    {
+      "cumulative_seconds": 2.7154071861878037,
+      "label_seconds": 0.11686170194298029,
+      "round": 1,
+      "supervised_seconds": 0.13450838532298803,
+      "training_loss_last": 0.25014883279800415,
+      "validation_target_loss": 0.269613116979599
+    },
+    {
+      "cumulative_seconds": 2.834466550499201,
+      "label_seconds": 0.1027101157233119,
+      "round": 2,
+      "supervised_seconds": 0.007660224102437496,
+      "training_loss_last": 0.425668329000473,
+      "validation_target_loss": 0.49755141139030457
+    }
+  ],
+  "label_seconds_total": 0.2195718176662922,
+  "method": "dpi",
+  "profile": "smoke",
+  "seed": 517555489,
+  "seed_index": 0,
+  "selected_round": 2,
+  "selection_metric": "preset Picard-round ceiling; within-round targets only",
+  "test_used_for_selection": false
+}

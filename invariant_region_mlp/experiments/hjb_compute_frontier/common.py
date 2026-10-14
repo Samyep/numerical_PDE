@@ -191,7 +191,12 @@ def write_csv(path: Path, rows: Sequence[dict[str, Any]], fields: Sequence[str] 
     columns = list(fields or rows[0].keys())
     temporary = path.with_name(path.name + f".tmp.{os.getpid()}")
     with temporary.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=columns, extrasaction="ignore")
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=columns,
+            extrasaction="ignore",
+            lineterminator="\n",
+        )
         writer.writeheader()
         writer.writerows(rows)
     temporary.replace(path)

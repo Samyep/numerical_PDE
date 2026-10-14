@@ -88,8 +88,8 @@ def terminal_pathwise_labels(
 ) -> tuple[np.ndarray, dict[str, Any]]:
     if paths % 2:
         raise ValueError("paths must be even")
-    times = np.asarray(t, dtype=np.float64).reshape(-1)
-    states = np.asarray(x, dtype=np.float64).reshape(-1, equation.d)
+    times = np.array(t, dtype=np.float64, copy=True).reshape(-1)
+    states = np.array(x, dtype=np.float64, copy=True, order="C").reshape(-1, equation.d)
     labels = np.empty_like(states)
     generator = torch.Generator(device=device).manual_seed(seed)
     if device.type == "cuda":
@@ -170,8 +170,8 @@ def policy_gradient_labels(
 ) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
     if paths % path_chunk or path_chunk % 2:
         raise ValueError("paths must be divisible by an even path_chunk")
-    times = np.asarray(t, dtype=np.float64).reshape(-1)
-    states = np.asarray(x, dtype=np.float64).reshape(-1, equation.d)
+    times = np.array(t, dtype=np.float64, copy=True).reshape(-1)
+    states = np.array(x, dtype=np.float64, copy=True, order="C").reshape(-1, equation.d)
     values = np.empty(len(times), dtype=np.float64)
     labels = np.empty_like(states)
     generator = torch.Generator(device=device).manual_seed(seed)
@@ -343,8 +343,8 @@ def predict_actor(
     equation: Equation,
     device: torch.device,
 ) -> np.ndarray:
-    times = np.asarray(t, dtype=np.float64).reshape(-1)
-    states = np.asarray(x, dtype=np.float64).reshape(-1, equation.d)
+    times = np.array(t, dtype=np.float64, copy=True).reshape(-1)
+    states = np.array(x, dtype=np.float64, copy=True, order="C").reshape(-1, equation.d)
     output: list[np.ndarray] = []
     actor.eval()
     with torch.no_grad():
@@ -377,8 +377,8 @@ def evaluate_policy_cv(
 
     if paths % path_chunk or path_chunk % 2:
         raise ValueError("paths must be divisible by even path_chunk")
-    times = np.asarray(t, dtype=np.float64).reshape(-1)
-    states = np.asarray(x, dtype=np.float64).reshape(-1, equation.d)
+    times = np.array(t, dtype=np.float64, copy=True).reshape(-1)
+    states = np.array(x, dtype=np.float64, copy=True, order="C").reshape(-1, equation.d)
     output = np.empty(len(times), dtype=np.float64)
     variances = np.empty(len(times), dtype=np.float64)
     generator = torch.Generator(device=device).manual_seed(seed)

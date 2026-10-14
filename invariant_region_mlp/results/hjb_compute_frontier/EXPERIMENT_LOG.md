@@ -28,3 +28,14 @@ Starting commit: `56f6448e1557118f8cc6e51ed038ff03512c84d2`
 - Diagnosis: configuration plumbing only; no OOM, NaN, or training instability.
 - Fix: every Actor label/evaluation call now passes `path_chunk=min(64, paths)`, with a regression test for the 8-path setting. Focused suite now has 7 passing tests.
 - Recovery script prepared: `experiments/hjb_compute_frontier/slurm/smoke_continue.slurm`; it skips the three completed B1 baseline cells.
+
+### 3377629 — `hjbfront_smoke2`
+
+- Authorization: user explicitly confirmed the recovery submission.
+- Commit: `2b30cde83e87dbdd6464c02d51064b757f5960b2`.
+- Hardware: NVIDIA GH200 120GB (97,871 MiB visible), driver 595.71.05.
+- State: `COMPLETED`, exit `0:0`, elapsed 55 GPU-seconds (`0.01528` GPU-hours), MaxRSS 727,168 KB.
+- Completed: B1 Actor smoke; HJB-Log PINN+SDGD, Deep BSDE, DPI, and Actor smoke; independent aggregation of 22 prediction artifacts.
+- Prediction audit: exact agreement between stored predictions and independently recomputed metrics (maximum scalar difference `0.0`).
+- Total allocation through smoke: 134 GPU-seconds (`0.03722` GH200 hours).
+- Nonfatal warning: read-only NumPy test views were passed to `torch.as_tensor`; inputs were not modified. Future jobs explicitly copy these views before tensor conversion.
