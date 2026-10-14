@@ -292,8 +292,9 @@ def evaluate_policy_plain_mc(
             bt = torch.as_tensor(times[begin:end], dtype=torch.float32, device=device)
             bx = torch.as_tensor(states[begin:end], dtype=torch.float32, device=device)
             sums = {key: torch.zeros(end - begin, dtype=torch.float64, device=device)
-                    for key in ("payoff", "payoff2", "running", "abs_action", "saturated")}
+                    for key in ("payoff", "pair", "pair2", "running", "abs_action", "saturated")}
             action_observations = 0
+            pair_observations = 0
             for _ in range(0, paths, path_chunk):
                 normals = antithetic_normals(
                     (end - begin, path_chunk, time_steps, problem.d),
@@ -324,19 +325,26 @@ def evaluate_policy_plain_mc(
                         saturated += (action[..., 0].abs() >= 0.99 * problem.A).float()
                     state = state + drift * dt[:, None, None] + problem.sigma * torch.sqrt(dt)[:, None, None] * normals[:, :, step, :]
                 payoff = problem.terminal(state) + running
+                half = path_chunk // 2
+                pair_payoff = 0.5 * (payoff[:, :half] + payoff[:, half:])
                 sums["payoff"] += payoff.double().sum(dim=1)
-                sums["payoff2"] += payoff.double().square().sum(dim=1)
+                sums["pair"] += pair_payoff.double().sum(dim=1)
+                sums["pair2"] += pair_payoff.double().square().sum(dim=1)
                 sums["running"] += running.double().sum(dim=1)
                 sums["abs_action"] += abs_action.double().sum(dim=1)
                 sums["saturated"] += saturated.double().sum(dim=1)
                 action_observations += path_chunk * time_steps
+                pair_observations += half
             mean = sums["payoff"] / paths
-            sample_var = torch.clamp(
-                (sums["payoff2"] - sums["payoff"].square() / paths) / max(paths - 1, 1),
+            pair_sample_var = torch.clamp(
+                (sums["pair2"] - sums["pair"].square() / pair_observations)
+                / max(pair_observations - 1, 1),
                 min=0.0,
             )
             outputs["value"][begin:end] = mean.cpu().numpy()
-            outputs["mc_variance_of_mean"][begin:end] = (sample_var / paths).cpu().numpy()
+            outputs["mc_variance_of_mean"][begin:end] = (
+                pair_sample_var / pair_observations
+            ).cpu().numpy()
             outputs["running_cost"][begin:end] = (sums["running"] / paths).cpu().numpy()
             outputs["mean_abs_action"][begin:end] = (sums["abs_action"] / action_observations).cpu().numpy()
             outputs["saturation_rate"][begin:end] = (sums["saturated"] / action_observations).cpu().numpy()
