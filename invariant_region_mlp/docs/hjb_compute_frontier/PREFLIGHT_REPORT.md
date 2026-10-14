@@ -42,4 +42,6 @@ External baselines use only full PDE residual, terminal mismatch, or preset Pica
 
 ## GPU preflight gate
 
-The next job is a short GH200 smoke/profile run containing all four methods on both PDEs. Its purpose is to verify CUDA memory, numerical finiteness, checkpoint/prediction serialization, and measured seconds per unit of work before spending the pilot allocation. It does not change the already frozen external baseline configurations.
+The smoke suite completed all four methods on both PDEs. Twenty-two stored prediction artifacts reproduced every reported scalar exactly. A final-scale GH200 microbenchmark then measured projected per-run costs: 31.8 minutes for 10,000-step PINN+SDGD, 6.4 minutes for 10,000-step Deep BSDE, 2.0 minutes for 20-round DPI, and 5.7 minutes for one 8,192-point high-quality Actor policy-improvement phase. A 2,048-point 256-path/64-step Actor evaluation projects to 19 seconds. Peak allocated CUDA memory was below 0.5 GB.
+
+These measurements place the planned two-PDE, three-seed comparison and targeted Actor exploration below the 18-hour allocation ceiling. Complete pilot accounting, rather than the linear projection, will determine the final launch grouping. The external configurations remain unchanged.

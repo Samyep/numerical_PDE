@@ -19,6 +19,8 @@ from .common import (
     vector_relative_error,
     write_csv,
 )
+from .equations import equation_key, make_equation
+from .run_experiment import _banks
 
 
 METHOD_LABELS = {
@@ -90,7 +92,13 @@ def aggregate(profile: str | None) -> tuple[list[dict[str, Any]], list[dict[str,
                     "selected": entry["actor"] == selected_token,
                     "selection_rule": run["selection_metric"],
                     "test_used_for_selection": True,
-                    "training_seconds": entry["path_training_seconds"],
+                    "training_seconds": entry.get(
+                        "training_seconds_with_validation",
+                        entry["path_training_seconds"],
+                    ),
+                    "policy_validation_mean": entry.get("policy_validation", {}).get(
+                        "mean_policy_value"
+                    ),
                     "inference_seconds_960": entry.get("inference_seconds_960", entry.get("inference_seconds")),
                     "inference_seconds_2048": entry.get("inference_seconds_2048", entry.get("inference_seconds")),
                     "total_seconds_960": entry.get("total_seconds_960", entry.get("total_seconds")),
@@ -175,6 +183,27 @@ def aggregate(profile: str | None) -> tuple[list[dict[str, Any]], list[dict[str,
             "artifacts": audit,
         },
     )
+    diagnostics: dict[str, Any] = {}
+    for short_name in ("b1", "hjb_log"):
+        equation = make_equation(short_name)
+        banks = _banks(equation)
+        validation_truth = equation.exact_u(
+            banks["policy_t"], banks["policy_x"]
+        )
+        constant_value = float(np.mean(validation_truth))
+        constant_prediction = np.full_like(banks["test_u"], constant_value)
+        terminal_prediction = equation.terminal(banks["test_x"])
+        diagnostics[equation_key(equation)] = {
+            "constant_fitted_on_independent_validation_truth": {
+                "constant": constant_value,
+                **model_metrics(constant_prediction, banks["test_u"]),
+            },
+            "terminal_value_predictor": model_metrics(
+                terminal_prediction, banks["test_u"]
+            ),
+            "purpose": "post-hoc scale diagnostic only; not a plotted main method",
+        }
+    atomic_json(RESULTS_DIR / "benchmark_diagnostics.json", diagnostics)
     return summary, frontier
 
 

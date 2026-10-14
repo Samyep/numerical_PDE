@@ -388,17 +388,22 @@ def run_actor(equation_name: str, seed_index: int, profile: str) -> None:
         source = actors.get(phase.source) if phase.source is not None else None
         if phase.source is not None and source is None:
             raise RuntimeError(f"source actor {phase.source} is unavailable")
+        point_namespace = (
+            "matched_q1_refresh_vs_q2"
+            if phase.name in {"q1_refresh", "q2"}
+            else phase.name
+        )
         train_t, train_x = named_points(
             key,
             equation.d,
-            f"actor_{profile}_{phase.name}_seed{seed_index}_train",
+            f"actor_{profile}_{point_namespace}_seed{seed_index}_train",
             phase.training_points,
             T=equation.T,
         )
         valid_t, valid_x = named_points(
             key,
             equation.d,
-            f"actor_{profile}_{phase.name}_seed{seed_index}_label_valid",
+            f"actor_{profile}_{point_namespace}_seed{seed_index}_label_valid",
             phase.validation_points,
             T=equation.T,
         )
@@ -515,10 +520,40 @@ def run_actor(equation_name: str, seed_index: int, profile: str) -> None:
     prediction_dir = PREDICTION_DIR / key / "ours" / f"seed{seed_index}" / profile
     for phase in phases:
         actor = actors[phase.name]
+        validation_paths = min(paths, 128)
+        validation_steps = min(time_steps, 32)
+        policy_value, policy_variance, policy_meta = evaluate_policy_cv(
+            equation,
+            actor,
+            banks["policy_t"],
+            banks["policy_x"],
+            paths=validation_paths,
+            time_steps=validation_steps,
+            seed=stable_seed(
+                "actor_policy_validation_common_random_numbers",
+                key,
+                seed_index,
+                profile,
+            ),
+            device=device,
+            path_chunk=min(64, validation_paths),
+        )
+        policy_validation = {
+            "mean_policy_value": float(np.mean(policy_value)),
+            "mc_standard_error_of_mean": float(
+                np.sqrt(np.sum(np.maximum(policy_variance, 0.0)))
+                / len(policy_variance)
+            ),
+            "value_standard_deviation_across_fixed_states": float(
+                np.std(policy_value, ddof=1)
+            ),
+            "metadata": policy_meta,
+            "analytic_reference_used": False,
+        }
         selection_x = banks["test_x"][:point_count]
         selection_t = banks["test_t"][:point_count]
         evaluation_seed = stable_seed(
-            "actor_test_eval", key, seed_index, profile, phase.name
+            "actor_test_eval_common_random_numbers", key, seed_index, profile
         )
         if point_count == 2048:
             first_value, first_variance, first_meta = evaluate_policy_cv(
@@ -594,17 +629,30 @@ def run_actor(equation_name: str, seed_index: int, profile: str) -> None:
                 "actor": phase.name,
                 "policy_iterations": int(phase.name[1]) if phase.name.startswith("q") and phase.name[1].isdigit() else 1,
                 "path_training_seconds": path_seconds[phase.name],
+                "policy_validation_seconds": policy_meta["wall_seconds"],
+                "training_seconds_with_validation": path_seconds[phase.name]
+                + policy_meta["wall_seconds"],
+                "policy_validation": policy_validation,
                 "cumulative_exploration_seconds": cumulative_exploration_seconds,
                 "inference_seconds_960": evaluation_meta["wall_seconds_960"],
                 "inference_seconds_2048": evaluation_meta["wall_seconds_2048"],
-                "total_seconds_960": path_seconds[phase.name] + evaluation_meta["wall_seconds_960"],
-                "total_seconds_2048": path_seconds[phase.name] + evaluation_meta["wall_seconds_2048"],
+                "total_seconds_960": path_seconds[phase.name]
+                + policy_meta["wall_seconds"]
+                + evaluation_meta["wall_seconds_960"],
+                "total_seconds_2048": path_seconds[phase.name]
+                + policy_meta["wall_seconds"]
+                + evaluation_meta["wall_seconds_2048"],
                 "evaluation": evaluation_meta,
                 "prediction_path": str(prediction_path),
                 **metrics,
             }
         )
     selected = min(evaluations, key=lambda item: item["relative_l2"])
+    selection_evaluation_seconds = sum(
+        float(item["policy_validation_seconds"])
+        + float(item["inference_seconds_2048"])
+        for item in evaluations
+    )
     result = {
         "method": "ours_actor_iteration_cv",
         "equation": key,
@@ -619,6 +667,11 @@ def run_actor(equation_name: str, seed_index: int, profile: str) -> None:
         "test_used_for_selection": True,
         "selection_label": "test_rmse_oracle_allowed_by_user",
         "total_exploration_seconds": cumulative_exploration_seconds,
+        "selection_evaluation_seconds": selection_evaluation_seconds,
+        "total_exploration_seconds_including_all_candidate_evaluations": (
+            cumulative_exploration_seconds + selection_evaluation_seconds
+        ),
+        "actor_comparison_common_random_numbers": True,
     }
     result_path = RESULTS_DIR / "runs" / key / "ours" / f"seed{seed_index}_{profile}.json"
     atomic_json(result_path, result)

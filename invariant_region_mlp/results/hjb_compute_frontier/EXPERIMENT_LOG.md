@@ -39,3 +39,15 @@ Starting commit: `56f6448e1557118f8cc6e51ed038ff03512c84d2`
 - Prediction audit: exact agreement between stored predictions and independently recomputed metrics (maximum scalar difference `0.0`).
 - Total allocation through smoke: 134 GPU-seconds (`0.03722` GH200 hours).
 - Nonfatal warning: read-only NumPy test views were passed to `torch.as_tensor`; inputs were not modified. Future jobs explicitly copy these views before tensor conversion.
+
+### 3377649 — `hjbfront_runtime`
+
+- Commit: `affefd7a` plus no semantic runtime-profile changes in the working tree.
+- State: `COMPLETED`, exit `0:0`, elapsed 28 GPU-seconds (`0.00778` GPU-hours), MaxRSS 88,448 KB.
+- Final-scale B1 microbenchmarks on GH200:
+  - PINN+SDGD: `0.19066 s/step`, projected 10,000 steps `1,906.6 s`; full 400-coordinate validation `0.337 s`.
+  - amortized Deep BSDE: `0.03834 s/step`, projected 10,000 steps `383.4 s`.
+  - DPI: projected 20 rounds `117.6 s` at 4,096 points, 512 paths, and 16 epochs.
+  - Actor: policy-gradient label generation `0.03789 s/point` at 512 paths and 32 Euler steps; projected 8,192-point/6,000-step phase `340.4 s`; 2,048-point 256-path/64-step inference `19.0 s`.
+- Peak allocated CUDA memory in the microbenchmarks: below 0.5 GB.
+- Total allocation through runtime profiling: 162 GPU-seconds (`0.04500` GH200 hours).
