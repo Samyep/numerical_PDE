@@ -353,7 +353,7 @@ def make_plots(frontier: list[dict[str, Any]], profile: str | None) -> None:
             fig.savefig(FIGURE_DIR / f"{stem}.pdf")
             plt.close(fig)
 
-    fig, axes = plt.subplots(2, 2, figsize=(9.0, 6.4), constrained_layout=True)
+    fig, axes = plt.subplots(2, 2, figsize=(9.0, 6.8))
     for row_index, (equation, title) in enumerate((("b1_d400_k40", "B1"), ("hjb_log_d400", "HJB-Log"))):
         for col_index, (cost_key, label) in enumerate((("training_seconds", "Training time (s)"), ("total_seconds_960", "Total cost, N=960 (s)"))):
             ax = axes[row_index, col_index]
@@ -367,13 +367,21 @@ def make_plots(frontier: list[dict[str, Any]], profile: str | None) -> None:
             ax.set_xscale("log")
             ax.set_yscale("log")
             ax.set_title(f"{title}: {label}")
-            ax.set_ylabel("Relative L2")
+            ax.set_ylabel("Value relative L2 error")
             ax.grid(True, which="both", alpha=0.2)
     handles, labels = axes[0, 0].get_legend_handles_labels()
     if handles:
-        fig.legend(handles, labels, loc="upper center", ncol=4, frameon=False)
-    fig.savefig(FIGURE_DIR / "hjb_compute_frontier_2x2.png")
-    fig.savefig(FIGURE_DIR / "hjb_compute_frontier_2x2.pdf")
+        fig.legend(
+            handles,
+            labels,
+            loc="upper center",
+            bbox_to_anchor=(0.5, 0.995),
+            ncol=4,
+            frameon=False,
+        )
+    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.94), h_pad=1.5, w_pad=1.2)
+    fig.savefig(FIGURE_DIR / "hjb_compute_frontier_2x2.png", bbox_inches="tight")
+    fig.savefig(FIGURE_DIR / "hjb_compute_frontier_2x2.pdf", bbox_inches="tight")
     plt.close(fig)
 
 
