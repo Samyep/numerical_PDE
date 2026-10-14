@@ -6,6 +6,7 @@ import argparse
 from dataclasses import asdict
 import json
 import math
+import os
 from pathlib import Path
 import platform
 import subprocess
@@ -368,6 +369,13 @@ def run_actor(equation_name: str, seed_index: int, profile: str) -> None:
     key = equation_key(equation)
     device = require_cuda()
     phases = _actor_phases(profile)
+    high_stage: int | None = None
+    if profile == "high":
+        high_stage = int(os.environ.get("HJB_ACTOR_HIGH_STAGE", "1"))
+        phase_count = {1: 2, 2: 3, 3: 5}.get(high_stage)
+        if phase_count is None:
+            raise ValueError("HJB_ACTOR_HIGH_STAGE must be 1, 2, or 3")
+        phases = phases[:phase_count]
     actors: dict[str, Any] = {}
     phase_metadata: dict[str, Any] = {}
     checkpoint_root = CHECKPOINT_DIR / key / "ours" / f"seed{seed_index}" / profile
@@ -672,6 +680,7 @@ def run_actor(equation_name: str, seed_index: int, profile: str) -> None:
             cumulative_exploration_seconds + selection_evaluation_seconds
         ),
         "actor_comparison_common_random_numbers": True,
+        "high_stage": high_stage,
     }
     result_path = RESULTS_DIR / "runs" / key / "ours" / f"seed{seed_index}_{profile}.json"
     atomic_json(result_path, result)
