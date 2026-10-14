@@ -1,0 +1,45 @@
+{
+  "actor": {
+    "batch_size": 512,
+    "depth": 3,
+    "learning_rate": 0.0002,
+    "optimizer_steps": 2500,
+    "path_chunk": 32,
+    "paths_per_label": 128,
+    "training_points": 2048,
+    "validation_points": 256,
+    "width": 192,
+    "label_time_steps": 16,
+    "parent_batch": 8
+  },
+  "evaluation": {
+    "estimator": "ordinary controlled-policy payoff Monte Carlo",
+    "martingale_control_variate": false,
+    "antithetic": true,
+    "policy_validation_points": 256,
+    "policy_validation_paths": 512,
+    "policy_validation_steps": 32,
+    "test_points": 512,
+    "test_paths": 512,
+    "test_steps": 64,
+    "common_random_numbers": true
+  },
+  "forbidden_training_information": [
+    "analytic nonterminal values",
+    "analytic nonterminal gradients",
+    "Riccati solution",
+    "one-dimensional HJB reference",
+    "nonlinear MLP gradient teacher",
+    "rank projection"
+  ],
+  "policy_initialization": "feasible zero action",
+  "policy_iterations": [1, 2],
+  "problems": {
+    "bounded": {"A": 0.35, "T": 0.5, "beta_seed": 9137, "d": 100, "m": 1},
+    "lqg": {"G": 1.0, "Q": 0.5, "R": 1.0, "T": 0.5, "d": 100, "gamma": 0.2, "m": 100},
+    "quartic": {"T": 0.5, "beta_seed": 9137, "d": 100, "lambda": 1.0, "m": 1}
+  },
+  "reference_selection_policy": "References are constructed and queried only after all learned checkpoints are frozen; they never affect checkpoint or iteration selection.",
+  "schema_version": 1
+}
+

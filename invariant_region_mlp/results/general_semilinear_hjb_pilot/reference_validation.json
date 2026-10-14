@@ -1,0 +1,51 @@
+{
+  "bounded": {
+    "action_refinement_max_abs": 0.017063517157531183,
+    "action_refinement_rmse": 0.0006983700168951544,
+    "audit_domain": [
+      -4.0,
+      4.0
+    ],
+    "boundary_half_width": 10.0,
+    "coarse_dt": 0.001,
+    "coarse_dx": 0.05,
+    "fine_dt": 0.0005,
+    "fine_dx": 0.025,
+    "problem": "bounded",
+    "terminal_max_abs": 8.881784197001252e-16,
+    "value_refinement_max_abs": 0.0005810838219633477,
+    "value_refinement_rmse": 0.00013402917040941314
+  },
+  "lqg": {
+    "P_max": 1.0,
+    "P_min": 0.7263772575118445,
+    "atol": 1e-13,
+    "riccati_residual_grid_max_abs": 2.823414416708303e-07,
+    "rtol": 1e-11,
+    "solver": "scipy.solve_ivp DOP853/RK45 default with dense output",
+    "terminal_P_error": 0.0,
+    "terminal_c_error": 0.0
+  },
+  "quartic": {
+    "action_refinement_max_abs": 0.0014251692762532464,
+    "action_refinement_rmse": 0.00016865351222830968,
+    "audit_domain": [
+      -4.0,
+      4.0
+    ],
+    "boundary_half_width": 10.0,
+    "coarse_dt": 0.001,
+    "coarse_dx": 0.05,
+    "fine_dt": 0.0005,
+    "fine_dx": 0.025,
+    "problem": "quartic",
+    "terminal_max_abs": 8.881784197001252e-16,
+    "value_refinement_max_abs": 0.0005810838219633477,
+    "value_refinement_rmse": 0.00013245537192315768
+  },
+  "training_leakage": {
+    "reference_imported_by_training_core": false,
+    "reference_used_for_checkpoint_selection": false,
+    "reference_used_for_policy_iteration_decision": false
+  }
+}
