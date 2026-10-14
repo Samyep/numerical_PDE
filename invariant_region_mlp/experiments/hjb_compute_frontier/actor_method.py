@@ -209,6 +209,7 @@ def policy_gradient_labels(
         "kind": "full_controlled_trajectory_pathwise_gradient",
         "points": len(times),
         "paths": paths,
+        "path_chunk": path_chunk,
         "time_steps": time_steps,
         "seed": seed,
         "source_actor_frozen": True,

@@ -9,15 +9,15 @@
 #SBATCH --mem=64G
 #SBATCH --gpus-per-node=1
 #SBATCH --gpu-bind=verbose,closest
-#SBATCH --time=01:30:00
+#SBATCH --time=01:14:00
 #SBATCH --output=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/slurm/%x_%j.out
 #SBATCH --error=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/slurm/%x_%j.err
 
 set -euo pipefail
 
-: "${HJB_ACTOR_HIGH_STAGE:?set HJB_ACTOR_HIGH_STAGE to 1, 2, or 3}"
-if [[ "$HJB_ACTOR_HIGH_STAGE" != "1" && "$HJB_ACTOR_HIGH_STAGE" != "2" && "$HJB_ACTOR_HIGH_STAGE" != "3" ]]; then
-  printf 'HJB_ACTOR_HIGH_STAGE must be 1, 2, or 3, got %s\n' "$HJB_ACTOR_HIGH_STAGE" >&2
+: "${HJB_ACTOR_HIGH_STAGE:?set HJB_ACTOR_HIGH_STAGE to 1, 2, 3, or 4}"
+if [[ "$HJB_ACTOR_HIGH_STAGE" != "1" && "$HJB_ACTOR_HIGH_STAGE" != "2" && "$HJB_ACTOR_HIGH_STAGE" != "3" && "$HJB_ACTOR_HIGH_STAGE" != "4" ]]; then
+  printf 'HJB_ACTOR_HIGH_STAGE must be 1, 2, 3, or 4, got %s\n' "$HJB_ACTOR_HIGH_STAGE" >&2
   exit 2
 fi
 

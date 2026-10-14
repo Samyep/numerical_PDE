@@ -372,9 +372,9 @@ def run_actor(equation_name: str, seed_index: int, profile: str) -> None:
     high_stage: int | None = None
     if profile == "high":
         high_stage = int(os.environ.get("HJB_ACTOR_HIGH_STAGE", "1"))
-        phase_count = {1: 2, 2: 3, 3: 5}.get(high_stage)
+        phase_count = {1: 1, 2: 2, 3: 3, 4: 5}.get(high_stage)
         if phase_count is None:
-            raise ValueError("HJB_ACTOR_HIGH_STAGE must be 1, 2, or 3")
+            raise ValueError("HJB_ACTOR_HIGH_STAGE must be 1, 2, 3, or 4")
         phases = phases[:phase_count]
     actors: dict[str, Any] = {}
     phase_metadata: dict[str, Any] = {}
@@ -443,6 +443,10 @@ def run_actor(equation_name: str, seed_index: int, profile: str) -> None:
                     device=device,
                 )
             else:
+                label_path_chunk = min(
+                    128 if profile == "high" else 64,
+                    phase.paths_per_label,
+                )
                 _, train_y, train_label_meta = policy_gradient_labels(
                     equation,
                     source,
@@ -452,7 +456,7 @@ def run_actor(equation_name: str, seed_index: int, profile: str) -> None:
                     time_steps=phase.label_time_steps,
                     seed=train_seed,
                     device=device,
-                    path_chunk=min(64, phase.paths_per_label),
+                    path_chunk=label_path_chunk,
                 )
                 _, valid_y, valid_label_meta = policy_gradient_labels(
                     equation,
@@ -463,7 +467,7 @@ def run_actor(equation_name: str, seed_index: int, profile: str) -> None:
                     time_steps=phase.label_time_steps,
                     seed=valid_seed,
                     device=device,
-                    path_chunk=min(64, phase.paths_per_label),
+                    path_chunk=label_path_chunk,
                 )
             label_metadata = {
                 "train": train_label_meta,

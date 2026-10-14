@@ -44,7 +44,7 @@ def test_actor_cv_terminal_and_source_freezing() -> None:
     )
     np.testing.assert_allclose(value, equation.terminal(x), rtol=2e-7, atol=2e-7)
     np.testing.assert_allclose(variance, 0.0, atol=1e-14)
-    _, labels, _ = policy_gradient_labels(
+    _, labels, label_metadata = policy_gradient_labels(
         equation,
         actor,
         np.zeros(2),
@@ -58,6 +58,7 @@ def test_actor_cv_terminal_and_source_freezing() -> None:
     )
     assert labels.shape == (2, 4)
     assert np.all(np.isfinite(labels))
+    assert label_metadata["path_chunk"] == 4
     assert all(parameter.grad is None for parameter in actor.parameters())
 
 
