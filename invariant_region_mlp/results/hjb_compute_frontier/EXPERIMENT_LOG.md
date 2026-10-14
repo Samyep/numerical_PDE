@@ -115,3 +115,68 @@ Starting commit: `56f6448e1557118f8cc6e51ed038ff03512c84d2`
   HJB-Log evaluation bottleneck.
 - Total allocated compute through this diagnostic: 23,969 GPU-seconds
   (`6.65806` GH200 hours).
+
+### 3378026 — high-quality B1 Actor `q0`
+
+- Script: `experiments/hjb_compute_frontier/slurm/high_actor_continue.slurm`.
+- State: `COMPLETED`, exit `0:0`, elapsed 88 GPU-seconds; Python step 41
+  seconds, MaxRSS 1,645,952 KB.
+- Produced the width-512 terminal-pathwise `q0` checkpoint.  RMSE was
+  `0.170516`; path-training time was 13.37 seconds.
+
+### 3378260 — high-quality B1 Actor `q1`
+
+- State: `COMPLETED`, exit `0:0`, elapsed 1,338 GPU-seconds (`0.37167`
+  GPU-hours); Python step 1,294 seconds, MaxRSS 1,611 MiB.
+- Configuration: 16,384 training points, 1,024 validation points, 1,024 paths
+  per label, 64 label Euler steps, 12,000 optimizer steps, width 512.
+- The selected optimizer checkpoint was step 12,000/12,000.  `q1` RMSE was
+  `0.053064`, 40.8% below the same-seed frozen-budget `q1`.
+
+### 3378329 — matched fresh-label `q1_refresh`
+
+- State: `COMPLETED`, exit `0:0`, elapsed 1,378 GPU-seconds (`0.38278`
+  GPU-hours); Python step 1,347 seconds, MaxRSS 1,776,448 KB.
+- Used the same high-quality budget and training-state distribution as the
+  planned true `q2`, with fresh independent `q0` policy-evaluation labels.
+- The selected optimizer checkpoint was step 12,000/12,000.  RMSE was
+  `0.033069`, a further 37.7% reduction from high-quality `q1`.
+
+### 3379826 — matched true `q2`
+
+- State: `COMPLETED`, exit `0:0`, elapsed 1,342 GPU-seconds (`0.37278`
+  GPU-hours); Python step 1,327 seconds, MaxRSS 2,220,480 KB.
+- Used the same 16,384/1,024/1,024/64/12,000 budget and matched states as
+  `q1_refresh`, but generated labels from the frozen `q1` policy evaluation.
+- RMSE was `0.040800`, 23.4% above `q1_refresh`, despite improving direct
+  gradient relative error from `0.2450` to `0.2305`.
+
+### 3379966 — high-quality true `q3` and final candidate evaluation
+
+- The QOS had only 5.691 one-GH200 minutes available at submission.  The job
+  used the declared smaller `q3` budget (8,192 points, 512 paths, 32 steps,
+  6,000 optimizer steps) and a five-minute wall limit.
+- The numerical `srun` completed in 283 seconds with exit `0:0`.  It atomically
+  wrote the `q3` checkpoint, all five prediction arrays, and the final result
+  JSON.  Slurm marked the outer job `TIMEOUT` at 306 allocated seconds because
+  batch cleanup ended six seconds after the wall limit; no numerical artifact
+  was partial and no retry was performed.
+- `q3` RMSE was `0.036694`: 10.1% below `q2` but 11.0% above `q1_refresh`.
+  The test oracle therefore retained `q1_refresh`; policy validation and the
+  direct-gradient diagnostic favored `q3`.  This disagreement did not justify
+  a `q4` run.
+- Independent recomputation of the five high-profile prediction artifacts
+  agreed with the run JSON to `1.67e-16` maximum scalar discrepancy.
+
+### Final accounting and seed-extension status
+
+- The five high-quality B1 stages used 4,452 allocated GH200-seconds
+  (`1.23667` GPU-hours).
+- Total allocation across smoke, recovery, profiling, pilot, frozen final,
+  HJB-Log evaluation sensitivity, and high-quality B1 diagnostics was 28,421
+  GH200-seconds (`7.89472` GPU-hours).
+- After job 3379966, QOS accounting showed 209,999,409 of 210,000,000 billing
+  minutes consumed, leaving 591 billing-minutes, or 0.591 one-GH200 wall
+  minutes.  The validated seeds 3--4 extension was therefore not submitted.
+  The main study remains three complete seeds for every method/PDE cell, as
+  permitted by the original cost-contingent protocol.

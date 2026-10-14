@@ -31,6 +31,12 @@ The main numerical result is mixed and useful:
   DPI.  Later Actor iterations improve the direct gradient but barely change
   Value accuracy.  The final policy evaluation, rather than Actor training,
   is the visible accuracy bottleneck.
+- A separate high-quality B1 seed-0 diagnostic reaches RMSE `0.03307` with a
+  refreshed one-step Actor.  A matched true `q2` and a later `q3` do not beat
+  it, so the best tuned result comes from better supervision and continued
+  fitting rather than additional policy iterations.  This test-oracle,
+  single-seed result is evidence of attainable accuracy, not a replacement
+  for the frozen comparison.
 
 ## Frozen methods and selection
 
@@ -159,7 +165,10 @@ single selected model and must be counted in any end-to-end tuning comparison.
 The complete frozen final array consumed 21,197 allocated GH200-seconds
 (`5.8881` GPU-hours).  Smoke tests, one diagnosed smoke failure, profiling,
 the pilot, and the final array together consumed 22,459 seconds (`6.2386`
-GPU-hours) before the targeted post-final diagnostics.
+GPU-hours).  Frozen HJB-Log evaluation sensitivity added 1,510 seconds, and
+the staged high-quality B1 diagnostic added 4,452 seconds.  Total recorded
+allocation for the complete study is 28,421 GH200-seconds (`7.8947`
+GPU-hours), including failed-job and scheduler overhead.
 
 ## Compute-accuracy curves
 
@@ -211,6 +220,31 @@ would have led to the wrong stopping conclusion.  On HJB-Log, gradient error
 falls steadily but Value RMSE remains near `0.005`; extra policy iterations
 do not provide a worthwhile accuracy-cost tradeoff.
 
+### Targeted high-quality B1 diagnostic
+
+One seed was then used to raise supervision quality without changing the
+ambient-output algorithm.  The width-512 `q1`, `q1_refresh`, and true `q2`
+phases each use 16,384 training points, 1,024 paths per label, 64 label Euler
+steps, and 12,000 optimizer steps.  `q1_refresh` and `q2` use the same states
+and compute budget; only the policy-evaluation source differs.  `q3` uses the
+smaller 8,192/512/32/6,000 follow-up budget.
+
+| Actor | Value RMSE | Relative L2 | gradient relative error | model-path seconds |
+|---|---:|---:|---:|---:|
+| `q1` | 0.053064 | 0.017343 | 0.3339 | 1,260.1 |
+| **`q1_refresh`** | **0.033069** | **0.010808** | 0.2450 | 2,536.8 |
+| true `q2` | 0.040800 | 0.013334 | 0.2305 | 2,493.6 |
+| true `q3` | 0.036694 | 0.011992 | **0.2151** | 2,667.8 |
+
+The matched true `q2` has 23.4% higher Value RMSE than continued fitting with
+fresh `q0` labels.  `q3` recovers 10.1% from `q2` but remains 11.0% above
+`q1_refresh`.  MC-variance-subtracted diagnostics preserve this ordering.  The
+test oracle therefore selects `q1_refresh`; reference-free policy validation
+instead ranks `q3` first, so the small single-seed gap is selection-rule
+sensitive.  A `q4` was not justified.  The high-quality `q1_refresh` is 42.1%
+below the same-seed frozen `q3` RMSE and demonstrates that label quality and
+continued fitting are the larger B1 lever.
+
 ## Numerical and artifact audit
 
 The HJB-Log reference uses a float64 one-dimensional Hopf-Cole quadrature after
@@ -222,13 +256,17 @@ and the martingale correction.
 
 Independent aggregation reloaded all 96 final prediction artifacts and
 recomputed the scalar metrics.  The maximum discrepancy from the stored run
-records is `1.42e-14`.  Reproducibility artifacts include:
+records is `1.42e-14`.  The five high-quality Actor prediction arrays were
+audited separately with maximum discrepancy `1.67e-16`.  Reproducibility
+artifacts include:
 
 - [`summary.csv`](../../results/hjb_compute_frontier/summary.csv)
 - [`compute_frontier.csv`](../../results/hjb_compute_frontier/compute_frontier.csv)
 - [`prediction_audit.json`](../../results/hjb_compute_frontier/prediction_audit.json)
 - [`evaluation_sensitivity_summary.csv`](../../results/hjb_compute_frontier/evaluation_sensitivity_summary.csv)
 - [`evaluation_sensitivity_aggregate.json`](../../results/hjb_compute_frontier/evaluation_sensitivity_aggregate.json)
+- [`high_actor_summary.csv`](../../results/hjb_compute_frontier/high_actor_summary.csv)
+- [`high_actor_prediction_audit.json`](../../results/hjb_compute_frontier/high_actor_prediction_audit.json)
 - [`validation.json`](../../results/hjb_compute_frontier/validation.json)
 - [`scheduler_accounting.json`](../../results/hjb_compute_frontier/scheduler_accounting.json)
 - [`EXPERIMENT_LOG.md`](../../results/hjb_compute_frontier/EXPERIMENT_LOG.md)
@@ -238,10 +276,12 @@ records is `1.42e-14`.  Reproducibility artifacts include:
 The strongest paper evidence is benchmark-dependent.  HJB-Log shows a clear
 accuracy-and-cost win for terminal-pathwise Actor initialization plus
 martingale-CV evaluation: the fixed `q0` result is already substantially
-better than all three baselines.  B1 shows that high-quality pathwise policy
-updates can attain the best mean Value accuracy, and that true policy
-iterations can recover after a poor intermediate update.  It also shows that
-DPI can be far more compute-efficient and statistically tied at three seeds.
+better than all three baselines.  B1 shows that high-quality pathwise
+supervision can attain much lower single-seed Value error and that true policy
+iterations can recover after a poor intermediate update.  The matched high
+budget comparison also shows that a true `q2` does not beat refreshed
+one-step training.  DPI remains far more compute-efficient and statistically
+tied to the frozen Actor result at three seeds.
 
 The main limits are the explicit test-oracle Actor selection, only three final
 training seeds, one frozen configuration per external baseline, a scaled
@@ -249,4 +289,6 @@ rather than author-scale PINN/DPI budget, and the amortized adaptation required
 for Deep BSDE.  The poor HJB-Log PINN result should be read as the result of
 this documented single preset, not as a universal statement about PINNs.
 Likewise, one targeted high-budget B1 seed is a tuning diagnostic rather than
-a replacement for the three-seed frozen comparison.
+a replacement for the three-seed frozen comparison.  A prepared seeds 3--4
+extension was not submitted because the project QOS had only 0.591 one-GH200
+minutes left after the final diagnostic; no five-seed claim is made.

@@ -1,4 +1,14 @@
 {
+  "five_seed_extension": {
+    "main_study_seeds": [
+      0,
+      1,
+      2
+    ],
+    "prepared_script": "invariant_region_mlp/experiments/hjb_compute_frontier/slurm/final_seed_extension.slurm",
+    "reason": "The bgvf-dtai-gh QOS had 591 billing-minutes remaining (0.591 one-GH200 wall minutes) after job 3379966, insufficient for any frozen training cell.",
+    "status": "not_submitted"
+  },
   "jobs": [
     {
       "alloc_tres": "billing=1000,cpu=8,gres/gpu=1,mem=64G,node=1",
@@ -110,7 +120,73 @@
       "partition": "ghx4",
       "purpose": "Frozen HJB-Log Actor evaluation sensitivity; no training",
       "state": "COMPLETED (3/3)"
+    },
+    {
+      "alloc_tres": "billing=1000,cpu=8,gres/gpu=1,mem=64G,node=1",
+      "elapsed": "00:01:28",
+      "elapsed_raw_seconds": 88,
+      "exit_code": "0:0",
+      "gpu_hours": 0.024444444444444446,
+      "job_id": "3378026",
+      "job_name": "hjbfront_hi_stage",
+      "max_python_rss_kb": 1645952,
+      "partition": "ghx4",
+      "purpose": "High-quality B1 Actor q0 stage",
+      "state": "COMPLETED"
+    },
+    {
+      "alloc_tres": "billing=1000,cpu=8,gres/gpu=1,mem=64G,node=1",
+      "elapsed": "00:22:18",
+      "elapsed_raw_seconds": 1338,
+      "exit_code": "0:0",
+      "gpu_hours": 0.37166666666666665,
+      "job_id": "3378260",
+      "job_name": "hjbfront_hi_stage",
+      "max_python_rss_kb": 1649664,
+      "partition": "ghx4",
+      "purpose": "High-quality B1 Actor q1 stage",
+      "state": "COMPLETED"
+    },
+    {
+      "alloc_tres": "billing=1000,cpu=8,gres/gpu=1,mem=64G,node=1",
+      "elapsed": "00:22:58",
+      "elapsed_raw_seconds": 1378,
+      "exit_code": "0:0",
+      "gpu_hours": 0.3827777777777778,
+      "job_id": "3378329",
+      "job_name": "hjbfront_hi_stage",
+      "max_python_rss_kb": 1776448,
+      "partition": "ghx4",
+      "purpose": "Matched high-quality B1 q1_refresh stage",
+      "state": "COMPLETED"
+    },
+    {
+      "alloc_tres": "billing=1000,cpu=8,gres/gpu=1,mem=64G,node=1",
+      "elapsed": "00:22:22",
+      "elapsed_raw_seconds": 1342,
+      "exit_code": "0:0",
+      "gpu_hours": 0.37277777777777776,
+      "job_id": "3379826",
+      "job_name": "hjbfront_hi_stage",
+      "max_python_rss_kb": 2220480,
+      "partition": "ghx4",
+      "purpose": "Matched high-quality B1 true q2 stage",
+      "state": "COMPLETED"
+    },
+    {
+      "alloc_tres": "billing=1000,cpu=8,gres/gpu=1,mem=64G,node=1",
+      "elapsed": "00:05:06",
+      "elapsed_raw_seconds": 306,
+      "exit_code": "0:0 for batch and srun steps",
+      "gpu_hours": 0.085,
+      "job_id": "3379966",
+      "job_name": "hjbfront_hi_stage",
+      "max_python_rss_kb": 1764672,
+      "partition": "ghx4",
+      "purpose": "High-quality B1 q3 and five-candidate evaluation; atomic result completed before top-level cleanup timeout",
+      "state": "TIMEOUT after completed numerical workload"
     }
   ],
-  "total_allocated_gpu_hours": 6.658055555555556
+  "total_allocated_gpu_hours": 7.894722222222223,
+  "total_allocated_gpu_seconds": 28421
 }

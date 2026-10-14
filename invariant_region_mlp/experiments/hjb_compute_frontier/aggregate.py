@@ -335,7 +335,7 @@ def make_plots(frontier: list[dict[str, Any]], profile: str | None) -> None:
             ("training_seconds", "training_time", "Cumulative GH200 training time (s)"),
             ("total_seconds_960", "total_cost", "Training + inference cost for N=960 (s)"),
         ):
-            fig, ax = plt.subplots(figsize=(4.5, 3.4), constrained_layout=True)
+            fig, ax = plt.subplots(figsize=(5.2, 3.6), constrained_layout=True)
             for method in METHOD_LABELS:
                 rows = [row for row in frontier if row["pde"] == equation and row["method"] == method]
                 if not rows:
@@ -349,6 +349,7 @@ def make_plots(frontier: list[dict[str, Any]], profile: str | None) -> None:
             ax.grid(True, which="both", alpha=0.25, linewidth=0.5)
             ax.legend(
                 loc="upper left",
+                fontsize=7.5,
                 frameon=True,
                 facecolor="white",
                 framealpha=0.92,

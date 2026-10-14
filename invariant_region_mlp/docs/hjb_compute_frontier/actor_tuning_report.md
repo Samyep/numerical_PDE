@@ -1,8 +1,10 @@
 # Actor tuning report
 
-Status: pilot, frozen three-seed study, and frozen-Actor evaluation sensitivity
-complete.  The targeted high-quality B1 branch and seed-extension replication
-are tracked separately below.
+Status: pilot, frozen three-seed study, frozen-Actor evaluation sensitivity,
+and the targeted high-quality B1 branch are complete.  The prepared five-seed
+extension could not be submitted because the project QOS allocation was
+exhausted; the main comparison therefore remains the predeclared three-seed
+study.
 
 The ambient-output Actor has no rank projection on either PDE. The declared study compares terminal-pathwise `q0`, one policy improvement `q1`, a matched fresh-label continuation `q1_refresh`, a true `q2`, and a true `q3`. Each controlled-policy label differentiates the full Euler trajectory with the source Actor frozen while preserving its state derivative.
 
@@ -128,7 +130,56 @@ The targeted branch uses width 512.  It raises `q1`, matched `q1_refresh`, and
 matched true `q2` to 16,384 training points, 1,024 paths per label, 64 label
 Euler steps, and 12,000 optimizer steps.  The three phases therefore separate
 better first-update supervision, continued fitting to a refreshed `q0`
-target, and a same-cost true update from `q1`.  A later `q3` retains
-8,192/512/32/6,000.  The run is phase-resumable; its Slurm results and
-single-seed interpretation are appended after completion and are not mixed
-into the frozen multi-seed table.
+target, and a same-cost true update from `q1`.  The final `q3` retains the
+8,192/512/32/6,000 budget.  This is a seed-0 tuning diagnostic and is not mixed
+into the frozen three-seed comparison.
+
+| Actor | Value RMSE | Relative L2 | bias | gradient relative error | policy-validation mean +/- MC SE | model-path time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| `q0` | 0.170516 | 0.055728 | +0.149100 | 0.6973 | -2.818277 +/- 0.002313 | 13.4 |
+| `q1` | 0.053064 | 0.017343 | +0.042369 | 0.3339 | -2.925322 +/- 0.001421 | 1,260.1 |
+| **`q1_refresh`** | **0.033069** | **0.010808** | +0.023556 | 0.2450 | -2.942610 +/- 0.001159 | 2,536.8 |
+| true `q2` | 0.040800 | 0.013334 | +0.025192 | 0.2305 | -2.940797 +/- 0.001224 | 2,493.6 |
+| true `q3` | 0.036694 | 0.011992 | **+0.022252** | **0.2151** | **-2.944910 +/- 0.001154** | 2,667.8 |
+
+High-quality supervision changes the attainable B1 accuracy substantially.
+Relative to the same-seed frozen-budget run, high-budget `q1` lowers RMSE from
+`0.08957` to `0.05306` (40.8%).  A fresh matched `q0` target then lowers it by
+another 37.7% to `0.03307`, which is 42.1% below the frozen seed-0 `q3` result.
+All three 12,000-step phases selected their last optimizer checkpoint, so the
+held-out label fit remained budget-limited even at this scale.
+
+The matched comparison does not support a second policy update.  True `q2`
+has 5.9% lower direct-gradient error than `q1_refresh`, but 23.4% higher Value
+RMSE.  The cheaper `q3` update recovers 10.1% from `q2` and produces the best
+gradient and policy-validation mean, yet its Value RMSE remains 11.0% above
+`q1_refresh`.  Subtracting the stored MC estimator variance gives the same
+ranking: diagnostic RMSE `0.03053` for `q1_refresh`, `0.03850` for `q2`, and
+`0.03443` for `q3`.  Thus the user-authorized test oracle selects
+`q1_refresh`, while reference-free policy validation selects `q3`; this
+single-seed disagreement and the small MC-scale difference do not justify a
+`q4` run.
+
+Generating every high-quality phase took 3,944.5 method-internal seconds; all
+five policy validations and test evaluations raise the exploration total to
+4,035.5 seconds.  The five staged Slurm allocations consumed 4,452 GH200
+seconds (1.2367 GPU-hours), including scheduler startup and cleanup.  All five
+prediction arrays passed independent metric recomputation with maximum
+discrepancy `1.67e-16`; compact results are in
+[`high_actor_summary.csv`](../../results/hjb_compute_frontier/high_actor_summary.csv)
+and
+[`high_actor_prediction_audit.json`](../../results/hjb_compute_frontier/high_actor_prediction_audit.json).
+
+The final stage's numerical `srun` completed with exit code zero and wrote the
+`q3` checkpoint, prediction array, and result JSON.  Slurm marked the outer job
+`TIMEOUT` because cleanup finished six seconds after a QOS-constrained
+five-minute limit.  No numerical output was partial, and no retry was needed.
+
+## Replication status
+
+The frozen study reached three seeds for all eight method/PDE cells.  A
+two-seed extension script was prepared and validated, but after the high Actor
+diagnostic the `bgvf-dtai-gh` QOS had only 591 billing-minutes left, equivalent
+to 0.591 one-GH200 wall minutes.  No extension job was submitted.  The
+three-seed uncertainty and exact small-sample intervals therefore remain the
+appropriate statistical interpretation.
