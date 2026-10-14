@@ -34,7 +34,7 @@ Automated tests cover:
 - Deep BSDE forward sign `dY=+0.5||Z||^2 dt+Z dW`.
 - finite SDGD second-derivative objective and backward propagation.
 
-Six focused tests pass. Baseline source code contains no `exact_u` or `exact_z` call. Actor label generation also receives no nonterminal analytic reference.
+Seven focused tests pass. Baseline source code contains no `exact_u` or `exact_z` call. Actor label generation also receives no nonterminal analytic reference.
 
 ## Frozen selection asymmetry
 

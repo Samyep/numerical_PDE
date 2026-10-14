@@ -1,0 +1,127 @@
+{
+  "checkpoints": [
+    {
+      "adaptation": "amortized u0(x0) with shared z(t,x)",
+      "analytic_reference_used_for_training_or_selection": false,
+      "method": "deep_bsde",
+      "parameter_count": 571793,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/checkpoints/b1_d400_k40/deep_bsde/seed0/pilot/deep_bsde_step250.pt",
+      "peak_gpu_bytes": 144036352,
+      "seed": 293842412,
+      "step": 250,
+      "time_steps": 32,
+      "training_seconds": 9.667912093922496,
+      "validation_terminal_mse": 0.6501686573028564
+    },
+    {
+      "adaptation": "amortized u0(x0) with shared z(t,x)",
+      "analytic_reference_used_for_training_or_selection": false,
+      "method": "deep_bsde",
+      "parameter_count": 571793,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/checkpoints/b1_d400_k40/deep_bsde/seed0/pilot/deep_bsde_step500.pt",
+      "peak_gpu_bytes": 144036352,
+      "seed": 293842412,
+      "step": 500,
+      "time_steps": 32,
+      "training_seconds": 18.979324717074633,
+      "validation_terminal_mse": 0.621044933795929
+    },
+    {
+      "adaptation": "amortized u0(x0) with shared z(t,x)",
+      "analytic_reference_used_for_training_or_selection": false,
+      "method": "deep_bsde",
+      "parameter_count": 571793,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/checkpoints/b1_d400_k40/deep_bsde/seed0/pilot/deep_bsde_step1000.pt",
+      "peak_gpu_bytes": 144036352,
+      "seed": 293842412,
+      "step": 1000,
+      "time_steps": 32,
+      "training_seconds": 37.367689775303006,
+      "validation_terminal_mse": 0.6159647703170776
+    }
+  ],
+  "equation": "b1_d400_k40",
+  "evaluation": [
+    {
+      "bias": 0.2664753507934013,
+      "checkpoint": 250,
+      "gradient_relative_error": 1.0470187420576782,
+      "inference_seconds_2048": 0.0008388226851820946,
+      "inference_seconds_960": 0.0006783166900277138,
+      "prediction_path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/predictions/b1_d400_k40/deep_bsde/seed0_pilot_250.npz",
+      "relative_l2": 0.21673633905020318,
+      "rmse": 0.6631623142123183,
+      "rmse_over_truth_std": 1.0860850314402994,
+      "total_seconds_960": 9.668590410612524,
+      "training_seconds": 9.667912093922496,
+      "truth_mean": -2.998221515526014,
+      "truth_std": 0.6105988896033979
+    },
+    {
+      "bias": 0.22267788272532316,
+      "checkpoint": 500,
+      "gradient_relative_error": 1.053978473758752,
+      "inference_seconds_2048": 0.0006469246000051498,
+      "inference_seconds_960": 0.000638892874121666,
+      "prediction_path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/predictions/b1_d400_k40/deep_bsde/seed0_pilot_500.npz",
+      "relative_l2": 0.20884606840481917,
+      "rmse": 0.6390199384395948,
+      "rmse_over_truth_std": 1.0465461849343638,
+      "total_seconds_960": 18.979963609948754,
+      "training_seconds": 18.979324717074633,
+      "truth_mean": -2.998221515526014,
+      "truth_std": 0.6105988896033979
+    },
+    {
+      "bias": 0.23020434690355004,
+      "checkpoint": 1000,
+      "gradient_relative_error": 1.0411002456168086,
+      "inference_seconds_2048": 0.0006225742399692535,
+      "inference_seconds_960": 0.0006473734974861145,
+      "prediction_path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/predictions/b1_d400_k40/deep_bsde/seed0_pilot_1000.npz",
+      "relative_l2": 0.20220143049890885,
+      "rmse": 0.6186889064119399,
+      "rmse_over_truth_std": 1.0132493146422141,
+      "total_seconds_960": 37.36833714880049,
+      "training_seconds": 37.367689775303006,
+      "truth_mean": -2.998221515526014,
+      "truth_std": 0.6105988896033979
+    }
+  ],
+  "full_seed": 293842412,
+  "git_commit": "75e3feb67f12a3a1b66298d892730ae86254c720",
+  "gpu_name": "NVIDIA GH200 120GB",
+  "history": [
+    {
+      "elapsed_seconds": 9.652565667405725,
+      "learning_rate": 0.001,
+      "step": 250,
+      "training_terminal_huber": 0.32824453711509705
+    },
+    {
+      "elapsed_seconds": 18.96428637765348,
+      "learning_rate": 0.001,
+      "step": 500,
+      "training_terminal_huber": 0.2811732292175293
+    },
+    {
+      "elapsed_seconds": 28.184838640503585,
+      "learning_rate": 0.001,
+      "step": 750,
+      "training_terminal_huber": 0.3355962038040161
+    },
+    {
+      "elapsed_seconds": 37.352775623090565,
+      "learning_rate": 0.001,
+      "step": 1000,
+      "training_terminal_huber": 0.33787769079208374
+    }
+  ],
+  "method": "deep_bsde",
+  "profile": "pilot",
+  "seed": 293842412,
+  "seed_index": 0,
+  "selected_step": 1000,
+  "selection_metric": "minimum frozen terminal mismatch MSE",
+  "test_used_for_selection": false
+}

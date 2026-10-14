@@ -1,6 +1,6 @@
 # HJB Compute Frontier Experiment Log
 
-Created: 2026-10-14 America/New_York
+Created: 2026-10-14 America/Chicago
 
 Branch: `ir-mlp-hjb-strong-baselines-compute-frontier`
 
@@ -51,3 +51,15 @@ Starting commit: `56f6448e1557118f8cc6e51ed038ff03512c84d2`
   - Actor: policy-gradient label generation `0.03789 s/point` at 512 paths and 32 Euler steps; projected 8,192-point/6,000-step phase `340.4 s`; 2,048-point 256-path/64-step inference `19.0 s`.
 - Peak allocated CUDA memory in the microbenchmarks: below 0.5 GB.
 - Total allocation through runtime profiling: 162 GPU-seconds (`0.04500` GH200 hours).
+
+### 3377665 — `hjbfront_pilot` array
+
+- Commit: `75e3feb67f12a3a1b66298d892730ae86254c720`.
+- Allocation: eight one-GH200 tasks, four-way concurrency, 8 CPUs and 64 GB host memory per task.
+- State: all 8 tasks `COMPLETED`, exit `0:0`.
+- Task elapsed times: 213, 82, 46, 249, 207, 48, 24, and 231 seconds; aggregate 1,100 GPU-seconds (`0.30556` GPU-hours).
+- B1 Actor pilot: test-oracle selection chose `q3`, RMSE `0.103285`; `q1_refresh` and `q2` were nearly tied at `0.112950` and `0.113306`.
+- HJB-Log Actor pilot: test-oracle selection chose `q1_refresh`, RMSE `0.009511`; `q2` and `q3` did not improve Value despite lower analytic gradient error at `q3`.
+- External pilot checkpoints remained reference-free: PINN used full residual, Deep BSDE used terminal mismatch, and DPI used its preset round ceiling.
+- Independent audit: 28/28 prediction artifacts passed, maximum metric discrepancy `2.49e-14`.
+- Total allocation through pilot: 1,262 GPU-seconds (`0.35056` GH200 hours).

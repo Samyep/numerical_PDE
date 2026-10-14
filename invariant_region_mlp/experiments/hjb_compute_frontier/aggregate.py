@@ -74,6 +74,14 @@ def aggregate(profile: str | None) -> tuple[list[dict[str, Any]], list[dict[str,
         if method == "ours_actor_iteration_cv":
             entries = run["evaluations"]
             selected_token = run["selected_actor"]
+            actor_peak_gpu_bytes = 0
+            for phase_record in run["phases"].values():
+                actor_peak_gpu_bytes = max(
+                    actor_peak_gpu_bytes,
+                    int(phase_record.get("optimizer", {}).get("peak_gpu_bytes") or 0),
+                    int(phase_record.get("labels", {}).get("train", {}).get("peak_gpu_bytes") or 0),
+                    int(phase_record.get("labels", {}).get("validation", {}).get("peak_gpu_bytes") or 0),
+                )
             for entry in entries:
                 independent = _verify_prediction(Path(entry["prediction_path"]))
                 differences = {
@@ -107,6 +115,13 @@ def aggregate(profile: str | None) -> tuple[list[dict[str, Any]], list[dict[str,
                     "bias": independent["bias"],
                     "rmse_over_truth_std": independent["rmse_over_truth_std"],
                     "gradient_relative_error": independent["gradient_relative_error"],
+                    "mean_policy_mc_standard_error": entry.get(
+                        "mean_mc_standard_error"
+                    ),
+                    "peak_gpu_bytes": max(
+                        actor_peak_gpu_bytes,
+                        int(entry.get("evaluation", {}).get("peak_gpu_bytes") or 0),
+                    ),
                     "prediction_path": entry["prediction_path"],
                     "run_path": str(run_path),
                 }
@@ -125,6 +140,7 @@ def aggregate(profile: str | None) -> tuple[list[dict[str, Any]], list[dict[str,
             checkpoint_by_token = {
                 item.get("step", item.get("round")): item for item in run["checkpoints"]
             }
+            raw_by_token: dict[Any, tuple[dict[str, Any], dict[str, float]]] = {}
             for entry in run["evaluation"]:
                 token = entry["checkpoint"]
                 independent = _verify_prediction(Path(entry["prediction_path"]))
@@ -134,34 +150,58 @@ def aggregate(profile: str | None) -> tuple[list[dict[str, Any]], list[dict[str,
                 }
                 if max(differences.values()) > 5e-12:
                     raise RuntimeError(f"prediction audit failed for {entry['prediction_path']}: {differences}")
-                checkpoint = checkpoint_by_token[token]
+                raw_by_token[token] = (entry, independent)
+                audit.append({"path": entry["prediction_path"], "max_metric_difference": max(differences.values())})
+
+            budget_tokens = sorted(raw_by_token)
+            for budget_token in budget_tokens:
+                if method == "dpi":
+                    # Picard targets change by round, so losses across rounds
+                    # are not a valid checkpoint-selection sequence.
+                    chosen_token = budget_token
+                else:
+                    eligible = [token for token in budget_tokens if token <= budget_token]
+                    chosen_token = min(
+                        eligible,
+                        key=lambda token: checkpoint_by_token[token][validation_key],
+                    )
+                if budget_token == budget_tokens[-1] and chosen_token != selected_token:
+                    raise RuntimeError(
+                        f"selection mismatch for {run_path}: {chosen_token} != {selected_token}"
+                    )
+                budget_entry, _ = raw_by_token[budget_token]
+                chosen_entry, independent = raw_by_token[chosen_token]
+                checkpoint = checkpoint_by_token[chosen_token]
                 row = {
                     "method": method,
                     "method_label": METHOD_LABELS[method],
                     "pde": equation,
                     "seed": seed,
                     "profile": run["profile"],
-                    "checkpoint": token,
-                    "selected": token == selected_token,
+                    "checkpoint": chosen_token,
+                    "budget_checkpoint": budget_token,
+                    "selected": budget_token == budget_tokens[-1],
                     "selection_rule": run["selection_metric"],
                     "test_used_for_selection": False,
                     "validation_metric": checkpoint[validation_key],
-                    "training_seconds": entry["training_seconds"],
-                    "inference_seconds_960": entry["inference_seconds_960"],
-                    "inference_seconds_2048": entry["inference_seconds_2048"],
-                    "total_seconds_960": entry["total_seconds_960"],
+                    "budget_validation_metric": checkpoint_by_token[budget_token][validation_key],
+                    "training_seconds": budget_entry["training_seconds"],
+                    "inference_seconds_960": chosen_entry["inference_seconds_960"],
+                    "inference_seconds_2048": chosen_entry["inference_seconds_2048"],
+                    "total_seconds_960": budget_entry["training_seconds"]
+                    + chosen_entry["inference_seconds_960"],
                     "relative_l2": independent["relative_l2"],
                     "rmse": independent["rmse"],
                     "bias": independent["bias"],
                     "rmse_over_truth_std": independent["rmse_over_truth_std"],
                     "gradient_relative_error": independent["gradient_relative_error"],
-                    "prediction_path": entry["prediction_path"],
+                    "peak_gpu_bytes": checkpoint.get("peak_gpu_bytes"),
+                    "prediction_path": chosen_entry["prediction_path"],
                     "run_path": str(run_path),
                 }
                 frontier.append(row)
                 if row["selected"]:
                     summary.append(row)
-                audit.append({"path": entry["prediction_path"], "max_metric_difference": max(differences.values())})
     if frontier:
         fields = list(frontier[0].keys())
         # Include keys that occur only in some methods.
@@ -207,6 +247,77 @@ def aggregate(profile: str | None) -> tuple[list[dict[str, Any]], list[dict[str,
     return summary, frontier
 
 
+def _draw_method(
+    ax: Any,
+    rows: list[dict[str, Any]],
+    method: str,
+    cost_key: str,
+) -> None:
+    seeds = sorted({int(row["seed"]) for row in rows})
+    if len(seeds) == 1:
+        seed_rows = sorted(rows, key=lambda row: float(row[cost_key]))
+        ax.plot(
+            [float(row[cost_key]) for row in seed_rows],
+            [float(row["relative_l2"]) for row in seed_rows],
+            marker=MARKERS[method],
+            color=COLORS[method],
+            alpha=0.9,
+            linewidth=1.2,
+            markersize=4,
+            label=METHOD_LABELS[method],
+        )
+        return
+
+    for seed in seeds:
+        seed_rows = sorted(
+            [row for row in rows if int(row["seed"]) == seed],
+            key=lambda row: float(row[cost_key]),
+        )
+        ax.plot(
+            [float(row[cost_key]) for row in seed_rows],
+            [float(row["relative_l2"]) for row in seed_rows],
+            color=COLORS[method],
+            alpha=0.14,
+            linewidth=0.8,
+        )
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        token = str(row.get("budget_checkpoint", row["checkpoint"]))
+        grouped.setdefault(token, []).append(row)
+    points: list[tuple[float, float, float]] = []
+    for members in grouped.values():
+        x_values = np.asarray([float(row[cost_key]) for row in members])
+        y_values = np.asarray([float(row["relative_l2"]) for row in members])
+        mean_y = float(np.mean(y_values))
+        ci95 = (
+            1.96 * float(np.std(y_values, ddof=1)) / np.sqrt(len(y_values))
+            if len(y_values) > 1
+            else 0.0
+        )
+        points.append((float(np.mean(x_values)), mean_y, ci95))
+    points.sort()
+    x_mean = np.asarray([point[0] for point in points])
+    y_mean = np.asarray([point[1] for point in points])
+    ci95 = np.asarray([point[2] for point in points])
+    ax.plot(
+        x_mean,
+        y_mean,
+        marker=MARKERS[method],
+        color=COLORS[method],
+        linewidth=1.5,
+        markersize=4,
+        label=METHOD_LABELS[method],
+    )
+    ax.fill_between(
+        x_mean,
+        np.maximum(y_mean - ci95, np.finfo(float).tiny),
+        y_mean + ci95,
+        color=COLORS[method],
+        alpha=0.14,
+        linewidth=0,
+    )
+
+
 def make_plots(frontier: list[dict[str, Any]], profile: str | None) -> None:
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update(
@@ -229,22 +340,7 @@ def make_plots(frontier: list[dict[str, Any]], profile: str | None) -> None:
                 rows = [row for row in frontier if row["pde"] == equation and row["method"] == method]
                 if not rows:
                     continue
-                seeds = sorted({int(row["seed"]) for row in rows})
-                for seed in seeds:
-                    seed_rows = sorted(
-                        [row for row in rows if int(row["seed"]) == seed],
-                        key=lambda row: float(row[cost_key]),
-                    )
-                    ax.plot(
-                        [float(row[cost_key]) for row in seed_rows],
-                        [float(row["relative_l2"]) for row in seed_rows],
-                        marker=MARKERS[method],
-                        color=COLORS[method],
-                        alpha=0.35 if len(seeds) > 1 else 0.9,
-                        linewidth=1.2,
-                        markersize=4,
-                        label=METHOD_LABELS[method] if seed == seeds[0] else None,
-                    )
+                _draw_method(ax, rows, method, cost_key)
             ax.set_xscale("log")
             ax.set_yscale("log")
             ax.set_xlabel(xlabel)
@@ -266,16 +362,8 @@ def make_plots(frontier: list[dict[str, Any]], profile: str | None) -> None:
                     [row for row in frontier if row["pde"] == equation and row["method"] == method],
                     key=lambda row: (int(row["seed"]), float(row[cost_key])),
                 )
-                for seed in sorted({int(row["seed"]) for row in rows}):
-                    seed_rows = [row for row in rows if int(row["seed"]) == seed]
-                    ax.plot(
-                        [float(row[cost_key]) for row in seed_rows],
-                        [float(row["relative_l2"]) for row in seed_rows],
-                        marker=MARKERS[method], color=COLORS[method], linewidth=1,
-                        alpha=0.35 if len({int(item["seed"]) for item in rows}) > 1 else 0.9,
-                        markersize=3,
-                        label=METHOD_LABELS[method] if seed == 0 else None,
-                    )
+                if rows:
+                    _draw_method(ax, rows, method, cost_key)
             ax.set_xscale("log")
             ax.set_yscale("log")
             ax.set_title(f"{title}: {label}")

@@ -155,6 +155,12 @@ def train_pinn_sdgd(
     valid_generator = torch.Generator(device=device).manual_seed(seed + 1)
     valid_t = torch.rand(8, device=device, generator=valid_generator) * (equation.T - 1e-5)
     valid_x = torch.randn((8, equation.d), device=device, generator=valid_generator)
+    audit_t = torch.rand((4, 8), device=device, generator=valid_generator) * (
+        equation.T - 1e-5
+    )
+    audit_x = torch.randn(
+        (4, 8, equation.d), device=device, generator=valid_generator
+    )
     history: list[dict[str, Any]] = []
     saved: list[dict[str, Any]] = []
     cumulative_started = time.perf_counter()
@@ -190,6 +196,10 @@ def train_pinn_sdgd(
             )
         if step in checkpoints:
             validation = full_pinn_residual_mse(model, equation, valid_t, valid_x)
+            validation_audit = [
+                full_pinn_residual_mse(model, equation, audit_t[index], audit_x[index])
+                for index in range(len(audit_t))
+            ]
             elapsed = time.perf_counter() - cumulative_started
             metadata = {
                 "method": "pinn_sdgd",
@@ -199,6 +209,12 @@ def train_pinn_sdgd(
                 "validation_full_residual_mse": validation,
                 "validation_points": len(valid_t),
                 "validation_laplacian_coordinates": equation.d,
+                "validation_audit_residual_mse_banks": validation_audit,
+                "validation_audit_residual_mse_mean": float(np.mean(validation_audit)),
+                "validation_audit_residual_mse_std": float(
+                    np.std(validation_audit, ddof=1)
+                ),
+                "validation_audit_used_for_selection": False,
                 "coordinate_budget": coordinate_budget,
                 "parameter_count": count_parameters(model),
                 "peak_gpu_bytes": _peak(device),

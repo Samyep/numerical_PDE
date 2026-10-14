@@ -347,7 +347,7 @@ def _actor_phases(profile: str) -> list[ActorPhase]:
             ActorPhase("q0", None, 4096, 1024, 256, 1, 6000, 512, 4, 5e-4),
             ActorPhase("q1", "q0", 16384, 1024, 1024, 64, 12000, 512, 4, 1e-4),
             ActorPhase("q1_refresh", "q0", 16384, 1024, 1024, 64, 12000, 512, 4, 1e-4),
-            ActorPhase("q2", "q1", 8192, 512, 512, 32, 6000, 512, 4, 1e-4),
+            ActorPhase("q2", "q1", 16384, 1024, 1024, 64, 12000, 512, 4, 1e-4),
             ActorPhase("q3", "q2", 8192, 512, 512, 32, 6000, 512, 4, 1e-4),
         ]
     raise ValueError(profile)
