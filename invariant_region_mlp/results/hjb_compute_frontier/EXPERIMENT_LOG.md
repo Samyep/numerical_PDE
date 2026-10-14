@@ -80,4 +80,38 @@ Starting commit: `56f6448e1557118f8cc6e51ed038ff03512c84d2`
 
 - Submitted as two high-quality Actor tasks, one per PDE.
 - HJB-Log task 1 was cancelled while still pending and consumed zero GPU-seconds: the final three-seed study showed RMSE near `0.0050` for every Actor round with per-point MC standard error near `0.0044`, so more Actor training would not address the observed bottleneck.
-- B1 task 0 retained. Its requested wall limit was reduced from 4:00 to 2:10 after profiling and its `q2/q3` phases were kept at the validated final budget; the much larger 16,384-point/1,024-path/64-step/12,000-step budget is concentrated on `q1` and matched `q1_refresh`.
+- B1 task 0 was also cancelled while pending, with zero GPU allocation.  The
+  array reservation continued to trigger `QOSGrpBillingMinutes` even after its
+  wall limit was reduced.  It was replaced by phase-resumable single jobs; no
+  completed computation was discarded.
+- The replacement keeps `q2/q3` at the validated final budget and concentrates
+  the much larger 16,384-point/1,024-path/64-step/12,000-step budget on `q1`
+  and matched `q1_refresh`.
+
+### 3378026–3378028 — staged `hjbfront_hi_stage` launch
+
+- Jobs 3378026, 3378027, and 3378028 were initially submitted as a three-stage
+  dependency chain.  Slurm counted the two unfulfilled 100-minute dependency
+  jobs against the group billing-minute limit and blocked stage 1.
+- Jobs 3378027 and 3378028 were cancelled before allocation, with zero elapsed
+  GPU-seconds.  Job 3378026 was retained; later stages are submitted only after
+  their predecessor completes.  This scheduling change does not alter any
+  numerical setting or recompute a completed phase.
+
+### 3378042 — `hjbfront_evalmc` array
+
+- Commit: `68f1e297`; three serial one-GH200 tasks evaluated frozen HJB-Log
+  Actor candidates.  No training was performed.
+- State: all 3 tasks `COMPLETED`, exit `0:0`; elapsed times 507, 488, and 515
+  seconds, totaling 1,510 GPU-seconds (`0.41944` GPU-hours).  Maximum Python
+  MaxRSS was 980,224 KB.
+- Each seed evaluated all five candidates at 1,024 paths/64 Euler steps and at
+  256 paths/128 steps, using candidate-level common random numbers.
+- Independent audit: 45/45 prediction files reproduced every stored scalar
+  exactly.  At 1,024 paths, `q3` was selected in all seeds with RMSE
+  `0.003094 +/- 0.000092`; fixed `q0` had `0.003233 +/- 0.000037`.
+- Increasing paths reduced RMSE materially, while doubling time steps at 256
+  paths did not.  This confirms final Monte Carlo variance as the main visible
+  HJB-Log evaluation bottleneck.
+- Total allocated compute through this diagnostic: 23,969 GPU-seconds
+  (`6.65806` GH200 hours).
