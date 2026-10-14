@@ -1,0 +1,72 @@
+{
+  "protocol_version": "tangent_actor_v1_frozen_before_reference",
+  "problems": [
+    "allen_cahn",
+    "joint_concave",
+    "joint_convex"
+  ],
+  "dimension": 100,
+  "horizon": 0.5,
+  "beta_seed": 24017,
+  "training_seeds_per_problem": 1,
+  "actor": {
+    "training_points": 2048,
+    "validation_points": 256,
+    "paths_per_label": 128,
+    "label_time_steps": 16,
+    "optimizer_steps": 2500,
+    "width": 192,
+    "depth": 3,
+    "learning_rate": 0.0002,
+    "batch_size": 512,
+    "parent_batch": 8,
+    "path_chunk": 32
+  },
+  "iterations": [
+    "a0",
+    "a1",
+    "a2"
+  ],
+  "evaluation": {
+    "policy_validation_points": 256,
+    "policy_validation_paths": 512,
+    "policy_validation_steps": 32,
+    "test_points": 512,
+    "test_paths": 512,
+    "test_steps": 64,
+    "audit_points": 1024,
+    "mc_floor_variants": [
+      {
+        "name": "main",
+        "paths": 512,
+        "steps": 64
+      },
+      {
+        "name": "high_paths",
+        "paths": 1024,
+        "steps": 64
+      },
+      {
+        "name": "high_steps",
+        "paths": 512,
+        "steps": 128
+      }
+    ],
+    "bregman_points": 128,
+    "bregman_paths": 256,
+    "bregman_steps": 64
+  },
+  "selection": {
+    "checkpoint": "minimum normalized held-out tangent-label loss",
+    "iteration_comparison": "independent paired plain weighted MC; lower mean frozen-tangent value is better",
+    "exact_reference_available_during_training": false,
+    "test_rmse_used_for_selection": false
+  },
+  "forbidden_components": {
+    "martingale_control_variate": false,
+    "rank_projection": false,
+    "analytic_nonterminal_training_labels": false,
+    "nonlinear_mlp_teacher": false,
+    "external_baselines": false
+  }
+}

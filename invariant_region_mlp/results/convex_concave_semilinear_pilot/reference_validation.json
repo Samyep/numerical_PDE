@@ -1,0 +1,67 @@
+{
+  "coarse": {
+    "internal_dt": 0.00025,
+    "spatial_points": 256,
+    "stored_dt": 0.001
+  },
+  "fine": {
+    "internal_dt": 0.000125,
+    "spatial_points": 512,
+    "stored_dt": 0.0005
+  },
+  "forward_time_variable": "tau = T - t",
+  "method": "independent periodic Fourier spectral Strang solver with explicit midpoint reaction",
+  "problems": {
+    "allen_cahn": {
+      "coarse_dt": 0.00025,
+      "coarse_n": 256,
+      "fine_dt": 0.000125,
+      "fine_n": 512,
+      "gradient_refinement_max_abs": 1.8786430526024356e-05,
+      "gradient_refinement_rmse": 6.453087093146109e-06,
+      "inside_tangent_domain": true,
+      "pde_residual_max_abs": 7.233065081602152e-08,
+      "pde_residual_rmse": 2.346923653981106e-08,
+      "problem": "allen_cahn",
+      "terminal_max_abs": 3.7622171783491254e-06,
+      "value_refinement_max_abs": 1.443154507646538e-05,
+      "value_refinement_rmse": 6.112569264785411e-06,
+      "working_value_max": 0.8140197982966912,
+      "working_value_min": 0.25
+    },
+    "joint_concave": {
+      "coarse_dt": 0.00025,
+      "coarse_n": 256,
+      "fine_dt": 0.000125,
+      "fine_n": 512,
+      "gradient_refinement_max_abs": 1.8786430526024356e-05,
+      "gradient_refinement_rmse": 6.356123329743207e-06,
+      "inside_tangent_domain": true,
+      "pde_residual_max_abs": 3.725801156484465e-08,
+      "pde_residual_rmse": 1.9063784409250485e-08,
+      "problem": "joint_concave",
+      "terminal_max_abs": 3.7622171783491254e-06,
+      "value_refinement_max_abs": 1.443154507646538e-05,
+      "value_refinement_rmse": 6.097087719180174e-06,
+      "working_value_max": 0.8090218528712377,
+      "working_value_min": 0.25
+    },
+    "joint_convex": {
+      "coarse_dt": 0.00025,
+      "coarse_n": 256,
+      "fine_dt": 0.000125,
+      "fine_n": 512,
+      "gradient_refinement_max_abs": 1.8786430526024356e-05,
+      "gradient_refinement_rmse": 5.850525918963713e-06,
+      "inside_tangent_domain": true,
+      "pde_residual_max_abs": 9.217123819738049e-08,
+      "pde_residual_rmse": 2.649805894489595e-08,
+      "problem": "joint_convex",
+      "terminal_max_abs": 3.7622171784601477e-06,
+      "value_refinement_max_abs": 1.443154507646538e-05,
+      "value_refinement_rmse": 5.632849564691147e-06,
+      "working_value_max": -0.22563696112903203,
+      "working_value_min": -0.75
+    }
+  }
+}
