@@ -1,0 +1,82 @@
+{
+  "data_banks": {
+    "b1_d400_k40": {
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/cache/data_banks/b1_d400_k40.npz",
+      "policy_points_sha256": "f3ef7e8773d85f875d153f8c9fe0311bef0cd0367b2c54f4082a78114715fc9c",
+      "sha256": "b70bd138b2e15cf01005be809eda1deb6a68d292253ce4ad9e83d3f304382660",
+      "test_points_sha256": "bb6364d150301462c29353d7bafceef149ddad25ab088e75b8398cec1c723109",
+      "test_reference_sha256": "4530f5541cd46ba0cddc812fd4fc680d2c4415fae95842a0eb6b3dcd6edbbbda"
+    },
+    "hjb_log_d400": {
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/hjb_compute_frontier/cache/data_banks/hjb_log_d400.npz",
+      "policy_points_sha256": "5fde803e44dbb4fde7204bf671c8a70851fe418772964c03e5fe126356ecf19f",
+      "sha256": "ff06ea2b3acf372a6715410c05ca71a2f8fe68a31d1b22400feb858a6bb3c361",
+      "test_points_sha256": "4a5d371c73e6792b0055f3882ccfe07204587897a04d81c16f8cce45d223f768",
+      "test_reference_sha256": "5d6cd6cda0a54bda3511fbc028217289c9c0aa529fe0e493f632baa7bff30069"
+    }
+  },
+  "equations": {
+    "b1_d400_k40": {
+      "analytic_pde_residual_max_abs": 2.220446049250313e-16,
+      "provenance": {
+        "K": 81,
+        "T": 0.25,
+        "affine_rank": 40,
+        "basis_seed": 20261006,
+        "basis_sha256": "81959ea6759aaa599909432f12699bc3302c664a763b5c00f322859e56414aed",
+        "coefficient_rule": "centered Gaussian Kxk matrix, globally rescaled to requested RMS row norm",
+        "coefficient_scale": 2.0,
+        "coefficient_seed": 20261012,
+        "coefficient_sha256": "563e07882c52cfa23873fba2552d00441e29e8dc695f0868c8bf1706b1a23a29",
+        "d": 400,
+        "direction_sha256": "0fba554f5d05b71ee1d1bd27d6c5e277e95a19de592d3071f995feaf553fdec2",
+        "family": "multiridge",
+        "k": 40,
+        "mu": 0.0,
+        "name": "B1_coupled_multiridge_quadratic_hjb",
+        "sigma": 1.4142135623730951
+      },
+      "terminal_value_max_abs_error": 0.0,
+      "terminal_z_max_abs_error": 0.0,
+      "torch_terminal_autodiff_z_max_abs_error": 1.3877787807814457e-16
+    },
+    "hjb_log_d400": {
+      "adaptive_quad_reported_abs_error_max": 1.064011876431686e-13,
+      "adaptive_quadrature_value_max_abs_error": 2.3003821070233244e-13,
+      "adaptive_quadrature_z_max_abs_error": 1.5265566588595902e-15,
+      "provenance": {
+        "T": 1.0,
+        "d": 400,
+        "name": "hjb_log",
+        "quadrature": {
+          "change_of_variable": "y=d*s",
+          "dtype": "float64",
+          "nodes": 256,
+          "rule": "Gauss-Legendre",
+          "upper_y": 80.0
+        },
+        "sigma": 1.4142135623730951,
+        "terminal": "log(1+||x||^2)-log(2)"
+      },
+      "terminal_value_max_abs_error": 0.0,
+      "terminal_z_max_abs_error": 3.469446951953614e-18,
+      "torch_terminal_autodiff_z_max_abs_error": 3.469446951953614e-18
+    }
+  },
+  "git_branch": "ir-mlp-hjb-strong-baselines-compute-frontier",
+  "git_commit": "56f6448e1557118f8cc6e51ed038ff03512c84d2",
+  "leakage_static_audit": {
+    "actor_training_functions_receive_exact_reference": false,
+    "baseline_module_contains_exact_u": false,
+    "baseline_module_contains_exact_z": false,
+    "ours_test_selection_explicitly_allowed": "test_rmse_oracle_allowed_by_user"
+  },
+  "numpy": "2.4.6",
+  "platform": "Linux-6.4.0-150600.23.53-64kb-aarch64-with-glibc2.38",
+  "protocol_sha256": "1ad2f70cbf54d8c793f4a7971b15d493da67f669102c513f0ae0271cc2b42920",
+  "python": "3.12.9 | packaged by conda-forge | (main, Mar  4 2025, 22:38:05) [GCC 13.3.0]",
+  "scipy": "1.17.1",
+  "status": "passed",
+  "timestamp": "2026-10-13T23:37:37-0500",
+  "torch": "2.10.0+cu129"
+}

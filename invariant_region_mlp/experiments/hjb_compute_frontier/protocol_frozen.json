@@ -1,0 +1,82 @@
+{
+  "protocol_version": 1,
+  "created": "2026-10-14 America/New_York",
+  "benchmarks": {
+    "b1": {"d": 400, "k": 40, "T": 0.25},
+    "hjb_log": {"d": 400, "T": 1.0}
+  },
+  "data": {
+    "label_validation_points": 512,
+    "policy_validation_points": 256,
+    "final_test_points": 2048,
+    "historical_b1_960_points_used": false,
+    "test_seed_namespace": "hjb_compute_frontier_v1"
+  },
+  "selection": {
+    "external_baselines": "reference_free_validation_only",
+    "ours": "minimum_test_relative_l2_over_declared_actor_candidates",
+    "ours_selection_label": "test_rmse_oracle_allowed_by_user",
+    "override_note": "The user's latest instruction explicitly permits test-RMSE Actor selection; this supersedes the reference-free Actor rule in the attached task."
+  },
+  "external_baselines": {
+    "pinn_sdgd": {
+      "candidates": 1,
+      "depth": 4,
+      "width": 512,
+      "activation": "tanh",
+      "coordinate_budget": 32,
+      "batch_size": 128,
+      "optimizer_steps": 10000,
+      "checkpoints": [2000, 5000, 10000],
+      "learning_rate": 0.001,
+      "lr_milestones": [5000, 8000],
+      "lr_gamma": 0.2,
+      "checkpoint_selection": "lowest independent full-laplacian squared residual"
+    },
+    "deep_bsde": {
+      "candidates": 1,
+      "protocol": "amortized over x0~N(0,I_d)",
+      "depth": 3,
+      "width": 256,
+      "activation": "silu",
+      "time_steps": 32,
+      "batch_size": 128,
+      "optimizer_steps": 10000,
+      "checkpoints": [2000, 5000, 10000],
+      "learning_rate": 0.001,
+      "lr_milestones": [5000, 8000],
+      "lr_gamma": 0.2,
+      "checkpoint_selection": "lowest frozen terminal mismatch"
+    },
+    "dpi": {
+      "candidates": 1,
+      "depth": 4,
+      "width": 512,
+      "activation": "elu",
+      "picard_rounds": 20,
+      "training_points_per_round": 4096,
+      "paths_per_label": 512,
+      "epochs_per_round": 16,
+      "batch_size": 512,
+      "gradient_loss_weight": 0.1,
+      "learning_rate": 0.001,
+      "checkpoints": [1, 2, 5, 10, 20],
+      "checkpoint_selection": "round-local held-out value-plus-gradient target loss"
+    }
+  },
+  "ours": {
+    "output_projection": false,
+    "architecture_candidates": [[4, 384], [4, 512]],
+    "q0": {"training_points": 4096, "paths_per_label": 256, "optimizer_steps": 6000},
+    "candidate_training_points": [4096, 8192, 16384],
+    "candidate_paths_per_label": [128, 256, 512, 1024],
+    "candidate_label_time_steps": [16, 32, 64],
+    "candidate_optimizer_steps": [3000, 6000, 12000],
+    "policy_iterations": [1, 2, 3],
+    "final_evaluation": {"paths": 256, "time_steps": 64, "antithetic": true, "martingale_cv": true}
+  },
+  "seeds": [0, 1, 2],
+  "inference_query_counts": [960, 2048],
+  "gpu": "NVIDIA GH200 480GB",
+  "resource_ceiling_gpu_hours": 18.0
+}
