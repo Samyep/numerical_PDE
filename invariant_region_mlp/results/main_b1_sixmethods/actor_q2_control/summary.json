@@ -1,0 +1,171 @@
+{
+  "actors": {
+    "continued_q1": {
+      "analytic_policy_gap_rms": 0.0507230562923889,
+      "corrected_value_bias": 0.04403861658033714,
+      "corrected_value_ci95": 8.190759655660227e-05,
+      "corrected_value_rmse": 0.05481227122676515,
+      "direct_actor_gradient_rmse": 0.4671689551677735,
+      "mean_analytic_policy_gap": 0.04235258846197717,
+      "mean_identity_residual": 0.001686028118359973,
+      "raw_value_ci95": 0.001491347760711715,
+      "raw_value_rmse": 0.06310310995538744,
+      "total_evaluation_seconds": 25.99820575863123,
+      "variance_reduction_factor": 4.468787564560112
+    },
+    "frozen_q1": {
+      "analytic_policy_gap_rms": 0.0717489486044805,
+      "corrected_value_bias": 0.06491074774628201,
+      "corrected_value_ci95": 0.000493254040470272,
+      "corrected_value_rmse": 0.07558171849179413,
+      "direct_actor_gradient_rmse": 0.5899411227836906,
+      "mean_analytic_policy_gap": 0.06346447380637982,
+      "mean_identity_residual": 0.0014462739399021833,
+      "raw_value_ci95": 0.0014293601664786874,
+      "raw_value_rmse": 0.0812102731453652,
+      "total_evaluation_seconds": 25.73958837520331,
+      "variance_reduction_factor": 3.350516167927422
+    },
+    "true_q2": {
+      "analytic_policy_gap_rms": 0.056546132479961375,
+      "corrected_value_bias": 0.046372388711061606,
+      "corrected_value_ci95": 0.00038201889535564713,
+      "corrected_value_rmse": 0.06039770963743488,
+      "direct_actor_gradient_rmse": 0.4642366919161374,
+      "mean_analytic_policy_gap": 0.04475303579529282,
+      "mean_identity_residual": 0.0016193529157687836,
+      "raw_value_ci95": 0.0015974573585374509,
+      "raw_value_rmse": 0.06789749200240917,
+      "total_evaluation_seconds": 25.646588708274066,
+      "variance_reduction_factor": 4.105954122356052
+    }
+  },
+  "baselines": {
+    "converged_actor_mlp_value_rmse": 0.08087294308704639,
+    "oracle_actor_mlp_value_rmse": 0.030665353290722525,
+    "pinn_sdgd_value_rmse": 0.08700384002677489
+  },
+  "decision": {
+    "extra_q0_label_training_explains_at_least_the_observed_q2_gain": true,
+    "independent_training_seed_confirmation_needed_for_publication": true,
+    "q2_improves_over_frozen_q1": true,
+    "q3_motivated": false,
+    "recommended_scope": "retain one policy improvement; improve or refresh q0-evaluation labels and training rather than adding another policy iteration",
+    "second_policy_update_supported_by_this_run": false
+  },
+  "headline": {
+    "continued_beats_q2_on_mean_policy_gap": true,
+    "continued_beats_q2_on_value_rmse": true,
+    "continued_relative_value_improvement_over_frozen_q1": 0.2747945889492299,
+    "q2_relative_direct_gradient_improvement_over_continued_q1": 0.006276665474449272,
+    "q2_relative_gap_rms_increase_over_continued_q1": 0.11480136673953223,
+    "q2_relative_mean_gap_increase_over_continued_q1": 0.05667770071410638,
+    "q2_relative_value_improvement_over_frozen_q1": 0.20089525823639165,
+    "q2_relative_value_increase_over_continued_q1": 0.10190124009935819
+  },
+  "label_comparison": {
+    "train": {
+      "continued_q1_raw_label_sha256": "146fc47f9d8cc53963d5f84af7e7c52b40a461c25b9fe632855854b2206462e5",
+      "raw_label_difference_vector_rmse": 0.1060259831812453,
+      "true_q2_raw_label_sha256": "2850c5e386747bc1931c75d4a3f3086c371ffdd7aefe3da512aedcbcba447388"
+    },
+    "valid": {
+      "continued_q1_raw_label_sha256": "16e40d4056bf458a634e2e567417be32b43c74f8485a57fac920eb1b5b743319",
+      "raw_label_difference_vector_rmse": 0.10394326859923497,
+      "true_q2_raw_label_sha256": "4573238197cf6f6487aac2d754f24e65b214f255de8cff984a33ecf819f61221"
+    }
+  },
+  "paired_evaluation_differences": {
+    "analytic_policy_gap_rms": {
+      "ci95": 0.00013958303461089112,
+      "mean": 0.005823076187572479,
+      "q2_minus_continued_by_seed": [
+        0.005741914707559734,
+        0.005762292754163359,
+        0.005965021100994346
+      ]
+    },
+    "corrected_value_bias": {
+      "ci95": 0.00013247785026904588,
+      "mean": 0.0023337721307244547,
+      "q2_minus_continued_by_seed": [
+        0.0021998411354919242,
+        0.002416624439259371,
+        0.0023848508174220684
+      ]
+    },
+    "corrected_value_rmse": {
+      "ci95": 0.00046149648694645586,
+      "mean": 0.005585438410669742,
+      "q2_minus_continued_by_seed": [
+        0.005114563836924171,
+        0.0058155464197080994,
+        0.005826204975376954
+      ]
+    },
+    "mean_analytic_policy_gap": {
+      "ci95": 2.6067806743528494e-05,
+      "mean": 0.002400447333315646,
+      "q2_minus_continued_by_seed": [
+        0.0023806855368699587,
+        0.0023949085790566926,
+        0.0024257478840202865
+      ]
+    }
+  },
+  "scheduler_accounting": {
+    "includes_failed_and_superseded_allocations": true,
+    "jobs": [
+      {
+        "alloc_tres": "billing=1154,cpu=8,gres/gpu=1,mem=128G,node=1",
+        "elapsed_seconds": 13,
+        "exit_code": "1:0",
+        "gpu_count": 1,
+        "gpu_seconds": 13,
+        "job_id": 3375859,
+        "job_name": "b1_actor_q2_ctrl",
+        "node": "gh097",
+        "role": "failed_allocation",
+        "state": "FAILED"
+      },
+      {
+        "alloc_tres": "billing=1154,cpu=8,gres/gpu=1,mem=128G,node=1",
+        "elapsed_seconds": 291,
+        "exit_code": "0:0",
+        "gpu_count": 1,
+        "gpu_seconds": 291,
+        "job_id": 3376645,
+        "job_name": "b1_actor_q2_ctrl",
+        "node": "gh014",
+        "role": "paired_experiment",
+        "state": "COMPLETED"
+      }
+    ],
+    "schema_version": 1,
+    "source": "Slurm sacct top-level allocation records",
+    "total_actual_gpu_hours": 0.08444444444444445,
+    "total_actual_gpu_seconds": 304
+  },
+  "schema_version": 1,
+  "status": "PASS",
+  "training": {
+    "continued_q1": {
+      "actor_training_seconds": 12.48075077868998,
+      "best_step": 6000,
+      "evaluation_seconds": 25.99820575863123,
+      "label_generation_seconds": 83.22768411412835,
+      "optimizer_converged": false,
+      "selected_validation_label_rmse": 0.40364929525880167,
+      "steps_executed": 6000
+    },
+    "true_q2": {
+      "actor_training_seconds": 12.565174796618521,
+      "best_step": 6000,
+      "evaluation_seconds": 25.646588708274066,
+      "label_generation_seconds": 83.75265905354172,
+      "optimizer_converged": false,
+      "selected_validation_label_rmse": 0.44108412812860026,
+      "steps_executed": 6000
+    }
+  }
+}

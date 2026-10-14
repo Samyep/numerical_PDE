@@ -1,0 +1,33 @@
+{
+  "includes_failed_and_superseded_allocations": true,
+  "jobs": [
+    {
+      "alloc_tres": "billing=1154,cpu=8,gres/gpu=1,mem=128G,node=1",
+      "elapsed_seconds": 13,
+      "exit_code": "1:0",
+      "gpu_count": 1,
+      "gpu_seconds": 13,
+      "job_id": 3375859,
+      "job_name": "b1_actor_q2_ctrl",
+      "node": "gh097",
+      "role": "failed_allocation",
+      "state": "FAILED"
+    },
+    {
+      "alloc_tres": "billing=1154,cpu=8,gres/gpu=1,mem=128G,node=1",
+      "elapsed_seconds": 291,
+      "exit_code": "0:0",
+      "gpu_count": 1,
+      "gpu_seconds": 291,
+      "job_id": 3376645,
+      "job_name": "b1_actor_q2_ctrl",
+      "node": "gh014",
+      "role": "paired_experiment",
+      "state": "COMPLETED"
+    }
+  ],
+  "schema_version": 1,
+  "source": "Slurm sacct top-level allocation records",
+  "total_actual_gpu_hours": 0.08444444444444445,
+  "total_actual_gpu_seconds": 304
+}
