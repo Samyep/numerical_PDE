@@ -43,7 +43,11 @@ def main() -> None:
         with np.load(PREDICTION_DIR / f"{problem}.npz") as arrays:
             hashes[problem] = _hash_arrays(arrays)
             truth = arrays["reference_original_value"]
-            for actor in ("a0", "a1", "a2", "exact_tangent"):
+            actors = tuple(
+                actor for actor in ("a0", "a1", "a2", "a3", "exact_tangent")
+                if (problem, actor) in reported
+            )
+            for actor in actors:
                 metrics = model_metrics(arrays[f"{actor}_original_value"], truth)
                 source = reported[(problem, actor)]
                 delta = max(
@@ -54,7 +58,9 @@ def main() -> None:
                 rows.append({"pde": problem, "actor": actor, "variant": "main", **metrics,
                              "max_abs_difference_from_report": delta})
             for variant in ("main", "high_paths", "high_steps"):
-                for actor in ("a2", "exact_tangent"):
+                for actor in ("a2", "a3", "exact_tangent"):
+                    if (problem, actor, variant) not in reported_floor:
+                        continue
                     metrics = model_metrics(
                         arrays[f"floor_{actor}_{variant}_original_value"], truth
                     )
