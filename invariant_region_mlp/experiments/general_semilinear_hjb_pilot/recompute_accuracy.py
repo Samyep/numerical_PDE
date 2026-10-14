@@ -21,7 +21,7 @@ def main() -> None:
             raw = json.load(handle)
             recorded = {row["iteration"]: row for row in raw["rows"]}
             truth = arrays["reference_value"].astype(np.float64)
-            for iteration in ("a0", "a1", "a2", "optimal_reference_policy"):
+            for iteration in [row["iteration"] for row in raw["rows"]]:
                 metrics = model_metrics(arrays[f"{iteration}_value"], truth)
                 row = {"pde": problem, "iteration": iteration, **metrics}
                 rows.append(row)

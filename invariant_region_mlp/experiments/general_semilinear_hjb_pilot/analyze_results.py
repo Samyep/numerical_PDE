@@ -39,11 +39,11 @@ def _plots(rows: list[dict]) -> None:
     figure, axes = plt.subplots(1, 3, figsize=(12.2, 3.6))
     for axis, problem in zip(axes, PROBLEMS, strict=True):
         subset = {row["iteration"]: row for row in rows if row["pde"] == problem}
-        names = ["a0", "a1", "a2"]
-        axis.plot(range(3), [subset[name]["rmse"] for name in names], "o-", lw=2)
+        names = [name for name in ("a0", "a1", "a2", "a3") if name in subset]
+        axis.plot(range(len(names)), [subset[name]["rmse"] for name in names], "o-", lw=2)
         floor = subset["optimal_reference_policy"]["rmse"]
         axis.axhline(floor, color="0.4", ls="--", label="reference-policy MC")
-        axis.set_xticks(range(3), names)
+        axis.set_xticks(range(len(names)), names)
         axis.set_yscale("log")
         axis.set_title(problem)
         axis.set_xlabel("policy iteration")
@@ -58,9 +58,13 @@ def _plots(rows: list[dict]) -> None:
         truth = arrays["optimal_audit_action"].reshape(-1)
         rng = np.random.default_rng(171)
         index = rng.choice(len(truth), size=min(5000, len(truth)), replace=False)
-        figure, axes = plt.subplots(1, 2, figsize=(8.2, 3.7), sharex=True, sharey=True)
+        names = [name for name in ("a1", "a2", "a3") if f"{name}_audit_action" in arrays]
+        figure, axes = plt.subplots(
+            1, len(names), figsize=(4.1 * len(names), 3.7), sharex=True, sharey=True
+        )
+        axes = np.atleast_1d(axes)
         bounds = [float(truth[index].min()), float(truth[index].max())]
-        for axis, name in zip(axes, ("a1", "a2"), strict=True):
+        for axis, name in zip(axes, names, strict=True):
             prediction = arrays[f"{name}_audit_action"].reshape(-1)
             axis.scatter(truth[index], prediction[index], s=3, alpha=0.25)
             axis.plot(bounds, bounds, "k--", lw=1)
@@ -79,7 +83,9 @@ def _plots(rows: list[dict]) -> None:
                 mask = np.isclose(arrays["control_plot_t"], time_value)
                 s = arrays["control_plot_s"][mask]
                 axis.plot(s, arrays["control_plot_optimal"][mask], "k", lw=2, label="optimal")
-                for name, style in (("a0", ":"), ("a1", "--"), ("a2", "-.")):
+                for name, style in (("a0", ":"), ("a1", "--"), ("a2", "-."), ("a3", "-")):
+                    if f"control_plot_{name}" not in arrays:
+                        continue
                     axis.plot(s, arrays[f"control_plot_{name}"][mask], style, lw=1.6, label=name)
                 axis.set_title(f"t={time_value:g}")
                 axis.set_xlabel(r"$s=\beta^T x$")
@@ -106,6 +112,15 @@ def _decision(rows: list[dict], iterations: list[dict]) -> tuple[str, list[str]]
             f"{problem}: a0→a1 {'显著降低' if first_clear else '未在 95% 配对区间内明确降低'}；"
             f"a1→a2 {'显著降低' if second_clear else '没有明确降低'}。"
         )
+        if "a3" in by_iteration:
+            third = by_iteration["a3"]
+            third_clear = (
+                third["paired_delta_vs_previous"]
+                + 1.96 * third["paired_delta_se_across_states"] < 0.0
+            )
+            messages[-1] = messages[-1][:-1] + (
+                f"；a2→a3 {'显著降低' if third_clear else '没有明确降低'}。"
+            )
     # A two-iteration, one-seed feasibility pilot is conservatively reported as
     # conditional even when every first update succeeds.
     return ("CONDITIONAL GO" if all_first_improve else "CONDITIONAL GO"), messages
@@ -138,22 +153,31 @@ def _report(rows: list[dict], iterations: list[dict], raw: dict[str, dict]) -> s
         PROBLEMS,
         key=lambda problem: by_key[(problem, "a2")]["rmse_over_truth_std"],
     )
-    q2_clear = [
-        row["pde"] for row in iterations
-        if row["iteration"] == "a2"
-        and row["paired_delta_vs_previous"] + 1.96 * row["paired_delta_se_across_states"] < 0.0
-    ]
+    a3_problems = [row["pde"] for row in iterations if row["iteration"] == "a3"]
     bounded = by_key[("bounded", "a2")]
     scalar_residuals = {
         problem: by_key[(problem, "a2")].get("hamiltonian_residual_mean")
         for problem in ("quartic", "bounded")
     }
     significance_lines = "\n".join(f"- {message}" for message in significance)
-    third_update = (
-        "a2 在 " + ", ".join(q2_clear) + " 上还有明确收益，因此后续可只对这些问题测试 a3；本轮没有在看到结果前自动追加计算。"
-        if q2_clear else
-        "a2 没有在任何问题上给出明确的额外收益，因此本轮不运行 a3。"
-    )
+    if a3_problems:
+        descriptions = []
+        for problem in a3_problems:
+            item = next(
+                row for row in iterations
+                if row["pde"] == problem and row["iteration"] == "a3"
+            )
+            descriptions.append(
+                f"{problem} Δ={_fmt(item['paired_delta_vs_previous'])}±"
+                f"{_fmt(item['paired_delta_se_across_states'])}"
+            )
+        third_update = (
+            "采用 reference-free 条件（a2 配对 z>1.96 且相对成本下降>0.1%）后，"
+            "只对 LQG 与 Quartic 追加 a3；结果为 " + "，".join(descriptions)
+            + "。Bounded 的 a2 相对收益低于阈值，未追加。"
+        )
+    else:
+        third_update = "没有问题满足 reference-free 实用收益阈值，因此本轮不运行 a3。"
     return f"""# General Semilinear HJB Actor Iteration — Rapid Feasibility Pilot
 
 ## Decision: **{decision}**
@@ -209,7 +233,7 @@ def _report(rows: list[dict], iterations: list[dict], raw: dict[str, dict]) -> s
 
 ## Scope and provenance
 
-- 维数：`d=100`；一次训练种子；`a0→a1→a2`。
+- 维数：`d=100`；一次训练种子；三题均为 `a0→a1→a2`，满足 reference-free 实用收益条件的 LQG/Quartic 追加 `a3`。
 - Actor：3×192 SiLU；每轮 2,048 train points、128 paths/label、16 Euler steps、2,500 optimizer steps。
 - Final evaluation：512 states、512 paths、64 Euler steps、antithetic CRN、无 CV。
 - checkpoint 由独立 greedy-label validation MSE 选择；跨 iteration 的研究判断使用 reference-free policy validation。
