@@ -1,0 +1,26 @@
+{
+  "criterion": {
+    "paired_validation_z_min": 1.96,
+    "relative_validation_cost_reduction_min": 0.001,
+    "uses_exact_reference": false
+  },
+  "decision_basis": "Frozen a2 reference-free policy validation with paired initial states and common Brownian paths.",
+  "problems": {
+    "bounded": {
+      "a2_paired_z": 3.1439210229958,
+      "a2_relative_validation_cost_reduction": 0.00006030529900455209,
+      "run_a3": false
+    },
+    "lqg": {
+      "a2_paired_z": 122.07720273364116,
+      "a2_relative_validation_cost_reduction": 0.018100065406846097,
+      "run_a3": true
+    },
+    "quartic": {
+      "a2_paired_z": 10.03689419985949,
+      "a2_relative_validation_cost_reduction": 0.002852113989195721,
+      "run_a3": true
+    }
+  },
+  "selected": ["lqg", "quartic"]
+}

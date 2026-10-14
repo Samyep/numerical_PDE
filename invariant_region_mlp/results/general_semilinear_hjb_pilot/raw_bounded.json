@@ -1,0 +1,467 @@
+{
+  "exact_reference_used_for_selection": false,
+  "phase_metadata": [
+    {
+      "checkpoint_selected_without_exact_reference": true,
+      "iteration": 1,
+      "label": {
+        "gradient_replication_relative_l2": 0.04924802353931059,
+        "gradient_replication_rmse": 0.003980243543190499,
+        "reference_information_used": false,
+        "replication": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 73088000,
+          "points": 256,
+          "seed": 2580693360,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 0.6396863339468837
+        },
+        "train": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 73088000,
+          "points": 2048,
+          "seed": 2296136168,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 5.166654980042949
+        },
+        "train_bank_sha256": "f120cfea998c713a08a88f765381d9e3a87a83ada9cfb52a80014e27a6a9ea49",
+        "valid": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 73088000,
+          "points": 256,
+          "seed": 438010371,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 0.6406177619937807
+        },
+        "valid_bank_sha256": "109ee53644b673485bd0cf8c664294f2a5fb97ca993f5f107f61d3e5b431a2f7"
+      },
+      "problem": "bounded",
+      "source": "a0",
+      "trace": [
+        {
+          "step": 1.0,
+          "train_mse": 0.10593204200267792,
+          "validation_mse": 0.10498544573783875
+        },
+        {
+          "step": 625.0,
+          "train_mse": 8.807970152702183e-05,
+          "validation_mse": 0.006024906877428293
+        },
+        {
+          "step": 1250.0,
+          "train_mse": 3.943699994124472e-05,
+          "validation_mse": 0.006083257030695677
+        },
+        {
+          "step": 1875.0,
+          "train_mse": 1.712886296445504e-05,
+          "validation_mse": 0.006120277568697929
+        },
+        {
+          "step": 2500.0,
+          "train_mse": 0.0001029378327075392,
+          "validation_mse": 0.006150864530354738
+        }
+      ],
+      "training": {
+        "best_validation_action_mse": 0.006024906877428293,
+        "config": {
+          "batch_size": 512,
+          "depth": 3,
+          "label_time_steps": 16,
+          "learning_rate": 0.0002,
+          "optimizer_steps": 2500,
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths_per_label": 128,
+          "training_points": 2048,
+          "validation_points": 256,
+          "width": 192
+        },
+        "parameters": 93889,
+        "peak_gpu_bytes": 73771008,
+        "selected_by": "held_out_greedy_label_mse_only",
+        "used_exact_reference": false,
+        "wall_seconds": 4.4642156509216875
+      }
+    },
+    {
+      "checkpoint_selected_without_exact_reference": true,
+      "iteration": 2,
+      "label": {
+        "gradient_replication_relative_l2": 0.045539052209394325,
+        "gradient_replication_rmse": 0.003680560332401487,
+        "reference_information_used": false,
+        "replication": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 80478208,
+          "points": 256,
+          "seed": 67207711,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 2.386120480019599
+        },
+        "train": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 80478208,
+          "points": 2048,
+          "seed": 1219203503,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 19.047849020222202
+        },
+        "train_bank_sha256": "e3abcb22340d047f231cc419f4a3b88e881a048a6f77b1fee606a064bea904b9",
+        "valid": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 80478208,
+          "points": 256,
+          "seed": 3370078568,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 2.3863672248553485
+        },
+        "valid_bank_sha256": "45c10c6b3def40904dae1b8c1359fe40e16b56d11735837d2cfc63f9c8d8b21e"
+      },
+      "problem": "bounded",
+      "source": "a1",
+      "trace": [
+        {
+          "step": 1.0,
+          "train_mse": 0.004395492374897003,
+          "validation_mse": 0.004725249949842691
+        },
+        {
+          "step": 625.0,
+          "train_mse": 3.862756784656085e-05,
+          "validation_mse": 0.005320163443684578
+        },
+        {
+          "step": 1250.0,
+          "train_mse": 2.284732909174636e-05,
+          "validation_mse": 0.0059331441298127174
+        },
+        {
+          "step": 1875.0,
+          "train_mse": 1.8205926608061418e-05,
+          "validation_mse": 0.006074992474168539
+        },
+        {
+          "step": 2500.0,
+          "train_mse": 1.7443546312279068e-05,
+          "validation_mse": 0.006100946106016636
+        }
+      ],
+      "training": {
+        "best_validation_action_mse": 0.004725249949842691,
+        "config": {
+          "batch_size": 512,
+          "depth": 3,
+          "label_time_steps": 16,
+          "learning_rate": 0.0002,
+          "optimizer_steps": 2500,
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths_per_label": 128,
+          "training_points": 2048,
+          "validation_points": 256,
+          "width": 192
+        },
+        "parameters": 93889,
+        "peak_gpu_bytes": 74148352,
+        "selected_by": "held_out_greedy_label_mse_only",
+        "used_exact_reference": false,
+        "wall_seconds": 4.370148732094094
+      }
+    }
+  ],
+  "policy_iteration_rows": [
+    {
+      "actor_validation_action_mse": null,
+      "gradient_replication_relative_l2": null,
+      "gradient_replication_rmse": null,
+      "iteration": "a0",
+      "label_seconds": 0.0,
+      "paired_delta_se_across_states": null,
+      "paired_delta_vs_previous": null,
+      "pde": "bounded",
+      "policy_cost": 0.9420142250299965,
+      "policy_cost_mc_se": 0.0021336506186487485,
+      "training_seconds": 0.0
+    },
+    {
+      "actor_validation_action_mse": 0.006024906877428293,
+      "gradient_replication_relative_l2": 0.04924802353931059,
+      "gradient_replication_rmse": 0.003980243543190499,
+      "iteration": "a1",
+      "label_seconds": 6.446959075983614,
+      "paired_delta_se_across_states": 0.0027273151722370156,
+      "paired_delta_vs_previous": -0.09994719020313854,
+      "pde": "bounded",
+      "policy_cost": 0.842067034826858,
+      "policy_cost_mc_se": 0.002056646604940323,
+      "training_seconds": 4.4642156509216875
+    },
+    {
+      "actor_validation_action_mse": 0.004725249949842691,
+      "gradient_replication_relative_l2": 0.045539052209394325,
+      "gradient_replication_rmse": 0.003680560332401487,
+      "iteration": "a2",
+      "label_seconds": 23.82033672509715,
+      "paired_delta_se_across_states": 1.6152156477748165e-05,
+      "paired_delta_vs_previous": -5.078110431711025e-05,
+      "pde": "bounded",
+      "policy_cost": 0.8420162537225409,
+      "policy_cost_mc_se": 0.002056804687640249,
+      "training_seconds": 4.370148732094094
+    }
+  ],
+  "prediction_path": "results/general_semilinear_hjb_pilot/predictions/bounded.npz",
+  "problem": {
+    "A": 0.35,
+    "T": 0.5,
+    "beta_norm": 0.9999999999999999,
+    "beta_seed": 9137,
+    "d": 100,
+    "m": 1,
+    "name": "bounded",
+    "sigma": 1.4142135623730951
+  },
+  "protocol": {
+    "actor": {
+      "batch_size": 512,
+      "depth": 3,
+      "label_time_steps": 16,
+      "learning_rate": 0.0002,
+      "optimizer_steps": 2500,
+      "parent_batch": 8,
+      "path_chunk": 32,
+      "paths_per_label": 128,
+      "training_points": 2048,
+      "validation_points": 256,
+      "width": 192
+    },
+    "evaluation": {
+      "antithetic": true,
+      "common_random_numbers": true,
+      "estimator": "ordinary controlled-policy payoff Monte Carlo",
+      "martingale_control_variate": false,
+      "policy_validation_paths": 512,
+      "policy_validation_points": 256,
+      "policy_validation_steps": 32,
+      "test_paths": 512,
+      "test_points": 512,
+      "test_steps": 64
+    },
+    "forbidden_training_information": [
+      "analytic nonterminal values",
+      "analytic nonterminal gradients",
+      "Riccati solution",
+      "one-dimensional HJB reference",
+      "nonlinear MLP gradient teacher",
+      "rank projection"
+    ],
+    "policy_initialization": "feasible zero action",
+    "policy_iterations": [
+      1,
+      2
+    ],
+    "problems": {
+      "bounded": {
+        "A": 0.35,
+        "T": 0.5,
+        "beta_seed": 9137,
+        "d": 100,
+        "m": 1
+      },
+      "lqg": {
+        "G": 1.0,
+        "Q": 0.5,
+        "R": 1.0,
+        "T": 0.5,
+        "d": 100,
+        "gamma": 0.2,
+        "m": 100
+      },
+      "quartic": {
+        "T": 0.5,
+        "beta_seed": 9137,
+        "d": 100,
+        "lambda": 1.0,
+        "m": 1
+      }
+    },
+    "reference_selection_policy": "References are constructed and queried only after all learned checkpoints are frozen; they never affect checkpoint or iteration selection.",
+    "schema_version": 1
+  },
+  "reference_created_after_checkpoint_freeze": true,
+  "rows": [
+    {
+      "action_relative_l2": 1.0,
+      "action_rmse": 0.317286643022815,
+      "actor_saturation_rate": 0.0,
+      "bias": 0.10363531165361069,
+      "d": 100,
+      "feasibility_violation_rate": 0.0,
+      "final_mc_paths": 512,
+      "final_mc_seconds": 8.73830544599332,
+      "final_mc_steps": 64,
+      "gpu_seconds": 8.73830544599332,
+      "hamiltonian_negative_fraction": 0.0,
+      "hamiltonian_residual_max": 0.5642980732034258,
+      "hamiltonian_residual_mean": 0.18523154990707494,
+      "hamiltonian_residual_rmse": 0.23181722736955918,
+      "iteration": "a0",
+      "m": 1,
+      "max_abs_action": 0.0,
+      "mean_abs_action_along_paths": 0.0,
+      "mean_running_cost": 0.0,
+      "optimal_saturation_rate": 0.732421875,
+      "path_saturation_rate": 0.0,
+      "pde": "bounded",
+      "policy_regret": 0.10363531165361069,
+      "relative_l2": 0.118110180406215,
+      "rmse": 0.11781964550671747,
+      "rmse_over_truth_std": 0.2410625932133987,
+      "truth_mean": 0.8696025142846926,
+      "truth_std": 0.48875125724055657,
+      "validation_policy_cost": 0.9420142250299965,
+      "validation_policy_cost_mc_se": 0.0021336506186487485,
+      "value_mean_mc_se": 0.0014827902836709996
+    },
+    {
+      "action_relative_l2": 0.23753697312101638,
+      "action_rmse": 0.0753673087953678,
+      "actor_saturation_rate": 0.5390625,
+      "bias": -0.0001167973660889187,
+      "d": 100,
+      "feasibility_violation_rate": 0.0,
+      "final_mc_paths": 512,
+      "final_mc_seconds": 17.22660584608093,
+      "final_mc_steps": 64,
+      "gpu_seconds": 28.13778057298623,
+      "hamiltonian_negative_fraction": 0.001953125,
+      "hamiltonian_residual_max": 0.12764324416719616,
+      "hamiltonian_residual_mean": 0.003827394801814198,
+      "hamiltonian_residual_rmse": 0.010704134132731571,
+      "iteration": "a1",
+      "m": 1,
+      "max_abs_action": 0.3499999940395355,
+      "mean_abs_action_along_paths": 0.31382755718937005,
+      "mean_running_cost": 0.02607693508351261,
+      "optimal_saturation_rate": 0.732421875,
+      "path_saturation_rate": 0.6205283999443054,
+      "pde": "bounded",
+      "policy_regret": -0.0001167973660889187,
+      "relative_l2": 0.03286528882684391,
+      "rmse": 0.03278444470863645,
+      "rmse_over_truth_std": 0.06707797519280938,
+      "truth_mean": 0.8696025142846926,
+      "truth_std": 0.48875125724055657,
+      "validation_policy_cost": 0.842067034826858,
+      "validation_policy_cost_mc_se": 0.002056646604940323,
+      "value_mean_mc_se": 0.0014281809087102768
+    },
+    {
+      "action_relative_l2": 0.2352293983492599,
+      "action_rmse": 0.07463514614251304,
+      "actor_saturation_rate": 0.53515625,
+      "bias": -0.00014508308739012092,
+      "d": 100,
+      "feasibility_violation_rate": 0.0,
+      "final_mc_paths": 512,
+      "final_mc_seconds": 17.225003191968426,
+      "final_mc_steps": 64,
+      "gpu_seconds": 45.41548864915967,
+      "hamiltonian_negative_fraction": 0.001953125,
+      "hamiltonian_residual_max": 0.11101694201056674,
+      "hamiltonian_residual_mean": 0.003784405571244586,
+      "hamiltonian_residual_rmse": 0.010390248511425485,
+      "iteration": "a2",
+      "m": 1,
+      "max_abs_action": 0.3499999940395355,
+      "mean_abs_action_along_paths": 0.3135224292545331,
+      "mean_running_cost": 0.026038580664397237,
+      "optimal_saturation_rate": 0.732421875,
+      "path_saturation_rate": 0.6174559593200684,
+      "pde": "bounded",
+      "policy_regret": -0.00014508308739012092,
+      "relative_l2": 0.03286750932519819,
+      "rmse": 0.032786659744868295,
+      "rmse_over_truth_std": 0.06708250722459248,
+      "truth_mean": 0.8696025142846926,
+      "truth_std": 0.48875125724055657,
+      "validation_policy_cost": 0.8420162537225409,
+      "validation_policy_cost_mc_se": 0.002056804687640249,
+      "value_mean_mc_se": 0.0014282577494821062
+    },
+    {
+      "action_relative_l2": 6.524554298319668e-07,
+      "action_rmse": 2.070153930533922e-07,
+      "actor_saturation_rate": 0.732421875,
+      "bias": -0.002796654056310446,
+      "d": 100,
+      "feasibility_violation_rate": 0.0,
+      "final_mc_paths": 512,
+      "final_mc_seconds": 20.170149357058108,
+      "final_mc_steps": 64,
+      "gpu_seconds": 20.170149357058108,
+      "hamiltonian_negative_fraction": 0.0,
+      "hamiltonian_residual_max": 4.409509118952215e-08,
+      "hamiltonian_residual_mean": 3.266529732563544e-09,
+      "hamiltonian_residual_rmse": 6.1475826274937316e-09,
+      "iteration": "optimal_reference_policy",
+      "m": 1,
+      "max_abs_action": 0.3499999940395355,
+      "mean_abs_action_along_paths": 0.3060645500792418,
+      "mean_running_cost": 0.025504959497427038,
+      "optimal_saturation_rate": 0.732421875,
+      "path_saturation_rate": 0.7501724362373352,
+      "pde": "bounded",
+      "policy_regret": -0.002796654056310446,
+      "relative_l2": 0.032819792490794905,
+      "rmse": 0.0327390602873553,
+      "rmse_over_truth_std": 0.0669851172807144,
+      "truth_mean": 0.8696025142846926,
+      "truth_std": 0.48875125724055657,
+      "validation_policy_cost": null,
+      "validation_policy_cost_mc_se": null,
+      "value_mean_mc_se": 0.001427561173937686
+    }
+  ],
+  "test_bank_sha256": "e38c0c34b4331bbc1d4ae37be71cdb014e8580036f62cecf3ddb3fc5e4021ee4",
+  "test_evaluation_total_seconds": 63.36006384110078
+}

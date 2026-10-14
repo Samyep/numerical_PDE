@@ -1,0 +1,612 @@
+{
+  "conditional_a3_decision": {
+    "a2_paired_z": 10.03689419985949,
+    "a2_relative_validation_reduction": 0.002852113989195721,
+    "criterion": "a2 paired validation z > 1.96 and relative cost reduction > 0.1%",
+    "exact_reference_used": false
+  },
+  "exact_reference_used_for_selection": false,
+  "phase_metadata": [
+    {
+      "checkpoint_selected_without_exact_reference": true,
+      "iteration": 1,
+      "label": {
+        "gradient_replication_relative_l2": 0.042058772214214356,
+        "gradient_replication_rmse": 0.0034816753841620837,
+        "reference_information_used": false,
+        "replication": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 73088000,
+          "points": 256,
+          "seed": 44486429,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 0.6893297559581697
+        },
+        "train": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 73088000,
+          "points": 2048,
+          "seed": 2283748157,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 5.559401025995612
+        },
+        "train_bank_sha256": "99cdfb6aee806300ff60bca922fbcf6df3b7d0cae2328b931b1e0c2bc0c28d4c",
+        "valid": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 73088000,
+          "points": 256,
+          "seed": 385976510,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 0.6857905029319227
+        },
+        "valid_bank_sha256": "9bcb905d2f1e5b681af26b53e5c3bafa80ebede78d65d445ce6eec055acb6a00"
+      },
+      "problem": "quartic",
+      "source": "a0",
+      "trace": [
+        {
+          "step": 1.0,
+          "train_mse": 0.33636945486068726,
+          "validation_mse": 0.31076234579086304
+        },
+        {
+          "step": 625.0,
+          "train_mse": 0.0015675267204642296,
+          "validation_mse": 0.0149011155590415
+        },
+        {
+          "step": 1250.0,
+          "train_mse": 0.00030922330915927887,
+          "validation_mse": 0.012631623074412346
+        },
+        {
+          "step": 1875.0,
+          "train_mse": 0.00012314165360294282,
+          "validation_mse": 0.01233496330678463
+        },
+        {
+          "step": 2500.0,
+          "train_mse": 9.432243678020313e-05,
+          "validation_mse": 0.012298639863729477
+        }
+      ],
+      "training": {
+        "best_validation_action_mse": 0.012298639863729477,
+        "config": {
+          "batch_size": 512,
+          "depth": 3,
+          "label_time_steps": 16,
+          "learning_rate": 0.0002,
+          "optimizer_steps": 2500,
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths_per_label": 128,
+          "training_points": 2048,
+          "validation_points": 256,
+          "width": 192
+        },
+        "parameters": 93889,
+        "peak_gpu_bytes": 73766912,
+        "selected_by": "held_out_greedy_label_mse_only",
+        "used_exact_reference": false,
+        "wall_seconds": 4.247797562042251
+      }
+    },
+    {
+      "checkpoint_selected_without_exact_reference": true,
+      "iteration": 2,
+      "label": {
+        "gradient_replication_relative_l2": 0.037916421394439626,
+        "gradient_replication_rmse": 0.002979408084811025,
+        "reference_information_used": false,
+        "replication": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 80462848,
+          "points": 256,
+          "seed": 1388791154,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 2.443460218142718
+        },
+        "train": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 80462848,
+          "points": 2048,
+          "seed": 2214247781,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 19.63701353617944
+        },
+        "train_bank_sha256": "84ffbb6aae096b07b92daa1545423c3287de2d833bd55f05467d00bf98b005b1",
+        "valid": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 80462848,
+          "points": 256,
+          "seed": 3334744285,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 2.427180608967319
+        },
+        "valid_bank_sha256": "595a3be9a8551a076d1870957c46cd4aebde78669edf717ccc843bae1b1097e9"
+      },
+      "problem": "quartic",
+      "source": "a1",
+      "trace": [
+        {
+          "step": 1.0,
+          "train_mse": 0.011567769572138786,
+          "validation_mse": 0.008932097814977169
+        },
+        {
+          "step": 625.0,
+          "train_mse": 9.928218787536025e-05,
+          "validation_mse": 0.0062744091264903545
+        },
+        {
+          "step": 1250.0,
+          "train_mse": 6.293837031989824e-06,
+          "validation_mse": 0.006415281444787979
+        },
+        {
+          "step": 1875.0,
+          "train_mse": 1.2608948054548819e-06,
+          "validation_mse": 0.00641724094748497
+        },
+        {
+          "step": 2500.0,
+          "train_mse": 7.600517619721359e-07,
+          "validation_mse": 0.006418685428798199
+        }
+      ],
+      "training": {
+        "best_validation_action_mse": 0.0062744091264903545,
+        "config": {
+          "batch_size": 512,
+          "depth": 3,
+          "label_time_steps": 16,
+          "learning_rate": 0.0002,
+          "optimizer_steps": 2500,
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths_per_label": 128,
+          "training_points": 2048,
+          "validation_points": 256,
+          "width": 192
+        },
+        "parameters": 93889,
+        "peak_gpu_bytes": 74144256,
+        "selected_by": "held_out_greedy_label_mse_only",
+        "used_exact_reference": false,
+        "wall_seconds": 4.243260130053386
+      }
+    },
+    {
+      "checkpoint_selected_without_exact_reference": true,
+      "iteration": 3,
+      "label": {
+        "gradient_replication_relative_l2": 0.03721098903277896,
+        "gradient_replication_rmse": 0.002883317920855284,
+        "reference_information_used": false,
+        "replication": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 80462848,
+          "points": 256,
+          "seed": 1277631497,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 2.2641384759917855
+        },
+        "train": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 80462848,
+          "points": 2048,
+          "seed": 1920327768,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 18.025462582707405
+        },
+        "train_bank_sha256": "bb5755026a05080d618e0fd6faa00504379707bb71e015473627cbb00857060c",
+        "valid": {
+          "analytic_nonterminal_reference_used": false,
+          "kind": "full_discretized_controlled_trajectory_vjp",
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths": 128,
+          "peak_gpu_bytes": 80462848,
+          "points": 256,
+          "seed": 3911547170,
+          "source_actor_frozen": true,
+          "state_dependence_preserved": true,
+          "time_steps": 16,
+          "wall_seconds": 2.2560015018098056
+        },
+        "valid_bank_sha256": "f0a6dede708f7618433381b3d7608d8c4aa77b616e875487b96551382fe1bb86"
+      },
+      "problem": "quartic",
+      "source": "a2",
+      "trace": [
+        {
+          "step": 1.0,
+          "train_mse": 0.00827738642692566,
+          "validation_mse": 0.007646389305591583
+        },
+        {
+          "step": 625.0,
+          "train_mse": 8.333139703609049e-05,
+          "validation_mse": 0.00547886872664094
+        },
+        {
+          "step": 1250.0,
+          "train_mse": 4.622788765118457e-06,
+          "validation_mse": 0.005530591122806072
+        },
+        {
+          "step": 1875.0,
+          "train_mse": 1.6280976069538156e-06,
+          "validation_mse": 0.005541318096220493
+        },
+        {
+          "step": 2500.0,
+          "train_mse": 6.11929749538831e-07,
+          "validation_mse": 0.0055418359115719795
+        }
+      ],
+      "training": {
+        "best_validation_action_mse": 0.00547886872664094,
+        "config": {
+          "batch_size": 512,
+          "depth": 3,
+          "label_time_steps": 16,
+          "learning_rate": 0.0002,
+          "optimizer_steps": 2500,
+          "parent_batch": 8,
+          "path_chunk": 32,
+          "paths_per_label": 128,
+          "training_points": 2048,
+          "validation_points": 256,
+          "width": 192
+        },
+        "parameters": 93889,
+        "peak_gpu_bytes": 74144256,
+        "selected_by": "held_out_greedy_label_mse_only",
+        "used_exact_reference": false,
+        "wall_seconds": 4.04950634483248
+      }
+    }
+  ],
+  "policy_iteration_rows": [
+    {
+      "actor_validation_action_mse": null,
+      "gradient_replication_relative_l2": null,
+      "gradient_replication_rmse": null,
+      "iteration": "a0",
+      "label_seconds": 0.0,
+      "paired_delta_se_across_states": null,
+      "paired_delta_vs_previous": null,
+      "pde": "quartic",
+      "policy_cost": 0.9645919130764579,
+      "policy_cost_mc_se": 0.0021133117843799903,
+      "training_seconds": 0.0
+    },
+    {
+      "actor_validation_action_mse": 0.012298639863729477,
+      "gradient_replication_relative_l2": 0.042058772214214356,
+      "gradient_replication_rmse": 0.0034816753841620837,
+      "iteration": "a1",
+      "label_seconds": 6.9345212848857045,
+      "paired_delta_se_across_states": 0.0044623599391581,
+      "paired_delta_vs_previous": -0.13561224459603624,
+      "pde": "quartic",
+      "policy_cost": 0.8289796684804216,
+      "policy_cost_mc_se": 0.0019937972076305714,
+      "training_seconds": 4.247797562042251
+    },
+    {
+      "actor_validation_action_mse": 0.0062744091264903545,
+      "gradient_replication_relative_l2": 0.037916421394439626,
+      "gradient_replication_rmse": 0.002979408084811025,
+      "iteration": "a2",
+      "label_seconds": 24.507654363289475,
+      "paired_delta_se_across_states": 0.0002355653514077035,
+      "paired_delta_vs_previous": -0.0023643445092318416,
+      "pde": "quartic",
+      "policy_cost": 0.8266153239711898,
+      "policy_cost_mc_se": 0.0019928112051338137,
+      "training_seconds": 4.243260130053386
+    },
+    {
+      "actor_validation_action_mse": 0.00547886872664094,
+      "gradient_replication_relative_l2": 0.03721098903277896,
+      "gradient_replication_rmse": 0.002883317920855284,
+      "iteration": "a3",
+      "label_seconds": 22.545602560508996,
+      "paired_delta_se_across_states": 0.00022201238347198876,
+      "paired_delta_vs_previous": -0.0013381340585443269,
+      "pde": "quartic",
+      "policy_cost": 0.8252771899126454,
+      "policy_cost_mc_se": 0.0019927427068358893,
+      "training_seconds": 4.04950634483248
+    }
+  ],
+  "prediction_path": "results/general_semilinear_hjb_pilot/predictions/quartic.npz",
+  "problem": {
+    "T": 0.5,
+    "beta_norm": 0.9999999999999999,
+    "beta_seed": 9137,
+    "d": 100,
+    "lam": 1.0,
+    "m": 1,
+    "name": "quartic",
+    "sigma": 1.4142135623730951
+  },
+  "protocol": {
+    "actor": {
+      "batch_size": 512,
+      "depth": 3,
+      "label_time_steps": 16,
+      "learning_rate": 0.0002,
+      "optimizer_steps": 2500,
+      "parent_batch": 8,
+      "path_chunk": 32,
+      "paths_per_label": 128,
+      "training_points": 2048,
+      "validation_points": 256,
+      "width": 192
+    },
+    "evaluation": {
+      "antithetic": true,
+      "common_random_numbers": true,
+      "estimator": "ordinary controlled-policy payoff Monte Carlo",
+      "martingale_control_variate": false,
+      "policy_validation_paths": 512,
+      "policy_validation_points": 256,
+      "policy_validation_steps": 32,
+      "test_paths": 512,
+      "test_points": 512,
+      "test_steps": 64
+    },
+    "forbidden_training_information": [
+      "analytic nonterminal values",
+      "analytic nonterminal gradients",
+      "Riccati solution",
+      "one-dimensional HJB reference",
+      "nonlinear MLP gradient teacher",
+      "rank projection"
+    ],
+    "policy_initialization": "feasible zero action",
+    "policy_iterations": [
+      1,
+      2
+    ],
+    "problems": {
+      "bounded": {
+        "A": 0.35,
+        "T": 0.5,
+        "beta_seed": 9137,
+        "d": 100,
+        "m": 1
+      },
+      "lqg": {
+        "G": 1.0,
+        "Q": 0.5,
+        "R": 1.0,
+        "T": 0.5,
+        "d": 100,
+        "gamma": 0.2,
+        "m": 100
+      },
+      "quartic": {
+        "T": 0.5,
+        "beta_seed": 9137,
+        "d": 100,
+        "lambda": 1.0,
+        "m": 1
+      }
+    },
+    "reference_selection_policy": "References are constructed and queried only after all learned checkpoints are frozen; they never affect checkpoint or iteration selection.",
+    "schema_version": 1
+  },
+  "reference_created_after_checkpoint_freeze": true,
+  "rows": [
+    {
+      "action_relative_l2": 1.0,
+      "action_rmse": 0.5306513394247218,
+      "bias": 0.14896624083181492,
+      "d": 100,
+      "feasibility_violation_rate": 0.0,
+      "final_mc_paths": 512,
+      "final_mc_seconds": 8.196542121004313,
+      "final_mc_steps": 64,
+      "gpu_seconds": 8.196542121004313,
+      "hamiltonian_negative_fraction": 0.0,
+      "hamiltonian_residual_max": 1.0134621650521756,
+      "hamiltonian_residual_mean": 0.2360645227827966,
+      "hamiltonian_residual_rmse": 0.3233448061086096,
+      "iteration": "a0",
+      "m": 1,
+      "max_abs_action": 0.0,
+      "mean_abs_action_along_paths": 0.0,
+      "mean_running_cost": 0.0,
+      "path_saturation_rate": 0.0,
+      "pde": "quartic",
+      "policy_regret": 0.14896624083181492,
+      "relative_l2": 0.18006559626659813,
+      "rmse": 0.16928793294177305,
+      "rmse_over_truth_std": 0.37967912181973956,
+      "truth_mean": 0.8276915604941171,
+      "truth_std": 0.44587106114869796,
+      "validation_policy_cost": 0.9645919130764579,
+      "validation_policy_cost_mc_se": 0.0021133117843799903,
+      "value_mean_mc_se": 0.0014954039357460696
+    },
+    {
+      "action_relative_l2": 0.205443639201944,
+      "action_rmse": 0.10901894231880084,
+      "bias": 0.009805771341002212,
+      "d": 100,
+      "feasibility_violation_rate": 0.0,
+      "final_mc_paths": 512,
+      "final_mc_seconds": 16.501240320969373,
+      "final_mc_steps": 64,
+      "gpu_seconds": 27.68355916789733,
+      "hamiltonian_negative_fraction": 0.0,
+      "hamiltonian_residual_max": 0.15431958678308938,
+      "hamiltonian_residual_mean": 0.010280024813532348,
+      "hamiltonian_residual_rmse": 0.020915410354763474,
+      "iteration": "a1",
+      "m": 1,
+      "max_abs_action": 1.0757379531860352,
+      "mean_abs_action_along_paths": 0.480474931248807,
+      "mean_running_cost": 0.09520093712457012,
+      "path_saturation_rate": 0.0,
+      "pde": "quartic",
+      "policy_regret": 0.009805771341002212,
+      "relative_l2": 0.03518254026455021,
+      "rmse": 0.03307672115337466,
+      "rmse_over_truth_std": 0.07418449869376827,
+      "truth_mean": 0.8276915604941171,
+      "truth_std": 0.44587106114869796,
+      "validation_policy_cost": 0.8289796684804216,
+      "validation_policy_cost_mc_se": 0.0019937972076305714,
+      "value_mean_mc_se": 0.0014145257598828867
+    },
+    {
+      "action_relative_l2": 0.1654425253157468,
+      "action_rmse": 0.08779229765660945,
+      "bias": 0.007327073596262912,
+      "d": 100,
+      "feasibility_violation_rate": 0.0,
+      "final_mc_paths": 512,
+      "final_mc_seconds": 16.519120729062706,
+      "final_mc_steps": 64,
+      "gpu_seconds": 45.27003522240557,
+      "hamiltonian_negative_fraction": 0.0,
+      "hamiltonian_residual_max": 0.0986506638827736,
+      "hamiltonian_residual_mean": 0.006538121974388755,
+      "hamiltonian_residual_rmse": 0.013490172066704343,
+      "iteration": "a2",
+      "m": 1,
+      "max_abs_action": 1.0792514085769653,
+      "mean_abs_action_along_paths": 0.4919687136483617,
+      "mean_running_cost": 0.09767651664186561,
+      "path_saturation_rate": 0.0,
+      "pde": "quartic",
+      "policy_regret": 0.007327073596262912,
+      "relative_l2": 0.03442681084008849,
+      "rmse": 0.03236622522976144,
+      "rmse_over_truth_std": 0.07259099782429546,
+      "truth_mean": 0.8276915604941171,
+      "truth_std": 0.44587106114869796,
+      "validation_policy_cost": 0.8266153239711898,
+      "validation_policy_cost_mc_se": 0.0019928112051338137,
+      "value_mean_mc_se": 0.0014149758390800266
+    },
+    {
+      "action_relative_l2": 4.3626706678202833e-07,
+      "action_rmse": 2.315057033347778e-07,
+      "bias": 0.0014949256588531969,
+      "d": 100,
+      "feasibility_violation_rate": 0.0,
+      "final_mc_paths": 512,
+      "final_mc_seconds": 19.746563063003123,
+      "final_mc_steps": 64,
+      "gpu_seconds": 19.746563063003123,
+      "hamiltonian_negative_fraction": 0.0,
+      "hamiltonian_residual_max": 1.0031404873434013e-10,
+      "hamiltonian_residual_mean": -2.455133223756945e-13,
+      "hamiltonian_residual_rmse": 1.6387232588066058e-11,
+      "iteration": "optimal_reference_policy",
+      "m": 1,
+      "max_abs_action": 0.9359279870986938,
+      "mean_abs_action_along_paths": 0.4974008984314935,
+      "mean_running_cost": 0.09526407903382594,
+      "path_saturation_rate": 0.0,
+      "pde": "quartic",
+      "policy_regret": 0.0014949256588531969,
+      "relative_l2": 0.03297624324839323,
+      "rmse": 0.031002480048661747,
+      "rmse_over_truth_std": 0.0695323889574489,
+      "truth_mean": 0.8276915604941171,
+      "truth_std": 0.44587106114869796,
+      "validation_policy_cost": null,
+      "validation_policy_cost_mc_se": null,
+      "value_mean_mc_se": 0.0014102266843733203
+    },
+    {
+      "action_relative_l2": 0.13900663907845376,
+      "action_rmse": 0.07376405921591034,
+      "bias": 0.0063303471432853645,
+      "d": 100,
+      "feasibility_violation_rate": 0.0,
+      "final_mc_paths": 512,
+      "final_mc_seconds": 16.100204647984356,
+      "final_mc_steps": 64,
+      "gpu_seconds": 42.69531355332583,
+      "hamiltonian_negative_fraction": 0.0,
+      "hamiltonian_residual_max": 0.10053160520095494,
+      "hamiltonian_residual_mean": 0.0047247699814788845,
+      "hamiltonian_residual_rmse": 0.010425130495712023,
+      "iteration": "a3",
+      "m": 1,
+      "max_abs_action": 1.0319092273712158,
+      "mean_abs_action_along_paths": 0.49682198242769005,
+      "mean_running_cost": 0.10002340737511428,
+      "path_saturation_rate": 0.0,
+      "pde": "quartic",
+      "policy_regret": 0.0063303471432853645,
+      "relative_l2": 0.03418654082783907,
+      "rmse": 0.03214033636167707,
+      "rmse_over_truth_std": 0.07208437407638409,
+      "truth_mean": 0.8276915604941171,
+      "truth_std": 0.44587106114869796,
+      "validation_policy_cost": 0.8252771899126454,
+      "validation_policy_cost_mc_se": 0.0019927427068358893,
+      "value_mean_mc_se": 0.0014147667098543667
+    }
+  ],
+  "test_bank_sha256": "908466a5e3b62bc6f102fba3e14755b5760878e600d0f8594bc180e1572ec076",
+  "test_evaluation_total_seconds": 60.963466234039515
+}

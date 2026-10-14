@@ -2,13 +2,30 @@
 
 from __future__ import annotations
 
-import csv
 import json
-from pathlib import Path
 
 import numpy as np
 
-from .common import PREDICTION_DIR, RESULTS_DIR, atomic_json, model_metrics, write_csv
+from .common import PREDICTION_DIR, RESULTS_DIR, atomic_json, write_csv
+
+
+def independent_metrics(prediction: np.ndarray, truth: np.ndarray) -> dict[str, float]:
+    """Deliberately independent from the metric helper used by the runner."""
+    prediction = np.asarray(prediction, dtype=np.float64).reshape(-1)
+    truth = np.asarray(truth, dtype=np.float64).reshape(-1)
+    error = prediction - truth
+    rmse = float(np.sqrt(np.dot(error, error) / len(error)))
+    truth_norm = float(np.sqrt(np.dot(truth, truth)))
+    truth_std = float(np.sqrt(np.mean((truth - truth.mean()) ** 2)))
+    return {
+        "rmse": rmse,
+        "relative_l2": float(np.sqrt(np.dot(error, error)) / truth_norm),
+        "policy_regret": float(error.sum() / len(error)),
+        "bias": float(error.sum() / len(error)),
+        "truth_mean": float(truth.sum() / len(truth)),
+        "truth_std": truth_std,
+        "rmse_over_truth_std": rmse / truth_std,
+    }
 
 
 def main() -> None:
@@ -22,7 +39,7 @@ def main() -> None:
             recorded = {row["iteration"]: row for row in raw["rows"]}
             truth = arrays["reference_value"].astype(np.float64)
             for iteration in [row["iteration"] for row in raw["rows"]]:
-                metrics = model_metrics(arrays[f"{iteration}_value"], truth)
+                metrics = independent_metrics(arrays[f"{iteration}_value"], truth)
                 row = {"pde": problem, "iteration": iteration, **metrics}
                 rows.append(row)
                 for key in ("rmse", "relative_l2", "policy_regret", "rmse_over_truth_std"):

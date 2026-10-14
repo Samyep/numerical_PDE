@@ -19,7 +19,7 @@ def main() -> None:
     residual = derivative - 2.0 * problem.gamma * P - P**2 / problem.R + problem.Q
     payload = {
         "lqg": {
-            "solver": "scipy.solve_ivp DOP853/RK45 default with dense output",
+            "solver": "scipy.solve_ivp RK45 with dense output",
             "rtol": 1e-11,
             "atol": 1e-13,
             "terminal_P_error": float(abs(P[-1] - problem.G)),

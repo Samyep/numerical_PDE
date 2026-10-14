@@ -108,6 +108,42 @@ def test_pathwise_vjp_matches_crn_central_difference_and_freezes_source() -> Non
     assert np.isfinite(value.item())
 
 
+class _NearSaturationPolicy(torch.nn.Module):
+    def __init__(self, problem: BoundedControlProblem) -> None:
+        super().__init__()
+        self.problem = problem
+        self.weight = torch.nn.Parameter(torch.tensor(12.0))
+
+    def predict(self, t: torch.Tensor, x: torch.Tensor, T: float) -> torch.Tensor:
+        del t, T
+        return self.problem.A * torch.tanh(self.weight * x[:, :1])
+
+
+def test_bounded_pathwise_gradient_is_stable_near_saturation_boundary() -> None:
+    problem = BoundedControlProblem(d=3, T=0.1)
+    policy = _NearSaturationPolicy(problem)
+    # tanh(weight*x0)=0.99 puts the initial feedback at the reported
+    # saturation threshold while retaining a nonzero state derivative.
+    boundary = float(np.arctanh(0.99) / policy.weight.detach().item())
+    x = torch.tensor([[boundary, -0.1, 0.2]])
+    t = torch.tensor([0.0])
+    normals = antithetic_normals(
+        (1, 512, 8, problem.d),
+        generator=torch.Generator().manual_seed(812),
+        device=torch.device("cpu"),
+    )
+    with frozen(policy):
+        _, gradient = _pathwise_chunk(problem, policy, t, x, normals)
+        eps = 1e-3
+        direction = torch.tensor([[eps, 0.0, 0.0]])
+        plus, _ = _pathwise_chunk(problem, policy, t, x + direction, normals)
+        minus, _ = _pathwise_chunk(problem, policy, t, x - direction, normals)
+    finite_difference = ((plus - minus) / (2.0 * eps)).item()
+    assert np.isfinite(gradient.numpy()).all()
+    assert abs(gradient[0, 0].item() - finite_difference) < 4e-3
+    assert policy.weight.grad is None
+
+
 @pytest.mark.parametrize("name", ["quartic", "bounded"])
 def test_scalar_reference_refines_and_matches_terminal(name: str) -> None:
     problem = QuarticControlProblem(d=3) if name == "quartic" else BoundedControlProblem(d=3)
