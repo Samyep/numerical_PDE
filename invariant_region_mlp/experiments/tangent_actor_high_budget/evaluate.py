@@ -50,6 +50,7 @@ def _actor_candidates(benchmark: str, seed: int) -> list[dict[str, Any]]:
     base = base_raw["phases"][2]
     candidates: list[dict[str, Any]] = [
         {
+            "evaluation_id": "frozen_original__a3_frozen",
             "checkpoint": "a3_frozen", "branch": "frozen_original",
             "path": base["checkpoint"],
             "training_seconds": base["cumulative_training_seconds"],
@@ -63,6 +64,7 @@ def _actor_candidates(benchmark: str, seed: int) -> list[dict[str, Any]]:
         for phase in result["phases"]:
             candidates.append(
                 {
+                    "evaluation_id": f"{branch}__{phase['checkpoint_label']}",
                     "checkpoint": phase["checkpoint_label"], "branch": branch,
                     "path": phase["checkpoint"],
                     "training_seconds": phase["cumulative_training_seconds"],
@@ -76,6 +78,7 @@ def _actor_candidates(benchmark: str, seed: int) -> list[dict[str, Any]]:
         for phase in result["phases"]:
             candidates.append(
                 {
+                    "evaluation_id": f"{branch}__{phase['checkpoint_label']}",
                     "checkpoint": phase["checkpoint_label"], "branch": branch,
                     "path": phase["checkpoint"],
                     "training_seconds": phase["cumulative_training_seconds"],
@@ -150,13 +153,15 @@ def evaluate_actors(benchmark: str, seed: int, device: torch.device) -> dict[str
     )
     for candidate in candidates:
         actor, _ = load_tangent_actor(Path(candidate["path"]), device)
-        actors[candidate["checkpoint"]] = actor
+        evaluation_id = candidate["evaluation_id"]
+        actors[evaluation_id] = actor
         prediction, variance, metadata = evaluate_tangent_actor(
             benchmark, actor, validation_x, device, paths=512, time_steps=32,
             seed=common_validation_seed,
         )
         selection.append(
             {
+                "evaluation_id": evaluation_id,
                 "checkpoint": candidate["checkpoint"], "branch": candidate["branch"],
                 "mean_policy_value": float(np.mean(prediction)),
                 "mean_policy_value_mc_se": float(np.sqrt(np.sum(variance)) / len(variance)),
@@ -167,7 +172,7 @@ def evaluate_actors(benchmark: str, seed: int, device: torch.device) -> dict[str
             }
         )
     selected = min(selection, key=lambda item: item["mean_policy_value"])
-    selected_label = selected["checkpoint"]
+    selected_id = selected["evaluation_id"]
 
     # Only after checkpoint selection is frozen do we access ground truth.
     test_reference = data["reference_original"][test_indices]
@@ -176,21 +181,23 @@ def evaluate_actors(benchmark: str, seed: int, device: torch.device) -> dict[str
     predictions: dict[str, np.ndarray] = {"test_reference": test_reference}
     for candidate in candidates:
         label = candidate["checkpoint"]
-        actor = actors[label]
+        evaluation_id = candidate["evaluation_id"]
+        actor = actors[evaluation_id]
         prediction, variance, metadata = evaluate_tangent_actor(
             benchmark, actor, test_x, device, paths=512, time_steps=32,
             seed=stable_seed("high_budget_test_common", benchmark, seed, 512, 32),
         )
-        key = f"actor_{label}_p512_s32"
+        key = f"actor_{evaluation_id}_p512_s32"
         row = {
             "method": "tangent_actor_high_budget",
             "benchmark": benchmark, "seed": seed, "branch": candidate["branch"],
-            "checkpoint": label, "checkpoint_path": candidate["path"],
-            "validation_selected": label == selected_label,
+            "checkpoint": label, "evaluation_id": evaluation_id,
+            "checkpoint_path": candidate["path"],
+            "validation_selected": evaluation_id == selected_id,
             "training_seconds": candidate["training_seconds"],
             "selection_inference_seconds": next(
                 item["selection_inference_seconds"] for item in selection
-                if item["checkpoint"] == label
+                if item["evaluation_id"] == evaluation_id
             ),
             "inference_seconds_N960": metadata["wall_seconds"],
             "total_seconds_N960": candidate["training_seconds"] + metadata["wall_seconds"],
@@ -204,28 +211,30 @@ def evaluate_actors(benchmark: str, seed: int, device: torch.device) -> dict[str
         rows.append(row)
         decomposition = _decomposition(
             prediction, test_reference, variance,
-            seed=stable_seed("high_budget_bootstrap", benchmark, seed, label, 512, 32),
+            seed=stable_seed("high_budget_bootstrap", benchmark, seed, evaluation_id, 512, 32),
         )
         decompositions.append({**{key: row[key] for key in (
-            "method", "benchmark", "seed", "branch", "checkpoint", "training_seconds",
+            "method", "benchmark", "seed", "branch", "checkpoint", "evaluation_id", "training_seconds",
             "inference_paths", "inference_time_steps", "validation_selected",
         )}, **decomposition})
         predictions[key] = prediction
 
     selected_candidate = next(
-        item for item in candidates if item["checkpoint"] == selected_label
+        item for item in candidates if item["evaluation_id"] == selected_id
     )
-    selected_actor = actors[selected_label]
+    selected_label = selected_candidate["checkpoint"]
+    selected_actor = actors[selected_id]
     # High-quality inference for the validation-selected checkpoint only.
     for paths in (2048, 8192):
         prediction, variance, metadata = evaluate_tangent_actor(
             benchmark, selected_actor, test_x, device, paths=paths, time_steps=32,
             seed=stable_seed("high_budget_selected_test", benchmark, seed, paths, 32),
         )
-        key = f"actor_{selected_label}_p{paths}_s32"
+        key = f"actor_{selected_id}_p{paths}_s32"
         row = {
             "method": "tangent_actor_high_budget", "benchmark": benchmark, "seed": seed,
             "branch": selected_candidate["branch"], "checkpoint": selected_label,
+            "evaluation_id": selected_id,
             "checkpoint_path": selected_candidate["path"], "validation_selected": True,
             "training_seconds": selected_candidate["training_seconds"],
             "selection_inference_seconds": selected["selection_inference_seconds"],
@@ -241,10 +250,10 @@ def evaluate_actors(benchmark: str, seed: int, device: torch.device) -> dict[str
         rows.append(row)
         decomposition = _decomposition(
             prediction, test_reference, variance,
-            seed=stable_seed("high_budget_bootstrap", benchmark, seed, selected_label, paths, 32),
+            seed=stable_seed("high_budget_bootstrap", benchmark, seed, selected_id, paths, 32),
         )
         decompositions.append({**{key: row[key] for key in (
-            "method", "benchmark", "seed", "branch", "checkpoint", "training_seconds",
+            "method", "benchmark", "seed", "branch", "checkpoint", "evaluation_id", "training_seconds",
             "inference_paths", "inference_time_steps", "validation_selected",
         )}, **decomposition})
         predictions[key] = prediction
@@ -255,10 +264,11 @@ def evaluate_actors(benchmark: str, seed: int, device: torch.device) -> dict[str
             benchmark, selected_actor, test_x, device, paths=2048, time_steps=steps,
             seed=stable_seed("high_budget_euler_test", benchmark, seed, 2048, steps),
         )
-        key = f"actor_{selected_label}_p2048_s{steps}"
+        key = f"actor_{selected_id}_p2048_s{steps}"
         row = {
             "method": "tangent_actor_high_budget", "benchmark": benchmark, "seed": seed,
             "branch": selected_candidate["branch"], "checkpoint": selected_label,
+            "evaluation_id": selected_id,
             "checkpoint_path": selected_candidate["path"], "validation_selected": True,
             "training_seconds": selected_candidate["training_seconds"],
             "selection_inference_seconds": selected["selection_inference_seconds"],
@@ -274,10 +284,10 @@ def evaluate_actors(benchmark: str, seed: int, device: torch.device) -> dict[str
         rows.append(row)
         decomposition = _decomposition(
             prediction, test_reference, variance,
-            seed=stable_seed("high_budget_bootstrap", benchmark, seed, selected_label, 2048, steps),
+            seed=stable_seed("high_budget_bootstrap", benchmark, seed, selected_id, 2048, steps),
         )
         decompositions.append({**{key: row[key] for key in (
-            "method", "benchmark", "seed", "branch", "checkpoint", "training_seconds",
+            "method", "benchmark", "seed", "branch", "checkpoint", "evaluation_id", "training_seconds",
             "inference_paths", "inference_time_steps", "validation_selected",
         )}, **decomposition})
         predictions[key] = prediction
@@ -286,7 +296,8 @@ def evaluate_actors(benchmark: str, seed: int, device: torch.device) -> dict[str
     np.savez_compressed(prediction_path, **predictions)
     result = {
         "benchmark": benchmark, "seed": seed, "selection": selection,
-        "selected_checkpoint": selected_label, "selection_rule": "minimum mean fixed-bank tangent-policy value",
+        "selected_checkpoint": selected_label, "selected_evaluation_id": selected_id,
+        "selection_rule": "minimum mean fixed-bank tangent-policy value",
         "ground_truth_used_for_selection": False, "rows": rows,
         "decompositions": decompositions, "prediction_path": str(prediction_path),
     }

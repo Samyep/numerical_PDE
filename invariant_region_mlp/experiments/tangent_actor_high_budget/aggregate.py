@@ -155,14 +155,14 @@ def _new_evaluation_records() -> tuple[
             actor_rows.extend(actor["rows"])
             decompositions.extend(actor["decompositions"])
             for item in actor["selection"]:
-                policy_scores[(benchmark, seed, item["checkpoint"])] = item["mean_policy_value"]
+                policy_scores[(benchmark, seed, item["evaluation_id"])] = item["mean_policy_value"]
             baseline = _json(
                 RAW_DIR / f"original_baseline_evaluation_{benchmark}_s{seed}.json"
             )
             baseline_rows.extend(baseline["rows"])
     for row in actor_rows:
         row["validation_policy_value"] = policy_scores.get(
-            (row["benchmark"], int(row["seed"]), row["checkpoint"])
+            (row["benchmark"], int(row["seed"]), row["evaluation_id"])
         )
     return actor_rows, baseline_rows, decompositions, policy_scores
 
@@ -243,10 +243,21 @@ def budget_alignment(
                         if math.isfinite(_number(row.get("validation_policy_value")))
                     ]
                     if scores:
-                        chosen_checkpoint = min(
+                        chosen = min(
                             scores, key=lambda row: _number(row["validation_policy_value"])
-                        )["checkpoint"]
-                        same_actor = [row for row in eligible if row.get("checkpoint") == chosen_checkpoint]
+                        )
+                        chosen_id = chosen.get("evaluation_id")
+                        if chosen_id:
+                            same_actor = [
+                                row for row in eligible
+                                if row.get("evaluation_id") == chosen_id
+                            ]
+                        else:
+                            same_actor = [
+                                row for row in eligible
+                                if row.get("checkpoint") == chosen.get("checkpoint")
+                                and row.get("branch") == chosen.get("branch")
+                            ]
                         selected = max(same_actor, key=lambda row: _number(row.get(time_key)))
                         rule = "minimum common-bank reference-free policy value, then largest predeclared MC budget"
                     else:
@@ -273,6 +284,7 @@ def budget_alignment(
                         "available": True, "actual_seconds": _number(selected.get(time_key)),
                         "checkpoint": selected.get("checkpoint"),
                         "branch": selected.get("branch"),
+                        "evaluation_id": selected.get("evaluation_id"),
                         "inference_paths": selected.get("inference_paths"),
                         "inference_time_steps": selected.get("inference_time_steps"),
                         "selection_rule": rule,

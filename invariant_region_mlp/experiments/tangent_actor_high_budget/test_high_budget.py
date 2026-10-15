@@ -116,6 +116,29 @@ def test_actor_validation_selection_ignores_test_error() -> None:
     assert selected["checkpoint"] == "good_validation"
 
 
+def test_actor_validation_selection_distinguishes_same_named_branch_checkpoints() -> None:
+    common = {
+        "benchmark": "nonseparable_d100_k2", "seed": 0,
+        "method": "tangent_actor_high_budget", "checkpoint": "a4",
+        "training_seconds": 200.0, "rmse": 0.1,
+    }
+    rows = [
+        {**common, "branch": "points4096", "evaluation_id": "points4096__a4",
+         "relative_l2": 0.001, "validation_policy_value": 0.5},
+        {**common, "branch": "points8192", "evaluation_id": "points8192__a4",
+         "relative_l2": 1.0, "validation_policy_value": 0.4},
+    ]
+    selected = next(
+        row for row in budget_alignment(rows, axis="training")
+        if row["benchmark"] == "nonseparable_d100_k2" and row["seed"] == 0
+        and row["method"] == "terminal_aware_tangent_actor"
+        and row["budget_level"] == "B3"
+        and row["selection_type"] == "validation_selected"
+    )
+    assert selected["branch"] == "points8192"
+    assert selected["evaluation_id"] == "points8192__a4"
+
+
 def test_corrected_scasml_includes_soft_terminal_defect() -> None:
     driver = driver_for("nonseparable_d100_k2")
     model = RawTanhPINN(driver.d, width=8, depth=1)
