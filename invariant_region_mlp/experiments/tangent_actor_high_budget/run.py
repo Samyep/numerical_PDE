@@ -7,7 +7,7 @@ import json
 
 import torch
 
-from .actor_scaling import BRANCHES, train_branch, train_pilot_suite
+from .actor_scaling import BRANCHES, continue_points8192, train_branch, train_pilot_suite
 from .common import BENCHMARKS, ensure_dirs
 from .original_baselines import train_deep_bsde_original, train_sdgd_pinn_original
 
@@ -16,7 +16,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--method",
-        choices=("actor_pilot", "actor_branch", "deep_bsde_original", "sdgd_pinn_original"),
+        choices=("actor_pilot", "actor_branch", "actor_stage2", "deep_bsde_original", "sdgd_pinn_original"),
         required=True,
     )
     parser.add_argument("--benchmark", choices=tuple(BENCHMARKS), required=True)
@@ -34,6 +34,8 @@ def main() -> None:
         if args.branch is None:
             parser.error("--branch is required for actor_branch")
         result = train_branch(args.benchmark, args.seed, args.branch, device)
+    elif args.method == "actor_stage2":
+        result = continue_points8192(args.benchmark, args.seed, device)
     elif args.method == "deep_bsde_original":
         result = train_deep_bsde_original(args.benchmark, args.seed, device)
     else:

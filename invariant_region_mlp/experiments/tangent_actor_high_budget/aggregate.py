@@ -14,7 +14,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .actor_scaling import BRANCHES
+from .actor_scaling import BRANCHES, CONTINUATION_BRANCHES
 from .common import (
     BENCHMARKS,
     BUDGETS,
@@ -76,7 +76,7 @@ def _actor_records() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     fitting: list[dict[str, Any]] = []
     for benchmark in BENCHMARKS:
         for seed in (0, 1):
-            for branch in BRANCHES:
+            for branch in (*BRANCHES, *CONTINUATION_BRANCHES):
                 result = _json(
                     RAW_DIR / f"tangent_actor_high_budget_{benchmark}_s{seed}_{branch}.json"
                 )
@@ -288,7 +288,7 @@ def _resource_rows(
     rows: list[dict[str, Any]] = []
     for benchmark in BENCHMARKS:
         for seed in (0, 1):
-            for branch in BRANCHES:
+            for branch in (*BRANCHES, *CONTINUATION_BRANCHES):
                 result = _json(
                     RAW_DIR / f"tangent_actor_high_budget_{benchmark}_s{seed}_{branch}.json"
                 )
@@ -399,7 +399,7 @@ def _plot_actor_diagnostics(
     fig, axes = plt.subplots(2, 2, figsize=(12.5, 9.2))
     branch_colors = {
         "iterations": "#006BA4", "points4096": "#5F9ED1", "points8192": "#A2C8EC",
-        "paths256": "#FF800E", "paths512": "#C85200",
+        "points8192_continued": "#004D73", "paths256": "#FF800E", "paths512": "#C85200",
     }
     for benchmark, marker in zip(BENCHMARKS, ("o", "s")):
         local = [row for row in ablations if row["benchmark"] == benchmark]

@@ -19,7 +19,7 @@ from invariant_region_mlp.experiments.tangent_actor_strong_baselines.tangent_bas
     load_tangent_actor,
 )
 
-from .actor_scaling import BRANCHES
+from .actor_scaling import BRANCHES, CONTINUATION_BRANCHES
 from .common import (
     CHECKPOINT_DIR,
     PREDICTION_DIR,
@@ -60,6 +60,19 @@ def _actor_candidates(benchmark: str, seed: int) -> list[dict[str, Any]]:
         }
     ]
     for branch in BRANCHES:
+        path = RAW_DIR / f"tangent_actor_high_budget_{benchmark}_s{seed}_{branch}.json"
+        result = _json(path)
+        for phase in result["phases"]:
+            candidates.append(
+                {
+                    "checkpoint": phase["checkpoint_label"], "branch": branch,
+                    "path": phase["checkpoint"],
+                    "training_seconds": phase["cumulative_training_seconds"],
+                    "validation_objective": phase["training"]["best_validation_normalized_loss"],
+                    "phase": phase,
+                }
+            )
+    for branch in CONTINUATION_BRANCHES:
         path = RAW_DIR / f"tangent_actor_high_budget_{benchmark}_s{seed}_{branch}.json"
         result = _json(path)
         for phase in result["phases"]:

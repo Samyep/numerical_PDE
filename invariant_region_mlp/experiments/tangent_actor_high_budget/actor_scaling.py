@@ -52,6 +52,7 @@ BRANCHES: dict[str, dict[str, int]] = {
     "paths256": {"training_points": 2048, "paths_per_label": 256, "phases": 1},
     "paths512": {"training_points": 2048, "paths_per_label": 512, "phases": 1},
 }
+CONTINUATION_BRANCHES = ("points8192_continued",)
 
 
 def _strong_a3_path(benchmark: str, seed: int) -> Path:
@@ -414,7 +415,138 @@ def train_pilot_suite(
     return results
 
 
+def continue_points8192(
+    benchmark: str,
+    seed: int,
+    device: torch.device,
+    *,
+    maximum_additional_phases: int = 4,
+    maximum_cumulative_seconds: float = 1200.0,
+) -> dict[str, Any]:
+    """Continue only the data-favored 8192-point branch after staged review."""
+    ensure_dirs()
+    pilot_path = RAW_DIR / f"tangent_actor_high_budget_{benchmark}_s{seed}_points8192.json"
+    pilot = json.loads(pilot_path.read_text())
+    pilot_phase = pilot["phases"][-1]
+    config = _config(training_points=8192, paths_per_label=128)
+    driver = driver_for(benchmark)
+    source, _ = load_tangent_actor(Path(pilot_phase["checkpoint"]), device)
+    cumulative = float(pilot_phase["cumulative_training_seconds"])
+    previous_phase_seconds = float(pilot_phase["phase_seconds"])
+    phases: list[dict[str, Any]] = []
+    no_improvement_streak = 0
+    synchronize(device)
+    resource_started = time.perf_counter()
+    for extension_index in range(2, 2 + maximum_additional_phases):
+        # Do not begin a phase that is likely to exceed the +25% B5 ceiling.
+        if cumulative + previous_phase_seconds > maximum_cumulative_seconds:
+            break
+        synchronize(device)
+        started = time.perf_counter()
+        arrays, label_meta = _generate_labels(
+            benchmark, seed, extension_index, source, config, device
+        )
+        actor, training, trace = train_actor(
+            driver, config, "terminal_aware",
+            arrays["train_t"], arrays["train_x"], arrays["train_r"], arrays.get("train_q"),
+            arrays["valid_t"], arrays["valid_x"], arrays["valid_r"], arrays.get("valid_q"),
+            seed=stable_seed("high_budget_fit", benchmark, seed, extension_index),
+            device=device, initial=source,
+        )
+        policy = reference_free_policy_validation(
+            benchmark, seed, "points8192_continued", extension_index,
+            source, actor, device,
+        )
+        synchronize(device)
+        before_save = time.perf_counter() - started
+        label = f"a{3 + extension_index}_points8192"
+        checkpoint_path = CHECKPOINT_DIR / f"tangent_actor_{benchmark}_s{seed}_{label}.pt"
+        atomic_torch_save(
+            checkpoint_path,
+            {
+                "state_dict": {
+                    name: value.detach().cpu().clone()
+                    for name, value in actor.state_dict().items()
+                },
+                "actor_kind": "terminal_aware", "width": config.width,
+                "depth": config.depth, "benchmark": benchmark, "seed": seed,
+                "branch": "points8192_continued", "extension_index": extension_index,
+                "checkpoint_label": label,
+            },
+        )
+        synchronize(device)
+        phase_seconds = time.perf_counter() - started
+        cumulative += phase_seconds
+        improvement = policy["previous_minus_new"]
+        meaningful = bool(
+            improvement["mc_ci95_low"] > 0.0 and improvement["mean"] >= 1e-4
+        )
+        no_improvement_streak = 0 if meaningful else no_improvement_streak + 1
+        phase = {
+            "method": "tangent_actor_high_budget", "benchmark": benchmark,
+            "seed": seed, "branch": "points8192_continued",
+            "extension_index": extension_index, "checkpoint_label": label,
+            "checkpoint": str(checkpoint_path),
+            "source_checkpoint": pilot_phase["checkpoint_label"]
+            if extension_index == 2 else phases[-1]["checkpoint_label"],
+            "phase_seconds": phase_seconds,
+            "phase_seconds_before_checkpoint_io": before_save,
+            "base_a3_training_seconds": pilot["base_a3_training_seconds"],
+            "cumulative_training_seconds": cumulative,
+            "labels": label_meta, "training": training, "trace": trace,
+            "reference_free_policy_validation": policy,
+            "meaningful_reference_free_improvement": meaningful,
+            "parameter_count": parameter_count(actor),
+            "selection_criterion": "held-out tangent labels and paired reference-free policy value",
+            "ground_truth_used_for_selection": False,
+        }
+        phases.append(phase)
+        source = actor
+        previous_phase_seconds = phase_seconds
+        partial = {
+            "method": "tangent_actor_high_budget", "benchmark": benchmark,
+            "seed": seed, "branch": "points8192_continued",
+            "configuration": asdict(config), "source_pilot": str(pilot_path),
+            "source_checkpoint": pilot_phase["checkpoint"],
+            "pilot_a4_cumulative_training_seconds": pilot_phase["cumulative_training_seconds"],
+            "phases": phases,
+            "resource_seconds_this_run": time.perf_counter() - resource_started,
+            "maximum_cumulative_seconds": maximum_cumulative_seconds,
+            "staged_decision_basis": "8192 points had the largest paired improvement in all four pilot tasks",
+            "ground_truth_used_for_training_or_selection": False,
+        }
+        atomic_json(
+            RAW_DIR / f"tangent_actor_high_budget_{benchmark}_s{seed}_points8192_continued.json",
+            partial,
+        )
+        print(
+            f"{benchmark} s{seed} points8192_continued {label}: "
+            f"cum={cumulative:.2f}s paired={improvement['mean']:.6g} "
+            f"CI=[{improvement['mc_ci95_low']:.6g},{improvement['mc_ci95_high']:.6g}]",
+            flush=True,
+        )
+        if no_improvement_streak >= 2:
+            break
+    result = {
+        "method": "tangent_actor_high_budget", "benchmark": benchmark,
+        "seed": seed, "branch": "points8192_continued",
+        "configuration": asdict(config), "source_pilot": str(pilot_path),
+        "source_checkpoint": pilot_phase["checkpoint"],
+        "pilot_a4_cumulative_training_seconds": pilot_phase["cumulative_training_seconds"],
+        "phases": phases,
+        "resource_seconds_this_run": time.perf_counter() - resource_started,
+        "maximum_cumulative_seconds": maximum_cumulative_seconds,
+        "staged_decision_basis": "8192 points had the largest paired improvement in all four pilot tasks",
+        "ground_truth_used_for_training_or_selection": False,
+    }
+    atomic_json(
+        RAW_DIR / f"tangent_actor_high_budget_{benchmark}_s{seed}_points8192_continued.json",
+        result,
+    )
+    return result
+
+
 __all__ = [
-    "BRANCHES", "nested_bank_audit", "reference_free_policy_validation",
-    "train_branch", "train_pilot_suite",
+    "BRANCHES", "CONTINUATION_BRANCHES", "nested_bank_audit", "reference_free_policy_validation",
+    "continue_points8192", "train_branch", "train_pilot_suite",
 ]

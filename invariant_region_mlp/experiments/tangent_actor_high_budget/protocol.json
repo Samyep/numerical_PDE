@@ -20,6 +20,7 @@
     "paths512": {"updates_after_a3": 1, "training_points": 2048, "paths_per_label": 512}
   },
   "iteration_stopping": "stop after two consecutive extensions whose paired reference-free MC CI includes zero or mean improvement is below 1e-4",
+  "staged_continuation": "after the five-way pilot, continue only the factor with the largest paired improvement in all four benchmark-seed tasks, subject to a 1200-second (+25% B5) pre-start ceiling",
   "ground_truth_role": "posthoc evaluation only",
   "corrected_external_baselines": {
     "deep_bsde_original": "raw amortized Y0 plus official-style nonshared BN/ReLU Z_n; no g or grad-g embedding",
