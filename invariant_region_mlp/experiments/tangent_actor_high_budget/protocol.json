@@ -1,0 +1,33 @@
+{
+  "benchmarks": [
+    "nonseparable_d100_k2",
+    "joint_concave_d400_k2"
+  ],
+  "training_seeds": [0, 1],
+  "frozen_reference_method": {
+    "actor": "terminal_aware_3x192_silu",
+    "training_points": 2048,
+    "paths_per_label": 128,
+    "label_time_steps": 16,
+    "optimizer_steps": 2500,
+    "updates": 3
+  },
+  "controlled_extensions": {
+    "iterations": {"updates_after_a3": 3, "training_points": 2048, "paths_per_label": 128},
+    "points4096": {"updates_after_a3": 1, "training_points": 4096, "paths_per_label": 128},
+    "points8192": {"updates_after_a3": 1, "training_points": 8192, "paths_per_label": 128},
+    "paths256": {"updates_after_a3": 1, "training_points": 2048, "paths_per_label": 256},
+    "paths512": {"updates_after_a3": 1, "training_points": 2048, "paths_per_label": 512}
+  },
+  "iteration_stopping": "stop after two consecutive extensions whose paired reference-free MC CI includes zero or mean improvement is below 1e-4",
+  "ground_truth_role": "posthoc evaluation only",
+  "corrected_external_baselines": {
+    "deep_bsde_original": "raw amortized Y0 plus official-style nonshared BN/ReLU Z_n; no g or grad-g embedding",
+    "sdgd_pinn_original": "ordinary tanh (t,x)->u plus authors' soft terminal value/gradient penalty; no hard terminal ansatz",
+    "deep_picard": "reuse prior result; terminal construction belongs to published algorithm",
+    "full_history_mlp": "reuse prior result; pathwise terminal evaluation belongs to published algorithm",
+    "scasml": "reevaluate from corrected ordinary SDGD-PINN backbone"
+  },
+  "budget_seconds": [60, 120, 240, 480, 960],
+  "final_test_used_for_selection": false
+}
