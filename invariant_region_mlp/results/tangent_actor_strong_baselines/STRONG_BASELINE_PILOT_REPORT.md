@@ -21,6 +21,8 @@ This is a medium-budget advantage rather than uniform dominance. At B5, Deep BSD
 
 The terminal-aware construction is material. Standard Tangent-Actor remains at relative $L^2$ 0.007949 on the nonseparable problem and 0.028118 at $d=400$, whereas the primary method reaches 0.006173 and 0.006904 before increasing inference MC. The untrained terminal tangent is also weaker on both benchmarks.
 
+![Compute-aligned strong-baseline summary](figures/strong_baseline_accuracy_compute_summary.png)
+
 ## Numerical reference and correctness
 
 | Benchmark | Reference refinement RMSE | PDE residual RMSE | Test value range | In [0,1] |

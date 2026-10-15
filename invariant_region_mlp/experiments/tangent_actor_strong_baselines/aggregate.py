@@ -59,6 +59,16 @@ COLORS = {
     "scasml_l1": "#E69F00",
     "full_history_mlp": "#000000",
 }
+MARKERS = {
+    "tangent_actor": "D",
+    "standard_tangent_actor": "o",
+    "terminal_tangent_Ag": "X",
+    "deep_bsde": "s",
+    "sdgd_pinn": "^",
+    "deep_picard": "P",
+    "scasml_l1": "v",
+    "full_history_mlp": "d",
+}
 
 
 def _read(path: Path) -> dict[str, Any]:
@@ -564,6 +574,120 @@ def _plot_method_convergence(training: list[dict[str, Any]]) -> None:
             plt.close(figure)
 
 
+def _plot_accuracy_compute_summary(
+    training: list[dict[str, Any]], total: list[dict[str, Any]]
+) -> None:
+    """Publication-style 2x2 summary matching the earlier frontier figures."""
+
+    figure, axes = plt.subplots(2, 2, figsize=(12.4, 8.2), sharey="row")
+    panels = (
+        (0, 0, BENCHMARKS[0], training, "training_seconds", "Training compute (GH200 s)"),
+        (0, 1, BENCHMARKS[1], training, "training_seconds", "Training compute (GH200 s)"),
+        (1, 0, BENCHMARKS[0], total, "total_seconds_N960", "Total compute for N=960 (GH200 s)"),
+        (1, 1, BENCHMARKS[1], total, "total_seconds_N960", "Total compute for N=960 (GH200 s)"),
+    )
+    panel_labels = ("(a)", "(b)", "(c)", "(d)")
+    titles = {
+        BENCHMARKS[0]: "Nonseparable, d=100, k=2",
+        BENCHMARKS[1]: "Joint concave, d=400, k=2",
+    }
+
+    for panel_index, (row_index, col_index, benchmark, rows, x_key, xlabel) in enumerate(
+        panels
+    ):
+        axis = axes[row_index, col_index]
+        local = [item for item in rows if item["benchmark"] == benchmark]
+        for method in TRAINING_METHODS:
+            method_rows = [item for item in local if item["method"] == method]
+            if not method_rows:
+                continue
+            grouped: dict[tuple[str, str | None], list[dict[str, Any]]] = defaultdict(list)
+            for item in method_rows:
+                grouped[(str(item["checkpoint"]), item.get("total_variant"))].append(item)
+            points: list[tuple[float, float, float]] = []
+            for group in grouped.values():
+                x_values = [max(float(item[x_key]), 0.1) for item in group]
+                y_values = [float(item["relative_l2"]) for item in group]
+                points.append(
+                    (
+                        float(np.mean(x_values)),
+                        float(np.mean(y_values)),
+                        float(np.std(y_values, ddof=1)) if len(y_values) > 1 else 0.0,
+                    )
+                )
+            points.sort(key=lambda point: point[0])
+            x_values = np.asarray([point[0] for point in points])
+            y_values = np.asarray([point[1] for point in points])
+            y_errors = np.asarray([point[2] for point in points])
+            line_style = "none" if method == "full_history_mlp" else "-"
+            line_width = 2.5 if method == "tangent_actor" else 1.35
+            alpha = 1.0 if method == "tangent_actor" else 0.82
+            axis.errorbar(
+                x_values,
+                y_values,
+                yerr=y_errors,
+                marker=MARKERS[method],
+                markersize=6.0 if method == "tangent_actor" else 4.5,
+                linestyle=line_style,
+                linewidth=line_width,
+                capsize=2.0,
+                color=COLORS[method],
+                alpha=alpha,
+                label=LABELS[method],
+                zorder=4 if method == "tangent_actor" else 2,
+            )
+        for level, budget in enumerate(BUDGETS, 1):
+            axis.axvline(budget, color="#bdbdbd", linewidth=0.65, linestyle=":", zorder=0)
+            if row_index == 0:
+                axis.text(
+                    budget,
+                    0.985,
+                    f"B{level}",
+                    transform=axis.get_xaxis_transform(),
+                    ha="center",
+                    va="top",
+                    fontsize=7,
+                    color="#777777",
+                )
+        axis.set_xscale("log")
+        axis.set_yscale("log")
+        axis.set_xlabel(xlabel)
+        if col_index == 0:
+            axis.set_ylabel("Value relative $L^2$")
+        axis.set_title(f"{panel_labels[panel_index]} {titles[benchmark]}", loc="left")
+        axis.grid(True, which="both", alpha=0.22, linewidth=0.55)
+
+    by_label: dict[str, Any] = {}
+    for axis in axes.flat:
+        handles, labels = axis.get_legend_handles_labels()
+        for label, handle in zip(labels, handles, strict=True):
+            by_label.setdefault(label, handle)
+    figure.legend(
+        by_label.values(),
+        by_label.keys(),
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.995),
+        ncol=4,
+        frameon=False,
+    )
+    figure.suptitle(
+        "Compute-aligned strong baselines for Terminal-Aware Tangent-Actor",
+        y=0.925,
+        fontsize=15,
+    )
+    figure.tight_layout(rect=(0.0, 0.0, 1.0, 0.88), h_pad=2.0, w_pad=1.2)
+    figure.savefig(
+        FIGURE_DIR / "strong_baseline_accuracy_compute_summary.png",
+        dpi=240,
+        bbox_inches="tight",
+    )
+    figure.savefig(
+        FIGURE_DIR / "strong_baseline_accuracy_compute_summary.pdf",
+        bbox_inches="tight",
+    )
+    plt.close(figure)
+
+
 def main() -> None:
     ensure_dirs()
     training, total, failures = load_frontiers()
@@ -613,6 +737,7 @@ def main() -> None:
         filename="accuracy_vs_total_compute_N960.png",
         training_guides=False,
     )
+    _plot_accuracy_compute_summary(training, total)
     _plot_method_convergence(training)
     print(
         json.dumps(
