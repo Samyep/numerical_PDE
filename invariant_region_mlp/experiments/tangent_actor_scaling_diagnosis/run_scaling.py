@@ -365,11 +365,14 @@ def _phase_row(phase: dict[str, Any] | None) -> dict[str, Any]:
             "warm_started": None,
         }
     training, labels = phase["training"], phase["labels"]
-    label_seconds = sum(
-        labels[name]["wall_seconds"] for name in ("train", "validation", "replication")
-    )
+    train_label_seconds = labels["train"]["wall_seconds"]
     if labels["iteration"] == 1:
-        label_seconds *= labels["nested_prefix_fraction"]
+        train_label_seconds *= labels["nested_prefix_fraction"]
+    label_seconds = (
+        train_label_seconds
+        + labels["validation"]["wall_seconds"]
+        + labels["replication"]["wall_seconds"]
+    )
     return {
         "selected_step": training["selected_step"],
         "actor_parameters": training["parameters"],
