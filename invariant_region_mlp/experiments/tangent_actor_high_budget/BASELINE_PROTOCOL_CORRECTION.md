@@ -26,7 +26,7 @@ the soft terminal penalty
 
 \[
 20\,\operatorname{MSE}(u(T,X),g(X))
-+\operatorname{MSE}(z(T,X),z_g(X)).
++\operatorname{MSE}(\nabla u(T,X),\nabla g(X)).
 \]
 
 The corrected adaptation follows that form. The network maps `(t,x)` directly

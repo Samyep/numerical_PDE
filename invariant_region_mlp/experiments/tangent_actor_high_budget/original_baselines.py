@@ -235,13 +235,13 @@ def _terminal_penalty(
         value.sum(), local_x, create_graph=create_graph, retain_graph=create_graph
     )[0]
     value_mse = torch.mean((value - driver.terminal(local_x)) ** 2)
-    z_mse = torch.mean(
-        (driver.sigma * gradient - driver.sigma * driver.terminal_gradient_torch(local_x)) ** 2
+    gradient_mse = torch.mean(
+        (gradient - driver.terminal_gradient_torch(local_x)) ** 2
     )
-    penalty = 20.0 * value_mse + z_mse
+    penalty = 20.0 * value_mse + gradient_mse
     return penalty, {
         "terminal_value_rmse": float(torch.sqrt(value_mse.detach()).item()),
-        "terminal_gradient_component_rmse": float(torch.sqrt(z_mse.detach()).item()),
+        "terminal_gradient_component_rmse": float(torch.sqrt(gradient_mse.detach()).item()),
     }
 
 
@@ -447,7 +447,7 @@ def train_sdgd_pinn_original(
         "method": "sdgd_pinn_original", "benchmark": benchmark, "seed": seed,
         "configuration": {
             "network": "ordinary tanh MLP (t,x)->u", "terminal_aware_features": False,
-            "terminal_training": "official soft penalty 20*MSE(u_T,g)+MSE(z_T,z_g)",
+            "terminal_training": "official soft penalty 20*MSE(u_T,g)+MSE(grad_u_T,grad_g)",
             "width": width, "depth": depth, "batch_size": batch_size,
             "coordinate_budget": coordinate_budget, "learning_rate": learning_rate,
             "official_source_commit": "c597cc4fe9caac0b3ca118ea84453405f25ff833",
