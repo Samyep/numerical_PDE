@@ -8,6 +8,7 @@ from .common import driver_for
 from .models import OriginalAmortizedDeepBSDE, RawTanhPINN
 from .original_baselines import sdgd_objective
 from .evaluate import _decomposition
+from .aggregate import budget_alignment
 
 
 def test_original_baselines_have_no_terminal_aware_ansatz() -> None:
@@ -65,3 +66,50 @@ def test_systematic_decomposition_subtracts_variance_of_mean() -> None:
     assert np.isclose(result["observed_mse"], 0.04)
     assert np.isclose(result["mc_variance_contribution"], 0.01)
     assert np.isclose(result["systematic_mse_proxy"], 0.03)
+
+
+def test_budget_envelope_retains_earlier_completed_point() -> None:
+    rows = [
+        {
+            "benchmark": "nonseparable_d100_k2", "seed": 0,
+            "method": "deep_bsde_original", "checkpoint": "early",
+            "training_seconds": 280.0, "relative_l2": 0.02, "rmse": 0.01,
+        },
+        {
+            "benchmark": "nonseparable_d100_k2", "seed": 0,
+            "method": "deep_bsde_original", "checkpoint": "late",
+            "training_seconds": 700.0, "relative_l2": 0.03, "rmse": 0.02,
+        },
+    ]
+    aligned = budget_alignment(rows, axis="training")
+    for level in ("B4", "B5"):
+        selected = next(
+            row for row in aligned
+            if row["benchmark"] == "nonseparable_d100_k2"
+            and row["seed"] == 0 and row["method"] == "deep_bsde_original"
+            and row["budget_level"] == level
+            and row["selection_type"] == "descriptive_test_envelope"
+        )
+        assert selected["checkpoint"] == "early"
+
+
+def test_actor_validation_selection_ignores_test_error() -> None:
+    common = {
+        "benchmark": "nonseparable_d100_k2", "seed": 0,
+        "method": "tangent_actor_high_budget", "training_seconds": 200.0,
+        "rmse": 0.1,
+    }
+    rows = [
+        {**common, "checkpoint": "good_validation", "relative_l2": 1.0,
+         "validation_policy_value": 0.4},
+        {**common, "checkpoint": "good_test", "relative_l2": 0.001,
+         "validation_policy_value": 0.5},
+    ]
+    selected = next(
+        row for row in budget_alignment(rows, axis="training")
+        if row["benchmark"] == "nonseparable_d100_k2" and row["seed"] == 0
+        and row["method"] == "terminal_aware_tangent_actor"
+        and row["budget_level"] == "B3"
+        and row["selection_type"] == "validation_selected"
+    )
+    assert selected["checkpoint"] == "good_validation"
