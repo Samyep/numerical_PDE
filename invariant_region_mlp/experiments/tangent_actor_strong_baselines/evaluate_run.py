@@ -50,6 +50,24 @@ def _scasml_prediction_key(checkpoint: str, paths: int, purpose: str) -> str:
     return f"scasml_l1_{checkpoint}_p{paths}_{purpose}"
 
 
+def _unique_picard_checkpoints(
+    checkpoints: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Return one row per real saved network, retaining crossed budgets."""
+    unique: dict[tuple[str, int], dict[str, Any]] = {}
+    for checkpoint in checkpoints:
+        key = (str(checkpoint["checkpoint"]), int(checkpoint["round"]))
+        target = checkpoint.get("target_budget_seconds")
+        if key not in unique:
+            unique[key] = dict(
+                checkpoint,
+                crossed_target_budget_seconds=[] if target is None else [target],
+            )
+        elif target is not None:
+            unique[key]["crossed_target_budget_seconds"].append(target)
+    return list(unique.values())
+
+
 def _metric_row(
     *,
     method: str,
@@ -247,7 +265,7 @@ def evaluate(benchmark: str, seed: int, device: torch.device) -> dict[str, Any]:
 
     # Deep Picard's real complete-round checkpoints.
     dpi = _load_json(RAW_DIR / f"deep_picard_{benchmark}_s{seed}_main.json")
-    dpi_checkpoints = list(dpi["checkpoints"])
+    dpi_checkpoints = _unique_picard_checkpoints(list(dpi["checkpoints"]))
     final_history = dpi["history"][-1]
     if final_history["checkpoint"] and all(
         item["checkpoint"] != final_history["checkpoint"] for item in dpi_checkpoints

@@ -12,7 +12,7 @@ from invariant_region_mlp.experiments.tangent_actor_scaling_diagnosis.models imp
 from .aggregate import budget_alignment
 from .common import driver_for, metrics
 from .deep_picard import ZeroPicardActor, picard_labels
-from .evaluate_run import _scasml_prediction_key
+from .evaluate_run import _scasml_prediction_key, _unique_picard_checkpoints
 from .full_history_mlp import predict_full_history_mlp
 from .models import AmortizedDeepBSDE, HardTerminalValue
 from .neural_baselines import sdgd_objective
@@ -175,4 +175,21 @@ def test_independent_scasml_draws_have_distinct_replay_keys() -> None:
     training_key = _scasml_prediction_key("B5", 32, "training_frontier")
     sweep_key = _scasml_prediction_key("B5", 32, "inference_sweep")
     assert training_key != sweep_key
+
+
+def test_picard_budget_crossings_do_not_duplicate_a_real_checkpoint() -> None:
+    common = {
+        "checkpoint": "/tmp/round2.pt",
+        "round": 2,
+        "training_seconds": 130.0,
+        "validation_objective": 0.1,
+    }
+    observed = _unique_picard_checkpoints(
+        [
+            {**common, "target_budget_seconds": 60.0},
+            {**common, "target_budget_seconds": 120.0},
+        ]
+    )
+    assert len(observed) == 1
+    assert observed[0]["crossed_target_budget_seconds"] == [60.0, 120.0]
 
