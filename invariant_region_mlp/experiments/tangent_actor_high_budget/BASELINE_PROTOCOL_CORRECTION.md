@@ -38,6 +38,11 @@ appear only as supervised boundary data in the authors' loss.
 Deep Picard's own terminal embedding and Full-History MLP's pathwise terminal
 evaluation remain intact because they are parts of those published methods.
 SCaSML is recomputed using the corrected ordinary SDGD-PINN as its backbone.
+Because this backbone satisfies terminal data softly, its level-one defect
+formula includes both the terminal mismatch
+`g(X_T)-u_hat(T,X_T)` and the sampled PDE-residual integral. Omitting the first
+term would incorrectly reuse a formula that is valid only for a hard-terminal
+surrogate.
 
 The final tables label the invalid older Deep BSDE, SDGD-PINN, and SCaSML rows
 as historical and do not let them enter a formal accuracy-compute envelope.

@@ -9,6 +9,7 @@ from .models import OriginalAmortizedDeepBSDE, RawTanhPINN
 from .original_baselines import sdgd_objective
 from .evaluate import _decomposition
 from .aggregate import budget_alignment
+from .scasml_original import predict_scasml_original_level1
 
 
 def test_original_baselines_have_no_terminal_aware_ansatz() -> None:
@@ -113,3 +114,17 @@ def test_actor_validation_selection_ignores_test_error() -> None:
         and row["selection_type"] == "validation_selected"
     )
     assert selected["checkpoint"] == "good_validation"
+
+
+def test_corrected_scasml_includes_soft_terminal_defect() -> None:
+    driver = driver_for("nonseparable_d100_k2")
+    model = RawTanhPINN(driver.d, width=8, depth=1)
+    prediction, variance, metadata = predict_scasml_original_level1(
+        model, "nonseparable_d100_k2", np.zeros((1, driver.d)),
+        torch.device("cpu"), paths=2, probes=1, seed=13,
+        parent_batch=1, path_chunk=2,
+    )
+    assert np.all(np.isfinite(prediction))
+    assert np.all(np.isfinite(variance))
+    assert metadata["terminal_defect_included"] is True
+    assert metadata["mean_terminal_defect_rms"] > 0.0

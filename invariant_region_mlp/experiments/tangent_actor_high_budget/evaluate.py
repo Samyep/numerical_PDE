@@ -11,9 +11,6 @@ from typing import Any
 import numpy as np
 import torch
 
-from invariant_region_mlp.experiments.tangent_actor_strong_baselines.scasml import (
-    predict_scasml_level1,
-)
 from invariant_region_mlp.experiments.tangent_actor_strong_baselines.tangent_baseline import (
     evaluate_tangent_actor,
     load_tangent_actor,
@@ -38,6 +35,7 @@ from .original_baselines import (
     predict_deep_bsde_original,
     predict_sdgd_pinn_original,
 )
+from .scasml_original import predict_scasml_original_level1
 
 
 def _json(path: Path) -> dict[str, Any]:
@@ -341,11 +339,11 @@ def evaluate_original_baselines(
     final_pinn = pinn_result["checkpoints"][-1]
     pinn, _ = load_sdgd_pinn_original(Path(final_pinn["checkpoint"]), device)
     for paths in (8, 32):
-        val_prediction, _, val_meta = predict_scasml_level1(
+        val_prediction, _, val_meta = predict_scasml_original_level1(
             pinn, benchmark, validation_x, device, paths=paths, probes=4,
             seed=stable_seed("high_budget_scasml", benchmark, seed, paths, "validation"),
         )
-        prediction, variance, metadata = predict_scasml_level1(
+        prediction, variance, metadata = predict_scasml_original_level1(
             pinn, benchmark, test_x, device, paths=paths, probes=4,
             seed=stable_seed("high_budget_scasml", benchmark, seed, paths, "test"),
         )
@@ -362,6 +360,8 @@ def evaluate_original_baselines(
                 "validation_inference_seconds": val_meta["inference_seconds"],
                 "mc_mean_se": metadata["mean_mc_se_across_workload"],
                 "mc_rmse_standard_error": float(np.sqrt(np.mean(variance))),
+                "mean_terminal_defect_rms": metadata["mean_terminal_defect_rms"],
+                "terminal_defect_included": True,
                 "validation_objective": final_pinn["validation_objective"],
                 "prediction_key": key, "terminal_aware_features": False,
                 "final_test_used_for_selection": False,
