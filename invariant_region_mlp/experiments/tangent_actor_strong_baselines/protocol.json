@@ -1,0 +1,75 @@
+{
+  "protocol_version": "tangent_actor_strong_baselines_v1",
+  "continuation_commit": "cd5d84c090852adc8c15f7b53f282c61b6731c72",
+  "hardware": "one NVIDIA GH200 per run",
+  "training_budgets_seconds": [60, 120, 240, 480, 960],
+  "budget_tolerance_fraction": 0.25,
+  "training_seeds": [0, 1],
+  "evaluation": {
+    "validation_states": 240,
+    "final_test_states": 960,
+    "distribution": "x~N(0,I_d), t=0",
+    "selection_uses_final_test": false,
+    "stochastic_inference_paths": [128, 512, 2048],
+    "stochastic_inference_steps": 32
+  },
+  "benchmarks": {
+    "nonseparable_d100_k2": {"family": "nonseparable", "d": 100, "k": 2, "T": 0.5},
+    "joint_concave_d400_k2": {"family": "joint_concave", "d": 400, "k": 2, "T": 0.5}
+  },
+  "tangent_actor_primary": {
+    "actor_kind": "terminal_aware",
+    "width": 192,
+    "depth": 3,
+    "training_points_per_iteration": 2048,
+    "validation_points": 256,
+    "paths_per_label": 128,
+    "label_time_steps": 16,
+    "optimizer_steps": 2500,
+    "iterations": 3,
+    "learning_rate": 0.0002,
+    "batch_size": 512
+  },
+  "deep_bsde": {
+    "width": 192,
+    "depth": 3,
+    "time_steps": 16,
+    "batch_size": 128,
+    "learning_rate": 0.0005,
+    "validation_size": 512,
+    "validation_every_steps": 50
+  },
+  "sdgd_pinn": {
+    "width": 192,
+    "depth": 3,
+    "batch_size": 128,
+    "coordinate_budget": 16,
+    "learning_rate": 0.0005,
+    "validation_points": 64,
+    "validation_coordinate_replicates": 4,
+    "validation_every_steps": 25
+  },
+  "deep_picard": {
+    "width": 512,
+    "depth": 4,
+    "training_points_per_round": 4096,
+    "validation_points": 256,
+    "paths_per_label": 512,
+    "epochs_per_round": 16,
+    "batch_size": 512,
+    "learning_rate": 0.001,
+    "maximum_rounds": 40
+  },
+  "full_history_mlp": {
+    "levels": [1, 2, 3],
+    "sample_bases": [4, 8, 16, 24, 32],
+    "pathwise_terminal_gradient": true,
+    "training_seconds": 0
+  },
+  "scasml": {
+    "backbone": "sdgd_pinn",
+    "defect_levels": [1],
+    "inference_paths": [8, 32, 128],
+    "laplacian_coordinate_budget": 16
+  }
+}
