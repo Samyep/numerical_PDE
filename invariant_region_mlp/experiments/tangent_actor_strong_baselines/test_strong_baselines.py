@@ -9,7 +9,7 @@ from invariant_region_mlp.experiments.tangent_actor_scaling_diagnosis.models imp
     make_actor,
 )
 
-from .aggregate import budget_alignment
+from .aggregate import budget_alignment, total_budget_alignment
 from .common import driver_for, metrics
 from .deep_picard import ZeroPicardActor, picard_labels
 from .evaluate_run import _scasml_prediction_key, _unique_picard_checkpoints
@@ -192,4 +192,44 @@ def test_picard_budget_crossings_do_not_duplicate_a_real_checkpoint() -> None:
     )
     assert len(observed) == 1
     assert observed[0]["crossed_target_budget_seconds"] == [60.0, 120.0]
+
+
+def test_total_alignment_selects_stochastic_budget_on_validation_only() -> None:
+    common = {
+        "benchmark": "nonseparable_d100_k2",
+        "method": "tangent_actor",
+        "seed": 0,
+        "checkpoint": "a3",
+        "training_seconds": 50.0,
+        "rmse_over_reference_std": 1.0,
+    }
+    rows = [
+        {
+            **common,
+            "total_variant": "paths8",
+            "total_seconds_N960": 60.0,
+            "inference_seconds_N960": 10.0,
+            "validation_relative_l2": 0.2,
+            "relative_l2": 0.001,
+            "rmse": 0.001,
+        },
+        {
+            **common,
+            "total_variant": "paths128",
+            "total_seconds_N960": 70.0,
+            "inference_seconds_N960": 20.0,
+            "validation_relative_l2": 0.02,
+            "relative_l2": 1.0,
+            "rmse": 1.0,
+        },
+    ]
+    selected = next(
+        row
+        for row in total_budget_alignment(rows)
+        if row["benchmark"] == "nonseparable_d100_k2"
+        and row["method"] == "tangent_actor"
+        and row["seed"] == 0
+        and row["budget_level"] == "B1"
+    )
+    assert selected["total_variant"] == "paths128"
 

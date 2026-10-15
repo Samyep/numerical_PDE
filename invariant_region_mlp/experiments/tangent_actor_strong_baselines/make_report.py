@@ -126,7 +126,10 @@ def _best_observed(training: list[dict[str, str]], benchmark: str) -> list[tuple
 
 
 def _tangent_iterations(training: list[dict[str, str]], benchmark: str) -> str:
-    lines = ["| Actor | Cumulative train s | Relative L2 | RMSE | Actor value val. RMSE | Actor gradient val. vector RMSE | ESS |", "|---|---:|---:|---:|---:|---:|---:|"]
+    lines = [
+        "| Actor | Cumulative train s | Relative L2 | RMSE | Actor value val. RMSE | Actor gradient val. vector RMSE | Value-label repl. RMSE | Gradient-label repl. vector RMSE | Weight ESS fraction |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ]
     for checkpoint in ("a1", "a2", "a3"):
         local = [
             row
@@ -151,6 +154,18 @@ def _tangent_iterations(training: list[dict[str, str]], benchmark: str) -> str:
                 [_float(row.get("actor_gradient_validation_vector_rmse")) for row in local], 4
             )
             + " | "
+            + _mean_std(
+                [_float(row.get("value_label_replication_rmse")) for row in local], 4
+            )
+            + " | "
+            + _mean_std(
+                [
+                    _float(row.get("gradient_label_replication_vector_rmse"))
+                    for row in local
+                ],
+                4,
+            )
+            + " | "
             + _mean_std([_float(row.get("label_weight_ess_fraction")) for row in local], 4)
             + " |"
         )
@@ -161,10 +176,11 @@ def _inference_tradeoff(total: list[dict[str, str]], benchmark: str, method: str
     lines = ["| Variant | Train s | Inference s for N=960 | Total s | Relative L2 | MC mean SE | Validation RMSE |", "|---|---:|---:|---:|---:|---:|---:|"]
     grouped: dict[str, list[dict[str, str]]] = defaultdict(list)
     for row in total:
+        final_checkpoint = "a3" if method == "tangent_actor" else "PINN_B5"
         if (
             row["benchmark"] == benchmark
             and row["method"] == method
-            and (method != "tangent_actor" or row["checkpoint"] == "a3")
+            and row["checkpoint"] == final_checkpoint
         ):
             grouped[row.get("total_variant", "")].append(row)
     for variant, local in sorted(grouped.items()):
@@ -208,6 +224,113 @@ def _matched_ratios(alignment: list[dict[str, str]]) -> dict[str, list[float]]:
     return ratios
 
 
+def _available_rows(
+    rows: list[dict[str, str]], benchmark: str, level: int, method: str
+) -> list[dict[str, str]]:
+    return [
+        row
+        for row in rows
+        if row["benchmark"] == benchmark
+        and row["budget_level"] == f"B{level}"
+        and row["method"] == method
+        and row["available"] == "True"
+    ]
+
+
+def _mean_field(rows: list[dict[str, str]], field: str) -> float:
+    values = [_float(row.get(field)) for row in rows]
+    return float(np.mean([value for value in values if math.isfinite(value)]))
+
+
+def _shared_training_summary(alignment: list[dict[str, str]]) -> str:
+    lines = [
+        "| Benchmark | Budget | Ours: rel. L2 (train s) | Strongest external: rel. L2 (train s) | Ours reduction |",
+        "|---|---|---:|---:|---:|",
+    ]
+    for benchmark in BENCHMARKS:
+        for level in range(1, 6):
+            ours = _available_rows(alignment, benchmark, level, "tangent_actor")
+            external: list[tuple[float, str, list[dict[str, str]]]] = []
+            for method in EXTERNAL:
+                local = _available_rows(alignment, benchmark, level, method)
+                if local:
+                    external.append(
+                        (_mean_field(local, "relative_l2_posthoc"), method, local)
+                    )
+            if not ours or not external:
+                continue
+            ext_rel, ext_method, ext_rows = min(external)
+            our_rel = _mean_field(ours, "relative_l2_posthoc")
+            gain = 100.0 * (1.0 - our_rel / ext_rel)
+            lines.append(
+                f"| {benchmark} | B{level} | {our_rel:.6f} "
+                f"({_mean_field(ours, 'actual_seconds'):.1f}) | "
+                f"{LABELS[ext_method]} {ext_rel:.6f} "
+                f"({_mean_field(ext_rows, 'actual_seconds'):.1f}) | {gain:.1f}% |"
+            )
+    return "\n".join(lines)
+
+
+def _total_compute_winners(total_alignment: list[dict[str, str]]) -> str:
+    lines = [
+        "| Benchmark | Budget | Best eligible method | Rel. L2 | Actual total s | Seeds |",
+        "|---|---|---|---:|---:|---:|",
+    ]
+    for benchmark in BENCHMARKS:
+        for level in range(1, 6):
+            candidates: list[tuple[float, str, list[dict[str, str]]]] = []
+            for method in METHODS:
+                local = _available_rows(total_alignment, benchmark, level, method)
+                if local:
+                    candidates.append(
+                        (_mean_field(local, "relative_l2_posthoc"), method, local)
+                    )
+            if not candidates:
+                continue
+            rel, method, local = min(candidates)
+            lines.append(
+                f"| {benchmark} | B{level} | {LABELS[method]} | {rel:.6f} | "
+                f"{_mean_field(local, 'actual_total_seconds_N960'):.1f} | {len(local)} |"
+            )
+    return "\n".join(lines)
+
+
+def _full_history_summary(total: list[dict[str, str]]) -> str:
+    lines = [
+        "| Benchmark | Best tested configuration | Rel. L2 | Inference s for N=960 |",
+        "|---|---|---:|---:|",
+    ]
+    for benchmark in BENCHMARKS:
+        groups: dict[str, list[dict[str, str]]] = defaultdict(list)
+        for row in total:
+            if row["benchmark"] == benchmark and row["method"] == "full_history_mlp":
+                groups[row["total_variant"]].append(row)
+        candidates = [
+            (_mean_field(local, "relative_l2"), variant, local)
+            for variant, local in groups.items()
+        ]
+        rel, variant, local = min(candidates)
+        lines.append(
+            f"| {benchmark} | {variant} | {rel:.6f} | "
+            f"{_mean_field(local, 'inference_seconds_N960'):.3f} |"
+        )
+    return "\n".join(lines)
+
+
+def _scheduler_table(rows: list[dict[str, str]]) -> str:
+    lines = [
+        "| Job | Stage | State | Node | Wall s | GPUs | Allocated GPU h | Productive |",
+        "|---:|---|---|---|---:|---:|---:|---:|",
+    ]
+    for row in rows:
+        lines.append(
+            f"| {row['job_id']} | {row['stage']} | {row['state']} | {row['node']} | "
+            f"{_float(row['elapsed_seconds']):.0f} | {_float(row['allocated_gpus']):.0f} | "
+            f"{_float(row['allocated_gpu_hours']):.3f} | {row['productive']} |"
+        )
+    return "\n".join(lines)
+
+
 def main() -> None:
     training = _csv("training_frontier.csv")
     total = _csv("total_compute_frontier.csv")
@@ -215,28 +338,37 @@ def main() -> None:
     total_alignment = _csv("total_compute_budget_alignment.csv")
     convergence = _csv("convergence_diagnostics.csv")
     runtime = _csv("runtime_accounting.csv")
+    scheduler = _csv("scheduler_accounting.csv")
     failures = _csv("evaluation_failures.csv")
     reference = json.loads((RESULTS_DIR / "numerical_reference_validation.json").read_text())
     audit = json.loads((RESULTS_DIR / "metric_recomputation_summary.json").read_text())
     ratios = _matched_ratios(alignment)
-    all_ratios = [ratio for values in ratios.values() for ratio in values]
-    if all_ratios and max(all_ratios) <= 1.1 and all(ratios.get(bench) for bench in BENCHMARKS):
-        decision = "GO"
-    elif all_ratios and min(all_ratios) <= 1.25:
-        decision = "CONDITIONAL GO"
-    else:
-        decision = "NO-GO"
+    # The matched signal is positive on both PDEs, but only B2 contains a
+    # complete primary-Actor checkpoint on both benchmarks.  Two k=2 PDEs and
+    # two seeds are not enough evidence for an unconditional full-suite claim,
+    # especially while Deep BSDE is still improving at B5.
+    decision = "CONDITIONAL GO"
 
     lines: list[str] = [
         "# Strong-Baseline Pilot: Terminal-Aware Tangent-Actor Iteration",
         "",
-        f"**Decision: {decision}.** This decision uses only real GH200 checkpoints and the common 60/120/240/480/960-second alignment rule. Test errors below are post hoc; no final-test value selected a checkpoint or hyperparameter.",
+        f"**Decision: {decision}.** Terminal-Aware Tangent-Actor is clearly competitive at moderate compute on both pilot PDEs, but the evidence does not yet support an unconditional full-suite claim. The primary method has a shared matched training comparison only at B2, the pilot has two seeds and two effective-dimension-two problems, and amortized Deep BSDE is still improving when it obtains the lowest B5 error. Test errors below are post hoc; no final-test value selected a checkpoint, hyperparameter, or inference budget.",
         "",
         "## Experimental contract",
         "",
         "Each benchmark has a fixed bank of 240 validation and 960 held-out test states shared by every method, with $x\\sim\\mathcal N(0,I_d)$ and $t=0$. The reference is an independent two-dimensional periodic Fourier solver (128×128 grid, $\\Delta t=2.5\\times10^{-4}$). Training time includes label generation, SDE simulation, optimization, validation, and checkpoint I/O. CUDA is synchronized around all timings.",
         "",
         "The external implementations were adapted only where the prediction task required it: Deep BSDE learns amortized $Y_0(x_0)$ and shared $Z(t,x)$; PINN uses hard terminal enforcement and SDGD; Deep Picard uses the authors' terminal embedding and centered gradient estimator; Full-History MLP is inference-only; SCaSML-L1 charges both PINN backbone training and defect-correction inference. The inspected official sources and frozen revisions are recorded in `official_source_review.json` and `OFFICIAL_SOURCE_REVIEW.md`.",
+        "",
+        "## Main measured findings",
+        "",
+        "The only training budget populated by the primary Tangent-Actor and external methods on both benchmarks is B2. Within the predeclared ±25% window, ours has the lowest mean error in both cases:",
+        "",
+        _shared_training_summary(alignment),
+        "",
+        "This is a medium-budget advantage rather than uniform dominance. At B5, Deep BSDE reaches relative $L^2$ 0.001861 on the nonseparable problem and 0.003207 on the joint-concave problem, below the best tested Tangent-Actor MC values 0.004547 and 0.004894. Those Tangent-Actor points cost only 389 and 280 total seconds, respectively, while Deep BSDE costs about 961 seconds.",
+        "",
+        "The terminal-aware construction is material. Standard Tangent-Actor remains at relative $L^2$ 0.007949 on the nonseparable problem and 0.028118 at $d=400$, whereas the primary method reaches 0.006173 and 0.006904 before increasing inference MC. The untrained terminal tangent is also weaker on both benchmarks.",
         "",
         "## Numerical reference and correctness",
         "",
@@ -249,7 +381,7 @@ def main() -> None:
         )
     lines += [
         "",
-        f"Eleven operator/sign/unit tests passed before GPU submission. Independent recomputation checked {audit['rows']} stored prediction vectors; the maximum RMSE discrepancy was {audit['maximum_rmse_abs_difference']:.3g} and every row passed at tolerance $10^{{-12}}$.",
+        f"Twelve operator/sign/unit tests passed. Independent recomputation checked {audit['rows']} stored prediction vectors; the maximum RMSE discrepancy was {audit['maximum_rmse_abs_difference']:.3g} and every row passed at tolerance $10^{{-12}}$.",
         "",
         "## Stage-A calibration",
         "",
@@ -278,6 +410,10 @@ def main() -> None:
         "![Accuracy versus training time](figures/accuracy_vs_training_time.png)",
         "",
         "## Accuracy versus total compute for N=960",
+        "",
+        "Stochastic inference budgets are chosen with the independent validation bank within each fixed trained checkpoint; final-test error never ranks inference variants. Across trained checkpoints, the selected row is the closest real total time within the ±25% budget window. The best eligible method at each total-cost budget is:",
+        "",
+        _total_compute_winners(total_alignment),
     ]
     for benchmark in BENCHMARKS:
         lines += [
@@ -300,6 +436,12 @@ def main() -> None:
         "",
         "![Accuracy versus total compute](figures/accuracy_vs_total_compute_N960.png)",
         "",
+        "Full-History MLP has no training cost and all tested configurations finish far below B1, so it appears on the continuous total-compute plot but not in a 60-second matched cell. Its best tested results are descriptive post-hoc values:",
+        "",
+        _full_history_summary(total),
+        "",
+        "The level-3 recursion is unstable for these cubic value-gradient drivers: increasing its sample base lowers error, but it remains worse than level 2 and becomes expensive. Full-History MLP is therefore an extremely fast, lower-accuracy option in this pilot rather than the accuracy leader.",
+        "",
         "## Convergence and stability",
         "",
         "| Benchmark | Method | Last train s | Last RMSE | Assessment |",
@@ -311,27 +453,31 @@ def main() -> None:
         )
     lines += [
         "",
-        "Deep Picard and Tangent-Actor validation targets change between rounds, so their round-local label losses are not interpreted as one monotone global objective. The post-hoc test trend is reported only as a diagnostic. All per-method traces are under `figures/convergence_*.png`.",
+        "Deep BSDE and SDGD-PINN are still improving at B5 on both benchmarks and must be described as compute-limited. SCaSML is mixed across seeds. Deep Picard reaches only about 238–249 seconds in 40 complete rounds, so B4 and B5 are unavailable and its result is also compute-limited. Deep Picard and Tangent-Actor validation targets change between rounds, so their round-local label losses are not interpreted as one monotone global objective. The post-hoc test trend is reported only as a diagnostic. All per-method traces are under `figures/convergence_*.png`.",
         "",
         "## Runtime accounting and failures",
         "",
-        "`runtime_accounting.csv` separates maximum charged training time, every measured N=960 inference time, and total time. Scheduler allocation records and per-process logs are retained under `slurm/`. ",
+        "`runtime_accounting.csv` separates maximum charged training time, every measured N=960 inference time, and total time. Scheduler-level allocation is:",
+        "",
+        _scheduler_table(scheduler),
+        "",
+        f"Productive jobs used {sum(_float(row['allocated_gpu_hours']) for row in scheduler if row['productive'] == 'True'):.3f} allocated GPU-hours. Including the canceled infrastructure launch gives {sum(_float(row['allocated_gpu_hours']) for row in scheduler):.3f} GPU-hours. Method frontiers use synchronized single-GPU elapsed times rather than four-GPU allocation wall time. Per-process logs remain under `slurm/` in the workspace.",
         "",
         f"The evaluation recorded {len(failures)} handled failures or guards. Details are in `evaluation_failures.csv`; no failed result was silently replaced or interpolated.",
         "",
         "## Answers to the research questions",
         "",
-        "1. **Is Terminal-Aware Tangent-Actor competitive?** The matched tables above give the direct answer on both PDEs. Competitive means its relative L2 is within the measured seed uncertainty or a small factor of the strongest eligible external checkpoint; no comparison uses widely separated times.",
-        "2. **Best accuracy under matched training budgets.** The winner is budget- and benchmark-specific in `compute_budget_alignment.csv`; the tables above report every eligible competitor, including seed spread.",
-        "3. **Best accuracy under matched total costs.** `total_compute_budget_alignment.csv` performs the same closest-real-point comparison after adding N=960 inference. Full-History MLP enters here with zero training and measured recursive inference.",
-        "4. **Do multiple Actor iterations justify their cost?** Compare a1, a2, and a3 in the phase tables. An iteration is useful only when its two-seed RMSE reduction is material relative to its added label-and-fit time.",
-        "5. **Are baselines converged?** The convergence table separates a reasonably stable last interval from methods still improving or unsettled at B5. A compute-limited method is not described as inherently inaccurate.",
-        "6. **Does any advantage persist across both PDEs?** The decision requires evidence on both nonseparable d=100 and joint-concave d=400; a win on only one yields at most a conditional decision.",
-        f"7. **Expand or revise?** **{decision}.** A full-suite expansion is justified only if the matched and total-cost comparisons are competitive on both initial PDEs; otherwise the next experiment should address the diagnosed approximation or supervision bottleneck first.",
+        "1. **Is Terminal-Aware Tangent-Actor competitive?** Yes at moderate compute. At the common B2 training budget it lowers relative $L^2$ by 33.2% versus Deep BSDE on the nonseparable problem and by 50.6% versus SCaSML-L1 at $d=400$. It does not have a B5 training checkpoint and therefore does not displace Deep BSDE's best long-budget accuracy.",
+        "2. **Best accuracy under matched training budgets.** Ours wins the shared B2 comparison on both PDEs. Where ours has no eligible checkpoint, Deep BSDE is the strongest external method at B3–B5 on both problems; SCaSML-L1 is strongest at joint-concave B1, while Standard Tangent-Actor is the single-seed nonseparable B1 leader.",
+        "3. **Best accuracy under matched total costs.** Ours has the lowest eligible mean error at nonseparable B1–B4 and joint-concave B1–B3. The nonseparable B1 and B2 Tangent-Actor cells contain only one seed because the other seed lies just outside the time window. Deep BSDE wins B5 on both PDEs; joint-concave B4 has no eligible Tangent-Actor point.",
+        "4. **Do multiple Actor iterations justify their cost?** The move from a1 to a2 reduces mean relative error by 17.5% on the nonseparable PDE and 14.4% at $d=400$, so a2 is justified. The move from a2 to a3 improves the nonseparable error by only 5.5% and worsens the $d=400$ mean by 0.23%. A third update is not robustly justified; use a2 by default or a reference-free validation stopping rule.",
+        "5. **Are baselines converged?** No for Deep BSDE or SDGD-PINN: both improve through B5. Deep Picard is limited by the 40-round run ending near B3. SCaSML is mixed, and Full-History MLP's tested level-3 recursion remains unstable. These outcomes are compute-limited diagnostics rather than claims of inherent solver inaccuracy.",
+        "6. **Does the advantage persist across both PDEs?** Yes at the one shared matched training budget and across all moderate total-cost cells where ours is eligible. The scope is still narrow: two seeds, two $k=2$ PDEs, and one independent reference construction per PDE.",
+        f"7. **Expand or revise?** **{decision}.** Keep the method and proceed to a focused confirmation: add a third seed, include higher effective dimension or another independently referenced PDE, retain Deep BSDE through B5 (and a common B6 only if every continuously trained method is extended), and predeclare an a2/validation stopping rule. A broad ICML suite should follow only if that confirmation preserves the advantage.",
         "",
         "## Reproducibility artifacts",
         "",
-        "The complete scalar outputs are `timing_calibration.csv`, `compute_budget_alignment.csv`, `total_compute_budget_alignment.csv`, `training_frontier.csv`, `total_compute_frontier.csv`, `convergence_diagnostics.csv`, `hyperparameter_trials.csv`, `runtime_accounting.csv`, and `metric_recomputation_audit.csv`. Heavy deterministic references, checkpoints, raw traces, and prediction arrays remain in the experiment workspace and are excluded from Git.",
+        "The complete scalar outputs are `timing_calibration.csv`, `compute_budget_alignment.csv`, `total_compute_budget_alignment.csv`, `training_frontier.csv`, `total_compute_frontier.csv`, `convergence_diagnostics.csv`, `hyperparameter_trials.csv`, `runtime_accounting.csv`, `scheduler_accounting.csv`, and `metric_recomputation_audit.csv`. `execution_manifest.json`, `runtime_environment.json`, and `protocol.json` record the jobs, hardware, software, seeds, and frozen configurations. Heavy deterministic references, checkpoints, raw traces, and prediction arrays remain in the experiment workspace and are excluded from Git.",
     ]
     (RESULTS_DIR / "STRONG_BASELINE_PILOT_REPORT.md").write_text(
         "\n".join(lines) + "\n", encoding="utf-8"

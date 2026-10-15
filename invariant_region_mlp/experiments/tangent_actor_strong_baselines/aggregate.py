@@ -225,8 +225,44 @@ def total_budget_alignment(total: list[dict[str, Any]]) -> list[dict[str, Any]]:
                             }
                         )
                         continue
+                    # Tune inference variants only *within the same trained
+                    # checkpoint* using the common value-validation bank.  A
+                    # tangent-label fit loss and a value Relative-L2 have
+                    # different units and must never rank different Actor
+                    # checkpoints.  Once each checkpoint has one variant, use
+                    # total-time proximity across checkpoints.
+                    by_checkpoint: dict[str, list[dict[str, Any]]] = defaultdict(list)
+                    for row in eligible:
+                        by_checkpoint[str(row["checkpoint"])].append(row)
+                    representatives: list[dict[str, Any]] = []
+                    for checkpoint_rows in by_checkpoint.values():
+                        validated = [
+                            row
+                            for row in checkpoint_rows
+                            if row.get("validation_relative_l2") is not None
+                            and math.isfinite(float(row["validation_relative_l2"]))
+                        ]
+                        if validated:
+                            representatives.append(
+                                min(
+                                    validated,
+                                    key=lambda row: (
+                                        float(row["validation_relative_l2"]),
+                                        abs(float(row["total_seconds_N960"]) - target),
+                                    ),
+                                )
+                            )
+                        else:
+                            representatives.append(
+                                min(
+                                    checkpoint_rows,
+                                    key=lambda row: abs(
+                                        float(row["total_seconds_N960"]) - target
+                                    ),
+                                )
+                            )
                     selected = min(
-                        eligible,
+                        representatives,
                         key=lambda row: abs(float(row["total_seconds_N960"]) - target),
                     )
                     output.append(
@@ -247,7 +283,7 @@ def total_budget_alignment(total: list[dict[str, Any]]) -> list[dict[str, Any]]:
                             / target,
                             "checkpoint": selected["checkpoint"],
                             "total_variant": selected.get("total_variant"),
-                            "selection_rule": "closest predeclared real total-cost point within +/-25%",
+                            "selection_rule": "within-checkpoint inference budget selected by common validation Relative-L2; closest real total time across checkpoints",
                             "relative_l2_posthoc": selected["relative_l2"],
                             "rmse_posthoc": selected["rmse"],
                             "rmse_over_reference_std_posthoc": selected[
@@ -419,16 +455,31 @@ def _plot_frontier(
                     continue
                 x = np.asarray([max(float(row[x_key]), 0.1) for row in seed_rows])
                 y = np.asarray([float(row["relative_l2"]) for row in seed_rows])
-                axis.plot(
-                    x,
-                    y,
-                    marker="o",
-                    markersize=3.3,
-                    linewidth=1.25,
-                    alpha=0.55,
-                    color=COLORS[method],
-                    label=LABELS[method] if seed == 0 else None,
-                )
+                if method == "full_history_mlp":
+                    # These points are distinct predeclared (level, sample-base)
+                    # configurations, rather than checkpoints on one training
+                    # trajectory.  Connecting them would suggest an ordering
+                    # that the algorithm does not have.
+                    axis.scatter(
+                        x,
+                        y,
+                        marker="D",
+                        s=18,
+                        alpha=0.55,
+                        color=COLORS[method],
+                        label=LABELS[method] if seed == 0 else None,
+                    )
+                else:
+                    axis.plot(
+                        x,
+                        y,
+                        marker="o",
+                        markersize=3.3,
+                        linewidth=1.25,
+                        alpha=0.55,
+                        color=COLORS[method],
+                        label=LABELS[method] if seed == 0 else None,
+                    )
             method_groups: dict[tuple[str, str | None], list[dict[str, Any]]] = defaultdict(list)
             for row in method_rows:
                 method_groups[(row["checkpoint"], row.get("total_variant"))].append(row)
@@ -452,7 +503,7 @@ def _plot_frontier(
         if training_guides:
             for budget in BUDGETS:
                 axis.axvline(budget, color="#bbbbbb", linewidth=0.7, linestyle=":", zorder=0)
-        axis.set_xscale("symlog", linthresh=1.0)
+        axis.set_xscale("log")
         axis.set_yscale("log")
         axis.grid(True, which="both", alpha=0.22)
         axis.set_title(benchmark.replace("_", " "))
@@ -499,11 +550,13 @@ def _plot_method_convergence(training: list[dict[str, Any]]) -> None:
             axes[0].set_ylabel("Test Value RMSE (post hoc)")
             axes[1].set_ylabel("Reference-free validation objective")
             for axis in axes:
-                axis.set_xscale("symlog", linthresh=1.0)
+                axis.set_xscale("log")
                 axis.set_yscale("log")
                 axis.set_xlabel("Actual training seconds")
                 axis.grid(True, which="both", alpha=0.25)
-                axis.legend(frameon=False)
+                handles, labels = axis.get_legend_handles_labels()
+                if handles:
+                    axis.legend(frameon=False)
             figure.suptitle(f"{LABELS[method]} — {benchmark}")
             figure.tight_layout()
             stem = f"convergence_{benchmark}_{method}"
