@@ -234,7 +234,7 @@ def main() -> None:
         "",
         "## Experimental contract",
         "",
-        "Both benchmarks use the same 240 validation and 960 held-out test states, with $x\\sim\\mathcal N(0,I_d)$ and $t=0$. The reference is an independent two-dimensional periodic Fourier solver (128×128 grid, $\\Delta t=2.5\\times10^{-4}$). Training time includes label generation, SDE simulation, optimization, validation, and checkpoint I/O. CUDA is synchronized around all timings.",
+        "Each benchmark has a fixed bank of 240 validation and 960 held-out test states shared by every method, with $x\\sim\\mathcal N(0,I_d)$ and $t=0$. The reference is an independent two-dimensional periodic Fourier solver (128×128 grid, $\\Delta t=2.5\\times10^{-4}$). Training time includes label generation, SDE simulation, optimization, validation, and checkpoint I/O. CUDA is synchronized around all timings.",
         "",
         "The external implementations were adapted only where the prediction task required it: Deep BSDE learns amortized $Y_0(x_0)$ and shared $Z(t,x)$; PINN uses hard terminal enforcement and SDGD; Deep Picard uses the authors' terminal embedding and centered gradient estimator; Full-History MLP is inference-only; SCaSML-L1 charges both PINN backbone training and defect-correction inference. The inspected official sources and frozen revisions are recorded in `official_source_review.json` and `OFFICIAL_SOURCE_REVIEW.md`.",
         "",
@@ -249,7 +249,7 @@ def main() -> None:
         )
     lines += [
         "",
-        f"Nine operator/sign/unit tests passed before GPU submission. Independent recomputation checked {audit['rows']} stored prediction vectors; the maximum RMSE discrepancy was {audit['maximum_rmse_abs_difference']:.3g} and every row passed at tolerance $10^{{-12}}$.",
+        f"Ten operator/sign/unit tests passed before GPU submission. Independent recomputation checked {audit['rows']} stored prediction vectors; the maximum RMSE discrepancy was {audit['maximum_rmse_abs_difference']:.3g} and every row passed at tolerance $10^{{-12}}$.",
         "",
         "## Stage-A calibration",
         "",
