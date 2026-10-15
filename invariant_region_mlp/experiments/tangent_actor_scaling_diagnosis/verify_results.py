@@ -66,6 +66,18 @@ def main() -> None:
         spec.run_id for spec in stage_specs("stage-a", protocol, selected_variant=None)
     }
     missing_stage_a = sorted(expected_stage_a - completed)
+    selection_path = RESULTS_DIR / "stage_b_selection.json"
+    if selection_path.exists():
+        with selection_path.open() as handle:
+            selected_variant = json.load(handle)["selected_variant"]
+        expected_transfer = {
+            spec.run_id
+            for stage in ("stage-b", "stage-c")
+            for spec in stage_specs(stage, protocol, selected_variant)
+        }
+    else:
+        expected_transfer = set()
+    missing_transfer = sorted(expected_transfer - completed)
     errors: list[str] = []
     fairness: dict[tuple[str, int], dict[str, set[Any]]] = defaultdict(
         lambda: defaultdict(set)
@@ -157,6 +169,8 @@ def main() -> None:
         "passed_for_completed_runs": not errors,
         "stage_a_complete": not missing_stage_a,
         "missing_stage_a_run_ids": missing_stage_a,
+        "planned_transfer_complete": not missing_transfer,
+        "missing_transfer_run_ids": missing_transfer,
         "errors": errors,
         "completed_run_count": len(payloads),
         "terminal_identity_passed": terminal["all_exact_to_float64_tolerance"],

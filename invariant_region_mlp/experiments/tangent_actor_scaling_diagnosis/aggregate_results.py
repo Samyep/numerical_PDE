@@ -10,6 +10,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 
 from .common import FIGURE_DIR, RESULTS_DIR, atomic_json, ensure_dirs, write_csv
@@ -233,8 +234,10 @@ def _plot_training(curves: list[dict[str, Any]]) -> None:
     if not stage_a:
         return
     figure, axes = plt.subplots(2, 2, figsize=(11.2, 7.8), sharex=True)
+    variant_names = sorted({row["variant"] for row in stage_a})
+    colors = dict(zip(variant_names, plt.get_cmap("tab10").colors, strict=False))
     for iteration, column in (("a1", 0), ("a3", 1)):
-        for variant in sorted({row["variant"] for row in stage_a}):
+        for variant in variant_names:
             subset = [
                 row for row in stage_a
                 if row["variant"] == variant and row["iteration"] == iteration
@@ -250,7 +253,7 @@ def _plot_training(curves: list[dict[str, Any]]) -> None:
                     for step in steps
                 ]
                 axes[0, column].plot(
-                    steps, value, linestyle, label=f"{variant} {prefix}"
+                    steps, value, linestyle, color=colors[variant]
                 )
                 gradient = [
                     np.mean(
@@ -262,7 +265,9 @@ def _plot_training(curves: list[dict[str, Any]]) -> None:
                     )
                     for step in steps
                 ]
-                axes[1, column].plot(steps, gradient, linestyle, label=f"{variant} {prefix}")
+                axes[1, column].plot(
+                    steps, gradient, linestyle, color=colors[variant]
+                )
         axes[0, column].set_title(f"{iteration}: Value Actor")
         axes[1, column].set_title(f"{iteration}: Gradient Actor")
     for axis in axes.flat:
@@ -271,7 +276,17 @@ def _plot_training(curves: list[dict[str, Any]]) -> None:
         axis.set_xlabel("optimizer step")
     axes[0, 0].set_ylabel("RMSE")
     axes[1, 0].set_ylabel("vector RMSE")
-    axes[0, 1].legend(frameon=False, fontsize=6, ncol=2)
+    handles = [
+        Line2D([0], [0], color=colors[name], lw=2, label=name)
+        for name in variant_names
+    ]
+    handles.extend(
+        (
+            Line2D([0], [0], color="0.25", lw=2, ls="--", label="train"),
+            Line2D([0], [0], color="0.25", lw=2, ls="-", label="validation"),
+        )
+    )
+    axes[0, 1].legend(handles=handles, frameon=False, fontsize=7, ncol=2)
     figure.tight_layout()
     figure.savefig(FIGURE_DIR / "training_validation_loss.png", dpi=180)
     plt.close(figure)
@@ -279,36 +294,73 @@ def _plot_training(curves: list[dict[str, Any]]) -> None:
 
 def _plot_accuracy_compute(rows: list[dict[str, Any]]) -> None:
     figure, axes = plt.subplots(1, 2, figsize=(10.5, 4.1))
-    markers = {"standard": "o", "terminal_aware": "s"}
-    for row in rows:
-        label = f"{row['variant']} s{row['training_seed']}"
-        axes[0].scatter(
-            row["attributed_total_gpu_seconds"] / 60.0,
-            row["final_improvement_from_a0"],
-            marker=markers[row["actor_kind"]],
+    stage_a = [
+        row for row in rows
+        if row["family"] == "joint_concave" and row["d"] == 400 and row["k"] == 5
+    ]
+    stage_groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in stage_a:
+        stage_groups[row["variant"]].append(row)
+    colors = dict(zip(sorted(stage_groups), plt.get_cmap("tab10").colors, strict=False))
+    for variant, samples in sorted(stage_groups.items()):
+        x = np.asarray([sample["attributed_total_gpu_seconds"] / 60.0 for sample in samples])
+        y = np.asarray([sample["final_improvement_from_a0"] for sample in samples])
+        axes[0].errorbar(
+            np.mean(x),
+            np.mean(y),
+            xerr=np.std(x, ddof=1) if len(x) > 1 else 0.0,
+            yerr=np.std(y, ddof=1) if len(y) > 1 else 0.0,
+            marker="s" if samples[0]["actor_kind"] == "terminal_aware" else "o",
+            color=colors[variant],
+            capsize=3,
+            label=variant,
         )
-        axes[0].annotate(label, (
-            row["attributed_total_gpu_seconds"] / 60.0,
-            row["final_improvement_from_a0"],
-        ), fontsize=6, xytext=(3, 3), textcoords="offset points")
+        axes[0].annotate(
+            variant,
+            (np.mean(x), np.mean(y)),
+            fontsize=8,
+            xytext=(5, 4),
+            textcoords="offset points",
+        )
     axes[0].axhline(0.0, color="0.4", lw=1)
     axes[0].set_xlabel("attributed GPU minutes")
     axes[0].set_ylabel("paired improvement, a0 − final")
     axes[0].set_title("Accuracy–compute tradeoff")
 
-    grouped: dict[tuple[str, int, str], list[dict[str, Any]]] = defaultdict(list)
-    for row in rows:
-        grouped[(row["family"], row["k"], row["variant"])].append(row)
-    for (family, k, variant), samples in sorted(grouped.items()):
-        x = k + ({"joint_concave": -0.08, "allen_cahn": 0.08}.get(family, 0.0))
-        values = [sample["final_improvement_from_a0"] for sample in samples]
+    transfer = [row for row in rows if row["variant"] == "TA_A"]
+    transfer_groups: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
+    for row in transfer:
+        transfer_groups[(row["family"], row["d"])].append(row)
+    transfer_colors = {
+        ("joint_concave", 400): "#d62728",
+        ("allen_cahn", 400): "#1f77b4",
+        ("joint_concave", 100): "#2ca02c",
+    }
+    for (family, d), samples in sorted(transfer_groups.items()):
+        by_k: dict[int, list[dict[str, Any]]] = defaultdict(list)
+        for sample in samples:
+            by_k[sample["k"]].append(sample)
+        k_values = sorted(by_k)
+        means = [
+            np.mean([sample["final_improvement_from_a0"] for sample in by_k[k]])
+            for k in k_values
+        ]
+        deviations = [
+            np.std(
+                [sample["final_improvement_from_a0"] for sample in by_k[k]], ddof=1
+            )
+            if len(by_k[k]) > 1
+            else 0.0
+            for k in k_values
+        ]
         axes[1].errorbar(
-            x,
-            np.mean(values),
-            yerr=np.std(values, ddof=1) if len(values) > 1 else 0.0,
-            marker=markers[samples[0]["actor_kind"]],
+            k_values,
+            means,
+            yerr=deviations,
+            marker="o" if d == 400 else "D",
+            color=transfer_colors[(family, d)],
             capsize=3,
-            label=f"{family}, {variant}",
+            label=f"{family}, d={d}",
         )
     axes[1].axhline(0.0, color="0.4", lw=1)
     axes[1].set_xlabel("effective dimension k")
@@ -323,24 +375,42 @@ def _plot_accuracy_compute(rows: list[dict[str, Any]]) -> None:
 
 
 def _plot_iterations(iteration_rows: list[dict[str, Any]]) -> None:
-    figure, axis = plt.subplots(figsize=(8.6, 4.8))
-    grouped: dict[tuple[str, str, int], list[dict[str, Any]]] = defaultdict(list)
-    for row in iteration_rows:
-        grouped[(row["family"], row["variant"], row["training_seed"])].append(row)
-    for (family, variant, seed), samples in sorted(grouped.items()):
-        samples.sort(key=lambda row: int(row["iteration"][1:]))
-        axis.plot(
-            [row["iteration"] for row in samples],
-            [row["improvement_from_a0_mean"] for row in samples],
-            "o-",
-            alpha=0.78,
-            label=f"{family} {variant} s{seed}",
-        )
-    axis.axhline(0.0, color="0.4", lw=1)
-    axis.set_xlabel("Actor iteration")
-    axis.set_ylabel("paired improvement from a0")
-    axis.grid(alpha=0.25)
-    axis.legend(frameon=False, fontsize=6, ncol=2)
+    figure, axes = plt.subplots(1, 2, figsize=(11.2, 4.4), sharey=True)
+    stage_a = [
+        row for row in iteration_rows
+        if row["family"] == "joint_concave" and row["d"] == 400 and row["k"] == 5
+    ]
+    transfer = [row for row in iteration_rows if row["variant"] == "TA_A"]
+
+    def plot_groups(axis: Any, source: list[dict[str, Any]], group_keys: tuple[str, ...]) -> None:
+        grouped: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
+        for row in source:
+            grouped[tuple(row[key] for key in group_keys)].append(row)
+        for key, samples in sorted(grouped.items(), key=lambda item: str(item[0])):
+            by_iteration: dict[str, list[float]] = defaultdict(list)
+            for sample in samples:
+                by_iteration[sample["iteration"]].append(
+                    sample["improvement_from_a0_mean"]
+                )
+            order = ("a0", "a1", "a2", "a3")
+            means = [np.mean(by_iteration[name]) for name in order]
+            deviations = [
+                np.std(by_iteration[name], ddof=1) if len(by_iteration[name]) > 1 else 0.0
+                for name in order
+            ]
+            label = key[0] if len(key) == 1 else ", ".join(map(str, key))
+            axis.errorbar(order, means, yerr=deviations, marker="o", capsize=3, label=label)
+
+    plot_groups(axes[0], stage_a, ("variant",))
+    plot_groups(axes[1], transfer, ("family", "d", "k"))
+    axes[0].set_title("Stage A: controlled ablation")
+    axes[1].set_title("Terminal-aware transfer")
+    for axis in axes:
+        axis.axhline(0.0, color="0.4", lw=1)
+        axis.set_xlabel("Actor iteration")
+        axis.grid(alpha=0.25)
+        axis.legend(frameon=False, fontsize=7)
+    axes[0].set_ylabel("paired improvement from a0")
     figure.tight_layout()
     figure.savefig(FIGURE_DIR / "iteration_improvement.png", dpi=180)
     plt.close(figure)
