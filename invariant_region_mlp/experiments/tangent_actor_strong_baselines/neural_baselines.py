@@ -465,7 +465,12 @@ def train_sdgd_pinn_timed(
                     "target_budget_seconds": target_budget,
                     "training_seconds": elapsed_after_save,
                     "step": step,
-                    "validation_objective": last_validation,
+                    # Use the nonnegative frozen sampled-residual RMS for
+                    # checkpoint diagnostics.  Retain the unbiased two-draw
+                    # product separately; it can be negative at finite sample
+                    # size and is therefore a poor ranking scalar.
+                    "validation_objective": last_validation_rms,
+                    "validation_unbiased_residual_product": last_validation,
                     "validation_sampled_residual_rms": last_validation_rms,
                     "checkpoint": str(checkpoint_path),
                     "learning_rate": lr,
@@ -476,7 +481,7 @@ def train_sdgd_pinn_timed(
                     if device.type == "cuda"
                     else None,
                     "nonfinite_count": nonfinite_count,
-                    "selection_criterion": "predeclared elapsed-time checkpoint; frozen reference-free residual proxy reported",
+                    "selection_criterion": "predeclared elapsed-time checkpoint; frozen reference-free sampled-residual RMS reported",
                     "final_test_used_for_selection": False,
                 }
             )
