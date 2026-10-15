@@ -37,7 +37,8 @@ for TASK in 0 1 2 3; do
   BENCHMARK=${BENCHMARKS[$BENCHMARK_INDEX]}
   TASK_OUT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_strong_baselines/slurm/ta_baseline_eval_${SLURM_JOB_ID}_${TASK}.out
   TASK_ERR=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_strong_baselines/slurm/ta_baseline_eval_${SLURM_JOB_ID}_${TASK}.err
-  srun --exclusive --exact --nodes=1 --ntasks=1 --cpus-per-task=12 --gpus-per-task=1 --gpu-bind=closest \
+  srun --exclusive --exact --nodes=1 --ntasks=1 --cpus-per-task=12 --mem=90G \
+    --gpus-per-node=1 --gpus-per-task=1 --gpu-bind=closest \
     invariant_region_mlp/experiments/tangent_actor_strong_baselines/run_evaluation_bundle.sh "$BENCHMARK" "$SEED" \
     >"$TASK_OUT" 2>"$TASK_ERR" &
 done
