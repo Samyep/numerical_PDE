@@ -249,7 +249,7 @@ def main() -> None:
         )
     lines += [
         "",
-        f"Eight operator/sign/unit tests passed before GPU submission. Independent recomputation checked {audit['rows']} stored prediction vectors; the maximum RMSE discrepancy was {audit['maximum_rmse_abs_difference']:.3g} and every row passed at tolerance $10^{{-12}}$.",
+        f"Nine operator/sign/unit tests passed before GPU submission. Independent recomputation checked {audit['rows']} stored prediction vectors; the maximum RMSE discrepancy was {audit['maximum_rmse_abs_difference']:.3g} and every row passed at tolerance $10^{{-12}}$.",
         "",
         "## Stage-A calibration",
         "",

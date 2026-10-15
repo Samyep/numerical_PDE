@@ -44,6 +44,12 @@ def _load_json(path: Path) -> dict[str, Any]:
         return json.load(handle)
 
 
+def _scasml_prediction_key(checkpoint: str, paths: int, purpose: str) -> str:
+    if purpose not in {"training_frontier", "inference_sweep"}:
+        raise ValueError(purpose)
+    return f"scasml_l1_{checkpoint}_p{paths}_{purpose}"
+
+
 def _metric_row(
     *,
     method: str,
@@ -218,10 +224,17 @@ def evaluate(benchmark: str, seed: int, device: torch.device) -> dict[str, Any]:
                             "nonfinite_count_inference": sca_meta["nonfinite_count"],
                         },
                     )
-                    sca_row["prediction_key"] = f"scasml_l1_B{index + 1}_p32"
+                    # Keep this common training-frontier evaluation distinct
+                    # from the final-checkpoint inference sweep below.  The two
+                    # calls intentionally use independent Monte Carlo seeds, so
+                    # sharing an archive key would invalidate metric replay.
+                    sca_key = _scasml_prediction_key(
+                        f"B{index + 1}", 32, "training_frontier"
+                    )
+                    sca_row["prediction_key"] = sca_key
                     training_rows.append(sca_row)
                     total_rows.append(dict(sca_row, total_variant="paths32"))
-                    predictions[f"scasml_l1_B{index + 1}_p32"] = sca_prediction
+                    predictions[sca_key] = sca_prediction
                 except Exception as error:
                     failures.append(
                         {
@@ -435,7 +448,8 @@ def evaluate(benchmark: str, seed: int, device: torch.device) -> dict[str, Any]:
                     "inference_kind": "SCaSML first defect correction",
                 },
             )
-            row["prediction_key"] = f"scasml_l1_B5_p{paths}"
+            sca_key = _scasml_prediction_key("B5", paths, "inference_sweep")
+            row["prediction_key"] = sca_key
             total_rows = [
                 current
                 for current in total_rows
@@ -446,7 +460,7 @@ def evaluate(benchmark: str, seed: int, device: torch.device) -> dict[str, Any]:
                 )
             ]
             total_rows.append(row)
-            predictions[f"scasml_l1_B5_p{paths}"] = test_prediction
+            predictions[sca_key] = test_prediction
         except Exception as error:
             failures.append(
                 {

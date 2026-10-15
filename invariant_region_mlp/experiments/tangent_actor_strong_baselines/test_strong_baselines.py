@@ -12,6 +12,7 @@ from invariant_region_mlp.experiments.tangent_actor_scaling_diagnosis.models imp
 from .aggregate import budget_alignment
 from .common import driver_for, metrics
 from .deep_picard import ZeroPicardActor, picard_labels
+from .evaluate_run import _scasml_prediction_key
 from .full_history_mlp import predict_full_history_mlp
 from .models import AmortizedDeepBSDE, HardTerminalValue
 from .neural_baselines import sdgd_objective
@@ -168,4 +169,10 @@ def test_budget_alignment_never_uses_test_error_for_selection() -> None:
         and row["budget_level"] == "B1"
     )
     assert selected["checkpoint"] == "closer_bad_test"
+
+
+def test_independent_scasml_draws_have_distinct_replay_keys() -> None:
+    training_key = _scasml_prediction_key("B5", 32, "training_frontier")
+    sweep_key = _scasml_prediction_key("B5", 32, "inference_sweep")
+    assert training_key != sweep_key
 
