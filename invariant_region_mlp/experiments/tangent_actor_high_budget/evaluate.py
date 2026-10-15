@@ -43,6 +43,27 @@ def _json(path: Path) -> dict[str, Any]:
         return json.load(handle)
 
 
+def _actor_selection_state_bank(
+    benchmark: str,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Load only states and split indices; keep reference arrays unopened."""
+    path = STRONG_RESULTS_DIR / f"evaluation_points_{benchmark}.npz"
+    with np.load(path) as archive:
+        return (
+            archive["x"].copy(),
+            archive["validation_indices"].copy(),
+            archive["test_indices"].copy(),
+        )
+
+
+def _post_selection_test_reference(
+    benchmark: str, test_indices: np.ndarray
+) -> np.ndarray:
+    path = STRONG_RESULTS_DIR / f"evaluation_points_{benchmark}.npz"
+    with np.load(path) as archive:
+        return archive["reference_original"][test_indices].copy()
+
+
 def _actor_candidates(benchmark: str, seed: int) -> list[dict[str, Any]]:
     base_raw = _json(
         STRONG_RESULTS_DIR / "raw" / f"tangent_actor_{benchmark}_s{seed}_main.json"
@@ -139,11 +160,9 @@ def _decomposition(
 
 def evaluate_actors(benchmark: str, seed: int, device: torch.device) -> dict[str, Any]:
     ensure_dirs()
-    data = evaluation_data(benchmark)
-    validation_indices = data["validation_indices"]
-    test_indices = data["test_indices"]
-    validation_x = data["x"][validation_indices]
-    test_x = data["x"][test_indices]
+    x, validation_indices, test_indices = _actor_selection_state_bank(benchmark)
+    validation_x = x[validation_indices]
+    test_x = x[test_indices]
     candidates = _actor_candidates(benchmark, seed)
     selection: list[dict[str, Any]] = []
     actors: dict[str, torch.nn.Module] = {}
@@ -175,7 +194,7 @@ def evaluate_actors(benchmark: str, seed: int, device: torch.device) -> dict[str
     selected_id = selected["evaluation_id"]
 
     # Only after checkpoint selection is frozen do we access ground truth.
-    test_reference = data["reference_original"][test_indices]
+    test_reference = _post_selection_test_reference(benchmark, test_indices)
     rows: list[dict[str, Any]] = []
     decompositions: list[dict[str, Any]] = []
     predictions: dict[str, np.ndarray] = {"test_reference": test_reference}

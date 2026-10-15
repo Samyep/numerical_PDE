@@ -125,7 +125,7 @@ def _selected_accuracy_table(total: list[dict[str, str]]) -> str:
         for row in local:
             by_paths[row["inference_paths"]].append(row)
         for paths, rows in sorted(by_paths.items(), key=lambda item: int(float(item[0]))):
-            actors = sorted({row["checkpoint"] for row in rows})
+            actors = sorted({f"{row['branch']}/{row['checkpoint']}" for row in rows})
             lines.append(
                 f"| {LABELS[benchmark]} | {', '.join(actors)} | {int(float(paths))} | "
                 f"{_mean_std(rows, 'training_seconds', 5)} | {_mean_std(rows, 'rmse', 5)} | "
@@ -147,16 +147,16 @@ def _systematic_table(decomposition: list[dict[str, str]]) -> str:
             and row["validation_selected"] == "True"
             and row["inference_time_steps"] == "32"
         ]
-        groups: dict[tuple[str, str], list[dict[str, str]]] = defaultdict(list)
+        groups: dict[tuple[str, str, str], list[dict[str, str]]] = defaultdict(list)
         for row in local:
-            groups[(row["checkpoint"], row["inference_paths"])].append(row)
-        for (checkpoint, paths), rows in sorted(
-            groups.items(), key=lambda item: int(float(item[0][1]))
+            groups[(row["branch"], row["checkpoint"], row["inference_paths"])].append(row)
+        for (branch, checkpoint, paths), rows in sorted(
+            groups.items(), key=lambda item: int(float(item[0][2]))
         ):
             observed = math.sqrt(_mean(rows, "observed_mse"))
             mc = math.sqrt(_mean(rows, "mc_variance_contribution"))
             lines.append(
-                f"| {LABELS[benchmark]} | {checkpoint} | {int(float(paths))} | 32 | "
+                f"| {LABELS[benchmark]} | {branch}/{checkpoint} | {int(float(paths))} | 32 | "
                 f"{observed:.5g} | {mc:.5g} | {_mean(rows, 'systematic_rmse_proxy'):.5g} | "
                 f"{100*_mean(rows, 'mc_fraction_observed_mse'):.2f}% |"
             )
@@ -207,6 +207,73 @@ def _baseline_table(training: list[dict[str, str]]) -> str:
                         f"{_mean_std(local, 'relative_l2', 5)} | {_mean_std(local, 'rmse', 5)} |"
                     )
     return "\n".join(lines)
+
+
+def _alignment_mean(
+    alignment: list[dict[str, str]], benchmark: str, method: str, level: str,
+    *, axis: str,
+) -> float:
+    rows = [
+        row for row in alignment
+        if row["axis"] == axis and row["benchmark"] == benchmark
+        and row["method"] == method and row["budget_level"] == level
+        and row["selection_type"] == "validation_selected"
+        and row["available"] == "True"
+    ]
+    return _mean(rows, "relative_l2_posthoc")
+
+
+def _deep_bsde_comparison(alignment: list[dict[str, str]]) -> str:
+    statements = []
+    for benchmark in BENCHMARKS:
+        levels = []
+        for level in ("B4", "B5"):
+            actor = _alignment_mean(
+                alignment, benchmark, "terminal_aware_tangent_actor", level,
+                axis="training",
+            )
+            deep_bsde = _alignment_mean(
+                alignment, benchmark, "deep_bsde_original", level,
+                axis="training",
+            )
+            if math.isfinite(actor) and math.isfinite(deep_bsde):
+                winner = "TA" if actor < deep_bsde else "Deep BSDE"
+                levels.append(
+                    f"{level}: TA {actor:.5g}, Deep BSDE {deep_bsde:.5g} ({winner} lower)"
+                )
+        statements.append(f"{LABELS[benchmark]} — " + "; ".join(levels))
+    return " ".join(statements)
+
+
+def _total_compute_leaders(alignment: list[dict[str, str]]) -> str:
+    statements = []
+    for benchmark in BENCHMARKS:
+        winners = []
+        for level in ("B1", "B2", "B3", "B4", "B5"):
+            candidates = []
+            methods = sorted({
+                row["method"] for row in alignment
+                if row["axis"] == "total" and row["benchmark"] == benchmark
+                and row["budget_level"] == level
+            })
+            for method in methods:
+                value = _alignment_mean(
+                    alignment, benchmark, method, level, axis="total"
+                )
+                rows = [
+                    row for row in alignment
+                    if row["axis"] == "total" and row["benchmark"] == benchmark
+                    and row["method"] == method and row["budget_level"] == level
+                    and row["selection_type"] == "validation_selected"
+                    and row["available"] == "True"
+                ]
+                if math.isfinite(value) and len(rows) == 2:
+                    candidates.append((value, method))
+            if candidates:
+                value, method = min(candidates)
+                winners.append(f"{level} {LABELS.get(method, method)} ({value:.5g})")
+        statements.append(f"{LABELS[benchmark]} — " + ", ".join(winners))
+    return " ".join(statements)
 
 
 def _budget_table(alignment: list[dict[str, str]], axis: str) -> str:
@@ -321,7 +388,12 @@ def main() -> None:
     decision = "CONDITIONAL GO" if evidence_of_scaling else "NO-GO"
 
     lowest_systematic = min(
-        (row for row in decomposition if row["validation_selected"] == "True" and row["inference_time_steps"] == "32"),
+        (
+            row for row in decomposition
+            if row["validation_selected"] == "True"
+            and row["inference_time_steps"] == "32"
+            and row["inference_paths"] == "8192"
+        ),
         key=lambda row: _float(row["systematic_rmse_proxy"]),
     )
 
@@ -361,7 +433,7 @@ def main() -> None:
             "",
             _systematic_table(decomposition),
             "",
-            f"The lowest measured systematic RMSE proxy is **{_float(lowest_systematic['systematic_rmse_proxy']):.6g}**, obtained for `{lowest_systematic['benchmark']}` at `{lowest_systematic['checkpoint']}` with {int(float(lowest_systematic['inference_paths']))} inference paths. Bootstrap intervals resample the fixed 960-state test workload and propagate the stored per-state MC variance estimate.",
+            f"The lowest high-precision systematic RMSE proxy is **{_float(lowest_systematic['systematic_rmse_proxy']):.6g}**, obtained for `{lowest_systematic['benchmark']}` at `{lowest_systematic['branch']}/{lowest_systematic['checkpoint']}` with 8192 inference paths. Bootstrap intervals resample the fixed 960-state test workload and propagate the stored per-state MC variance estimate.",
             "",
             "### Euler sensitivity",
             "",
@@ -400,9 +472,9 @@ def main() -> None:
             f"1. **Beyond $a_3$:** {'Yes on the joint-concave d=400 problem; gains persist but diminish. On the nonseparable d=100 problem they fall below the frozen practical threshold after a4.' if h1.get('joint_concave_d400_k2') else 'No consistent multi-step gain was detected.'}",
             f"2. **Additional supervision data:** {'Yes, 8192 points is consistently the strongest controlled extension and materially lowers Actor fitting error.' if h2 else 'No consistent data-scaling benefit was detected.'}",
             f"3. **More MC paths per label:** {'The gain is large enough to support H3.' if h3 else 'No. They reduce label replication noise, but yield much less policy improvement per GPU second than more points.'}",
-            f"4. **Lowest systematic floor:** `{lowest_systematic['benchmark']}`, `{lowest_systematic['checkpoint']}`, RMSE proxy **{_float(lowest_systematic['systematic_rmse_proxy']):.6g}**.",
-            "5. **Deep BSDE at 480/960 seconds:** see the corrected envelope tables above; the conclusion uses only original-form Deep BSDE rows and validation-selected Actor checkpoints.",
-            "6. **Best accuracy per total GPU second:** use the validation-selected total-compute table for an operational choice; the descriptive column is shown only to diagnose attainable points and never defines the algorithm.",
+            f"4. **Lowest systematic floor:** `{lowest_systematic['benchmark']}`, `{lowest_systematic['branch']}/{lowest_systematic['checkpoint']}`, at 8192 inference paths; RMSE proxy **{_float(lowest_systematic['systematic_rmse_proxy']):.6g}**.",
+            f"5. **Deep BSDE at 480/960 seconds:** {_deep_bsde_comparison(alignment)}",
+            f"6. **Best accuracy at matched total-compute budgets:** {_total_compute_leaders(alignment)} The descriptive test envelope remains diagnostic only.",
             f"7. **Scaling limitation:** {'There is no evidence of an immediate structural plateau: additional state coverage lowers the non-MC floor. The remaining limitation is Actor approximation/data scaling, especially at d=400.' if evidence_of_scaling else 'The expanded budget did not materially lower the non-MC floor, so further progress requires a methodological change rather than a larger version of the same training recipe.'}",
             "",
             f"**Final recommendation: {decision}.** Continue only with methods that improve state-space coverage or Actor representation. Do not spend the next budget increase primarily on more MC paths per label, and do not present the excluded terminal-aware competitor variants as external baselines.",
