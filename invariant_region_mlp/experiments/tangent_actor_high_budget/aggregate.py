@@ -7,6 +7,8 @@ import csv
 import json
 import math
 from pathlib import Path
+import shutil
+import subprocess
 from typing import Any
 
 import matplotlib
@@ -554,6 +556,31 @@ def main() -> None:
     write_csv(RESULTS_DIR / "metric_recomputation_audit.csv", metric_rows)
     atomic_json(RESULTS_DIR / "metric_recomputation_summary.json", metric_summary)
     atomic_json(RESULTS_DIR / "independent_correctness_audit.json", correctness)
+    shutil.copyfile(
+        STRONG_RESULTS_DIR / "numerical_reference_validation.json",
+        RESULTS_DIR / "numerical_reference_validation.json",
+    )
+    protocol = _json(Path(__file__).resolve().parent / "protocol.json")
+    atomic_json(
+        RESULTS_DIR / "reproducibility_metadata.json",
+        {
+            "git_commit": subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[3],
+                text=True,
+            ).strip(),
+            "branch": "ir-mlp-tangent-actor-high-budget",
+            "protocol": protocol,
+            "evaluation_banks": {
+                benchmark: _json(
+                    STRONG_RESULTS_DIR / f"evaluation_points_{benchmark}.json"
+                )
+                for benchmark in BENCHMARKS
+            },
+            "hardware": "NVIDIA GH200 120GB",
+            "software": "Python 3.12.9; PyTorch 2.10.0+cu129",
+            "final_test_used_for_training_or_selection": False,
+        },
+    )
     _plot_frontier(training, "training_seconds", "relative_l2_vs_training_seconds", "Accuracy versus cumulative training compute")
     _plot_frontier(total, "total_seconds_N960", "relative_l2_vs_total_compute", "Accuracy versus total compute for 960 states")
     _plot_actor_diagnostics(ablations, decompositions)
