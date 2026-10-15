@@ -9,6 +9,7 @@ from invariant_region_mlp.experiments.tangent_actor_scaling_diagnosis.models imp
     make_actor,
 )
 
+from .aggregate import budget_alignment
 from .common import driver_for, metrics
 from .deep_picard import ZeroPicardActor, picard_labels
 from .full_history_mlp import predict_full_history_mlp
@@ -142,4 +143,29 @@ def test_metrics_match_independent_formula() -> None:
     assert observed["rmse"] == expected_rmse
     assert observed["relative_l2"] == expected_rmse / math.sqrt(14.0 / 3.0)
     assert observed["bias"] == 1.0
+
+
+def test_budget_alignment_never_uses_test_error_for_selection() -> None:
+    common = {
+        "benchmark": "nonseparable_d100_k2",
+        "method": "deep_bsde",
+        "seed": 0,
+        "validation_objective": 1.0,
+        "relative_l2": 1.0,
+        "rmse_over_reference_std": 1.0,
+    }
+    rows = [
+        {**common, "checkpoint": "closer_bad_test", "training_seconds": 59.0, "rmse": 1.0},
+        {**common, "checkpoint": "farther_good_test", "training_seconds": 50.0, "rmse": 0.001},
+    ]
+    aligned = budget_alignment(rows)
+    selected = next(
+        row
+        for row in aligned
+        if row["benchmark"] == "nonseparable_d100_k2"
+        and row["method"] == "deep_bsde"
+        and row["seed"] == 0
+        and row["budget_level"] == "B1"
+    )
+    assert selected["checkpoint"] == "closer_bad_test"
 
