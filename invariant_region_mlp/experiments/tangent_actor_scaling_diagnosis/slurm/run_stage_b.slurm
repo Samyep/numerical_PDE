@@ -33,4 +33,5 @@ nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
 "$PYTHON_BIN" -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available(), 'device', torch.cuda.get_device_name(0))"
 
 srun "$PYTHON_BIN" -u -m invariant_region_mlp.experiments.tangent_actor_scaling_diagnosis.run_scaling --stage stage-b
+srun "$PYTHON_BIN" -u -m invariant_region_mlp.experiments.tangent_actor_scaling_diagnosis.run_scaling --stage stage-c
 

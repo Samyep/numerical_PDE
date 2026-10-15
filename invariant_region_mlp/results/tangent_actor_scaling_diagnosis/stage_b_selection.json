@@ -1,0 +1,36 @@
+{
+  "selected_variant": "TA_A",
+  "selection_time": "after all predeclared Stage A runs; before any Stage B run",
+  "selection_used_exact_test": false,
+  "selection_inputs": [
+    "reference-free paired tangent-value improvement",
+    "held-out noisy-label Value and Gradient Actor fit",
+    "independent label replication noise",
+    "exponential-weight ESS and finite-rollout checks",
+    "attributed compute",
+    "two-seed variability"
+  ],
+  "stage_a_mean_final_improvement": {
+    "A": 0.004597169114049393,
+    "B": 0.013261451147741354,
+    "C": 0.003978927483331063,
+    "D": 0.01274484730356562,
+    "TA_A": 0.016519359821927537
+  },
+  "stage_a_mean_attributed_gpu_seconds": {
+    "A": 113.59562828566413,
+    "B": 299.22093147737905,
+    "C": 113.84263766731601,
+    "D": 301.1896186033264,
+    "TA_A": 163.02872125979047
+  },
+  "rationale": "TA_A improved both seeds, had the largest mean paired improvement, the lowest held-out Value error, nearly the lowest held-out Gradient error, no terminal-domain saturation, and 2.29x the improvement per attributed GPU minute of A. It also outperformed the 8192-point standard Actor B at 54% of B's attributed compute. Wider Actors C and D did not improve their matched-width-192 controls, so capacity expansion was not selected. TA_B was not run because the smaller terminal-aware fix already exceeded the high-data standard Actor; combining fixes was not needed to identify the smallest justified intervention.",
+  "stage_b_scope": [
+    "joint_concave_d400_k10, seeds 0 and 1",
+    "allen_cahn_d400_k5, seeds 0 and 1",
+    "allen_cahn_d400_k10, seeds 0 and 1"
+  ],
+  "stage_c_scope": [
+    "joint_concave_d100_k5, seeds 0 and 1"
+  ]
+}
