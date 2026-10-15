@@ -187,14 +187,14 @@ def train_deep_picard(
     seed: int,
     device: torch.device,
     *,
-    width: int = 512,
-    depth: int = 4,
-    training_points: int = 4096,
+    width: int = 256,
+    depth: int = 3,
+    training_points: int = 2048,
     validation_points: int = 256,
-    paths: int = 512,
-    epochs: int = 16,
+    paths: int = 128,
+    epochs: int = 20,
     batch_size: int = 512,
-    learning_rate: float = 1e-3,
+    learning_rate: float = 5e-4,
     maximum_rounds: int = 40,
     budgets: tuple[float, ...] = BUDGETS,
     calibration_rounds: int | None = None,
@@ -342,6 +342,11 @@ def train_deep_picard(
             f"cumulative={cumulative:.2f}s val={training['best_validation_normalized_loss']:.5g}",
             flush=True,
         )
+        # The common ladder ends at B5.  Continuing after the first complete
+        # round that crosses it spends compute with no predeclared comparison
+        # point and can make later, network-sourced rounds dominate wall time.
+        if next_budget == len(budgets):
+            break
     result = {
         "method": "deep_picard",
         "benchmark": benchmark,
@@ -352,7 +357,7 @@ def train_deep_picard(
         "checkpoints": checkpoints,
         "total_training_seconds": time.perf_counter() - overall_started,
         "ground_truth_used_for_training_or_selection": False,
-        "official_configuration_delta": "authors use 4x512, 4096 points, 4096 paths and 40 rounds; paths reduced to 512 for the common GH200 budget",
+        "official_configuration_delta": "authors use 4x512, 4096 points, 4096 paths and 40 rounds; the calibrated common-budget configuration uses 3x256, 2048 points and 128 paths, and stops after the complete round crossing B5",
     }
     suffix = f"cal{rounds}{trial_tag}" if calibration_rounds else "main"
     atomic_json(RAW_DIR / f"deep_picard_{benchmark}_s{seed}_{suffix}.json", result)

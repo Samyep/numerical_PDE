@@ -133,7 +133,7 @@ def write_csv(path: Path, rows: Iterable[dict[str, Any]]) -> None:
             if key not in fields:
                 fields.append(key)
     with tempfile.NamedTemporaryFile("w", dir=path.parent, delete=False, newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(materialized)
         temporary = Path(handle.name)

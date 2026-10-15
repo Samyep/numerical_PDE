@@ -1,12 +1,12 @@
-method,trial,calibration_seconds,calibration_units,units_name,units_per_second,estimated_units_B1,estimated_units_B2,estimated_units_B3,estimated_units_B4,estimated_units_B5,validation_objective,estimated_960_state_seconds
-deep_bsde,A,30.514262405922636,1150,optimizer_steps,37.68729470507509,2261,4522,9045,18090,36180,0.0011211736127734184,
-deep_bsde,B,30.40319012699183,950,optimizer_steps,31.246721019469394,1875,3750,7499,14998,29997,0.0022852441761642694,
-sdgd_pinn,A,30.381450501969084,350,optimizer_steps,11.520187292483477,691,1382,2765,5530,11059,0.002236535874544643,
-sdgd_pinn,B,30.455683707026765,525,optimizer_steps,17.238161686019595,1034,2069,4137,8274,16549,0.003846277017146349,
-deep_picard,A,20.906744403997436,1,complete_rounds,0.047831454801197874,3,6,11,23,46,0.030964731301031154,
-deep_picard,B,3.0587477220688015,1,complete_rounds,0.32693117931401167,20,39,78,157,314,0.10695895795764424,
-tangent_actor,predeclared_TA_A,21.467539191013202,1,complete_actor_phases,0.046581957582666145,3,6,11,22,45,0.061664526426232116,
-full_history_mlp,n1_M64,0.0021633190335705876,64,validation_state_predictions,29584.170899826608,,,,,,,0.032449785503558815
-full_history_mlp,n2_M8,0.004720416967757046,64,validation_state_predictions,13558.124300703514,,,,,,,0.0708062545163557
-full_history_mlp,n3_M4,0.012002604082226753,64,validation_state_predictions,5332.176214557479,,,,,,,0.1800390612334013
-scasml_l1,pinn_A_paths8_probes4,0.08792846498545259,64,validation_state_predictions,727.8644067150329,,,,,,0.0026354816036484215,1.3189269747817889
+method,trial,calibration_seconds,calibration_units,units_name,units_per_second,estimated_units_B1,estimated_units_B2,estimated_units_B3,estimated_units_B4,estimated_units_B5,validation_objective,estimated_960_state_seconds,calibration_scope
+deep_bsde,A,30.514262405922636,1150,optimizer_steps,37.68729470507509,2261,4522,9045,18090,36180,0.0011211736127734184,,
+deep_bsde,B,30.40319012699183,950,optimizer_steps,31.246721019469394,1875,3750,7499,14998,29997,0.0022852441761642694,,
+sdgd_pinn,A,30.381450501969084,350,optimizer_steps,11.520187292483477,691,1382,2765,5530,11059,0.002236535874544643,,
+sdgd_pinn,B,30.455683707026765,525,optimizer_steps,17.238161686019595,1034,2069,4137,8274,16549,0.003846277017146349,,
+deep_picard,A,20.906744403997436,1,complete_rounds,0.047831454801197874,,,,,,0.030964731301031154,,zero-source round one only; later complete rounds are timed directly
+deep_picard,B,3.0587477220688015,1,complete_rounds,0.32693117931401167,,,,,,0.10695895795764424,,zero-source round one only; later complete rounds are timed directly
+tangent_actor,predeclared_TA_A,21.467539191013202,1,complete_actor_phases,0.046581957582666145,,,,,,0.061664526426232116,,constant-source phase one only; a1--a3 are timed as complete phases
+full_history_mlp,n1_M64,0.0021633190335705876,64,validation_state_predictions,29584.170899826608,,,,,,,0.032449785503558815,
+full_history_mlp,n2_M8,0.004720416967757046,64,validation_state_predictions,13558.124300703514,,,,,,,0.0708062545163557,
+full_history_mlp,n3_M4,0.012002604082226753,64,validation_state_predictions,5332.176214557479,,,,,,,0.1800390612334013,
+scasml_l1,pinn_A_paths8_probes4,0.08792846498545259,64,validation_state_predictions,727.8644067150329,,,,,,0.0026354816036484215,1.3189269747817889,

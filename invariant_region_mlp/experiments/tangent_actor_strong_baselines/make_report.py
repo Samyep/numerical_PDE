@@ -253,7 +253,7 @@ def main() -> None:
         "",
         "## Stage-A calibration",
         "",
-        "Calibration used only frozen, reference-free validation objectives. It selected Deep BSDE 3×192 with 16 time steps, SDGD-PINN 3×192 with 16 sampled coordinates, and Deep Picard 4×512 with 4096 points and 512 paths. The full attempted settings, including losing trials, are in `hyperparameter_trials.csv`.",
+        "Calibration used only frozen, reference-free validation objectives and measured throughput. It selected Deep BSDE 3×192 with 16 time steps, SDGD-PINN 3×192 with 16 sampled coordinates, and the feasible Deep Picard setting 3×256 with 2048 points and 128 paths. The official-style 4×512 Picard trial had lower round-one validation loss, but round one uses a zero source and does not represent the cost of later network-sourced rounds; it is retained in `hyperparameter_trials.csv` rather than extrapolated as if every round cost 21 seconds.",
         "",
         "## Actual training-time alignment",
     ]

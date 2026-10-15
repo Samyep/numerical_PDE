@@ -178,10 +178,12 @@ def main() -> None:
         trial_tag="_B",
     )
     dpi_results = {"A": dpi_a, "B": dpi_b}
-    dpi_selected = min(
-        dpi_results,
-        key=lambda key: dpi_results[key]["history"][-1]["validation_normalized_loss"],
-    )
+    # Round one uses the zero Picard source, so its throughput does not measure
+    # the network-sourced rounds that dominate the main run.  Trial A has the
+    # lower one-round label loss but cannot provide a useful multi-round ladder
+    # inside B1--B5; retain it as an attempted official-style configuration and
+    # select the calibrated feasible trial B without consulting test error.
+    dpi_selected = "B"
     for label, result in dpi_results.items():
         row = result["history"][-1]
         seconds = row["cumulative_training_seconds"]
@@ -193,8 +195,9 @@ def main() -> None:
                 "calibration_units": 1,
                 "units_name": "complete_rounds",
                 "units_per_second": 1.0 / seconds,
-                **{f"estimated_units_B{index + 1}": round(budget / seconds) for index, budget in enumerate(BUDGETS)},
+                **{f"estimated_units_B{index + 1}": None for index, _ in enumerate(BUDGETS)},
                 "validation_objective": row["validation_normalized_loss"],
+                "calibration_scope": "zero-source round one only; later complete rounds are timed directly",
             }
         )
         trials.append(
@@ -220,8 +223,9 @@ def main() -> None:
             "calibration_units": 1,
             "units_name": "complete_actor_phases",
             "units_per_second": 1.0 / phase["cumulative_training_seconds"],
-            **{f"estimated_units_B{index + 1}": round(budget / phase["cumulative_training_seconds"]) for index, budget in enumerate(BUDGETS)},
+            **{f"estimated_units_B{index + 1}": None for index, _ in enumerate(BUDGETS)},
             "validation_objective": phase["training"]["best_validation_normalized_loss"],
+            "calibration_scope": "constant-source phase one only; a1--a3 are timed as complete phases",
         }
     )
     trials.append(
