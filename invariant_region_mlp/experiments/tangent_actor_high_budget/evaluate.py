@@ -357,6 +357,11 @@ def evaluate_original_baselines(
                     "target_budget_seconds": checkpoint["target_budget_seconds"],
                     "optimizer_step": checkpoint["step"],
                     "validation_objective": checkpoint["validation_objective"],
+                    "training_status": result.get("status", "completed"),
+                    "training_failure_cause": result.get("failure_diagnostic", {}).get("cause"),
+                    "training_nonfinite_lower_bound": result.get("failure_diagnostic", {}).get(
+                        "first_checkpoint_nonfinite_count_lower_bound"
+                    ),
                     "prediction_key": key, "terminal_aware_features": False,
                     "final_test_used_for_selection": False,
                     **metrics(prediction, test_reference),
@@ -393,6 +398,7 @@ def evaluate_original_baselines(
                 "mean_terminal_defect_rms": metadata["mean_terminal_defect_rms"],
                 "terminal_defect_included": True,
                 "validation_objective": final_pinn["validation_objective"],
+                "training_status": pinn_result.get("status", "completed"),
                 "prediction_key": key, "terminal_aware_features": False,
                 "final_test_used_for_selection": False,
                 **metrics(prediction, test_reference),

@@ -189,8 +189,8 @@ def _euler_table(decomposition: list[dict[str, str]]) -> str:
 
 def _baseline_table(training: list[dict[str, str]]) -> str:
     lines = [
-        "| Benchmark | Method | Budget checkpoint | Actual train s | Relative L2 | RMSE |",
-        "|---|---|---|---:|---:|---:|",
+        "| Benchmark | Method | Budget checkpoint | Actual train s | Relative L2 | RMSE | Training status |",
+        "|---|---|---|---:|---:|---:|---|",
     ]
     for benchmark in BENCHMARKS:
         for method in ("deep_bsde_original", "sdgd_pinn_original", "deep_picard"):
@@ -204,7 +204,8 @@ def _baseline_table(training: list[dict[str, str]]) -> str:
                     lines.append(
                         f"| {LABELS[benchmark]} | {LABELS[method]} | {checkpoint} | "
                         f"{_mean_std(local, 'training_seconds', 5)} | "
-                        f"{_mean_std(local, 'relative_l2', 5)} | {_mean_std(local, 'rmse', 5)} |"
+                        f"{_mean_std(local, 'relative_l2', 5)} | {_mean_std(local, 'rmse', 5)} | "
+                        f"{', '.join(sorted({row.get('training_status', 'completed') for row in local}))} |"
                     )
     return "\n".join(lines)
 
@@ -336,6 +337,11 @@ def main() -> None:
     resources = _csv("resource_accounting.csv")
     metric_audit = json.loads((RESULTS_DIR / "metric_recomputation_summary.json").read_text())
     correctness = json.loads((RESULTS_DIR / "independent_correctness_audit.json").read_text())
+    deep_bsde_unstable = any(
+        row.get("method") == "deep_bsde_original"
+        and row.get("training_status", "completed") != "completed"
+        for row in training
+    )
 
     # Frozen, reference-free hypothesis decisions.
     h2_by_benchmark = {}
@@ -443,6 +449,10 @@ def main() -> None:
             "",
             _baseline_table(training),
             "",
+            ("Original-form Deep BSDE produced all timed checkpoints, but its BSDE rollout became non-finite before B1. The final strict-JSON write therefore failed; metadata were recovered from the immutable checkpoint files without retraining, unavailable validation objectives are null, and the table reports the finite raw $Y_0(x)$ outputs post hoc. This instability is part of the baseline result."
+             if deep_bsde_unstable else
+             "Original-form Deep BSDE completed without non-finite rollout diagnostics."),
+            "",
             "The historical terminal-aware Deep BSDE, SDGD-PINN and SCaSML measurements are preserved in `historical_terminal_aware_baselines.csv` but are ineligible here.",
             "",
             "## Accuracy-compute envelopes",
@@ -473,7 +483,8 @@ def main() -> None:
             f"2. **Additional supervision data:** {'Yes, 8192 points is consistently the strongest controlled extension and materially lowers Actor fitting error.' if h2 else 'No consistent data-scaling benefit was detected.'}",
             f"3. **More MC paths per label:** {'The gain is large enough to support H3.' if h3 else 'No. They reduce label replication noise, but yield much less policy improvement per GPU second than more points.'}",
             f"4. **Lowest systematic floor:** `{lowest_systematic['benchmark']}`, `{lowest_systematic['branch']}/{lowest_systematic['checkpoint']}`, at 8192 inference paths; RMSE proxy **{_float(lowest_systematic['systematic_rmse_proxy']):.6g}**.",
-            f"5. **Deep BSDE at 480/960 seconds:** {_deep_bsde_comparison(alignment)}",
+            f"5. **Deep BSDE at 480/960 seconds:** {_deep_bsde_comparison(alignment)}"
+            + (" These are posthoc errors of its finite raw $Y_0$ checkpoints; the underlying BSDE rollout was numerically unstable." if deep_bsde_unstable else ""),
             f"6. **Best accuracy at matched total-compute budgets:** {_total_compute_leaders(alignment)} The descriptive test envelope remains diagnostic only.",
             f"7. **Scaling limitation:** {'There is no evidence of an immediate structural plateau: additional state coverage lowers the non-MC floor. The remaining limitation is Actor approximation/data scaling, especially at d=400.' if evidence_of_scaling else 'The expanded budget did not materially lower the non-MC floor, so further progress requires a methodological change rather than a larger version of the same training recipe.'}",
             "",

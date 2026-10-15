@@ -6,7 +6,7 @@ import torch
 from .actor_scaling import nested_bank_audit
 from .common import driver_for
 from .models import OriginalAmortizedDeepBSDE, RawTanhPINN
-from .original_baselines import sdgd_objective
+from .original_baselines import _json_safe, sdgd_objective
 from .evaluate import _decomposition
 from .aggregate import budget_alignment
 from .scasml_original import predict_scasml_original_level1
@@ -49,6 +49,11 @@ def test_sdgd_raw_pinn_objective_is_finite() -> None:
     objective.backward()
     assert torch.isfinite(objective)
     assert np.isfinite(diagnostics["terminal_penalty"])
+
+
+def test_nonfinite_training_diagnostics_are_serialized_as_null() -> None:
+    payload = {"finite": 1.0, "nested": [float("nan"), float("inf"), -float("inf")]}
+    assert _json_safe(payload) == {"finite": 1.0, "nested": [None, None, None]}
 
 
 def test_nested_point_banks_are_exact_prefixes() -> None:

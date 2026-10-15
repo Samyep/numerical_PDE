@@ -324,6 +324,8 @@ def _resource_rows(
                         "actual_resource_seconds": result["checkpoints"][-1]["training_seconds"],
                         "method_cumulative_seconds": result["checkpoints"][-1]["training_seconds"],
                         "completed_checkpoints": len(result["checkpoints"]),
+                        "run_status": result.get("status", "completed"),
+                        "failure_cause": result.get("failure_diagnostic", {}).get("cause"),
                     }
                 )
             local_actor = [row for row in actor_rows if row["benchmark"] == benchmark and int(row["seed"]) == seed]

@@ -30,6 +30,17 @@ from .common import (
 from .models import OriginalAmortizedDeepBSDE, RawTanhPINN, architecture_payload
 
 
+def _json_safe(value: Any) -> Any:
+    """Replace non-finite diagnostics with null while preserving run evidence."""
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, (float, np.floating)) and not math.isfinite(float(value)):
+        return None
+    return value
+
+
 def _cpu_state(model: nn.Module) -> dict[str, torch.Tensor]:
     return {key: value.detach().cpu().clone() for key, value in model.state_dict().items()}
 
@@ -186,6 +197,7 @@ def train_deep_bsde_original(
         },
         "history": history, "checkpoints": checkpoints,
     }
+    result = _json_safe(result)
     atomic_json(RAW_DIR / f"deep_bsde_original_{benchmark}_s{seed}.json", result)
     return result
 
@@ -454,6 +466,7 @@ def train_sdgd_pinn_original(
         },
         "history": history, "checkpoints": checkpoints,
     }
+    result = _json_safe(result)
     atomic_json(RAW_DIR / f"sdgd_pinn_original_{benchmark}_s{seed}.json", result)
     return result
 
@@ -515,6 +528,7 @@ def predict_sdgd_pinn_original(
 
 __all__ = [
     "load_deep_bsde_original", "load_sdgd_pinn_original",
+    "_json_safe",
     "pinn_validation_proxy", "predict_deep_bsde_original",
     "predict_sdgd_pinn_original", "sdgd_objective", "train_deep_bsde_original",
     "train_sdgd_pinn_original",
