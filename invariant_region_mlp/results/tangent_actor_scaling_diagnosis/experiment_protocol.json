@@ -1,0 +1,81 @@
+{
+  "protocol_version": "tangent_actor_scaling_diagnosis_v1",
+  "continuation_commit": "cde7b4a2",
+  "training_seeds": [0, 1],
+  "stage_a_problem": {
+    "family": "joint_concave",
+    "dimension": 400,
+    "effective_dimension": 5
+  },
+  "stage_a_variants": ["A", "B", "C", "D", "TA_A"],
+  "variants": {
+    "A": {
+      "training_points": 2048,
+      "width": 192,
+      "actor_kind": "standard"
+    },
+    "B": {
+      "training_points": 8192,
+      "width": 192,
+      "actor_kind": "standard"
+    },
+    "C": {
+      "training_points": 2048,
+      "width": 512,
+      "actor_kind": "standard"
+    },
+    "D": {
+      "training_points": 8192,
+      "width": 512,
+      "actor_kind": "standard"
+    },
+    "TA_A": {
+      "training_points": 2048,
+      "width": 192,
+      "actor_kind": "terminal_aware"
+    },
+    "TA_B": {
+      "training_points": 8192,
+      "width": 192,
+      "actor_kind": "terminal_aware"
+    }
+  },
+  "nested_bank_max_points": 8192,
+  "actor_base": {
+    "validation_points": 256,
+    "paths_per_label": 128,
+    "label_time_steps": 16,
+    "optimizer_steps": 2500,
+    "depth": 3,
+    "learning_rate": 0.0002,
+    "batch_size": 512,
+    "parent_batch": 8,
+    "path_chunk": 32,
+    "checkpoint_interval": 125,
+    "gradient_clip": 10.0
+  },
+  "iterations": [1, 2, 3],
+  "evaluation": {
+    "points": 256,
+    "paths": 512,
+    "time_steps": 32,
+    "parent_batch": 8,
+    "path_chunk": 64,
+    "fixed_test_seed": 991
+  },
+  "stage_b_optional_allen_k10": false,
+  "selection": {
+    "checkpoint": "minimum normalized held-out noisy tangent-label loss",
+    "method": "Stage A reference-free paired improvement, validation fit, replication noise, stability, and compute; no exact test values",
+    "ground_truth_used": false
+  },
+  "safeguards": {
+    "external_baselines": false,
+    "analytic_nonterminal_labels": false,
+    "oracle_subspace_projection": false,
+    "projected_actor_input": false,
+    "paths_per_label_changed": false,
+    "extra_actor_iterations": false
+  }
+}
+

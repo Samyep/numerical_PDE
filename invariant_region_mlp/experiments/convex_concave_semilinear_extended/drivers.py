@@ -52,6 +52,10 @@ class ConcaveSemilinearDriver:
         coordinates = np.asarray(x) @ self.B
         return self.terminal_coordinate_gradient_numpy(coordinates) @ self.B.T
 
+    def terminal_gradient_torch(self, x: torch.Tensor) -> torch.Tensor:
+        """Return the known terminal gradient without breaking the state graph."""
+        raise NotImplementedError
+
     def driver(self, y: torch.Tensor, z: torch.Tensor | None) -> torch.Tensor:
         raise NotImplementedError
 
@@ -176,6 +180,10 @@ class MultiDirectionTerminalDriver(ConcaveSemilinearDriver):
     def terminal_coordinate_gradient_original_numpy(self, s: np.ndarray) -> np.ndarray:
         return self.amplitude * np.cos(np.asarray(s))
 
+    def terminal_gradient_original_torch(self, x: torch.Tensor) -> torch.Tensor:
+        basis = torch.as_tensor(self.B, dtype=x.dtype, device=x.device)
+        return (self.amplitude * torch.cos(x @ basis)) @ basis.T
+
 
 class AllenCahnDriver(MultiDirectionTerminalDriver):
     has_gradient = False
@@ -186,6 +194,9 @@ class AllenCahnDriver(MultiDirectionTerminalDriver):
 
     def terminal(self, x: torch.Tensor) -> torch.Tensor:
         return self.terminal_original(x)
+
+    def terminal_gradient_torch(self, x: torch.Tensor) -> torch.Tensor:
+        return self.terminal_gradient_original_torch(x)
 
     def terminal_numpy(self, x: np.ndarray) -> np.ndarray:
         return self.terminal_original_numpy(x)
@@ -218,6 +229,9 @@ class JointConcaveDriver(MultiDirectionTerminalDriver):
 
     def terminal(self, x: torch.Tensor) -> torch.Tensor:
         return self.terminal_original(x)
+
+    def terminal_gradient_torch(self, x: torch.Tensor) -> torch.Tensor:
+        return self.terminal_gradient_original_torch(x)
 
     def terminal_numpy(self, x: np.ndarray) -> np.ndarray:
         return self.terminal_original_numpy(x)
@@ -254,6 +268,9 @@ class JointConvexOriginalDriver(MultiDirectionTerminalDriver):
 
     def terminal(self, x: torch.Tensor) -> torch.Tensor:
         return self.terminal_original(x)
+
+    def terminal_gradient_torch(self, x: torch.Tensor) -> torch.Tensor:
+        return self.terminal_gradient_original_torch(x)
 
     def terminal_numpy(self, x: np.ndarray) -> np.ndarray:
         return self.terminal_original_numpy(x)
@@ -299,6 +316,9 @@ class SignTransformedDriver(ConcaveSemilinearDriver):
     def terminal(self, x: torch.Tensor) -> torch.Tensor:
         return -self.original.terminal(x)
 
+    def terminal_gradient_torch(self, x: torch.Tensor) -> torch.Tensor:
+        return -self.original.terminal_gradient_torch(x)
+
     def terminal_numpy(self, x: np.ndarray) -> np.ndarray:
         return -self.original.terminal_numpy(x)
 
@@ -343,6 +363,14 @@ class NonseparableDriver(ConcaveSemilinearDriver):
         basis = torch.as_tensor(self.B, dtype=x.dtype, device=x.device)
         s = x @ basis
         return 0.5 + 0.15 * torch.sin(s[..., 0]) + 0.15 * torch.cos(s[..., 1])
+
+    def terminal_gradient_torch(self, x: torch.Tensor) -> torch.Tensor:
+        basis = torch.as_tensor(self.B, dtype=x.dtype, device=x.device)
+        s = x @ basis
+        coefficients = torch.stack(
+            (0.15 * torch.cos(s[..., 0]), -0.15 * torch.sin(s[..., 1])), dim=-1
+        )
+        return coefficients @ basis.T
 
     def terminal_numpy(self, x: np.ndarray) -> np.ndarray:
         return self.terminal_from_coordinates_numpy(np.asarray(x) @ self.B)
