@@ -1,0 +1,79 @@
+{
+  "benchmarks": [
+    "nonseparable_d100_k2",
+    "joint_concave_d400_k2"
+  ],
+  "branch": "ir-mlp-tangent-actor-mcv-training",
+  "budget_boundaries_seconds": [
+    240,
+    480,
+    960
+  ],
+  "common_actor_quality_inference": {
+    "kind": "plain",
+    "paths": 512,
+    "steps": 32
+  },
+  "deliverables": [
+    "MCV_TRAINING_HIGH_BUDGET_REPORT.md",
+    "actor_training_frontier.csv",
+    "actor_validation_diagnostics.csv",
+    "budget_operating_points.csv",
+    "euler_sensitivity.csv",
+    "figures/actor_validation_by_iteration.pdf",
+    "figures/actor_validation_by_iteration.png",
+    "figures/label_variance_reduction.pdf",
+    "figures/label_variance_reduction.png",
+    "figures/relative_l2_vs_training_seconds.pdf",
+    "figures/relative_l2_vs_training_seconds.png",
+    "figures/systematic_rmse_vs_training_seconds.pdf",
+    "figures/systematic_rmse_vs_training_seconds.png",
+    "label_variance_comparison.csv",
+    "raw/common_evaluation_joint_concave_d400_k2_s0.json",
+    "raw/common_evaluation_joint_concave_d400_k2_s1.json",
+    "raw/common_evaluation_nonseparable_d100_k2_s0.json",
+    "raw/common_evaluation_nonseparable_d100_k2_s1.json",
+    "raw/evaluation_summary.json",
+    "raw/mcv_points2048_joint_concave_d400_k2_s0.json",
+    "raw/mcv_points2048_nonseparable_d100_k2_s0.json",
+    "raw/mcv_points8192_joint_concave_d400_k2_s0.json",
+    "raw/mcv_points8192_joint_concave_d400_k2_s1.json",
+    "raw/mcv_points8192_nonseparable_d100_k2_s0.json",
+    "raw/mcv_points8192_nonseparable_d100_k2_s1.json",
+    "raw/plain_euler_extension.json",
+    "raw/prefix_evaluation_joint_concave_d400_k2_s0.json",
+    "raw/prefix_evaluation_joint_concave_d400_k2_s1.json",
+    "raw/prefix_evaluation_nonseparable_d100_k2_s0.json",
+    "raw/prefix_evaluation_nonseparable_d100_k2_s1.json",
+    "raw/stage0_raw_manifest.json",
+    "raw/stage1_assessment.json",
+    "reproducibility_manifest.json",
+    "runtime_and_resource_accounting.csv",
+    "stage0_decision.json",
+    "stage1_decision.json",
+    "systematic_error_comparison.csv"
+  ],
+  "experiment": "tangent_actor_mcv_training_high_budget_v1",
+  "git_commit_at_aggregation": "6cf4a1d91cb55ec13d0ab6eae4e33846be35697c",
+  "ground_truth_used_for_training_or_selection": false,
+  "label_estimator": "direct alpha=1 P-H with full pathwise derivative",
+  "platform": "Linux-6.4.0-150600.23.53-64kb-aarch64-with-glibc2.38",
+  "python": "3.12.9",
+  "secondary_inference": {
+    "kind": "MCV",
+    "paths": 512,
+    "steps": [
+      16,
+      32,
+      64
+    ]
+  },
+  "source_results": {
+    "high_budget_plain": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_high_budget",
+    "strong_baselines": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_strong_baselines"
+  },
+  "training_seeds": [
+    0,
+    1
+  ]
+}
