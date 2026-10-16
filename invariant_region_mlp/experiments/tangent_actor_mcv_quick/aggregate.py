@@ -367,6 +367,14 @@ def _render_report(
     calibration: list[dict[str, Any]], coverage: dict[str, Any],
     metric_audit: dict[str, Any], correctness: dict[str, Any],
 ) -> None:
+    manifest_path = RESULTS_DIR / "execution_manifest.json"
+    manifest = _json(manifest_path) if manifest_path.exists() else {"jobs": []}
+    completed_jobs = [
+        job for job in manifest.get("jobs", []) if job.get("state") == "COMPLETED"
+    ]
+    total_gpu_hours = sum(
+        float(job.get("allocated_gpu_hours", 0.0)) for job in completed_jobs
+    )
     late = [row for row in variance if row["checkpoint_key"] == "late"]
     reproducible_by_benchmark: dict[str, bool] = {}
     best_variant_by_benchmark: dict[str, str] = {}
@@ -416,6 +424,17 @@ def _render_report(
         [row for row in runtime if row["checkpoint_key"] == "late"],
         "mcv_runtime_overhead_fraction",
     )
+    late_diagnostic_rows = [
+        row for row in late if row["variant"] == "direct"
+    ]
+    payoff_antithetic_ratio = _mean(
+        late_diagnostic_rows, "payoff_antithetic_variance_ratio"
+    )
+    martingale_antithetic_ratio = _mean(
+        late_diagnostic_rows, "martingale_antithetic_variance_ratio"
+    )
+    ess_min = min(float(row["weight_ess_fraction"]) for row in variance)
+    ess_max = max(float(row["weight_ess_fraction"]) for row in variance)
     alpha_table = [
         "| Benchmark | Actor | Calibrated alpha | Calibration s | Pair corr(P,H) |",
         "|---|---|---:|---:|---:|",
@@ -444,6 +463,8 @@ def _render_report(
         "",
         "## Variance ratio across iterations",
         "",
+        "The 95% intervals below are paired state bootstraps of the replicate-variance ratio; all variants share Brownian streams within each replicate.",
+        "",
         _variance_table(variance),
         "",
         "![Variance ratio versus Actor iteration](figures/mcv_variance_ratio_by_iteration.png)",
@@ -459,6 +480,12 @@ def _render_report(
         "![Accuracy versus inference compute](figures/mcv_accuracy_vs_inference_compute.png)",
         "",
         "Calibration is a one-time per-Actor cost. Calibrated efficiency includes one eighth of that cost per reported replicate; direct MCV has no calibration cost.",
+        "",
+        "## Sampling and resource diagnostics",
+        "",
+        f"For late Actors, antithetic pairing alone has payoff and martingale variance ratios **{payoff_antithetic_ratio:.3g}** and **{martingale_antithetic_ratio:.3g}** relative to ordinary independent-path averaging. Thus antithetic sampling already removes **{100*(1-payoff_antithetic_ratio):.1f}%** of payoff variance by this diagnostic, and the reported MCV gain is additional. Exponential-weight ESS fractions range from **{ess_min:.3f}** to **{ess_max:.3f}**.",
+        "",
+        f"The completed Slurm allocations used **{total_gpu_hours:.3f} GH200 GPU-hours** across **{len(completed_jobs)}** jobs. Exact job IDs, nodes, elapsed times and launcher commits are in `execution_manifest.json`.",
         "",
         "## Correctness and interpretation",
         "",
