@@ -135,6 +135,63 @@ def _plain_catalog(benchmark: str, seed: int) -> list[dict[str, Any]]:
     return rows
 
 
+def _evaluate_shared_prefix(
+    benchmark: str, seed: int, device: torch.device
+) -> list[dict[str, Any]]:
+    """Re-evaluate a1/a2 so the systematic-error plot includes the prefix."""
+    output_path = RAW_DIR / f"prefix_evaluation_{benchmark}_s{seed}.json"
+    if output_path.exists():
+        return _json(output_path)["rows"]
+    training = _json(
+        STRONG_RESULTS_DIR / "raw" / f"tangent_actor_{benchmark}_s{seed}_main.json"
+    )
+    data_path = STRONG_RESULTS_DIR / f"evaluation_points_{benchmark}.npz"
+    with np.load(data_path) as archive:
+        test_indices = archive["test_indices"].copy()
+        test_x = archive["x"][test_indices].copy()
+        reference = archive["reference_original"][test_indices].copy()
+    rows: list[dict[str, Any]] = []
+    for phase in training["phases"][:2]:
+        actor, _ = load_tangent_actor(Path(phase["checkpoint"]), device)
+        prediction, variance, metadata = evaluate_tangent_actor(
+            benchmark, actor, test_x, device, paths=512, time_steps=32,
+            seed=stable_seed("high_budget_test_common", benchmark, seed, 512, 32),
+        )
+        decomposition = _decomposition(
+            prediction, reference, variance,
+            seed=stable_seed(
+                "mcv_training_prefix_systematic", benchmark, seed, phase["iteration"]
+            ),
+        )
+        rows.append({
+            "training_variant": "shared_prefix",
+            "benchmark": benchmark,
+            "seed": seed,
+            "evaluation_id": f"a{phase['iteration']}",
+            "checkpoint": f"a{phase['iteration']}",
+            "checkpoint_path": phase["checkpoint"],
+            "branch": "shared_prefix",
+            "training_points": training["configuration"]["training_points"],
+            "paths_per_label": training["configuration"]["paths_per_label"],
+            "iteration": phase["iteration"],
+            "training_seconds": phase["cumulative_training_seconds"],
+            "validation_objective": phase["training"]["best_validation_normalized_loss"],
+            "validation_policy_mean": "",
+            "validation_policy_mc_se": "",
+            "inference_variant": "plain",
+            "inference_paths": 512,
+            "inference_time_steps": 32,
+            "inference_seconds": metadata["wall_seconds"],
+            "weight_ess_fraction": metadata["weight_ess_fraction"],
+            "nonfinite_count": metadata["nonfinite_count"],
+            **metrics(prediction, reference),
+            **decomposition,
+            "final_test_used_for_selection": False,
+        })
+    atomic_json(output_path, {"benchmark": benchmark, "seed": seed, "rows": rows})
+    return rows
+
+
 def _evaluate_mcv_training_candidates(
     benchmark: str, seed: int, device: torch.device
 ) -> list[dict[str, Any]]:
@@ -314,8 +371,10 @@ def run(args: argparse.Namespace) -> None:
     budget_rows: list[dict[str, Any]] = []
     for benchmark in ("nonseparable_d100_k2", "joint_concave_d400_k2"):
         for seed in (0, 1):
+            prefix_rows = _evaluate_shared_prefix(benchmark, seed, device)
             plain_rows = _plain_catalog(benchmark, seed)
             mcv_rows = _evaluate_mcv_training_candidates(benchmark, seed, device)
+            all_rows.extend(prefix_rows)
             all_rows.extend(plain_rows)
             all_rows.extend(mcv_rows)
             for budget in BUDGETS:
