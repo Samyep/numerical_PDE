@@ -9,7 +9,7 @@
 #SBATCH --mem=384G
 #SBATCH --gpus-per-node=4
 #SBATCH --gpu-bind=verbose,closest
-#SBATCH --time=02:00:00
+#SBATCH --time=01:00:00
 #SBATCH --output=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_high_budget/slurm/%x_%j.out
 #SBATCH --error=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_high_budget/slurm/%x_%j.err
 
