@@ -1,0 +1,47 @@
+{
+  "experiment": "tangent_actor_mcv_training_high_budget_v1",
+  "starting_commit": "4ff6d3db",
+  "benchmarks": ["nonseparable_d100_k2", "joint_concave_d400_k2"],
+  "training_seeds": [0, 1],
+  "source_checkpoint": "frozen a3 for every paired branch",
+  "primary_alpha": 1.0,
+  "correction": "sum_m C_m q(t_m,X_m)^T dW_m at predictable left endpoints",
+  "gradient_label": "sqrt(2) times the full initial-state derivative of P-H",
+  "stage0": {
+    "benchmark": "nonseparable_d100_k2",
+    "seed": 0,
+    "checkpoints": ["a3", "late"],
+    "states": 128,
+    "paths": [32, 128],
+    "time_steps": 16,
+    "replicates": 8,
+    "finite_difference_paths": 512,
+    "gate": {
+      "gradient_variance_ratio_point_below": 0.95,
+      "gradient_variance_ratio_ci95_high_below": 1.10,
+      "value_variance_ratio_below": 1.0,
+      "median_fd_relative_error_below": 0.10,
+      "maximum_fd_relative_error_below": 0.30,
+      "runtime_ratio_below": 1.50,
+      "nonfinite_count": 0
+    }
+  },
+  "stage1": {
+    "seeds": [0],
+    "training_points": 2048,
+    "paths_per_label": 128,
+    "time_steps": 16,
+    "updates": 1
+  },
+  "stage2": {
+    "seeds": [0, 1],
+    "training_points": 8192,
+    "paths_per_label": 128,
+    "time_steps": 16,
+    "budget_targets_seconds_including_a3_prefix": [240, 480, 960],
+    "only_if_stage1_promising": true
+  },
+  "selection": "held-out tangent-label loss; no Ground Truth",
+  "final_accuracy": "post hoc independent Ground Truth with common inference",
+  "external_baselines_retrained": false
+}
