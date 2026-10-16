@@ -246,6 +246,28 @@ def _deep_bsde_comparison(alignment: list[dict[str, str]]) -> str:
     return " ".join(statements)
 
 
+def _sdgd_comparison(alignment: list[dict[str, str]]) -> str:
+    statements = []
+    for benchmark in BENCHMARKS:
+        levels = []
+        for level in ("B4", "B5"):
+            actor = _alignment_mean(
+                alignment, benchmark, "terminal_aware_tangent_actor", level,
+                axis="total",
+            )
+            sdgd = _alignment_mean(
+                alignment, benchmark, "sdgd_pinn_original", level,
+                axis="total",
+            )
+            if math.isfinite(actor) and math.isfinite(sdgd):
+                winner = "TA" if actor < sdgd else "SDGD-PINN"
+                levels.append(
+                    f"{level}: TA {actor:.5g}, SDGD-PINN {sdgd:.5g} ({winner} lower)"
+                )
+        statements.append(f"{LABELS[benchmark]} — " + "; ".join(levels))
+    return " ".join(statements)
+
+
 def _total_compute_leaders(alignment: list[dict[str, str]]) -> str:
     statements = []
     for benchmark in BENCHMARKS:
@@ -342,6 +364,12 @@ def main() -> None:
         and row.get("training_status", "completed") != "completed"
         for row in training
     )
+    allocated_gpu_hours = sum(
+        _float(row.get("allocated_gpu_hours"))
+        for row in resources
+        if row["category"] == "scheduler"
+        and math.isfinite(_float(row.get("allocated_gpu_hours")))
+    )
 
     # Frozen, reference-free hypothesis decisions.
     h2_by_benchmark = {}
@@ -402,11 +430,24 @@ def main() -> None:
         ),
         key=lambda row: _float(row["systematic_rmse_proxy"]),
     )
+    euler64_systematic = {
+        benchmark: _mean(
+            [
+                row for row in decomposition
+                if row["benchmark"] == benchmark
+                and row["validation_selected"] == "True"
+                and row["inference_time_steps"] == "64"
+                and row["inference_paths"] == "2048"
+            ],
+            "systematic_rmse_proxy",
+        )
+        for benchmark in BENCHMARKS
+    }
 
     lines = [
         "# Terminal-Aware Tangent-Actor: High-Budget Scaling Study",
         "",
-        f"**Decision: {decision}.** The controlled pilot supports **H2 (data-limited)** on both PDEs. More training points improve the held-out Actor fit and the reference-free policy value much more efficiently than increasing paths per label. Extra iterations remain useful on the $d=400$ problem and rapidly diminish on the $d=100$ problem. The final conclusion below separates the systematic Actor/discretization floor from inference MC noise and uses corrected original-form competitors.",
+        f"**Decision: {decision}.** The controlled pilot supports **H2 (data-limited)** on both PDEs. More training points improve the held-out Actor fit and the reference-free policy value much more efficiently than increasing paths per label. Extra iterations remain useful on the $d=400$ problem and rapidly diminish on the $d=100$ problem. At the strict 960-second total-compute envelope, the validation-selected method beats original SDGD-PINN on $d=400$ but loses on the nonseparable $d=100$ problem. The conclusion therefore supports continued targeted development, not a blanket baseline win.",
         "",
         "## Protocol correction and selection firewall",
         "",
@@ -453,6 +494,8 @@ def main() -> None:
              if deep_bsde_unstable else
              "Original-form Deep BSDE completed without non-finite rollout diagnostics."),
             "",
+            "The stable original-form SDGD-PINN is the informative high-budget comparator. At strict matched total-compute envelopes: " + _sdgd_comparison(alignment),
+            "",
             "The historical terminal-aware Deep BSDE, SDGD-PINN and SCaSML measurements are preserved in `historical_terminal_aware_baselines.csv` but are ineligible here.",
             "",
             "## Accuracy-compute envelopes",
@@ -475,18 +518,20 @@ def main() -> None:
             "",
             _resource_summary(resources),
             "",
+            f"Total scheduler allocation was **{allocated_gpu_hours:.3f} GH200 GPU-hours**, including the Deep-BSDE allocation whose child steps failed after writing their timed checkpoints. The rejected QOS-limited submission received no job ID and consumed zero allocation.",
+            "",
             f"The independent metric replay checked **{metric_audit['rows_checked']}** prediction rows; maximum absolute discrepancy was **{metric_audit['maximum_absolute_difference']:.3g}** and the audit passed: **{metric_audit['passed']}**. The protocol audit passed: **{correctness['passed']}**. It verifies exact nested state prefixes, non-Terminal-Aware competitor configurations, the Ground Truth selection firewall, and budget-envelope eligibility.",
             "",
             "## Answers to the research questions",
             "",
-            f"1. **Beyond $a_3$:** {'Yes on the joint-concave d=400 problem; gains persist but diminish. On the nonseparable d=100 problem they fall below the frozen practical threshold after a4.' if h1.get('joint_concave_d400_k2') else 'No consistent multi-step gain was detected.'}",
-            f"2. **Additional supervision data:** {'Yes, 8192 points is consistently the strongest controlled extension and materially lowers Actor fitting error.' if h2 else 'No consistent data-scaling benefit was detected.'}",
+            f"1. **Beyond $a_3$:** {'Yes on the joint-concave d=400 problem; gains persist but diminish. On the nonseparable d=100 problem the gains are positive but below the frozen practical threshold from a4 onward.' if h1.get('joint_concave_d400_k2') else 'No consistent multi-step gain was detected.'}",
+            f"2. **Additional supervision data:** {'It breaks the apparent plateau but does not eliminate the remaining error floor: 8192 points is consistently the strongest controlled extension and materially lowers Actor fitting error.' if h2 else 'No consistent data-scaling benefit was detected.'}",
             f"3. **More MC paths per label:** {'The gain is large enough to support H3.' if h3 else 'No. They reduce label replication noise, but yield much less policy improvement per GPU second than more points.'}",
-            f"4. **Lowest systematic floor:** `{lowest_systematic['benchmark']}`, `{lowest_systematic['branch']}/{lowest_systematic['checkpoint']}`, at 8192 inference paths; RMSE proxy **{_float(lowest_systematic['systematic_rmse_proxy']):.6g}**.",
+            f"4. **Lowest systematic floor:** at the most precise common 32-step protocol, `{lowest_systematic['benchmark']}`, `{lowest_systematic['branch']}/{lowest_systematic['checkpoint']}`, with 8192 paths gives RMSE proxy **{_float(lowest_systematic['systematic_rmse_proxy']):.6g}**. The 64-step/2048-path sensitivity run lowers the two-seed mean proxy to **{euler64_systematic['joint_concave_d400_k2']:.6g}** on joint concave and **{euler64_systematic['nonseparable_d100_k2']:.6g}** on nonseparable, but those estimates have wider MC uncertainty.",
             f"5. **Deep BSDE at 480/960 seconds:** {_deep_bsde_comparison(alignment)}"
-            + (" These are posthoc errors of its finite raw $Y_0$ checkpoints; the underlying BSDE rollout was numerically unstable." if deep_bsde_unstable else ""),
+            + (" These are posthoc errors of its finite raw $Y_0$ checkpoints; the underlying BSDE rollout was numerically unstable. Thus this run shows robustness against the observed original-form failure, but does not establish superiority to a successfully converged Deep BSDE." if deep_bsde_unstable else ""),
             f"6. **Best accuracy at matched total-compute budgets:** {_total_compute_leaders(alignment)} The descriptive test envelope remains diagnostic only.",
-            f"7. **Scaling limitation:** {'There is no evidence of an immediate structural plateau: additional state coverage lowers the non-MC floor. The remaining limitation is Actor approximation/data scaling, especially at d=400.' if evidence_of_scaling else 'The expanded budget did not materially lower the non-MC floor, so further progress requires a methodological change rather than a larger version of the same training recipe.'}",
+            f"7. **Scaling limitation:** {'There is no evidence of an immediate structural plateau: additional state coverage lowers the non-MC floor. The remaining limits are Actor approximation/data coverage and Euler bias; the 16→64-step sensitivity is material on both PDEs.' if evidence_of_scaling else 'The expanded budget did not materially lower the non-MC floor, so further progress requires a methodological change rather than a larger version of the same training recipe.'}",
             "",
             f"**Final recommendation: {decision}.** Continue only with methods that improve state-space coverage or Actor representation. Do not spend the next budget increase primarily on more MC paths per label, and do not present the excluded terminal-aware competitor variants as external baselines.",
         ]

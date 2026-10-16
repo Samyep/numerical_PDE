@@ -1,0 +1,85 @@
+{
+  "branch": "ir-mlp-tangent-actor-high-budget",
+  "hardware": "NVIDIA GH200 120GB",
+  "nvidia_driver": "595.71.05",
+  "python": "3.12.9",
+  "torch": "2.10.0+cu129",
+  "jobs": [
+    {
+      "job_id": 3387497,
+      "stage": "actor scaling pilot",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed_seconds": 1147,
+      "allocated_gpus": 4,
+      "allocated_gpu_hours": 1.2744444444,
+      "node": "gh031",
+      "launcher_commit": "c997f8a046e36afa19fc4ab6fbe7d825de7b45fd",
+      "submitted_at": "2026-10-15T12:52:50-05:00",
+      "started_at": "2026-10-15T12:55:26-05:00",
+      "ended_at": "2026-10-15T13:14:33-05:00"
+    },
+    {
+      "job_id": 3388473,
+      "stage": "actor continuation and original Deep BSDE",
+      "state": "COMPLETED_WITH_FAILED_STEPS",
+      "exit_code": "0:0 parent; four child steps 1:0",
+      "elapsed_seconds": 1847,
+      "allocated_gpus": 4,
+      "allocated_gpu_hours": 2.0522222222,
+      "node": "gh055",
+      "launcher_commit": "72643751a9fbd5d1f7b9334c42a05a7c1b213b1e",
+      "submitted_at": "2026-10-15T15:30:18-05:00",
+      "started_at": "2026-10-15T15:30:40-05:00",
+      "ended_at": "2026-10-15T16:01:27-05:00",
+      "child_step_states": ["FAILED", "FAILED", "FAILED", "FAILED"],
+      "failure": "Deep-BSDE rollouts became non-finite and the strict JSON serializer rejected NaN validation diagnostics after all timed checkpoints had been written.",
+      "recovery": "All 20 immutable timed checkpoints were recovered without retraining; unavailable validation objectives remain null and checkpoint times were inferred from file mtimes."
+    },
+    {
+      "job_id": 3390185,
+      "stage": "original SDGD-PINN recovery",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed_seconds": 981,
+      "allocated_gpus": 4,
+      "allocated_gpu_hours": 1.09,
+      "node": "gh101",
+      "launcher_commit": "4b7ad92d0648f14eab57f367afd41d0cd9854be1",
+      "submitted_at": "2026-10-15T21:22:42-05:00",
+      "started_at": "2026-10-15T21:24:21-05:00",
+      "ended_at": "2026-10-15T21:40:42-05:00"
+    },
+    {
+      "job_id": 3390345,
+      "stage": "posthoc actor and original-baseline evaluation",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed_seconds": 1945,
+      "allocated_gpus": 4,
+      "allocated_gpu_hours": 2.1611111111,
+      "node": "gh103",
+      "launcher_commit": "472d0e21e9cf93b6fb375d269f2f40a894952ee7",
+      "submitted_at": "2026-10-15T21:41:33-05:00",
+      "started_at": "2026-10-15T21:48:07-05:00",
+      "ended_at": "2026-10-15T22:20:32-05:00",
+      "child_step_states": ["COMPLETED", "COMPLETED", "COMPLETED", "COMPLETED"]
+    }
+  ],
+  "rejected_submissions": [
+    {
+      "stage": "separate original-baseline launch attempt",
+      "state": "REJECTED_BEFORE_ALLOCATION",
+      "reason": "QOSMaxSubmitJobPerUserLimit",
+      "job_id": null,
+      "elapsed_seconds": 0,
+      "allocated_gpus": 0,
+      "allocated_gpu_hours": 0,
+      "node": null
+    }
+  ],
+  "total_allocated_gpu_hours": 6.5777777777,
+  "failed_or_restarted_allocations_included": true,
+  "method_times_are_cuda_synchronized_single_gpu_elapsed_seconds": true,
+  "final_test_used_for_training_or_selection": false
+}

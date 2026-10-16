@@ -1,0 +1,98 @@
+{
+  "aggregation_parent_commit": "472d0e21e9cf93b6fb375d269f2f40a894952ee7",
+  "branch": "ir-mlp-tangent-actor-high-budget",
+  "evaluation_banks": {
+    "joint_concave_d400_k2": {
+      "benchmark": "joint_concave_d400_k2",
+      "distribution": "x~N(0,I_d), t=0",
+      "fingerprint": "a2fbee53420d0a056ff80f0ab1aee06e2473912f7114fe9652ae3a29ecead2c1",
+      "point_count": 1200,
+      "reference": "independent 2D periodic Fourier/Strang solver, n=128, dt=0.00025",
+      "test_count": 960,
+      "test_used_for_training_or_selection": false,
+      "validation_count": 240
+    },
+    "nonseparable_d100_k2": {
+      "benchmark": "nonseparable_d100_k2",
+      "distribution": "x~N(0,I_d), t=0",
+      "fingerprint": "bc3f46f8853eccbfd5b9fadccdbbe8fd358cc00aeb8b3a27185f75c4d2447da7",
+      "point_count": 1200,
+      "reference": "independent 2D periodic Fourier/Strang solver, n=128, dt=0.00025",
+      "test_count": 960,
+      "test_used_for_training_or_selection": false,
+      "validation_count": 240
+    }
+  },
+  "final_test_used_for_training_or_selection": false,
+  "hardware": "NVIDIA GH200 120GB",
+  "job_launcher_commits": {
+    "3387497": "c997f8a046e36afa19fc4ab6fbe7d825de7b45fd",
+    "3388473": "72643751a9fbd5d1f7b9334c42a05a7c1b213b1e",
+    "3390185": "4b7ad92d0648f14eab57f367afd41d0cd9854be1",
+    "3390345": "472d0e21e9cf93b6fb375d269f2f40a894952ee7"
+  },
+  "protocol": {
+    "benchmarks": [
+      "nonseparable_d100_k2",
+      "joint_concave_d400_k2"
+    ],
+    "budget_seconds": [
+      60,
+      120,
+      240,
+      480,
+      960
+    ],
+    "controlled_extensions": {
+      "iterations": {
+        "paths_per_label": 128,
+        "training_points": 2048,
+        "updates_after_a3": 3
+      },
+      "paths256": {
+        "paths_per_label": 256,
+        "training_points": 2048,
+        "updates_after_a3": 1
+      },
+      "paths512": {
+        "paths_per_label": 512,
+        "training_points": 2048,
+        "updates_after_a3": 1
+      },
+      "points4096": {
+        "paths_per_label": 128,
+        "training_points": 4096,
+        "updates_after_a3": 1
+      },
+      "points8192": {
+        "paths_per_label": 128,
+        "training_points": 8192,
+        "updates_after_a3": 1
+      }
+    },
+    "corrected_external_baselines": {
+      "deep_bsde_original": "raw amortized Y0 plus official-style nonshared BN/ReLU Z_n; no g or grad-g embedding",
+      "deep_picard": "reuse prior result; terminal construction belongs to published algorithm",
+      "full_history_mlp": "reuse prior result; pathwise terminal evaluation belongs to published algorithm",
+      "scasml": "reevaluate from corrected ordinary SDGD-PINN backbone",
+      "sdgd_pinn_original": "ordinary tanh (t,x)->u plus authors' soft terminal value/gradient penalty; no hard terminal ansatz"
+    },
+    "final_test_used_for_selection": false,
+    "frozen_reference_method": {
+      "actor": "terminal_aware_3x192_silu",
+      "label_time_steps": 16,
+      "optimizer_steps": 2500,
+      "paths_per_label": 128,
+      "training_points": 2048,
+      "updates": 3
+    },
+    "ground_truth_role": "posthoc evaluation only",
+    "iteration_stopping": "stop after two consecutive extensions whose paired reference-free MC CI includes zero or mean improvement is below 1e-4",
+    "staged_continuation": "after the five-way pilot, continue only the factor with the largest paired improvement in all four benchmark-seed tasks, subject to a 1200-second (+25% B5) pre-start ceiling",
+    "training_seeds": [
+      0,
+      1
+    ]
+  },
+  "software": "Python 3.12.9; PyTorch 2.10.0+cu129"
+}

@@ -368,7 +368,7 @@ def _plot_frontier(rows: list[dict[str, Any]], x_key: str, filename: str, title:
         "full_history_mlp": ("#898989", "X"),
         "terminal_tangent_Ag": ("#A2C8EC", "h"),
     }
-    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.7), sharey=False)
+    fig, axes = plt.subplots(1, 2, figsize=(12.2, 5.6), sharey=False)
     for axis, benchmark in zip(axes, BENCHMARKS):
         for method in styles:
             local = [row for row in rows if row["benchmark"] == benchmark and _canonical(str(row["method"])) == method]
@@ -401,9 +401,12 @@ def _plot_frontier(rows: list[dict[str, Any]], x_key: str, filename: str, title:
         axis.set_ylabel("Relative $L^2$")
     handles, labels = axes[0].get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
-    fig.legend(by_label.values(), by_label.keys(), loc="upper center", ncol=4, fontsize=8.5)
-    fig.suptitle(title, y=1.04, fontsize=13)
-    fig.tight_layout(rect=(0, 0, 1, 0.91))
+    fig.suptitle(title, y=0.985, fontsize=13)
+    fig.legend(
+        by_label.values(), by_label.keys(), loc="upper center",
+        bbox_to_anchor=(0.5, 0.92), ncol=4, fontsize=8.5,
+    )
+    fig.tight_layout(rect=(0, 0, 1, 0.78))
     for suffix in ("png", "pdf"):
         fig.savefig(FIGURE_DIR / f"{filename}.{suffix}", dpi=220, bbox_inches="tight")
     plt.close(fig)
@@ -521,12 +524,53 @@ def _correctness_audit(
     ablations: list[dict[str, Any]], alignment: list[dict[str, Any]]
 ) -> dict[str, Any]:
     nested = []
+    validation_fingerprints: dict[tuple[str, int], set[str]] = defaultdict(set)
+    training_reference_flags: list[bool] = []
+    evaluation_reference_flags: list[bool] = []
+    final_test_selection_flags: list[bool] = []
     for benchmark in BENCHMARKS:
         for seed in (0, 1):
-            result = _json(
-                RAW_DIR / f"tangent_actor_high_budget_{benchmark}_s{seed}_points8192.json"
+            for branch in (*BRANCHES, *CONTINUATION_BRANCHES):
+                result = _json(
+                    RAW_DIR / f"tangent_actor_high_budget_{benchmark}_s{seed}_{branch}.json"
+                )
+                if branch == "points8192":
+                    nested.append(result["nested_bank_audit"])
+                training_reference_flags.append(
+                    bool(result["ground_truth_used_for_training_or_selection"])
+                )
+                for phase in result["phases"]:
+                    validation_fingerprints[(benchmark, seed)].add(
+                        phase["labels"]["fixed_validation_bank_fingerprint"]
+                    )
+                    training_reference_flags.extend(
+                        [
+                            bool(phase["ground_truth_used_for_selection"]),
+                            bool(phase["labels"]["ground_truth_used"]),
+                            bool(phase["training"]["used_exact_reference"]),
+                        ]
+                    )
+            actor_evaluation = _json(
+                RAW_DIR / f"actor_evaluation_{benchmark}_s{seed}.json"
             )
-            nested.append(result["nested_bank_audit"])
+            evaluation_reference_flags.append(
+                bool(actor_evaluation["ground_truth_used_for_selection"])
+            )
+            evaluation_reference_flags.extend(
+                bool(item["ground_truth_used"])
+                for item in actor_evaluation["selection"]
+            )
+            final_test_selection_flags.extend(
+                bool(row["final_test_used_for_selection"])
+                for row in actor_evaluation["rows"]
+            )
+            baseline_evaluation = _json(
+                RAW_DIR / f"original_baseline_evaluation_{benchmark}_s{seed}.json"
+            )
+            final_test_selection_flags.extend(
+                bool(row["final_test_used_for_selection"])
+                for row in baseline_evaluation["rows"]
+            )
     original_configs = []
     for benchmark in BENCHMARKS:
         for seed in (0, 1):
@@ -537,16 +581,29 @@ def _correctness_audit(
     for row in alignment:
         if row["selection_type"] == "descriptive_test_envelope" and row["available"]:
             envelope_ok &= _number(row["actual_seconds"]) <= _number(row["budget_seconds"]) + 1e-9
+    validation_bank_ok = all(
+        len(fingerprints) == 1
+        for fingerprints in validation_fingerprints.values()
+    ) and len(validation_fingerprints) == len(BENCHMARKS) * 2
+    training_reference_ok = not any(training_reference_flags)
+    evaluation_reference_ok = not any(evaluation_reference_flags)
+    final_test_selection_ok = not any(final_test_selection_flags)
     return {
         "nested_state_prefixes_verified": all(item["prefix_equality_verified"] for item in nested),
-        "fixed_validation_bank_consistent_across_branches": True,
+        "fixed_validation_bank_consistent_across_branches": validation_bank_ok,
+        "validation_bank_fingerprints": {
+            f"{benchmark}_s{seed}": sorted(fingerprints)
+            for (benchmark, seed), fingerprints in sorted(validation_fingerprints.items())
+        },
         "original_baselines_terminal_aware_features_false": all(original_configs),
-        "ground_truth_used_for_actor_selection": False,
-        "final_test_used_for_checkpoint_selection": False,
+        "ground_truth_used_for_actor_training_or_selection": not training_reference_ok,
+        "ground_truth_used_for_policy_selection": not evaluation_reference_ok,
+        "final_test_used_for_checkpoint_selection": not final_test_selection_ok,
         "budget_envelope_never_uses_future_point": envelope_ok,
         "actor_ablation_rows": len(ablations),
         "passed": all(item["prefix_equality_verified"] for item in nested)
-        and all(original_configs) and envelope_ok,
+        and validation_bank_ok and all(original_configs) and training_reference_ok
+        and evaluation_reference_ok and final_test_selection_ok and envelope_ok,
     }
 
 
@@ -575,13 +632,18 @@ def main() -> None:
         RESULTS_DIR / "numerical_reference_validation.json",
     )
     protocol = _json(Path(__file__).resolve().parent / "protocol.json")
+    execution_manifest = _json(RESULTS_DIR / "execution_manifest.json")
     atomic_json(
         RESULTS_DIR / "reproducibility_metadata.json",
         {
-            "git_commit": subprocess.check_output(
+            "aggregation_parent_commit": subprocess.check_output(
                 ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[3],
                 text=True,
             ).strip(),
+            "job_launcher_commits": {
+                str(job["job_id"]): job["launcher_commit"]
+                for job in execution_manifest["jobs"]
+            },
             "branch": "ir-mlp-tangent-actor-high-budget",
             "protocol": protocol,
             "evaluation_banks": {
