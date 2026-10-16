@@ -96,6 +96,9 @@ def test_calibration_centers_within_state_and_handles_zero_denominator() -> None
     payoff = state_means + 2.0 * h
     alpha, diagnostics = calibrated_alpha(payoff, h)
     assert abs(alpha - 2.0) < 1e-12
+    np.testing.assert_allclose(
+        payoff - alpha * h, np.broadcast_to(state_means, payoff.shape)
+    )
     assert not diagnostics["denominator_was_zero"]
     zero_alpha, zero_diagnostics = calibrated_alpha(payoff, np.zeros_like(h))
     assert zero_alpha == 0.0
