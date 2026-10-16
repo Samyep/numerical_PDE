@@ -1,0 +1,64 @@
+{
+  "aggregation_parent_commit": "a0d8b8675fa0644afdd14736110bd4ca7ae1a2d9",
+  "branch": "ir-mlp-tangent-actor-mcv-quick",
+  "hardware": "NVIDIA GH200 120GB",
+  "protocol": {
+    "benchmarks": [
+      "nonseparable_d100_k2",
+      "joint_concave_d400_k2"
+    ],
+    "calibration": "one scalar alpha per frozen Actor, centered within state over independent antithetic pair averages",
+    "calibration_paths": 512,
+    "checkpoints": [
+      "a1",
+      "a3",
+      "late"
+    ],
+    "experiment": "tangent_actor_mcv_quick_v1",
+    "inference_paths": [
+      64,
+      128,
+      512
+    ],
+    "late_checkpoint": {
+      "joint_concave_d400_k2": {
+        "seed_0": "a7",
+        "seed_1": "a8"
+      },
+      "nonseparable_d100_k2": {
+        "seed_0": "a6",
+        "seed_1": "a6"
+      }
+    },
+    "mc_repetitions": 8,
+    "safeguards": {
+      "actor_retrained": false,
+      "brownian_paths_shared_across_variants": true,
+      "ground_truth_used_for_alpha": false,
+      "ground_truth_used_for_selection": false,
+      "martingale_endpoint": "left pre-increment",
+      "original_solver_modified": false,
+      "q_multiplied_by_sqrt2_again": false,
+      "variance_independent_unit": "antithetic pair average"
+    },
+    "state_count": 128,
+    "time_steps": 32,
+    "training_seeds": [
+      0,
+      1
+    ],
+    "variants": {
+      "calibrated": "Cov(P,H)/Var(H) from independent calibration paths",
+      "direct": 1.0,
+      "no_mcv": 0.0
+    }
+  },
+  "raw_fragments": [
+    "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_mcv_quick/raw/mcv_expand_a3_nonseparable_d100_k2_s0.json",
+    "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_mcv_quick/raw/mcv_expand_d400_s0_joint_concave_d400_k2_s0.json",
+    "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_mcv_quick/raw/mcv_expand_d400_s1_joint_concave_d400_k2_s1.json",
+    "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_mcv_quick/raw/mcv_expand_seed1_nonseparable_d100_k2_s1.json",
+    "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_mcv_quick/raw/mcv_pilot_nonseparable_d100_k2_s0.json"
+  ],
+  "software": "Python 3.12.9; PyTorch 2.10.0+cu129"
+}
