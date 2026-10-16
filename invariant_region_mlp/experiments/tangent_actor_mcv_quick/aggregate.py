@@ -362,6 +362,32 @@ def _runtime_table(runtime: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
+def _accuracy_table(variance: list[dict[str, Any]]) -> str:
+    lines = [
+        "| Benchmark | M | No-MCV replicate RMSE | Direct replicate RMSE | Calibrated replicate RMSE | Direct 8-replicate-mean RMSE |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for benchmark in BENCHMARKS:
+        for paths in (64, 128, 512):
+            local = [
+                row for row in variance
+                if row["benchmark"] == benchmark
+                and row["checkpoint_key"] == "late"
+                and int(row["paths"]) == paths
+            ]
+            plain = [row for row in local if row["variant"] == "no_mcv"]
+            direct = [row for row in local if row["variant"] == "direct"]
+            calibrated = [row for row in local if row["variant"] == "calibrated"]
+            lines.append(
+                f"| {BENCHMARK_LABELS[benchmark]} | {paths} | "
+                f"{_mean_std(plain, 'mean_replicate_rmse', 5)} | "
+                f"{_mean_std(direct, 'mean_replicate_rmse', 5)} | "
+                f"{_mean_std(calibrated, 'mean_replicate_rmse', 5)} | "
+                f"{_mean_std(direct, 'rmse_of_replicate_mean', 5)} |"
+            )
+    return "\n".join(lines)
+
+
 def _render_report(
     variance: list[dict[str, Any]], runtime: list[dict[str, Any]],
     calibration: list[dict[str, Any]], coverage: dict[str, Any],
@@ -478,6 +504,12 @@ def _render_report(
         _runtime_table(runtime),
         "",
         "![Accuracy versus inference compute](figures/mcv_accuracy_vs_inference_compute.png)",
+        "",
+        "## Posthoc accuracy and unchanged bias",
+        "",
+        _accuracy_table(variance),
+        "",
+        "The replicate RMSE includes frozen Actor/Euler bias and finite-path noise. The eight-replicate-mean RMSE suppresses most of the latter and exposes the remaining floor; MCV cannot change that floor because it leaves the discrete policy-value expectation unchanged.",
         "",
         "Calibration is a one-time per-Actor cost. Calibrated efficiency includes one eighth of that cost per reported replicate; direct MCV has no calibration cost.",
         "",
