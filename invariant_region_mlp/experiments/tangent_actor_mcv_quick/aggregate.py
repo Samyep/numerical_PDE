@@ -265,9 +265,9 @@ def _plot_variance(variance: list[dict[str, Any]]) -> None:
         axis.grid(True, which="both", alpha=0.25)
     axes[0].set_ylabel("Variance ratio to ordinary FK (M=128)")
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncol=2, bbox_to_anchor=(0.5, 0.98))
-    fig.suptitle("Martingale control-variate effectiveness across Actor iterations", y=1.07)
-    fig.tight_layout(rect=(0, 0, 1, 0.88))
+    fig.legend(handles, labels, loc="upper center", ncol=2, bbox_to_anchor=(0.5, 0.91))
+    fig.suptitle("Martingale control-variate effectiveness across Actor iterations", y=0.98)
+    fig.tight_layout(rect=(0, 0, 1, 0.84))
     for suffix in ("png", "pdf"):
         fig.savefig(FIGURE_DIR / f"mcv_variance_ratio_by_iteration.{suffix}", dpi=220, bbox_inches="tight")
     plt.close(fig)
@@ -295,8 +295,16 @@ def _plot_accuracy_compute(variance: list[dict[str, Any]]) -> None:
                 marker="o", linewidth=2, color=VARIANT_COLORS[variant],
                 label=VARIANT_LABELS[variant],
             )
+            if variant == "direct":
+                annotation_offset, horizontal_alignment = (-4, -13), "right"
+            else:
+                annotation_offset, horizontal_alignment = (4, 5), "left"
             for paths, point in zip((64, 128, 512), points):
-                axis.annotate(str(paths), point, xytext=(4, 3), textcoords="offset points", fontsize=8)
+                axis.annotate(
+                    str(paths), point, xytext=annotation_offset,
+                    textcoords="offset points", fontsize=8,
+                    ha=horizontal_alignment,
+                )
         axis.set_xscale("log")
         axis.set_yscale("log")
         axis.set_xlabel("Inference seconds for 128 states (calibration amortized)")
@@ -304,17 +312,24 @@ def _plot_accuracy_compute(variance: list[dict[str, Any]]) -> None:
         axis.set_title(BENCHMARK_LABELS[benchmark])
         axis.grid(True, which="both", alpha=0.25)
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncol=3, bbox_to_anchor=(0.5, 0.98))
-    fig.suptitle("Accuracy versus inference compute for the latest Actor", y=1.07)
-    fig.tight_layout(rect=(0, 0, 1, 0.88))
+    fig.legend(handles, labels, loc="upper center", ncol=3, bbox_to_anchor=(0.5, 0.91))
+    fig.suptitle("Accuracy versus inference compute for the latest Actor", y=0.98)
+    fig.tight_layout(rect=(0, 0, 1, 0.84))
     for suffix in ("png", "pdf"):
         fig.savefig(FIGURE_DIR / f"mcv_accuracy_vs_inference_compute.{suffix}", dpi=220, bbox_inches="tight")
     plt.close(fig)
 
 
 def _variance_table(variance: list[dict[str, Any]]) -> str:
+    def ratio_and_ci(rows: list[dict[str, Any]]) -> str:
+        return (
+            f"{_mean(rows, 'variance_ratio_replicates'):.4g} "
+            f"[{min(float(row['variance_ratio_ci95_low']) for row in rows):.4g}, "
+            f"{max(float(row['variance_ratio_ci95_high']) for row in rows):.4g}]"
+        )
+
     lines = [
-        "| Benchmark | Actor | M | Direct R | Calibrated R | Direct reduction | Calibrated reduction |",
+        "| Benchmark | Actor | M | Direct R [paired 95% CI envelope] | Calibrated R [paired 95% CI envelope] | Direct reduction | Calibrated reduction |",
         "|---|---|---:|---:|---:|---:|---:|",
     ]
     for benchmark in BENCHMARKS:
@@ -330,8 +345,7 @@ def _variance_table(variance: list[dict[str, Any]]) -> str:
                 calibrated = [row for row in base if row["variant"] == "calibrated"]
                 lines.append(
                     f"| {BENCHMARK_LABELS[benchmark]} | {checkpoint} | {paths} | "
-                    f"{_mean_std(direct, 'variance_ratio_replicates', 4)} | "
-                    f"{_mean_std(calibrated, 'variance_ratio_replicates', 4)} | "
+                    f"{ratio_and_ci(direct)} | {ratio_and_ci(calibrated)} | "
                     f"{_mean_std(direct, 'effective_variance_reduction', 4)}× | "
                     f"{_mean_std(calibrated, 'effective_variance_reduction', 4)}× |"
                 )
@@ -428,9 +442,12 @@ def _render_report(
         row for row in late
         if row["variant"] == best_variant_by_benchmark[row["benchmark"]]
     ]
-    efficiency = _mean(best_late, "effective_variance_reduction_per_gpu_second")
+    decision_efficiency = _mean(
+        best_late, "effective_variance_reduction_per_gpu_second"
+    )
     decision = (
-        "GO" if all(reproducible_by_benchmark.values()) and consistency and efficiency > 1.1
+        "GO" if all(reproducible_by_benchmark.values())
+        and consistency and decision_efficiency > 1.1
         else "NO-GO"
     )
     direct_late = [row for row in late if row["variant"] == "direct"]
@@ -444,6 +461,7 @@ def _render_report(
     ]
     helps_more_late = direct_ratio < _mean(early, "variance_ratio_replicates")
     chosen = direct_late if direct_suffices else calibrated_late
+    efficiency = _mean(chosen, "effective_variance_reduction_per_gpu_second")
     path_fraction = _mean(chosen, "path_saving_fraction")
     path_factor = _mean(chosen, "effective_variance_reduction")
     overhead = _mean(
@@ -485,11 +503,11 @@ def _render_report(
         "",
         r"No Actor was retrained and the original FK solver was not modified. For every Euler step the auxiliary estimator accumulates $H\leftarrow H+C_mq(t_m,X_m)^\top\Delta W_m$ at the left endpoint before the state and exponential weight are advanced. The ordinary and MCV predictions use the same Brownian paths. A separate 512-path stream estimates one scalar $\alpha$ per Actor after within-state centering.",
         "",
-        "The ordinary implementation reports `martingale_control_variate=False`; identical-seed ordinary values and the $\alpha=0$ augmented values agree to the tolerance recorded in the correctness audit.",
+        r"The ordinary implementation reports `martingale_control_variate=False`; identical-seed ordinary values and the $\alpha=0$ augmented values agree to the tolerance recorded in the correctness audit.",
         "",
         "## Variance ratio across iterations",
         "",
-        "The 95% intervals below are paired state bootstraps of the replicate-variance ratio; all variants share Brownian streams within each replicate.",
+        "The 95% intervals below are paired state bootstraps of the replicate-variance ratio; all variants share Brownian streams within each replicate. Each consolidated interval is the envelope of the two independently trained Actor seeds, while the CSV retains both seed-specific intervals.",
         "",
         _variance_table(variance),
         "",
@@ -530,7 +548,7 @@ def _render_report(
         f"1. **Does MCV help?** {'Yes' if decision == 'GO' else 'Not reliably enough'}. The best late-Actor mean effective variance reduction is **{_mean(best_late, 'effective_variance_reduction'):.3g}×**.",
         f"2. **Does it help more for later Actors?** {'Yes' if helps_more_late else 'No'}. Direct-MCV mean variance ratio changes from **{_mean(early, 'variance_ratio_replicates'):.3g}** at a1 to **{direct_ratio:.3g}** for the late Actors.",
         f"3. **Paths saved for the same standard error:** approximately **{100*path_fraction:.1f}%**, or a **{path_factor:.3g}×** path reduction, for the preferred late-Actor variant under the observed $1/M$ scaling.",
-        f"4. **Does $\alpha=1$ suffice?** {'Yes; calibration gives less than a 10% relative variance advantage.' if direct_suffices else f'No; calibrated mean ratio {calibrated_ratio:.3g} is materially below direct {direct_ratio:.3g}.'}",
+        rf"4. **Does $\alpha=1$ suffice?** {'Yes; calibration gives less than a 10% relative variance advantage.' if direct_suffices else f'No; calibrated mean ratio {calibrated_ratio:.3g} is materially below direct {direct_ratio:.3g}.'}",
         f"5. **Accuracy per GPU second:** the preferred estimator gives **{efficiency:.3g}×** effective variance reduction per GPU second, with mean kernel overhead **{100*overhead:.2f}%**. Its total RMSE benefit can be smaller when Actor/Euler bias dominates.",
         f"6. **Optional inference enhancement:** {'Yes. Keep it inference-only and default to the direct coefficient when calibration is unnecessary.' if decision == 'GO' else 'No under the current evidence; retain the code as a diagnostic only.'}",
     ]
