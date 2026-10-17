@@ -7,6 +7,7 @@
 | PINN-HTE | Same DPI commit | `pinn_100d_T1.0_v16.yaml` | Fixed seeds, wall/memory logging, final state export |
 | D-DBSDE | Same DPI commit | `diffusion_100d_T1.0.yaml` | Fixed seeds, wall/memory logging, final state export; execute the standalone solver once as documented below |
 | SDGD-PINN | `zheyuanhu01/SDGD_PINN` at `c597cc4fe9caac0b3ca118ea84453405f25ff833` | `Section_5.3/HJB_Log.py` defaults | Supply the omitted test file from an independent exact reference; split its otherwise uncheckpointed loop at exact epoch boundaries; export final state afterward |
+| Full-History MLP | Neufeld--Wu gradient-dependent MLP formulation; public SCaSML-bundled implementation at `c2412b942b1720084accf9ac9651c6085e073919` | centered terminal estimator, Beta(1/2) randomized times, multilevel differences, pathwise terminal gradient/Bismut weights | Reuse the existing generic recursion with a frozen six-configuration grid; wrap the original PDE drivers and skip mathematically unused gradient coordinates for the value-only Allen--Cahn driver |
 
 ## Deep BSDE port
 
@@ -93,6 +94,19 @@ an isolated dependency directory.  This changes only post-training file
 serialization; the official source, model, optimizer, losses, samples, and
 reporting frequency remain unchanged.
 
+## Full-History MLP control
+
+The secondary recursive-Monte-Carlo control has no learned parameters and no
+training phase.  It retains the centered terminal estimator, Beta(1/2)
+importance distribution in time, multilevel telescoping differences, and the
+pathwise terminal-gradient/Bismut estimator required by HJB-Log.  The wrapper
+uses the exact original terminal data and diffusion and applies no value
+projection, terminal-aware neural feature, or MCV.  Allen--Cahn's driver
+depends only on value, so its recursive state is scalar and the unused
+100-dimensional gradient calculation is omitted; same-seed CPU audits before
+and after this optimization gave bitwise-identical values.  The six `(n,M)`
+configurations and three seeds were frozen before any result was opened.
+
 ## Fixed-configuration reproduction status
 
 The official configurations were run once for each amortized DPI-family
@@ -108,6 +122,8 @@ These are fixed reproductions rather than baseline hyperparameter searches.
 | D-DBSDE, OU/GMM common 960-state bank | 1 | Value RMSE `30.7247` | 453.05 s |
 | SDGD-PINN, HJB-Log common 960-state bank | 1 | Value RMSE `0.0299212` | 11,402.80 s |
 | SDGD-PINN, HJB-Log at `u(0,0)` | 1 | absolute error `2.06813` | 11,402.80 s |
+| Full-History MLP `(3,24)`, HJB-Log common 960-state bank | 3 | Value RMSE `0.001073 ± 0.000016` | no training; `0.769 s` inference |
+| Full-History MLP `(3,24)`, Allen–Cahn common 410-state bank | 3 | Value RMSE `0.000205 ± 0.000005` | no training; `0.317 s` inference |
 
 The uncertainty after `±` is the sample standard deviation across seeds, not
 a confidence interval.  DPI, PINN-HTE, D-DBSDE, and SDGD-PINN have one official
@@ -118,4 +134,11 @@ states used for Tangent-Actor.  Its `u(0,0)` value is evaluated separately and
 is not inferred from the distributed RMSE.  The formal comparison report also
 keeps DPI's distributed function task separate from diagnostic values at
 `x=0`, which is not that benchmark's published native task.
+
+The Full-History entries are the lowest function-RMSE configurations observed
+inside the frozen six-configuration grid, not configurations selected before
+evaluation.  The comparison report therefore includes all 36 grid results and
+uses these two rows only as descriptive accuracy endpoints.  The complete grid
+allocation, including 36 independent Python and `srun` launches, consumed 132
+GPU seconds and produced no nonfinite values.
 

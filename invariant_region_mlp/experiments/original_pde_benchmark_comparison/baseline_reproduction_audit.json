@@ -1,0 +1,203 @@
+{
+  "calibration_and_audit_trials": [
+    {
+      "artifact": "official_dpi_d_dbsde_s0_calibration_evaluation.json",
+      "benchmark": "dpi_ou_gmm_d100",
+      "headline": false,
+      "method": "d_dbsde",
+      "training_seconds": 3.639733472838998,
+      "value_rmse": 35.84070702052899
+    },
+    {
+      "artifact": "official_dpi_dpi_s0_calibration_evaluation.json",
+      "benchmark": "dpi_ou_gmm_d100",
+      "headline": false,
+      "method": "dpi",
+      "training_seconds": 8.140010845847428,
+      "value_rmse": 120.37941601769892
+    },
+    {
+      "artifact": "official_dpi_pinn_hte_s0_calibration_evaluation.json",
+      "benchmark": "dpi_ou_gmm_d100",
+      "headline": false,
+      "method": "pinn_hte",
+      "training_seconds": 4.712320293998346,
+      "value_rmse": 100.76952818974117
+    },
+    {
+      "artifact": "official_dpi_dpi_s0_full_data_one_iteration_evaluation.json",
+      "benchmark": "dpi_ou_gmm_d100",
+      "headline": false,
+      "method": "dpi",
+      "training_seconds": 15.763860854320228,
+      "value_rmse": 120.83124751653352
+    },
+    {
+      "artifact": "official_sdgd_s0_calibration_evaluation.json",
+      "benchmark": "hjb_log_d100",
+      "headline": false,
+      "method": "sdgd_pinn_official",
+      "training_seconds": 121.470100549981,
+      "value_rmse": 0.3948458454720484
+    }
+  ],
+  "calibration_is_headline_result": false,
+  "failed_or_cancelled_allocations": [
+    {
+      "elapsed_seconds": 4,
+      "exit_code": "0:0",
+      "job_id": "3396188",
+      "job_name": "orig_actor_hjb",
+      "state": "CANCELLED by 93898"
+    },
+    {
+      "elapsed_seconds": 0,
+      "exit_code": "0:0",
+      "job_id": "3396276",
+      "job_name": "orig_dpi_cal_s",
+      "state": "CANCELLED by 93898"
+    },
+    {
+      "elapsed_seconds": 0,
+      "exit_code": "0:0",
+      "job_id": "3396290",
+      "job_name": "orig_dpi_cal_s",
+      "state": "CANCELLED by 93898"
+    },
+    {
+      "elapsed_seconds": 49,
+      "exit_code": "1:0",
+      "job_id": "3396294",
+      "job_name": "orig_dpi_cal_s",
+      "state": "FAILED"
+    },
+    {
+      "elapsed_seconds": 129,
+      "exit_code": "1:0",
+      "job_id": "3396326",
+      "job_name": "orig_sdgd_cal",
+      "state": "FAILED"
+    },
+    {
+      "elapsed_seconds": 0,
+      "exit_code": "0:0",
+      "job_id": "3396460",
+      "job_name": "orig_dpi_full1",
+      "state": "CANCELLED by 93898"
+    },
+    {
+      "elapsed_seconds": 56,
+      "exit_code": "1:0",
+      "job_id": "3396467",
+      "job_name": "orig_dpi_full_s",
+      "state": "FAILED"
+    },
+    {
+      "elapsed_seconds": 11,
+      "exit_code": "1:0",
+      "job_id": "3398242",
+      "job_name": "orig_actor_eval",
+      "state": "FAILED"
+    },
+    {
+      "elapsed_seconds": 20,
+      "exit_code": "1:0",
+      "job_id": "3398612",
+      "job_name": "orig_sdgd_chunk",
+      "state": "FAILED"
+    }
+  ],
+  "fidelity_controls": {
+    "baseline_mcv_added": false,
+    "baseline_terminal_aware_feature_added": false,
+    "d_dbsde_launcher_correction": "standalone solver executed once instead of inherited redundant outer N=40 loop",
+    "deep_bsde_framework_port_algorithmic_changes": [],
+    "dpi_checkpoint_compatibility": "restore pre-PyTorch-2.6 torch.load weights_only=False default for locally generated checkpoints",
+    "dpi_non_numerical_change": "Rich progress display disabled under Slurm",
+    "full_history_mcv_added": false,
+    "full_history_recursive_value_projection": false,
+    "full_history_terminal_aware_neural_feature": false,
+    "sdgd_posttraining_dependency": "isolated openpyxl==3.1.5 for xlsx serialization",
+    "sdgd_resumable_loop_equivalence": {
+      "all_parameters_bitwise_equal": true,
+      "compared_epochs": 100,
+      "maximum_parameter_absolute_difference": 0.0,
+      "per_tensor_maximum_absolute_difference": {
+        "nn.0.bias": 0.0,
+        "nn.0.weight": 0.0,
+        "nn.2.bias": 0.0,
+        "nn.2.weight": 0.0,
+        "nn.4.bias": 0.0,
+        "nn.4.weight": 0.0,
+        "nn.6.bias": 0.0,
+        "nn.6.weight": 0.0
+      },
+      "seed": 0,
+      "tag": "equivalence100"
+    }
+  },
+  "methods": {
+    "d_dbsde": {
+      "benchmarks": [
+        "dpi_ou_gmm_d100"
+      ],
+      "best_function_rmse": 30.724748743130068,
+      "best_native_absolute_error": 71.17706332545382,
+      "completed_function_evaluations": 1,
+      "completed_native_evaluations": 1
+    },
+    "deep_bsde_official_pytorch_compatibility_port": {
+      "benchmarks": [
+        "allen_cahn_d100",
+        "hjb_log_d100"
+      ],
+      "best_function_rmse": null,
+      "best_native_absolute_error": 3.115870831641582e-05,
+      "completed_function_evaluations": 0,
+      "completed_native_evaluations": 6
+    },
+    "dpi": {
+      "benchmarks": [
+        "dpi_ou_gmm_d100"
+      ],
+      "best_function_rmse": 17.663799525399465,
+      "best_native_absolute_error": 143.98226709944578,
+      "completed_function_evaluations": 1,
+      "completed_native_evaluations": 1
+    },
+    "full_history_mlp_raw": {
+      "benchmarks": [
+        "allen_cahn_d100",
+        "hjb_log_d100"
+      ],
+      "best_function_rmse": 0.0001989729253736686,
+      "best_native_absolute_error": 1.776621260003719e-05,
+      "completed_function_evaluations": 36,
+      "completed_native_evaluations": 36
+    },
+    "pinn_hte": {
+      "benchmarks": [
+        "dpi_ou_gmm_d100"
+      ],
+      "best_function_rmse": 38.66978541094191,
+      "best_native_absolute_error": 148.02557591053187,
+      "completed_function_evaluations": 1,
+      "completed_native_evaluations": 1
+    },
+    "sdgd_pinn_official": {
+      "benchmarks": [
+        "hjb_log_d100"
+      ],
+      "best_function_rmse": 0.029921198015246307,
+      "best_native_absolute_error": 2.0681294637101075,
+      "completed_function_evaluations": 1,
+      "completed_native_evaluations": 1
+    }
+  },
+  "source_commits": {
+    "DeepBSDE": "e76fed80b1995daf4a0dd6d3e2cf64a0931dabda",
+    "DeepPicardIteration": "e8616c2f531c9f95299b246a13c1180b8f02822a",
+    "HTE_PINN": "8b9ca6310cc9d050a54f92528401573413567fe4",
+    "SDGD_PINN": "c597cc4fe9caac0b3ca118ea84453405f25ff833"
+  }
+}

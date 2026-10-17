@@ -52,11 +52,12 @@ training loop.  No baseline receives the Tangent-Actor terminal construction
 or MCV.
 
 The Full-History launcher keeps the frozen six-configuration, three-seed grid
-as its default.  Its `BENCHMARKS`, `CONFIGURATIONS` (for example `3:24`), and
-`SEEDS` exports only partition that same grid across allocations when the
-two-hour queue limit requires it.  Completed atomic result files are skipped
-by default, so a timed-out partition can be resumed without rerunning finished
-configurations; set `SKIP_EXISTING=0` only for an intentional reproduction.
+as its default in a 30-minute, backfill-friendly allocation.  Its `BENCHMARKS`,
+`CONFIGURATIONS` (for example `3:24`), and `SEEDS` exports only partition that
+same grid across allocations when needed.  Completed atomic result files are
+skipped by default, so a timed-out partition can be resumed without rerunning
+finished configurations; set `SKIP_EXISTING=0` only for an intentional
+reproduction.
 
 After all jobs finish, regenerate the auditable tables and figures with:
 

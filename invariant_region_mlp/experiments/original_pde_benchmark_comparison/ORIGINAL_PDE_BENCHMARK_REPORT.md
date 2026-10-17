@@ -18,11 +18,14 @@ and a replicated common-state policy-value bank.  Final test references are
 opened only after the checkpoint is frozen.  A later screen of all checkpoints
 is descriptive and is never used to change the selected method.
 
-All GPU runs use one NVIDIA GH200 120 GB GPU.  Reported training and inference
-times are synchronized wall times.  Failed and restarted allocations remain in
-the resource audit.
+All completed numerical runs use one NVIDIA GH200 120 GB GPU.  Reported
+training and inference times are synchronized wall times.  Failed and
+restarted allocations remain in the resource audit, including one accidental
+four-GPU request cancelled after four seconds before numerical work.
 
 ## Benchmarks
+
+### Table 1 — PDE benchmarks
 
 | Benchmark | PDE and terminal condition | Native task | Independent reference | Eligibility |
 |---|---|---|---|---|
@@ -63,9 +66,9 @@ iteration schedules.  It remains a native single-point solver.
 | SDGD-PINN | HJB-Log common 960-state bank | 1 | `0.0299212` RMSE | 11,402.80 s |
 
 The `±` entries are sample standard deviations across independent seeds.  The
-DPI-family entries have one fixed official run and provide no seed-stability
-estimate.  DPI's value at `x=0` is reported only as a diagnostic because its
-published benchmark is the distributed function task.
+DPI-family and SDGD-PINN entries have one fixed official run and provide no
+seed-stability estimate.  DPI's value at `x=0` is reported only as a diagnostic
+because its published benchmark is the distributed function task.
 
 The official SDGD-PINN run completed all 10,000 published epochs.  Its
 otherwise monolithic loop was split at epoch 5,000 while preserving model,
@@ -165,21 +168,30 @@ the frozen 64-step Actor RMSE is far below DPI (`17.6638`), PINN-HTE
 official seed, so the magnitude is compelling but is not presented as a
 multi-seed significance test.
 
-The native published-point comparison remains a different task:
+### Table 2 — Native-task accuracy
+
+The native published-point comparison remains a different task.  The
+Full-History row uses the member with the lowest function-bank RMSE in its
+frozen grid; all six configurations are reported below, so this descriptive
+label is not presented as a preregistered selection.
 
 | Benchmark and method | Native absolute error | Training | Native inference | Interpretation |
 |---|---:|---:|---:|---|
 | HJB-Log Tangent-Actor | `0.003150 ± 0.000207` | `1030.3 ± 75.9 s` | `25.84 ± 1.14 s` | more accurate, substantially slower at one query |
 | HJB-Log Deep BSDE | `0.009678 ± 0.002761` | `65.15 s` | included in training output | native single-point baseline |
 | HJB-Log SDGD-PINN | `2.06813` | `11402.80 s` | `0.00068 s` | official amortized model evaluated at the native point |
+| HJB-Log Full-History `n3/M24` | `0.001647 ± 0.00175` | none | `0.00383 ± 0.00007 s` | inference-only; large three-seed point-estimator spread |
 | Allen–Cahn Tangent-Actor | `0.0000295 ± 0.0000241` | `580.2 ± 63.8 s` | `26.20 ± 1.04 s` | mean MC SE is `0.0000467`; reference-limited |
 | Allen–Cahn Deep BSDE | `0.0001691 ± 0.0001798` | `127.69 s` | included in training output | seed spread exceeds its mean error |
+| Allen–Cahn Full-History `n3/M24` | `0.0001969 ± 0.000220` | none | `0.00309 ± 0.00007 s` | inference-only; point estimate is reference- and sampling-limited |
 
-Thus Tangent-Actor is more accurate on the HJB-Log native point but does not
-win on single-query runtime.  Its training cost is amortized only when the
-learned function is queried repeatedly.  On Allen–Cahn the Actor mean error is
-lower, but its MC standard error and the independent-reference uncertainty
-prevent a fine-grained ranking of very small point errors.
+Thus Tangent-Actor is more accurate than Deep BSDE and SDGD-PINN on the
+HJB-Log native point but does not win on single-query runtime.  The displayed
+Full-History mean is lower still, with a standard deviation slightly larger
+than its mean.  Actor training cost is amortized only when the learned
+function is queried repeatedly.  On Allen–Cahn the Actor mean error is lower,
+but its MC standard error and the independent-reference uncertainty prevent a
+fine-grained ranking of very small point errors.
 
 ### MC, time discretization, and Actor error
 
@@ -292,3 +304,211 @@ statistical dominance.  Allen–Cahn comparisons within roughly `1e-5` of the
 reference are labelled reference-limited.  A variance-reduction factor only
 compares estimator variances on shared paths; it is never interpreted as a
 factor reduction in Value RMSE or systematic bias.
+
+## Frozen Full-History MLP control
+
+The Full-History control has no learned parameters or training phase.  The
+grid below was fixed before results were opened.  Entries are mean ± sample
+standard deviation across three independent estimator seeds.  Function timing
+is synchronized GPU time for the full common bank: 960 HJB-Log states and 410
+Allen–Cahn states.  It excludes Python and `srun` startup, as do the timed
+training and inference kernels for the neural methods.  The complete
+36-process allocation, including every interpreter and scheduler launch, took
+132 GPU seconds.
+
+| Benchmark | `(n,M)` | Value RMSE | Relative L2 | Bias | Function inference | Native absolute error |
+|---|---:|---:|---:|---:|---:|---:|
+| HJB-Log | `(2,16)` | `0.007426 ± 0.000125` | `0.001620 ± 0.000027` | `-0.000123 ± 0.000385` | `0.1109 ± 0.0002 s` | `0.00235 ± 0.00231` |
+| HJB-Log | `(2,32)` | `0.003819 ± 0.000052` | `0.000833 ± 0.000011` | `-0.000136 ± 0.000089` | `0.1086 ± 0.0031 s` | `0.00614 ± 0.00286` |
+| HJB-Log | `(3,8)` | `0.005371 ± 0.000147` | `0.001172 ± 0.000032` | `-0.000825 ± 0.000111` | `0.1844 ± 0.0039 s` | `0.00936 ± 0.00729` |
+| HJB-Log | `(3,12)` | `0.002917 ± 0.000113` | `0.000636 ± 0.000025` | `-0.000439 ± 0.000026` | `0.1825 ± 0.0045 s` | `0.00127 ± 0.00092` |
+| HJB-Log | `(3,16)` | `0.001888 ± 0.000031` | `0.000412 ± 0.000007` | `-0.000404 ± 0.000060` | `0.2585 ± 0.0213 s` | `0.00249 ± 0.00212` |
+| HJB-Log | `(3,24)` | `0.001073 ± 0.000016` | `0.000234 ± 0.000003` | `-0.000273 ± 0.000023` | `0.7689 ± 0.0161 s` | `0.00165 ± 0.00175` |
+| Allen–Cahn | `(2,16)` | `0.001323 ± 0.000072` | `0.02887 ± 0.00158` | `-0.000607 ± 0.000043` | `0.0773 ± 0.0014 s` | `0.00216 ± 0.00099` |
+| Allen–Cahn | `(2,32)` | `0.001124 ± 0.000020` | `0.02454 ± 0.00044` | `-0.000646 ± 0.000037` | `0.0780 ± 0.0004 s` | `0.00201 ± 0.00078` |
+| Allen–Cahn | `(3,8)` | `0.000541 ± 0.000018` | `0.01182 ± 0.00039` | `-0.000036 ± 0.000022` | `0.1036 ± 0.0005 s` | `0.000612 ± 0.000540` |
+| Allen–Cahn | `(3,12)` | `0.000389 ± 0.000019` | `0.00850 ± 0.00041` | `-0.000059 ± 0.000013` | `0.1072 ± 0.0052 s` | `0.000350 ± 0.000280` |
+| Allen–Cahn | `(3,16)` | `0.000291 ± 0.000002` | `0.00635 ± 0.00004` | `-0.000042 ± 0.000013` | `0.1316 ± 0.0082 s` | `0.000343 ± 0.000502` |
+| Allen–Cahn | `(3,24)` | `0.000205 ± 0.000005` | `0.00448 ± 0.00012` | `-0.000046 ± 0.000013` | `0.3171 ± 0.0081 s` | `0.000197 ± 0.000220` |
+
+All 36 estimators were finite.  The best observed grid member is `(3,24)` on
+both PDEs, but it is labelled descriptively because the protocol commits to
+reporting the complete grid rather than selecting a configuration with Ground
+Truth.  Tangent-Actor lowers its RMSE by only 20.5% on HJB-Log and 18.8% on
+Allen–Cahn.  That accuracy increment costs orders of magnitude more: for
+HJB-Log, `0.7689` seconds of Full-History inference becomes `1030.3 + 101.6`
+seconds of Actor training and inference.  Even the entire two-PDE,
+three-seed Full-History grid consumed only 132 allocated GPU seconds.  These
+data contradict an efficiency advantage over Full-History MLP on the two
+supported original PDEs.
+
+## Consolidated fixed comparison
+
+### Table 3 — Amortized function accuracy
+
+The table uses the frozen Actor and fixed official baselines.  The
+Full-History entry is the highest-accuracy observed member of the fully
+reported frozen grid.  Total time is training plus inference on the indicated
+bank and excludes diagnostic Ground-Truth gradients.
+
+| Benchmark | Method | Seeds | States | Value RMSE | Relative L2 | Training | Inference | Total |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| HJB-Log | Full-History MLP `(3,24)` | 3 | 960 | `0.001073 ± 0.000016` | `0.000234 ± 0.000003` | none | `0.769 s` | `0.769 s` |
+| HJB-Log | Tangent-Actor + MCV | 3 | 960 | `0.000854 ± 0.000037` | `0.000186 ± 0.000008` | `1030.3 s` | `101.6 s` | `1132.0 s` |
+| HJB-Log | SDGD-PINN | 1 | 960 | `0.029921` | `0.006527` | `11402.8 s` | `0.187 s` | `11403.0 s` |
+| OU/GMM HJB | Tangent-Actor + MCV | 3 | 960 | `0.22095 ± 0.00149` | `0.000713 ± 0.000005` | `1382.3 s` | `134.2 s` | `1516.4 s` |
+| OU/GMM HJB | DPI | 1 | 960 | `17.6638` | `0.05697` | `627.4 s` | `0.119 s` | `627.5 s` |
+| OU/GMM HJB | PINN-HTE | 1 | 960 | `38.6698` | `0.12472` | `767.2 s` | `0.120 s` | `767.3 s` |
+| OU/GMM HJB | D-DBSDE | 1 | 960 | `30.7247` | `0.09910` | `453.0 s` | `0.117 s` | `453.2 s` |
+| Allen–Cahn | Full-History MLP `(3,24)` | 3 | 410 | `0.000205 ± 0.000005` | `0.00448 ± 0.00012` | none | `0.317 s` | `0.317 s` |
+| Allen–Cahn | Tangent-Actor | 3 | 410 | `0.000167 ± 0.000008` | `0.00364 ± 0.00018` | `580.2 s` | `44.3 s` | `624.6 s` |
+
+Tangent-Actor is 35.1 times more accurate than SDGD-PINN on HJB-Log while
+using about one tenth of its total time.  On OU/GMM it is 79.9 times more
+accurate than DPI, 175.0 times more accurate than PINN-HTE, and 139.1 times
+more accurate than D-DBSDE, but takes 2.4, 2.0, and 3.3 times their total time,
+respectively.  These are one-run official neural baselines, so the ratios
+describe the observed fixed runs rather than seed-level significance.
+
+## Compute, memory, and stability
+
+| Benchmark and method | Parameters | Peak GPU bytes | Nonfinite count |
+|---|---:|---:|---:|
+| HJB-Log Tangent-Actor | 521,188 | 138,283,520 | 0 |
+| HJB-Log Full-History `(3,24)` | 0 | 138,526,720 | 0 |
+| HJB-Log SDGD-PINN | 2,204,673 | 893,657,088 | 0 |
+| HJB-Log Deep BSDE | 665,861 | 103,439,872 | 0 |
+| OU/GMM Tangent-Actor | 521,188 | 155,096,064 | 0 |
+| OU/GMM DPI | 967,624 | 98,693,219,840 | 0 |
+| OU/GMM PINN-HTE | 967,624 | 2,464,704,512 | 0 |
+| OU/GMM D-DBSDE | 967,624 | 3,565,502,464 | 0 |
+| Allen–Cahn Tangent-Actor | 483,073 | 109,887,488 | 0 |
+| Allen–Cahn Full-History `(3,24)` | 0 | 85,722,112 | 0 |
+| Allen–Cahn Deep BSDE | 665,861 | 102,528,000 | 0 |
+
+The complete study used 32 Slurm allocation records: 10.752 completed GH200
+GPU-hours and 0.078 failed or cancelled GPU-hours.  The latter includes every
+calibration failure, an accidental four-GPU launch cancelled after four
+seconds, a failed evaluation launch, and the 20-second SDGD RNG-device resume
+failure.  None is removed from `runtime_resource_accounting.csv`.  The
+headline method times in Tables 2 and 3 are per solve; the allocation total
+also includes broad Actor tuning, conditional trials, reference audits,
+independent seeds, diagnostics, and failed starts.
+
+For amortized workloads, Figure 2 evaluates `K=1,16,128,960` and uses
+`E*(C)=min_{i:C_i<=C} E_i`.  Full-History owns the low-budget envelope on both
+supported PDEs.  The frozen Actor enters the HJB-Log envelope only around
+1,132 seconds, lowering RMSE from `0.001073` to `0.000854`; on Allen–Cahn it
+enters around 684 seconds for `K=960`, lowering `0.000205` to `0.000167`.
+The dashed Actor curve is the explicitly descriptive postselection screen and
+does not alter the primary envelope.  Figure 1 places zero-training
+Full-History points at a `0.01`-second display floor because its horizontal axis
+is logarithmic; Figure 2 uses their actual measured total inference time.
+
+Deep BSDE remains much faster for one native point: approximately 67 total
+seconds for HJB-Log and 130 seconds for Allen–Cahn, versus roughly 1,056 and
+606 seconds for Actor training plus native inference.  If one only extrapolates
+cost and assumes independent Deep BSDE retraining at every point, batched Actor
+cost crosses below Deep BSDE at about 16 HJB queries and five Allen–Cahn
+queries.  This is a cost crossover, not a multi-query accuracy claim, because
+the native Deep BSDE architecture supplies no common-bank function prediction.
+
+## Answers to the research questions
+
+1. **Eligible original PDEs.** HJB-Log and OU/GMM have globally concave
+   quadratic gradient drivers; Allen–Cahn is concave on its rigorously
+   invariant `[0,1]` interval.  All three are semilinear with a linear
+   highest-order operator.  HJB-Rosenbrock has a compatible driver but was
+   excluded because its official test data are missing and the available
+   reference is not accurate enough for a headline comparison.
+
+2. **Deep BSDE.** At the published point, Tangent-Actor has lower observed
+   error on HJB-Log (`0.003150` versus `0.009678`) but costs much more for one
+   query.  Its Allen–Cahn mean is also lower (`0.0000295` versus `0.0001691`),
+   but Actor MC error, Deep BSDE seed spread, and the `9.64e-6` reference proxy
+   make this a qualified result rather than a precise ranking.
+
+3. **Deep Picard Iteration.** Yes on the official 960-state OU/GMM function
+   task: `0.22095` versus `17.6638` RMSE.  The Actor run is about 2.4 times
+   slower and its 64-step error is still dominated by Euler bias; 128 steps
+   reduce its seed-0 RMSE further to `0.08768`.
+
+4. **PINNs.** The frozen Actor beats SDGD-PINN on HJB-Log (`0.000854` versus
+   `0.029921` RMSE) with about one tenth of the total time.  It also beats
+   PINN-HTE on OU/GMM (`0.22095` versus `38.6698`) but costs about twice as
+   much.  There is no original amortized PINN result for the selected
+   Allen–Cahn protocol.
+
+5. **GPU-time budgets.** Below one second of timed inference, Full-History
+   reaches `0.001073` on HJB-Log and `0.000205` on Allen–Cahn.  The frozen
+   Actor improves those errors modestly only after hundreds to more than one
+   thousand seconds.  On OU/GMM the official neural baselines occupy the
+   453–767 second range with RMSE 17.7–38.7; the frozen Actor uses about 1,516
+   seconds and reaches `0.221`.  Lower-budget Actor checkpoints look strong in
+   the descriptive test screen, but they were not selected with an admissible
+   final-test rule and cannot replace the frozen headline.
+
+6. **Single point versus multiple queries.** Deep BSDE wins single-query
+   runtime; Tangent-Actor gives lower observed point error but does not hide
+   its training overhead.  Its batched cost becomes preferable to retraining
+   Deep BSDE near 16 HJB or five Allen–Cahn queries.  Full-History remains much
+   cheaper across all tested query counts on the two PDEs it supports.
+
+7. **Important Actor hyperparameters.** Iteration count matters most on
+   OU/GMM, where all four updates give independently replicated positive
+   policy improvements.  Width and depth matter mainly in the low-budget HJB
+   search.  More points, paths, or label steps alone do not reliably improve
+   the policy.  MCV sharply reduces label and inference variance, while its
+   matched-round policy benefit over plain-FK training is unresolved.
+
+8. **Systematic error after tuning.** Tuning produces stable, strong neural
+   baseline results but does not remove systematic error.  HJB-Log retains a
+   non-MC RMSE proxy of `0.000435`.  OU/GMM retains `0.21999`, driven mainly by
+   time discretization and reference-free checkpoint ranking; increasing from
+   64 to 128 Euler steps cuts seed-0 RMSE from `0.21976` to `0.08768`.  Cleaner
+   upper-budget labels by themselves do not improve the chosen Actor.
+
+9. **Efficiency relative to Full-History MLP.** The evidence is negative on
+   these benchmarks.  Actor is only 20.5% and 18.8% more accurate than the
+   strongest frozen Full-History result on HJB-Log and Allen–Cahn, while one
+   Actor solve costs far more than the complete 36-run Full-History grid.  The
+   current zero-drift recursive wrapper does not cover OU/GMM, so that PDE
+   supplies no countervailing Full-History evidence.
+
+10. **Defensible ICML-level claim.** The data support a conditional claim:
+    terminal-aware Tangent-Actor with direct MCV is stable across three
+    original 100D semilinear PDEs and substantially improves on fixed official
+    amortized neural baselines in Value accuracy, with verified iterative
+    policy improvement and useful variance reduction.  They do not support a
+    general efficiency claim over recursive nonlinear Monte Carlo, nor a
+    universal single-query advantage.  A paper centered on replacing
+    Full-History MLP would need benchmarks where effective dimension,
+    nonseparability, or recursion depth makes the matched Full-History control
+    genuinely costly.  With the present evidence, that stronger positioning is
+    a no-go; the neural-baseline and Actor-iteration result is a conditional go.
+
+## Research conclusion
+
+The study changes the proposed story.  Tangent-Actor + MCV is a strong
+high-dimensional neural function approximator on the three eligible original
+benchmarks.  It clearly outperforms the tested official DPI, PINN-HTE,
+D-DBSDE, and SDGD-PINN runs in Value RMSE, and it gives lower mean native-point
+error than Deep BSDE.  Its advantages have explicit costs and limitations:
+single-point runtime is worse, Allen–Cahn is reference-limited, OU/GMM is
+Euler-limited, and the raw Full-History estimator is already extremely strong
+on HJB-Log and Allen–Cahn.  The appropriate outcome is therefore
+**CONDITIONAL GO** for the Tangent-Actor method and **NO-GO** for the current
+claim that it is a more efficient replacement for Full-History MLP.
+
+## Generated artifacts
+
+The publication figures are
+[accuracy versus training time](figures/accuracy_vs_training_gpu_time.png),
+[the true total-compute envelope](figures/total_compute_budget_envelope.png),
+[Actor hyperparameter scaling](figures/tangent_actor_hyperparameter_scaling.png),
+and [error/compute decomposition](figures/error_and_compute_decomposition.png).
+Their vector PDF versions are stored beside the PNG files.  The underlying
+rows are in `native_task_comparison.csv`,
+`function_approximation_comparison.csv`, `hyperparameter_trials.csv`,
+`training_compute_frontier.csv`, `total_compute_frontier.csv`, and
+`runtime_resource_accounting.csv`.

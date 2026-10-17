@@ -1,0 +1,70 @@
+{
+  "benchmarks": {
+    "allen_cahn_d100": {
+      "T": 0.3,
+      "actor_kind": "value",
+      "dimension": 100,
+      "driver": "f(u)=u-u^3",
+      "equation": "u_t + Delta u + u - u^3 = 0",
+      "input_scale": 4.0,
+      "name": "allen_cahn_d100",
+      "native_horizon": 0.3,
+      "native_initial_state": "x0=0",
+      "reference": "independent radial squared-radius PDE convergence study",
+      "sigma": 1.4142135623730951,
+      "tangent_domain_justification": "comparison principle preserves 0<=u<=1",
+      "terminal": "1/(2+0.4||x||^2)",
+      "value_bounds": [
+        0.0,
+        1.0
+      ],
+      "z_convention": "z=sigma*grad(u)"
+    },
+    "dpi_ou_gmm_d100": {
+      "T": 1.0,
+      "actor_kind": "gradient",
+      "base_drift_used_by_tangent_solver": "-F=theta(x-mu)",
+      "dimension": 100,
+      "driver_z_form": "f(z,x)=-F.grad(u)-||z||^2/2-d theta",
+      "equation": "u_t + alpha/2 Delta u - theta(mu-x).grad u - alpha/2||grad u||^2 - d theta = 0",
+      "evaluation_distribution": "t~U[0,1], x|t~N(0,(4+t)I)",
+      "exact_solution": "negative log density of GMM evolved by forward OU process",
+      "input_scale": 2.23606797749979,
+      "name": "dpi_ou_gmm_d100",
+      "official_missing_variance_recovery": "five covariance matrices fixed to 2I per source constructor",
+      "sigma": 1.0,
+      "terminal": "negative log density of official five-component GMM",
+      "value_bounds": null,
+      "z_convention": "z=sigma*grad(u)"
+    },
+    "hjb_log_d100": {
+      "T": 1.0,
+      "actor_kind": "gradient",
+      "dimension": 100,
+      "driver": "f(z)=-||z||^2/2",
+      "equation": "u_t + Delta u - ||grad u||^2 = 0",
+      "input_scale": 1.0,
+      "name": "hjb_log_d100",
+      "native_horizon": 1.0,
+      "native_initial_state": "x0=0",
+      "reference": "independent Hopf-Cole one-dimensional quadrature",
+      "sigma": 1.4142135623730951,
+      "terminal": "log((1+||x||^2)/2)",
+      "value_bounds": null,
+      "z_convention": "z=sigma*grad(u)"
+    }
+  },
+  "excluded": {
+    "hjb_rosenbrock": {
+      "compatible_driver": true,
+      "included": false,
+      "reason": "official repository omits its generated test/reference data; the supplied generator uses only 1000 effective MC paths per point and does not quantify reference error, so it fails the independent-reference eligibility rule"
+    }
+  },
+  "source_commits": {
+    "DeepBSDE": "e76fed80b1995daf4a0dd6d3e2cf64a0931dabda",
+    "DeepPicardIteration": "e8616c2f531c9f95299b246a13c1180b8f02822a",
+    "HTE_PINN": "8b9ca6310cc9d050a54f92528401573413567fe4",
+    "SDGD_PINN": "c597cc4fe9caac0b3ca118ea84453405f25ff833"
+  }
+}

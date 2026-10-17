@@ -1,0 +1,61 @@
+{
+  "M": 16,
+  "benchmark": "allen_cahn_d100",
+  "configuration_grid_frozen_before_results": true,
+  "dtype": "float32",
+  "function": {
+    "chunk_size": 19,
+    "metrics": {
+      "bias": -4.309980620117344e-05,
+      "mae": 0.0001981939235333251,
+      "relative_l2": 0.006397319348121406,
+      "rmse": 0.00029304080701803335
+    },
+    "peak_gpu_bytes": 98009600,
+    "states": 410,
+    "stats": {
+      "driver_evaluations": 223040,
+      "nonfinite_count": 0,
+      "recursive_calls": 110,
+      "recursive_states": 223450,
+      "terminal_samples": 6822400,
+      "transition_samples": 216480,
+      "value_projection_count": 0
+    },
+    "wall_seconds": 0.14098317781463265
+  },
+  "function_inference_seconds": 0.14098317781463265,
+  "ground_truth_used_for_configuration_selection": false,
+  "inference_seconds": 0.1444806377403438,
+  "mcv": false,
+  "method": "full_history_mlp_raw",
+  "n": 3,
+  "native": {
+    "absolute_error": 0.000922501390355393,
+    "chunk_size": 19,
+    "peak_gpu_bytes": 5163008,
+    "point": "t=0,x=0",
+    "prediction": 0.053703851997852325,
+    "reference": 0.05278135060749693,
+    "stats": {
+      "driver_evaluations": 544,
+      "nonfinite_count": 0,
+      "recursive_calls": 5,
+      "recursive_states": 545,
+      "terminal_samples": 16640,
+      "transition_samples": 528,
+      "value_projection_count": 0
+    },
+    "wall_seconds": 0.003497459925711155
+  },
+  "native_inference_seconds": 0.003497459925711155,
+  "parameter_count": 0,
+  "pathwise_terminal_gradient": false,
+  "prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/predictions/full_history_mlp_allen_cahn_d100_n3_M16_s1.npz",
+  "recursive_value_projection": false,
+  "seed": 1,
+  "terminal_aware_neural_feature": false,
+  "total_seconds": 0.1444806377403438,
+  "training_seconds": 0.0,
+  "value_only_gradient_work_skipped": true
+}

@@ -58,7 +58,12 @@ def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fields = sorted({key for row in rows for key in row})
     with path.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=fields,
+            extrasaction="ignore",
+            lineterminator="\n",
+        )
         writer.writeheader()
         for row in rows:
             writer.writerow(
@@ -860,6 +865,7 @@ def baseline_audit(function: list[dict[str, Any]], native: list[dict[str, Any]])
         "pinn_hte",
         "d_dbsde",
         "sdgd_pinn_official",
+        "full_history_mlp_raw",
     ):
         frows = [row for row in function if row["method"] == method]
         nrows = [row for row in native if row["method"] == method]
@@ -920,6 +926,9 @@ def baseline_audit(function: list[dict[str, Any]], native: list[dict[str, Any]])
             "d_dbsde_launcher_correction": "standalone solver executed once instead of inherited redundant outer N=40 loop",
             "sdgd_posttraining_dependency": "isolated openpyxl==3.1.5 for xlsx serialization",
             "sdgd_resumable_loop_equivalence": sdgd_equivalence,
+            "full_history_recursive_value_projection": False,
+            "full_history_terminal_aware_neural_feature": False,
+            "full_history_mcv_added": False,
         },
         "calibration_is_headline_result": False,
     }
