@@ -465,6 +465,63 @@ def _pinn_diagnostics(baselines: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return output
 
 
+def _baseline_accuracy_findings(
+    endpoint: list[dict[str, Any]], comparison: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    by_method = {row["method"]: row for row in endpoint}
+    ours = by_method.get("Tangent-Actor + MCV")
+    full = by_method.get("Full-History MLP")
+    pinn = by_method.get("Hutchinson PINN")
+    if ours is None or full is None or full["value_rmse_mean"] is None:
+        return None
+    ours_values = [
+        row["value_rmse"]
+        for row in comparison
+        if row["method"] == "Tangent-Actor + MCV"
+        and row["budget"] == "main"
+        and row["family"] == "primary"
+        and row["d"] == 100
+        and math.isclose(row["lam"], 0.2)
+        and row.get("finite")
+    ]
+    full_values = [
+        row["value_rmse"]
+        for row in comparison
+        if row["method"] == "Full-History MLP"
+        and row["configuration"] == "n=3,M=256"
+        and row.get("finite")
+    ]
+    m64 = [
+        row["value_rmse"]
+        for row in comparison
+        if row["method"] == "Full-History MLP"
+        and row["configuration"] == "n=3,M=64"
+        and row.get("finite")
+        and row.get("value_rmse") is not None
+    ]
+    return {
+        "ours_rmse_mean": ours["value_rmse_mean"],
+        "ours_rmse_min": float(np.min(ours_values)),
+        "ours_rmse_max": float(np.max(ours_values)),
+        "full_history_m256_rmse_mean": full["value_rmse_mean"],
+        "full_history_m256_rmse_min": float(np.min(full_values)),
+        "full_history_m256_rmse_max": float(np.max(full_values)),
+        "ours_over_full_history_m256_rmse_ratio": ours["value_rmse_mean"]
+        / full["value_rmse_mean"],
+        "full_history_m64_rmse_mean": float(np.mean(m64)) if m64 else None,
+        "full_history_m64_over_ours_rmse_ratio": float(np.mean(m64))
+        / ours["value_rmse_mean"]
+        if m64
+        else None,
+        "pinn_rmse_mean": None if pinn is None else pinn["value_rmse_mean"],
+        "pinn_over_ours_rmse_ratio": None
+        if pinn is None or pinn["value_rmse_mean"] is None
+        else pinn["value_rmse_mean"] / ours["value_rmse_mean"],
+        "ours_total_seconds_mean": ours["total_seconds_mean"],
+        "full_history_m256_total_seconds_mean": full["total_seconds_mean"],
+    }
+
+
 def _ambient_scaling_diagnosis(
     training: list[dict[str, Any]], iterations: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
@@ -1204,8 +1261,15 @@ def _summary(
         "coupled_completed": bool(coupled),
         "d400_completed": bool(d400),
         "coupled_d400_completed": bool(coupled_d400),
-        "full_history_configurations_completed": sum(
+        "full_history_runs_completed": sum(
             item["method"] == "full_history_mlp_raw_adaptation" for item in baselines
+        ),
+        "full_history_unique_configurations_completed": len(
+            {
+                (item["n"], item["M"])
+                for item in baselines
+                if item["method"] == "full_history_mlp_raw_adaptation"
+            }
         ),
         "neural_baseline_runs_completed": sum(
             item["method"] != "full_history_mlp_raw_adaptation" for item in baselines
@@ -1226,6 +1290,9 @@ def _summary(
         "curvature_strength_results": _curvature_strength_results(iterations),
         "euler_sensitivity": euler_rows(post_freeze),
         "frozen_endpoint_baseline_comparison": endpoint,
+        "baseline_accuracy_findings": _baseline_accuracy_findings(
+            endpoint, comparison
+        ),
         "full_history_frozen_grid": _full_history_grid(comparison),
         "pinn_final_diagnostics": _pinn_diagnostics(baselines),
         "tangent_actor_beats_all_available_frozen_baseline_endpoints": endpoint_advantage,
@@ -1437,6 +1504,14 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
                 f"{accuracy} | "
                 f"{row['total_seconds_mean']:.1f} |"
             )
+        findings = summary["baseline_accuracy_findings"]
+        if findings is not None:
+            lines.extend(
+                [
+                    "",
+                    f"At the initial M=64 endpoint, Full-History is {findings['full_history_m64_over_ours_rmse_ratio']:.2f}× less accurate than Tangent-Actor when measured by RMSE. The required frontier extension reverses that ordering: at M=256, Tangent-Actor's mean RMSE is {findings['ours_over_full_history_m256_rmse_ratio']:.2f}× the Full-History mean. All three Full-History RMSEs ({findings['full_history_m256_rmse_min']:.6g}–{findings['full_history_m256_rmse_max']:.6g}) are below all three Tangent-Actor RMSEs ({findings['ours_rmse_min']:.6g}–{findings['ours_rmse_max']:.6g}). Thus the experiment establishes a large advantage over the plain PINN and over moderate-budget Full-History, but no absolute-accuracy advantage over the strongest completed Full-History budget. Runtime is reported for transparency and does not alter this accuracy conclusion.",
+                ]
+            )
     full_history_grid = summary["full_history_frozen_grid"]
     if full_history_grid:
         lines.extend(
@@ -1444,7 +1519,7 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
                 "",
                 "### Full-History frozen grid (seed 0)",
                 "",
-                "Every predeclared configuration is shown. Test RMSE is reported for audit and is not used to retune or replace the frozen endpoint.",
+                "Every frozen initial-grid and frontier-extension configuration is shown. Test RMSE is reported for audit and is not used to retune or replace the frozen extension endpoint.",
                 "",
                 "| configuration | finite | Value RMSE | Relative L2 | wall seconds |",
                 "|---|---:|---:|---:|---:|",
@@ -1534,7 +1609,8 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
             "4. MCV reduces label-replication noise and becomes a strong inference control variate once the Actor is accurate. With weak Actors it can increase inference variance.",
             "5. Nonseparable coupling remains solvable at d=100, with lower variance-reduction benefit and higher error than the primary high-budget run.",
             "6. The d=400 pilot is stable but gains only marginal accuracy; current evidence points to full-ambient statistical generalization as the scaling bottleneck.",
-            "7. The resulting paper claim should remain restricted to smooth bounded-curvature, locally stable semilinear drivers with careful reference-free selection.",
+            "7. Against baselines, the method decisively beats the plain PINN and moderate-budget Full-History, but high-budget Full-History reaches lower RMSE. The present results do not support a strongest-baseline accuracy claim.",
+            "8. The resulting paper claim should remain restricted to smooth bounded-curvature, locally stable semilinear drivers with careful reference-free selection.",
             "",
             "## Artifacts",
             "",
