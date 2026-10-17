@@ -76,20 +76,20 @@ The lambda=0 control is a retained negative signal: fixed-point consistency and 
 
 The post-freeze true-best column is an audit only; it was unavailable during checkpoint selection.
 
-| run | selected | post-freeze true best | match | selected excess RMSE | within-run rank correlation |
-|---|---|---|---:|---:|---:|
-| coupled_d100_k2_lam0p2_eta1_pilot_mcv_s0 | a2 | a2 | yes | 0 | 1.000 |
-| primary_d100_k2_lam0_eta0_pilot_mcv_s0 | a2 | a0 | no | 0.000466579 | -1.000 |
-| primary_d100_k2_lam0p05_eta0_pilot_mcv_s0 | a2 | a2 | yes | 0 | 0.500 |
-| primary_d100_k2_lam0p2_eta0_main_mcv_s0 | a4 | a4 | yes | 0 | 1.000 |
-| primary_d100_k2_lam0p2_eta0_main_mcv_s1 | a4 | a4 | yes | 0 | 1.000 |
-| primary_d100_k2_lam0p2_eta0_main_mcv_s2 | a4 | a3 | no | 6.40634e-06 | 0.900 |
-| primary_d100_k2_lam0p2_eta0_pilot_mcv_s0 | a2 | a2 | yes | 0 | 1.000 |
-| primary_d100_k2_lam0p2_eta0_pilot_plain_s0 | a2 | a2 | yes | 0 | 1.000 |
-| primary_d100_k2_lam0p5_eta0_pilot_mcv_s0 | a2 | a2 | yes | 0 | 0.500 |
-| primary_d400_k2_lam0p2_eta0_pilot_mcv_s0 | a2 | a2 | yes | 0 | 1.000 |
+| run | selected | post-freeze true best | match | selected excess RMSE | gap / MC scale | within-run rank correlation |
+|---|---|---|---:|---:|---:|---:|
+| coupled_d100_k2_lam0p2_eta1_pilot_mcv_s0 | a2 | a2 | yes | 0 | 0.000 | 1.000 |
+| primary_d100_k2_lam0_eta0_pilot_mcv_s0 | a2 | a0 | no | 0.000466579 | 0.242 | -1.000 |
+| primary_d100_k2_lam0p05_eta0_pilot_mcv_s0 | a2 | a2 | yes | 0 | 0.000 | 0.500 |
+| primary_d100_k2_lam0p2_eta0_main_mcv_s0 | a4 | a4 | yes | 0 | 0.000 | 1.000 |
+| primary_d100_k2_lam0p2_eta0_main_mcv_s1 | a4 | a4 | yes | 0 | 0.000 | 1.000 |
+| primary_d100_k2_lam0p2_eta0_main_mcv_s2 | a4 | a3 | no | 6.40634e-06 | 0.011 | 0.900 |
+| primary_d100_k2_lam0p2_eta0_pilot_mcv_s0 | a2 | a2 | yes | 0 | 0.000 | 1.000 |
+| primary_d100_k2_lam0p2_eta0_pilot_plain_s0 | a2 | a2 | yes | 0 | 0.000 | 1.000 |
+| primary_d100_k2_lam0p5_eta0_pilot_mcv_s0 | a2 | a2 | yes | 0 | 0.000 | 0.500 |
+| primary_d400_k2_lam0p2_eta0_pilot_mcv_s0 | a2 | a2 | yes | 0 | 0.000 | 1.000 |
 
-Across canonical MCV runs, the frozen selector matches the post-freeze best candidate in 77.8% of runs. This supports the score as a useful diagnostic in the tested regime, not as an error bound.
+Across canonical MCV runs, the frozen selector matches the post-freeze best candidate in 77.8% of runs. This supports the score as a useful diagnostic in the tested regime, not as an error bound. The observed mismatches all have RMSE gaps below 0.24× the quadrature MC-error scale and are not treated as statistically resolved.
 
 ## Euler-step sensitivity of frozen selections
 
@@ -110,11 +110,46 @@ Each entry is an independently seeded MCV evaluation with the same number of sta
 
 ## Frozen endpoint comparison
 
-This table uses the reference-free selected main Actor, the predeclared highest Full-History endpoint `n=3,M=64`, and the PINN final step. No baseline row is selected by test RMSE.
+This table uses the reference-free selected main Actor, the frozen Full-History frontier-extension endpoint `n=3,M=256`, and the PINN final step. The initial Full-History grid ended at M=64; because it had not plateaued, one geometric extension through M=256 was fixed before any extension point was executed. No baseline row is selected by test RMSE.
 
 | method | frozen configuration | finite / total seeds | Value RMSE mean ± sd | mean total seconds |
 |---|---|---:|---:|---:|
+| Full-History MLP | n=3,M=256 | 3 / 3 | 0.000538736 ± 2.24e-05 | 68.7 |
+| Hutchinson PINN | frozen 4x256, 5000 steps | 1 / 1 | 0.0251204 ± 0 | 42.0 |
 | Tangent-Actor + MCV | reference-free FP-selected Actor | 3 / 3 | 0.000656365 ± 3.51e-05 | 2910.8 |
+
+At the initial M=64 endpoint, Full-History is 3.04× less accurate than Tangent-Actor when measured by RMSE. The required frontier extension reverses that ordering: at M=256, Tangent-Actor's mean RMSE is 1.22× the Full-History mean. All three Full-History RMSEs (0.000518686–0.000562989) are below all three Tangent-Actor RMSEs (0.000617239–0.000684943). Thus the experiment establishes a large advantage over the plain PINN and over moderate-budget Full-History, but no absolute-accuracy advantage over the strongest completed Full-History budget. Runtime is reported for transparency and does not alter this accuracy conclusion.
+
+### Full-History frozen grid (seed 0)
+
+Every frozen initial-grid and frontier-extension configuration is shown. Test RMSE is reported for audit and is not used to retune or replace the frozen extension endpoint.
+
+| configuration | finite | Value RMSE | Relative L2 | wall seconds |
+|---|---:|---:|---:|---:|
+| n=1,M=64 | yes | 0.0237518 | 0.0477131 | 0.096 |
+| n=1,M=256 | yes | 0.0203125 | 0.0408041 | 0.099 |
+| n=2,M=8 | yes | 0.0188536 | 0.0378736 | 0.156 |
+| n=2,M=16 | yes | 0.0115501 | 0.0232021 | 0.145 |
+| n=2,M=32 | yes | 0.00707097 | 0.0142043 | 0.143 |
+| n=2,M=64 | yes | 0.0060619 | 0.0121773 | 0.166 |
+| n=3,M=4 | yes | 0.0483979 | 0.0972228 | 0.200 |
+| n=3,M=8 | yes | 0.0234886 | 0.0471844 | 0.214 |
+| n=3,M=12 | yes | 0.0141687 | 0.0284624 | 0.200 |
+| n=3,M=16 | yes | 0.0101386 | 0.0203667 | 0.273 |
+| n=3,M=24 | yes | 0.00631251 | 0.0126807 | 0.699 |
+| n=3,M=32 | yes | 0.0046064 | 0.00925344 | 1.563 |
+| n=3,M=48 | yes | 0.00293041 | 0.00588668 | 3.112 |
+| n=3,M=64 | yes | 0.00209203 | 0.00420251 | 3.412 |
+| n=3,M=96 | yes | 0.00120067 | 0.00241192 | 5.843 |
+| n=3,M=128 | yes | 0.000845485 | 0.00169843 | 10.365 |
+| n=3,M=192 | yes | 0.000606109 | 0.00121757 | 29.992 |
+| n=3,M=256 | yes | 0.000562989 | 0.00113094 | 68.881 |
+
+### Plain PINN final-step diagnostics
+
+| seed | steps | validation PDE residual RMSE | validation terminal RMSE | test Value RMSE | Relative L2 | wall seconds |
+|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 5000 | 0.0762786 | 0.0324569 | 0.0251204 | 0.0504624 | 42.0 |
 
 ## Ambient-dimension scaling diagnosis
 
@@ -145,11 +180,12 @@ The independent comparison uses raw Full-History MLP and a plain soft-terminal P
 
 1. The undamped generic tangent update is accurate on the primary and coupled d=100 nonconvex drivers, including a genuinely nonseparable `(u,z)` driver. This is empirical local-regime evidence, not global convergence.
 2. Iteration is numerically stable in every completed run, but true Value error is not monotone and additional updates matter differently across curvature strengths.
-3. The independent fixed-point score usually ranks candidates well, but the lambda=0 control has an observed finite-bank selection mismatch whose gap is not resolved beyond MC error; the score cannot replace a theorem or calibrated validation bound.
+3. The independent fixed-point score usually ranks candidates well, but the lambda=0 control and one main-seed audit have observed finite-bank selection mismatches whose gaps are not resolved beyond MC error; the score cannot replace a theorem or calibrated validation bound.
 4. MCV reduces label-replication noise and becomes a strong inference control variate once the Actor is accurate. With weak Actors it can increase inference variance.
 5. Nonseparable coupling remains solvable at d=100, with lower variance-reduction benefit and higher error than the primary high-budget run.
 6. The d=400 pilot is stable but gains only marginal accuracy; current evidence points to full-ambient statistical generalization as the scaling bottleneck.
-7. The resulting paper claim should remain restricted to smooth bounded-curvature, locally stable semilinear drivers with careful reference-free selection.
+7. Against baselines, the method decisively beats the plain PINN and moderate-budget Full-History, but high-budget Full-History reaches lower RMSE. The present results do not support a strongest-baseline accuracy claim.
+8. The resulting paper claim should remain restricted to smooth bounded-curvature, locally stable semilinear drivers with careful reference-free selection.
 
 ## Artifacts
 

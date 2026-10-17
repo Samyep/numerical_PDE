@@ -15,7 +15,7 @@
     "seed_derivation": "SHA-256 stable_seed in common.py"
   },
   "experiment": "nonconvex_nonconcave_tangent_actor_v1",
-  "generated_from_git_commit": "f70e11a7cc63db2e1bf1b8b22cf83eae57db076a",
+  "generated_from_git_commit": "631305865b73c29d1cf9f395fe8e1ccb31057158",
   "large_local_artifacts": {
     "compact_results_and_audits_tracked": true,
     "directories": [
@@ -35,14 +35,33 @@
         "full_history": {
           "endpoint": [
             3,
-            64
+            256
           ],
           "endpoint_replication_seeds": [
             0,
             1,
             2
           ],
-          "grid": [
+          "frontier_extension": [
+            [
+              3,
+              96
+            ],
+            [
+              3,
+              128
+            ],
+            [
+              3,
+              192
+            ],
+            [
+              3,
+              256
+            ]
+          ],
+          "frontier_extension_trigger": "initial n=3 errors at M=24,32,48,64 had not plateaued; freeze one geometric MC-budget extension before executing any extension point",
+          "initial_grid": [
             [
               1,
               64
@@ -242,7 +261,7 @@
       "selection": "minimum noise-corrected normalized fixed-point inconsistency among finite stable candidates; Ground Truth unavailable until selection is written"
     },
     "path": "experiments/nonconvex_tangent_actor/protocol.json",
-    "sha256": "09f124fd9b59193a2e0f6689ce1ec97480c1ac07431f1f24b4c1ec3a9a3cd4ce"
+    "sha256": "65a0189387d1a7c899e2bc1a7cfee9672187d4e959d2bb180408325a8b3be48a"
   },
   "recorded_runtime_environments": [
     {
@@ -363,6 +382,306 @@
       "record": "environment_evaluation_primary_d400_k2_lam0p2_eta0_pilot_mcv_s0.json",
       "stage": "post_freeze_evaluation",
       "started_unix": 1792259795.4872053,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n1_M256_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270505.765517,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n1_M64_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270502.9369817,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n2_M16_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270511.7367468,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n2_M32_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270514.503351,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n2_M64_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270517.3732195,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n2_M8_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270508.8132565,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "5cc15222aa43616d86c49632cc73b47575d5c6b8",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh079.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M128_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270745.941656,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M12_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270526.1863828,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M16_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270529.7969654,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "5cc15222aa43616d86c49632cc73b47575d5c6b8",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh079.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M192_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270759.318351,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M24_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270532.949791,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "5cc15222aa43616d86c49632cc73b47575d5c6b8",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh079.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M256_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270792.5225987,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "5cc15222aa43616d86c49632cc73b47575d5c6b8",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh079.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M256_s1.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270864.8552988,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "5cc15222aa43616d86c49632cc73b47575d5c6b8",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh079.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M256_s2.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270937.0108857,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M32_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270536.125316,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M32_s1.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270552.8355412,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M32_s2.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270565.168548,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M48_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270540.2401385,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M4_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270520.452347,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M64_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270546.3677926,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M64_s1.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270557.5421214,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M64_s2.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270569.5064254,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "eb45876c8b3dbc0720500154e84cc131eb033f98",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh087.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M8_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270523.1996353,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "5cc15222aa43616d86c49632cc73b47575d5c6b8",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh079.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_full_history_primary_d100_k2_lam0p2_eta0_main_mcv_s0_n3_M96_s0.json",
+      "stage": "full_history_baseline",
+      "started_unix": 1792270737.1797633,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "5cc15222aa43616d86c49632cc73b47575d5c6b8",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh062.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_pinn_primary_d100_k2_lam0p2_eta0_main_mcv_s0_s0.json",
+      "stage": "pinn_baseline",
+      "started_unix": 1792270636.3500545,
       "torch": "2.10.0+cu129"
     },
     {
@@ -495,6 +814,10 @@
     {
       "path": "experiments/nonconvex_tangent_actor/slurm/run_full_history_baselines.slurm",
       "sha256": "ebe2824ef5a211976f95bccfb7ab62933abd946d7a8f048cf60e40ef6fd87891"
+    },
+    {
+      "path": "experiments/nonconvex_tangent_actor/slurm/run_full_history_frontier_extension.slurm",
+      "sha256": "27c7d1ee3e532065e19d57be790a8b690de0c8a7d224c9ef19fe6b1ffc83cddf"
     },
     {
       "path": "experiments/nonconvex_tangent_actor/slurm/run_main_primary.slurm",
