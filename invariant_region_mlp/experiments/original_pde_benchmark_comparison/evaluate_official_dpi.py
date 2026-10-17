@@ -90,6 +90,7 @@ def evaluate(
         "gradient_vector_rmse": float(
             np.sqrt(np.mean(np.square(gradient_error).sum(axis=1)))
         ),
+        "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
         "inference_seconds": inference_seconds,
         "training_seconds": record["training_seconds"],
         "total_seconds": float(record["training_seconds"]) + inference_seconds,

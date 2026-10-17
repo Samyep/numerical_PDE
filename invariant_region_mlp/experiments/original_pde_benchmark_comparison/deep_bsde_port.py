@@ -175,6 +175,7 @@ def _validation(
 def train_deep_bsde(
     benchmark_name: str, seed: int, device: torch.device
 ) -> dict[str, Any]:
+    invocation_started = time.perf_counter()
     ensure_dirs()
     if benchmark_name not in CONFIGS:
         raise KeyError(benchmark_name)
@@ -199,6 +200,7 @@ def train_deep_bsde(
         generator=validation_generator,
         device=device,
     )
+    initialization_seconds = time.perf_counter() - invocation_started
     history: list[dict[str, Any]] = []
     nonfinite = 0
     synchronize(device)
@@ -274,6 +276,7 @@ def train_deep_bsde(
             reference_audit["allen_cahn"]["native_u_0_0_extrapolated"]
         )
         reference_status = "independent radial numerical reference"
+    post_final_z = model.z_init.detach().double().cpu().numpy()[0]
     result = {
         "method": "deep_bsde_official_pytorch_compatibility_port",
         "benchmark": benchmark_name,
@@ -288,13 +291,20 @@ def train_deep_bsde(
         "mcv": False,
         "reported_y0": official_reported_y,
         "post_final_update_y0": float(model.y_init.detach().item()),
+        "post_final_update_z0_component_rmse": float(
+            np.sqrt(np.mean(np.square(post_final_z)))
+        ),
+        "post_final_update_z0_vector_rmse": float(np.linalg.norm(post_final_z)),
+        "native_exact_z0": "zero by radial symmetry",
         "native_reference": native_reference,
         "native_reference_status": reference_status,
         "native_absolute_error": abs(official_reported_y - native_reference),
         "native_relative_error": abs(official_reported_y - native_reference)
         / abs(native_reference),
         "history": history,
+        "model_data_optimizer_initialization_seconds": initialization_seconds,
         "training_seconds": elapsed,
+        "total_process_seconds": time.perf_counter() - invocation_started,
         "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
         "peak_gpu_bytes": int(torch.cuda.max_memory_allocated(device))
         if device.type == "cuda"

@@ -197,6 +197,7 @@ def run(
             **native_meta,
         },
         "training_seconds": 0.0,
+        "parameter_count": 0,
         "inference_seconds": total_seconds,
         "total_seconds": total_seconds,
         "pathwise_terminal_gradient": True,

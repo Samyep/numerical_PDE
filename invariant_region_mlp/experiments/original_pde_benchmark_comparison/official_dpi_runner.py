@@ -31,6 +31,7 @@ def run_official(method: str, seed: int, calibration: bool) -> dict[str, object]
     # Imports intentionally occur here so PYTHONPATH can point at the pinned
     # checkout and its isolated compatibility dependencies in the Slurm job.
     import lightning as pl
+    from lightning.pytorch.callbacks import RichProgressBar
     from picard import load_cfg, PicardRunner
     import picard.solution as solutions
 
@@ -63,6 +64,25 @@ def run_official(method: str, seed: int, calibration: bool) -> dict[str, object]
 
     solutions.PINNSolution.train = pinn_train_and_capture
     solutions.DiffusionSolution.train = diffusion_train_and_capture
+
+    # The upstream custom Rich progress callback crashes before the first
+    # training batch under a noninteractive Slurm stream with the installed
+    # Rich/Lightning combination (``Console.clear_live(): pop from empty
+    # list``).  Remove only that display callback.  Evaluation callbacks,
+    # model summaries, loggers, data, losses, and optimizer steps are kept.
+    original_reporting_callbacks = PicardRunner.get_reporting_callbacks
+
+    def reporting_callbacks_without_rich(self):
+        callbacks, trainer_kwargs = original_reporting_callbacks(self)
+        callbacks = [
+            callback
+            for callback in callbacks
+            if not isinstance(callback, RichProgressBar)
+        ]
+        trainer_kwargs["enable_progress_bar"] = False
+        return callbacks, trainer_kwargs
+
+    PicardRunner.get_reporting_callbacks = reporting_callbacks_without_rich
 
     overrides = ["NAME", str(exp_dir), "FORCE", "True"]
     launcher_correction = None
@@ -129,7 +149,8 @@ def run_official(method: str, seed: int, calibration: bool) -> dict[str, object]
         if torch.cuda.is_available()
         else None,
         "instrumentation": (
-            "fixed RNG seeds, wall/memory accounting, and final state_dict export only; "
+            "fixed RNG seeds, wall/memory accounting, final state_dict export, and "
+            "non-numerical Rich progress display disabled; "
             "upstream architecture, terminal construction, loss, optimizer, labels, and iterations unchanged"
         ),
         "launcher_compatibility_correction": launcher_correction,

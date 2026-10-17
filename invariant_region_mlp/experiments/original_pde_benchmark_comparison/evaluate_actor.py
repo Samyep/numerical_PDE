@@ -238,6 +238,7 @@ def evaluate(
         "iteration": iteration,
         "checkpoint": phase["checkpoint"],
         "configuration": training["configuration"],
+        "parameter_count": sum(parameter.numel() for parameter in actor.parameters()),
         "states": len(reference),
         "paths_per_replicate": paths,
         "replicates": replicates,

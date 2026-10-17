@@ -73,7 +73,23 @@ def evaluate(
     with np.load(RESULTS_DIR / "evaluation_bank_hjb_log_d100.npz") as common:
         common_indices = common["test_indices"]
         common_reference = common["value"][common_indices]
+        common_reference_z = common["z"][common_indices]
     common_error = prediction[common_indices] - common_reference
+    gradient_chunks: list[np.ndarray] = []
+    gradient_started = time.perf_counter()
+    for begin in range(0, len(common_indices), 256):
+        local_indices = common_indices[begin : begin + 256]
+        local = torch.as_tensor(tx[local_indices], device=device).requires_grad_(True)
+        value = model(local)[:, 0]
+        gradient = torch.autograd.grad(value.sum(), local)[0][:, :-1]
+        gradient_chunks.append(
+            (np.sqrt(2.0) * gradient.detach().cpu().numpy()).astype(np.float64)
+        )
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
+    gradient_evaluation_seconds = time.perf_counter() - gradient_started
+    common_z = np.concatenate(gradient_chunks)
+    common_z_error = common_z - common_reference_z
     output = PREDICTION_DIR / f"official_sdgd_s{seed}_{suffix}.npz"
     np.savez_compressed(output, prediction=prediction)
     result: dict[str, object] = {
@@ -94,6 +110,17 @@ def evaluate(
             np.linalg.norm(common_error) / np.linalg.norm(common_reference)
         ),
         "common_960_value_bias": float(np.mean(common_error)),
+        "common_960_gradient_component_rmse": float(
+            np.sqrt(np.mean(np.square(common_z_error)))
+        ),
+        "common_960_gradient_vector_rmse": float(
+            np.sqrt(np.mean(np.square(common_z_error).sum(axis=1)))
+        ),
+        "common_960_gradient_relative_l2": float(
+            np.linalg.norm(common_z_error) / np.linalg.norm(common_reference_z)
+        ),
+        "gradient_evaluation_seconds_reported_separately": gradient_evaluation_seconds,
+        "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
         "training_seconds": record[
             "training_seconds_including_official_per_epoch_test_reporting"
         ],

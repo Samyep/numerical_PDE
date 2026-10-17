@@ -44,6 +44,12 @@ construction, loss, batch size, 50 SDE intervals, step size, optimizer, and
 15,000 epochs are unchanged.  Both the inherited value and this correction
 are recorded in every run artifact; no result is selected across repetitions.
 
+The upstream custom Rich progress callback raises `IndexError` before the
+first batch under this cluster's noninteractive Slurm stream.  The launcher
+removes that display callback and sets Lightning's `enable_progress_bar=False`.
+Evaluation callbacks, model summaries, TensorBoard/W&B logging, data, labels,
+losses, precision, optimizers, and iteration counts remain unchanged.
+
 ## SDGD test data recovery
 
 The official script requires `HJB_Log_100_grad.pkl`, but the file is absent
