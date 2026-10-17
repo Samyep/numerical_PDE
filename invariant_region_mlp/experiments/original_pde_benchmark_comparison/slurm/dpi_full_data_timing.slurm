@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=orig_dpi_full1
 #SBATCH --account=bgvf-dtai-gh
-#SBATCH --partition=ghx4
+#SBATCH --partition=ghx4-interactive
 #SBATCH --exclude=gh097
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -9,7 +9,7 @@
 #SBATCH --mem=120G
 #SBATCH --gpus-per-node=1
 #SBATCH --gpu-bind=verbose,closest
-#SBATCH --time=08:00:00
+#SBATCH --time=02:00:00
 #SBATCH --output=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/slurm/%x_%j.out
 #SBATCH --error=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/slurm/%x_%j.err
 
