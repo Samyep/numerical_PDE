@@ -1,0 +1,86 @@
+{
+  "experiment": "tangent_actor_accuracy_frontier_v1",
+  "parent_commit": "ef2ec67af8da6791e2bbc6086b9b1a1c55227420",
+  "selection": "minimum independently replicated noise-corrected normalized fixed-point inconsistency; no Ground Truth",
+  "actor_input": "full ambient (t,x)",
+  "oracle_projection": false,
+  "ground_truth_training_labels": false,
+  "primary_update": "undamped",
+  "mcv_alpha": 1.0,
+  "pilot": {
+    "training_points": 2048,
+    "validation_points": 256,
+    "paths_per_label": 64,
+    "label_time_steps": 16,
+    "optimizer_steps": 2000,
+    "width": 384,
+    "depth": 4,
+    "learning_rate": 0.00015,
+    "batch_size": 512,
+    "parent_batch": 8,
+    "path_chunk": 32,
+    "checkpoint_interval": 250,
+    "gradient_clip": 10.0,
+    "updates": 2,
+    "seeds": [0]
+  },
+  "main": {
+    "training_points": 8192,
+    "validation_points": 512,
+    "paths_per_label": 128,
+    "label_time_steps": 32,
+    "optimizer_steps": 5000,
+    "width": 384,
+    "depth": 4,
+    "learning_rate": 0.00015,
+    "batch_size": 512,
+    "parent_batch": 8,
+    "path_chunk": 32,
+    "checkpoint_interval": 250,
+    "gradient_clip": 10.0,
+    "updates": 4,
+    "seeds": [0, 1, 2]
+  },
+  "fixed_point": {
+    "states": 128,
+    "pilot_paths": 128,
+    "pilot_steps": 32,
+    "main_paths": 256,
+    "main_steps": 64,
+    "ranking_audit_paths": 512,
+    "ranking_audit_steps": 128,
+    "value_scale_floor": 0.05,
+    "gradient_component_scale_floor": 0.001
+  },
+  "post_freeze_evaluation": {
+    "states": 512,
+    "paths": 512,
+    "steps": 64,
+    "euler_steps": [64, 128, 256],
+    "actor_audit_states": 2048,
+    "parent_batch": 8,
+    "path_chunk": 64
+  },
+  "pilot_gate": {
+    "all_finite": true,
+    "minimum_weight_ess_fraction": 0.2,
+    "minimum_fixed_point_reduction_fraction": 0.05,
+    "ranking_audit_required": true
+  },
+  "precision_evaluation": {
+    "states": 512,
+    "paths": 2048,
+    "steps": [64, 128, 256, 512],
+    "fine_steps": 512,
+    "parent_batch": 2,
+    "path_chunk": 16,
+    "bootstrap_replicates": 4000,
+    "reference_uncertainty_rule": "refined-vs-production RMSE propagated in quadrature"
+  },
+  "full_history_frontier": {
+    "primary_n3": [[3, 384], [3, 512]],
+    "n4_profile": [[4, 2]],
+    "replication_seeds": [0, 1, 2],
+    "ground_truth_configuration_selection": false
+  }
+}

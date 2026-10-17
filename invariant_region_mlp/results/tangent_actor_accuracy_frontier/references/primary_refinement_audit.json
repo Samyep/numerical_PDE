@@ -1,0 +1,56 @@
+{
+  "driver": {
+    "T": 0.5,
+    "actor_input": "full ambient x",
+    "basis_orthogonality_max_abs": 1.1102230246251565e-16,
+    "basis_seed": 61511,
+    "d": 100,
+    "e_equals_beta_1": true,
+    "eta": 0.0,
+    "family": "sine_quadratic",
+    "has_gradient": true,
+    "invariant_interval": [
+      0.0,
+      1.0
+    ],
+    "k": 2,
+    "lambda": 0.2,
+    "mixed_derivative": "-eta*e",
+    "name": "sine_quadratic_d100_k2_lam0p2_eta0p0",
+    "oracle_projection_used": false,
+    "reconstruction_sign": 1.0,
+    "sigma": 1.4142135623730951,
+    "tangent_domain": [
+      0.0,
+      1.0
+    ],
+    "terminal": "0.5+0.3*sin(beta1.x)*cos(beta2.x)",
+    "value_curvature_changes_sign": true
+  },
+  "frozen_test_bank": {
+    "gradient_max_norm": 0.00011237393445088596,
+    "gradient_vector_rmse": 3.170221353425144e-05,
+    "value_max_abs": 9.280812257483895e-05,
+    "value_rmse": 2.074549468000497e-05
+  },
+  "frozen_test_bank_sha256": "93779e02e716827765b17959ca09b65cca0c97a2995f05fe3b8a0d05262f04ce",
+  "inside_invariant_interval": true,
+  "old_dt": 0.000125,
+  "old_n": 128,
+  "old_reference": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/nonconvex_tangent_actor/references/sine_quadratic_d100_k2_lam0p2_eta0p0.npz",
+  "query_points": 32768,
+  "random_periodic_query": {
+    "gradient_max_norm": 0.0001349874199402647,
+    "gradient_vector_rmse": 3.11800597568913e-05,
+    "value_max_abs": 0.00014243130716684593,
+    "value_rmse": 2.194791865522002e-05
+  },
+  "reference_uncertainty_value_rmse": 2.194791865522002e-05,
+  "refined_dt": 6.25e-05,
+  "refined_n": 192,
+  "refined_reference": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/references/sine_quadratic_d100_k2_lam0p2_eta0p0_refined.npz",
+  "solution_grid_max": 0.8,
+  "solution_grid_min": 0.2,
+  "uncertainty_rule": "max old-vs-refined RMSE; conservative two-level proxy",
+  "wall_seconds": 62.11926518706605
+}
