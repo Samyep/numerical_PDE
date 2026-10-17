@@ -92,7 +92,7 @@
   },
   "baselines": {
     "full_history": {
-      "grid": [
+      "initial_grid": [
         [1, 64],
         [1, 256],
         [2, 8],
@@ -108,8 +108,15 @@
         [3, 48],
         [3, 64]
       ],
+      "frontier_extension_trigger": "initial n=3 errors at M=24,32,48,64 had not plateaued; freeze one geometric MC-budget extension before executing any extension point",
+      "frontier_extension": [
+        [3, 96],
+        [3, 128],
+        [3, 192],
+        [3, 256]
+      ],
       "primary_seed": 0,
-      "endpoint": [3, 64],
+      "endpoint": [3, 256],
       "endpoint_replication_seeds": [0, 1, 2],
       "value_projection": false,
       "terminal_aware_feature": false,

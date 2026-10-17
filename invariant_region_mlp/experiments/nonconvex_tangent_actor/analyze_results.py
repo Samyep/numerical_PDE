@@ -371,7 +371,7 @@ def _frozen_endpoint_comparison(
             continue
         if row["method"] == "Tangent-Actor + MCV" and row["budget"] == "main":
             eligible.append(row)
-        elif row["method"] == "Full-History MLP" and row["configuration"] == "n=3,M=64":
+        elif row["method"] == "Full-History MLP" and row["configuration"] == "n=3,M=256":
             eligible.append(row)
         elif row["method"] == "Hutchinson PINN":
             eligible.append(row)
@@ -1359,8 +1359,8 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
                 "",
                 "The post-freeze true-best column is an audit only; it was unavailable during checkpoint selection.",
                 "",
-                "| run | selected | post-freeze true best | match | selected excess RMSE | within-run rank correlation |",
-                "|---|---|---|---:|---:|---:|",
+                "| run | selected | post-freeze true best | match | selected excess RMSE | gap / MC scale | within-run rank correlation |",
+                "|---|---|---|---:|---:|---:|---:|",
             ]
         )
         for row in reliability:
@@ -1369,12 +1369,25 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
             lines.append(
                 f"| {row['run_id']} | {row['selected_actor']} | {row['postfreeze_true_best_actor']} | "
                 f"{'yes' if row['selected_matches_postfreeze_true_best'] else 'no'} | "
-                f"{row['selected_excess_rmse']:.6g} | {correlation_text} |"
+                f"{row['selected_excess_rmse']:.6g} | "
+                f"{row['observed_rmse_gap_over_quadrature_mc_scale']:.3f} | {correlation_text} |"
             )
+        mismatches = [
+            row
+            for row in reliability
+            if not row["selected_matches_postfreeze_true_best"]
+        ]
+        mismatch_note = (
+            ""
+            if not mismatches
+            else " The observed mismatches all have RMSE gaps below "
+            f"{max(row['observed_rmse_gap_over_quadrature_mc_scale'] for row in mismatches):.2f}× "
+            "the quadrature MC-error scale and are not treated as statistically resolved."
+        )
         lines.extend(
             [
                 "",
-                f"Across canonical MCV runs, the frozen selector matches the post-freeze best candidate in {100.0 * summary['canonical_selection_matches_postfreeze_best_fraction']:.1f}% of runs. This supports the score as a useful diagnostic in the tested regime, not as an error bound.",
+                f"Across canonical MCV runs, the frozen selector matches the post-freeze best candidate in {100.0 * summary['canonical_selection_matches_postfreeze_best_fraction']:.1f}% of runs. This supports the score as a useful diagnostic in the tested regime, not as an error bound.{mismatch_note}",
             ]
         )
     euler = summary["euler_sensitivity"]
@@ -1407,7 +1420,7 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
                 "",
                 "## Frozen endpoint comparison",
                 "",
-                "This table uses the reference-free selected main Actor, the predeclared highest Full-History endpoint `n=3,M=64`, and the PINN final step. No baseline row is selected by test RMSE.",
+                "This table uses the reference-free selected main Actor, the frozen Full-History frontier-extension endpoint `n=3,M=256`, and the PINN final step. The initial Full-History grid ended at M=64; because it had not plateaued, one geometric extension through M=256 was fixed before any extension point was executed. No baseline row is selected by test RMSE.",
                 "",
                 "| method | frozen configuration | finite / total seeds | Value RMSE mean ± sd | mean total seconds |",
                 "|---|---|---:|---:|---:|",
@@ -1517,7 +1530,7 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
             "",
             "1. The undamped generic tangent update is accurate on the primary and coupled d=100 nonconvex drivers, including a genuinely nonseparable `(u,z)` driver. This is empirical local-regime evidence, not global convergence.",
             "2. Iteration is numerically stable in every completed run, but true Value error is not monotone and additional updates matter differently across curvature strengths.",
-                "3. The independent fixed-point score usually ranks candidates well, but the lambda=0 control has an observed finite-bank selection mismatch whose gap is not resolved beyond MC error; the score cannot replace a theorem or calibrated validation bound.",
+            "3. The independent fixed-point score usually ranks candidates well, but the lambda=0 control and one main-seed audit have observed finite-bank selection mismatches whose gaps are not resolved beyond MC error; the score cannot replace a theorem or calibrated validation bound.",
             "4. MCV reduces label-replication noise and becomes a strong inference control variate once the Actor is accurate. With weak Actors it can increase inference variance.",
             "5. Nonseparable coupling remains solvable at d=100, with lower variance-reduction benefit and higher error than the primary high-budget run.",
             "6. The d=400 pilot is stable but gains only marginal accuracy; current evidence points to full-ambient statistical generalization as the scaling bottleneck.",
