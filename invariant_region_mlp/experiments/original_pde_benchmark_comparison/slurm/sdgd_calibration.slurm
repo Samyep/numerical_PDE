@@ -16,11 +16,12 @@
 set -euo pipefail
 
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
+SDGD_DEPS=/work/nvme/bgvf/ywang151/original_pde_source_audit/sdgd_deps
 module load default
 source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
 conda activate base
 cd "$SOURCE_ROOT"
-export PYTHONPATH="$SOURCE_ROOT${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH="$SDGD_DEPS:$SOURCE_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 export NCCL_SOCKET_IFNAME=hsn
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 

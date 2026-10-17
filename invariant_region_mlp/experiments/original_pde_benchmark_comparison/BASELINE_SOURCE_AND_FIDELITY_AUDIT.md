@@ -60,3 +60,9 @@ states are the frozen common bank, which permits an exact shared 960-state
 test subset.  The official script still performs its native per-epoch test
 reporting, and that cost is charged.
 
+The script writes its trajectory as `.xlsx` after training.  The cluster base
+environment lacked that optional writer, so `openpyxl==3.1.5` is installed in
+an isolated dependency directory.  This changes only post-training file
+serialization; the official source, model, optimizer, losses, samples, and
+reporting frequency remain unchanged.
+

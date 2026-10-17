@@ -18,13 +18,26 @@ from .references import dpi_exact_reference
 
 
 def evaluate(
-    method: str, seed: int, device: torch.device, *, calibration: bool = False
+    method: str,
+    seed: int,
+    device: torch.device,
+    *,
+    calibration: bool = False,
+    full_data_one_iteration: bool = False,
 ) -> dict[str, object]:
     from picard import load_cfg, PicardRunner
     from picard.solution_jac import PicardSolutionGradientWrapper
 
     ensure_dirs()
-    suffix = "calibration" if calibration else "official"
+    if calibration and full_data_one_iteration:
+        raise ValueError("calibration modes are mutually exclusive")
+    suffix = (
+        "full_data_one_iteration"
+        if full_data_one_iteration
+        else "calibration"
+        if calibration
+        else "official"
+    )
     record_path = RAW_DIR / f"official_dpi_{method}_s{seed}_{suffix}.json"
     record = json.loads(record_path.read_text())
     cfg = load_cfg(record["expanded_config"])
@@ -93,6 +106,7 @@ def evaluate(
         "benchmark": "dpi_ou_gmm_d100",
         "seed": seed,
         "calibration": calibration,
+        "full_data_one_iteration": full_data_one_iteration,
         "states": len(reference),
         "value_rmse": float(np.sqrt(np.mean(np.square(error)))),
         "value_relative_l2": float(
@@ -137,12 +151,14 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--calibration", action="store_true")
+    parser.add_argument("--full-data-one-iteration", action="store_true")
     args = parser.parse_args()
     result = evaluate(
         args.method,
         args.seed,
         torch.device(args.device),
         calibration=args.calibration,
+        full_data_one_iteration=args.full_data_one_iteration,
     )
     print(json.dumps(result, sort_keys=True))
 

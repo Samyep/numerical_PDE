@@ -25,8 +25,18 @@ CONFIGS = {
 }
 
 
-def run_official(method: str, seed: int, calibration: bool) -> dict[str, object]:
+def run_official(
+    method: str,
+    seed: int,
+    calibration: bool,
+    *,
+    full_data_one_iteration: bool = False,
+) -> dict[str, object]:
     """Run upstream classes without changing any loss or network operation."""
+    if calibration and full_data_one_iteration:
+        raise ValueError("calibration modes are mutually exclusive")
+    if full_data_one_iteration and method != "dpi":
+        raise ValueError("full-data one-iteration timing is only defined for DPI")
     ensure_dirs()
     # Imports intentionally occur here so PYTHONPATH can point at the pinned
     # checkout and its isolated compatibility dependencies in the Slurm job.
@@ -40,7 +50,13 @@ def run_official(method: str, seed: int, calibration: bool) -> dict[str, object]
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     pl.seed_everything(seed, workers=True)
-    suffix = "calibration" if calibration else "official"
+    suffix = (
+        "full_data_one_iteration"
+        if full_data_one_iteration
+        else "calibration"
+        if calibration
+        else "official"
+    )
     exp_dir = OFFICIAL_WORK_DIR / "dpi_runs" / f"{method}_s{seed}_{suffix}"
     capture = exp_dir.parent / f"{exp_dir.name}_final_state.pt"
     exp_dir.parent.mkdir(parents=True, exist_ok=True)
@@ -111,6 +127,12 @@ def run_official(method: str, seed: int, calibration: bool) -> dict[str, object]
             ]
         else:
             overrides += ["TRAIN.N_EPOCHS", "100", "EVAL.FREQ", "50"]
+    elif full_data_one_iteration:
+        # Runtime calibration with every official data, MC-label, network,
+        # optimizer, and evaluation setting intact.  Only the outer Picard
+        # count is shortened from 40 to 1 so that a faithful per-iteration
+        # cost is measured before reserving the full run.
+        overrides += ["PICARD.N", "1"]
     # Upstream derived YAML files store ``BASE`` as a path relative to the
     # official scripts/hjb directory.  Resolve the configuration under that
     # native working directory, then return to the prepared GMM-tensor
@@ -139,6 +161,7 @@ def run_official(method: str, seed: int, calibration: bool) -> dict[str, object]
         "method": method,
         "seed": seed,
         "calibration": calibration,
+        "full_data_one_iteration": full_data_one_iteration,
         "official_source_commit": "e8616c2f531c9f95299b246a13c1180b8f02822a",
         "config_source": str(CONFIGS[method]),
         "expanded_config": str(exp_dir / "config.yaml"),
@@ -168,8 +191,14 @@ def main() -> None:
     parser.add_argument("--method", choices=tuple(CONFIGS), required=True)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--calibration", action="store_true")
+    parser.add_argument("--full-data-one-iteration", action="store_true")
     args = parser.parse_args()
-    record = run_official(args.method, args.seed, args.calibration)
+    record = run_official(
+        args.method,
+        args.seed,
+        args.calibration,
+        full_data_one_iteration=args.full_data_one_iteration,
+    )
     print(json.dumps({"status": "complete", "seconds": record["training_seconds"]}))
 
 
