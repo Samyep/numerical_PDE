@@ -42,6 +42,11 @@ and a numerically validated checkpointable transcription of its monolithic
 training loop.  No baseline receives the Tangent-Actor terminal construction
 or MCV.
 
+The Full-History launcher keeps the frozen six-configuration, three-seed grid
+as its default.  Its `BENCHMARKS`, `CONFIGURATIONS` (for example `3:24`), and
+`SEEDS` exports only partition that same grid across allocations when the
+two-hour queue limit requires it.
+
 After all jobs finish, regenerate the auditable tables and figures with:
 
 ```bash

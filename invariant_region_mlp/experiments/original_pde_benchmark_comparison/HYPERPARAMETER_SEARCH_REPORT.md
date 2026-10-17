@@ -75,3 +75,32 @@ gate therefore stopped it before `a2`.  This result separates cleaner labels
 from better policies: supervision noise fell, but the chosen policy did not
 improve.
 
+## OU/GMM HJB staged search outcome
+
+The replicated common-bank ranking selected `focused a4` after `1539.59`
+seconds of cumulative training.  Its policy value was `308.7257452`, MC
+standard error `0.002914`, held-out gradient-label RMSE `0.059290`, and
+independent label-replication RMSE `0.009644`.  All exponential weights were
+finite, their mean ESS fraction was one, and MCV reduced inference-estimator
+variance by a factor of `43.57` on this ranking bank.
+
+| Candidate | Policy minus selected | Paired state SE | Interpretation |
+|---|---:|---:|---|
+| `focused a3` | `+0.027388` | `0.003114` | the fourth update gives a clearly resolved improvement |
+| `focused_plain a3` | `+0.028678` | `0.004092` | matched three-round plain training is close to MCV training at `a3` |
+| `data8192 a3` | `+0.097540` | `0.010293` | more states alone does not match the combined focused budget |
+| `wide384 a3` | `+0.106273` | `0.011713` | the smaller Stage-B budget plateaus earlier |
+
+At the matched third update, MCV and plain-FK training produced nearly equal
+policy values (`308.75313` and `308.75442`).  MCV did make the supervision
+substantially cleaner: label-replication RMSE was `0.010465`, versus `0.029624`
+for plain FK, and held-out label RMSE was `0.071546`, versus `0.077291`.
+Thus the DPI evidence supports a training-variance benefit but does not by
+itself show a material matched-round policy gain from MCV.  The fourth MCV
+update is the material improvement.
+
+Because `a4` remained better by about `8.8` paired standard errors and its
+held-out error was still `6.15` times the label-replication RMSE, the
+predeclared gate admits one `max_quality` update.  Further upper-budget rounds
+remain conditional on that checkpoint improving the same replicated bank.
+
