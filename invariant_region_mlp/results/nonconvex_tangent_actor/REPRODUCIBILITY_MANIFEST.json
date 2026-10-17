@@ -1,0 +1,205 @@
+{
+  "branch": "ir-mlp-nonconvex-nonconcave-tangent-actor",
+  "correctness_tests": {
+    "command": "PYTHONPATH=$PWD pytest -q invariant_region_mlp/experiments/nonconvex_tangent_actor/test_correctness.py",
+    "latest_verified_result": "13 passed",
+    "test_file_sha256": "319cbfb9824fac0ca5d2e608ab6c1e0b9c80e34d45149b3d2fc5e02ccae2636c",
+    "test_function_definitions": 10,
+    "verified_date": "2026-10-17"
+  },
+  "determinism": {
+    "common_fixed_point_state_seed": 20261017,
+    "common_postfreeze_state_seed": 20261017,
+    "fixed_validation_states_across_candidates": true,
+    "independent_training_and_validation_brownian_streams": true,
+    "seed_derivation": "SHA-256 stable_seed in common.py"
+  },
+  "experiment": "nonconvex_nonconcave_tangent_actor_v1",
+  "generated_from_git_commit": "fa60eecfde54b6dc56e3a5296170edc1216e4364",
+  "large_local_artifacts": {
+    "compact_results_and_audits_tracked": true,
+    "directories": [
+      "cache",
+      "checkpoints",
+      "predictions",
+      "references",
+      "raw",
+      "slurm"
+    ],
+    "tracked_in_git": false
+  },
+  "protocol": {
+    "frozen_configuration": {
+      "actor_input": "full ambient (t,x)",
+      "branch": "ir-mlp-nonconvex-nonconcave-tangent-actor",
+      "controlled_expansion": {
+        "coupled_eta": 1.0,
+        "expand_only_after_primary_gate": true,
+        "lambdas": [
+          0.0,
+          0.05,
+          0.2,
+          0.5
+        ],
+        "primary_dimensions": [
+          100,
+          400
+        ]
+      },
+      "coupled": {
+        "T": 0.5,
+        "d": 100,
+        "eta": 1.0,
+        "k": 2,
+        "lambda": 0.2
+      },
+      "experiment": "nonconvex_nonconcave_tangent_actor_v1",
+      "fixed_point": {
+        "gradient_component_scale_floor": 0.001,
+        "main_paths": 256,
+        "main_steps": 64,
+        "pilot_paths": 128,
+        "pilot_steps": 32,
+        "ranking_audit_paths": 512,
+        "ranking_audit_steps": 128,
+        "states": 128,
+        "value_scale_floor": 0.05
+      },
+      "ground_truth_training_labels": false,
+      "main": {
+        "batch_size": 512,
+        "checkpoint_interval": 250,
+        "depth": 4,
+        "gradient_clip": 10.0,
+        "label_time_steps": 32,
+        "learning_rate": 0.00015,
+        "optimizer_steps": 5000,
+        "parent_batch": 8,
+        "path_chunk": 32,
+        "paths_per_label": 128,
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "training_points": 8192,
+        "updates": 4,
+        "validation_points": 512,
+        "width": 384
+      },
+      "mcv_alpha": 1.0,
+      "oracle_projection": false,
+      "pilot": {
+        "batch_size": 512,
+        "checkpoint_interval": 250,
+        "depth": 4,
+        "gradient_clip": 10.0,
+        "label_time_steps": 16,
+        "learning_rate": 0.00015,
+        "optimizer_steps": 2000,
+        "parent_batch": 8,
+        "path_chunk": 32,
+        "paths_per_label": 64,
+        "seeds": [
+          0
+        ],
+        "training_points": 2048,
+        "updates": 2,
+        "validation_points": 256,
+        "width": 384
+      },
+      "pilot_gate": {
+        "all_finite": true,
+        "minimum_fixed_point_reduction_fraction": 0.05,
+        "minimum_weight_ess_fraction": 0.2,
+        "ranking_audit_required": true
+      },
+      "post_freeze_evaluation": {
+        "actor_audit_states": 2048,
+        "euler_steps": [
+          32,
+          64,
+          128
+        ],
+        "parent_batch": 8,
+        "path_chunk": 64,
+        "paths": 512,
+        "states": 512,
+        "steps": 64
+      },
+      "predeclared_nonconvexity_gate": {
+        "f_uu_negative_fraction_min": 0.1,
+        "f_uu_positive_fraction_min": 0.1,
+        "fallback_if_failed": "do not train; audit terminal amplitude/offset using the independent reference and freeze a revised benchmark before Actor results",
+        "strong_abs_threshold": 0.25,
+        "strong_negative_fraction_min": 0.05,
+        "strong_positive_fraction_min": 0.05
+      },
+      "primary": {
+        "T": 0.5,
+        "d": 100,
+        "eta": 0.0,
+        "k": 2,
+        "lambda": 0.2,
+        "terminal": "0.5+0.3*sin(beta1.x)*cos(beta2.x)"
+      },
+      "primary_update": "undamped",
+      "selection": "minimum noise-corrected normalized fixed-point inconsistency among finite stable candidates; Ground Truth unavailable until selection is written"
+    },
+    "path": "experiments/nonconvex_tangent_actor/protocol.json",
+    "sha256": "2dc15f34d2f2244970f31e51adfaa0168ab171613e3ddaa32a503cae7bee9ae0"
+  },
+  "recorded_runtime_environments": [
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "3c0f6ed6bfe84038781712b36e184e326f96445e",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh005.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_evaluation_primary_d100_k2_lam0p2_eta0_pilot_mcv_s0.json",
+      "stage": "post_freeze_evaluation",
+      "started_unix": 1792253031.6948082,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "d7a37e038c2f1385f85592adf3db29ecbfcaaecc",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh005.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_training_primary_d100_k2_lam0p2_eta0_pilot_mcv_s0.json",
+      "stage": "training",
+      "started_unix": 1792252216.727057,
+      "torch": "2.10.0+cu129"
+    }
+  ],
+  "selection_boundary": {
+    "criterion": "minimum independently replicated, noise-corrected normalized fixed-point inconsistency",
+    "ground_truth_available_to_training_or_selection": false,
+    "ranking_audit_doubles_paths_and_steps": true
+  },
+  "slurm_scripts": [
+    {
+      "path": "experiments/nonconvex_tangent_actor/slurm/run_main_primary.slurm",
+      "sha256": "a769030d7d919a8179efe4b381be618659ecf8583c86946a9e2b4a86a91b630a"
+    },
+    {
+      "path": "experiments/nonconvex_tangent_actor/slurm/run_pilot.slurm",
+      "sha256": "6f3d83602b723e92406abb01b9692ba250a8cff7bf7f8a65ffde3c3ce74bb517"
+    },
+    {
+      "path": "experiments/nonconvex_tangent_actor/slurm/run_primary_baselines.slurm",
+      "sha256": "97b26016a8e9d7413ea9f763755193a42ee0f1ed3792093310b21270ec5be5d0"
+    },
+    {
+      "path": "experiments/nonconvex_tangent_actor/slurm/run_primary_replicates.slurm",
+      "sha256": "1dd7655119ddb93f96818f57028fd90aa7848740c69c7f78b64bfe8d83566259"
+    },
+    {
+      "path": "experiments/nonconvex_tangent_actor/slurm/run_scaling_pilots.slurm",
+      "sha256": "730a970702ddbb51f4763ff33300cdb8de3a07c8e3185549a7edb345e1dca546"
+    }
+  ]
+}

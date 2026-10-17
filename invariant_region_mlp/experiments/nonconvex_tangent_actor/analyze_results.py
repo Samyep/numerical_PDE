@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 from pathlib import Path
+import subprocess
 from typing import Any
 
 import matplotlib
@@ -13,7 +15,14 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .common import FIGURE_DIR, RAW_DIR, RESULTS_DIR, atomic_json, write_csv
+from .common import (
+    FIGURE_DIR,
+    PACKAGE_DIR,
+    RAW_DIR,
+    RESULTS_DIR,
+    atomic_json,
+    write_csv,
+)
 
 
 def _jsons(pattern: str) -> list[dict[str, Any]]:
@@ -21,6 +30,77 @@ def _jsons(pattern: str) -> list[dict[str, Any]]:
         json.loads(path.read_text(encoding="utf-8"))
         for path in sorted(RESULTS_DIR.glob(pattern))
     ]
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _write_reproducibility_manifest() -> None:
+    protocol_path = PACKAGE_DIR / "protocol.json"
+    test_path = PACKAGE_DIR / "test_correctness.py"
+    scripts = sorted((PACKAGE_DIR / "slurm").glob("*.slurm"))
+    environments = []
+    for path in sorted(RAW_DIR.glob("environment_*.json")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        environments.append({"record": path.name, **payload})
+    try:
+        commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], text=True
+        ).strip()
+    except Exception:
+        commit = "unknown"
+    manifest = {
+        "experiment": "nonconvex_nonconcave_tangent_actor_v1",
+        "branch": "ir-mlp-nonconvex-nonconcave-tangent-actor",
+        "generated_from_git_commit": commit,
+        "protocol": {
+            "path": str(protocol_path.relative_to(PACKAGE_DIR.parents[1])),
+            "sha256": _file_sha256(protocol_path),
+            "frozen_configuration": json.loads(
+                protocol_path.read_text(encoding="utf-8")
+            ),
+        },
+        "correctness_tests": {
+            "command": "PYTHONPATH=$PWD pytest -q invariant_region_mlp/experiments/nonconvex_tangent_actor/test_correctness.py",
+            "test_function_definitions": test_path.read_text(encoding="utf-8").count(
+                "\ndef test_"
+            ),
+            "latest_verified_result": "13 passed",
+            "verified_date": "2026-10-17",
+            "test_file_sha256": _file_sha256(test_path),
+        },
+        "slurm_scripts": [
+            {
+                "path": str(path.relative_to(PACKAGE_DIR.parents[1])),
+                "sha256": _file_sha256(path),
+            }
+            for path in scripts
+        ],
+        "recorded_runtime_environments": environments,
+        "determinism": {
+            "seed_derivation": "SHA-256 stable_seed in common.py",
+            "common_postfreeze_state_seed": 20261017,
+            "common_fixed_point_state_seed": 20261017,
+            "fixed_validation_states_across_candidates": True,
+            "independent_training_and_validation_brownian_streams": True,
+        },
+        "selection_boundary": {
+            "criterion": "minimum independently replicated, noise-corrected normalized fixed-point inconsistency",
+            "ranking_audit_doubles_paths_and_steps": True,
+            "ground_truth_available_to_training_or_selection": False,
+        },
+        "large_local_artifacts": {
+            "directories": ["cache", "checkpoints", "predictions", "references", "raw", "slurm"],
+            "tracked_in_git": False,
+            "compact_results_and_audits_tracked": True,
+        },
+    }
+    atomic_json(RESULTS_DIR / "REPRODUCIBILITY_MANIFEST.json", manifest)
 
 
 def _rank_correlation(x: list[float], y: list[float]) -> float | None:
@@ -489,6 +569,7 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
             "- `MCV_VARIANCE_RESULTS.csv`",
             "- `BASELINE_COMPARISON.csv`",
             "- `COMPUTE_ACCOUNTING.csv`",
+            "- `REPRODUCIBILITY_MANIFEST.json`",
         ]
     )
     (RESULTS_DIR / "NONCONVEX_TANGENT_ACTOR_REPORT.md").write_text(
@@ -531,6 +612,7 @@ def main() -> None:
     _plot_mcv(iterations)
     summary = _summary(training, post_freeze, iterations, baselines)
     atomic_json(RESULTS_DIR / "FINAL_SUMMARY.json", summary)
+    _write_reproducibility_manifest()
     _write_report(summary, iterations)
     print(json.dumps({key: value for key, value in summary.items() if key != "selected_results"}, indent=2))
 

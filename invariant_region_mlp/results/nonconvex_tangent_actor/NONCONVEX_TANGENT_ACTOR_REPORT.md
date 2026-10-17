@@ -29,3 +29,4 @@ The Actor always receives the full ambient state. Active coordinates and referen
 - `MCV_VARIANCE_RESULTS.csv`
 - `BASELINE_COMPARISON.csv`
 - `COMPUTE_ACCOUNTING.csv`
+- `REPRODUCIBILITY_MANIFEST.json`
