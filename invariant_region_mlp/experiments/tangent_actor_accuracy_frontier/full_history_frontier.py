@@ -45,9 +45,9 @@ class MemoryTiledFullHistoryMLP(GenericFullHistoryMLP):
         samples = self.M**n
         tau = torch.clamp(self.driver.T - t, min=0.0)
         parent_terminal = self.driver.terminal(x)
-        value_sum = torch.zeros(b, dtype=torch.float64, device=self.device)
+        value_sum = torch.zeros(b, dtype=self.dtype, device=self.device)
         gradient_sum = torch.zeros(
-            (b, d), dtype=torch.float64, device=self.device
+            (b, d), dtype=self.dtype, device=self.device
         ) if self.driver.has_gradient else None
         sample_chunk = max(
             1, min(samples, self.max_terminal_coordinates // max(b * d, 1))
@@ -57,19 +57,19 @@ class MemoryTiledFullHistoryMLP(GenericFullHistoryMLP):
             normal = self._normal((b, count, d))
             terminal_x = x[:, None, :] + self.driver.sigma * torch.sqrt(tau)[:, None, None] * normal
             terminal = self.driver.terminal(terminal_x.reshape(-1, d)).reshape(b, count)
-            value_sum += (terminal - parent_terminal[:, None]).double().sum(dim=1)
+            value_sum += (terminal - parent_terminal[:, None]).sum(dim=1)
             if gradient_sum is not None:
                 terminal_z = self.driver.sigma * self.driver.terminal_gradient_torch(
                     terminal_x.reshape(-1, d)
                 ).reshape(b, count, d)
-                gradient_sum += terminal_z.double().sum(dim=1)
+                gradient_sum += terminal_z.sum(dim=1)
             del normal, terminal_x, terminal
             if gradient_sum is not None:
                 del terminal_z
         output = torch.zeros((b, self.state_dim), dtype=self.dtype, device=self.device)
-        output[:, 0] = parent_terminal + (value_sum / samples).to(self.dtype)
+        output[:, 0] = parent_terminal + value_sum / samples
         if gradient_sum is not None:
-            output[:, 1:] = (gradient_sum / samples).to(self.dtype)
+            output[:, 1:] = gradient_sum / samples
         self.stats.terminal_samples += b * samples
         return output
 
