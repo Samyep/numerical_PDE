@@ -35,6 +35,7 @@ def rank(
     pattern = str(RAW_DIR / f"actor_{benchmark_name}_*_s{seed}.json")
     for filename in sorted(glob.glob(pattern)):
         record = json.loads(Path(filename).read_text())
+        label_estimator = str(record["configuration"]["label_estimator"])
         for phase in record["phases"]:
             candidates.append(
                 {
@@ -48,6 +49,8 @@ def rank(
                     "label_replication_rmse": float(
                         phase["labels"]["validation_label_replication_rmse"]
                     ),
+                    "label_estimator": label_estimator,
+                    "eligible_for_primary_selection": label_estimator == "mcv",
                 }
             )
     if not candidates:
@@ -100,7 +103,14 @@ def rank(
         candidate["_state_prediction"] = state_prediction
 
     candidates.sort(key=lambda row: (row["policy_value"], row["heldout_label_rmse"]))
-    best = candidates[0]["_state_prediction"]
+    eligible = [row for row in candidates if row["eligible_for_primary_selection"]]
+    if not eligible:
+        raise RuntimeError("no MCV-training candidate is eligible for primary selection")
+    selected_candidate = min(
+        eligible,
+        key=lambda row: (row["policy_value"], row["heldout_label_rmse"]),
+    )
+    best = selected_candidate["_state_prediction"]
     for candidate in candidates:
         difference = candidate.pop("_state_prediction") - best
         candidate["candidate_minus_best_policy_value"] = float(np.mean(difference))
@@ -108,12 +118,21 @@ def rank(
             np.std(difference, ddof=1) / math.sqrt(len(difference))
         )
         candidate["ground_truth_used"] = False
+        if not candidate["eligible_for_primary_selection"]:
+            candidate["selection_role"] = "plain_FK_training_ablation_only"
+        elif candidate is selected_candidate:
+            candidate["selection_role"] = "primary_MCV_training_selected"
+        else:
+            candidate["selection_role"] = "primary_MCV_training_candidate"
 
     result = {
         "benchmark": benchmark_name,
         "seed": seed,
         "stage": "post-training frozen reference-free checkpoint ranking",
-        "criterion": "minimum replicated common-bank tangent-policy value",
+        "criterion": (
+            "minimum replicated common-bank tangent-policy value among "
+            "MCV-training candidates; plain-FK training remains an ablation"
+        ),
         "states": len(t),
         "paths_per_replicate": paths,
         "time_steps": time_steps,
@@ -121,8 +140,14 @@ def rank(
         "common_random_numbers_across_candidates": True,
         "ranking": candidates,
         "selected": {
-            key: candidates[0][key]
-            for key in ("trial", "iteration", "checkpoint", "training_seconds")
+            key: selected_candidate[key]
+            for key in (
+                "trial",
+                "iteration",
+                "checkpoint",
+                "training_seconds",
+                "label_estimator",
+            )
         },
         "ranking_seconds": time.perf_counter() - started,
         "ground_truth_used": False,
