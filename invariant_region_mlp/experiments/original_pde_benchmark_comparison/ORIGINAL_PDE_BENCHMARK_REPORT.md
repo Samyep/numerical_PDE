@@ -212,6 +212,32 @@ reference-free selection.  The OU/GMM mismatch is an honest limitation of the
 policy-value selection statistic and is retained in the descriptive compute
 frontier rather than hidden by selecting on test RMSE.
 
+### What tuning changed
+
+Iteration count was the most consequential Actor hyperparameter on OU/GMM:
+the replicated paired improvement fell from `18.77` on the first update to
+`1.077`, `0.0879`, and `0.0277` on updates two through four, but remained
+positive for all three seeds.  On HJB-Log, later-round gains were much smaller
+(`1.42e-4 ± 8.07e-5` for update four), and Allen–Cahn was already on a
+practical plateau after update one.
+
+Width/depth mattered mainly during the low-budget HJB searches.  Increasing
+only the number of spatial points or only the label-path count did not
+reliably improve the reference-free ranking.  The upper-budget experiments
+make this especially clear: doubling states and paths and using 64 label steps
+reduced label-replication noise on HJB-Log and OU/GMM, yet worsened their
+policy rankings.  Cleaner labels alone therefore do not solve Actor
+approximation or optimization error.  MCV training likewise reduced label
+noise without a resolved matched-round policy advantage over plain-FK
+training.
+
+Extensive tuning did materially lower error relative to the initial pilots,
+especially on OU/GMM, but it did not remove every systematic limitation.  The
+frozen OU/GMM checkpoint is sensitive to the reference-free selection
+statistic, and its final 64-step bias is primarily an Euler error.  Those two
+effects are more important than further increasing label paths at the tested
+budgets.
+
 ## Numerical integrity and leakage controls
 
 Every Actor consumes time and all 100 ambient state coordinates.  The model
