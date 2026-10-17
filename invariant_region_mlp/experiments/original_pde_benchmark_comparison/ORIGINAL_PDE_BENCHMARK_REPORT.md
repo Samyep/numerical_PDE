@@ -1,0 +1,83 @@
+# Original-PDE benchmark report
+
+## Scope and experimental contract
+
+This study tests Terminal-Aware Tangent-Actor with direct martingale control
+variates (MCV) on PDEs taken from the official
+[Deep BSDE](https://github.com/frankhan91/DeepBSDE),
+[Deep Picard Iteration](https://github.com/DeepOptimalControl/DeepPicardIteration),
+and [SDGD-PINN](https://github.com/zheyuanhu01/SDGD_PINN) repositories.  It keeps the competitors' published
+architectures and algorithms intact.  In particular, no baseline receives our
+terminal-aware Actor construction, tangent labels, invariant-region layer, or
+MCV.  An original terminal construction or variance-reduction device remains
+in place when it is part of that baseline.
+
+Actor hyperparameters and iteration count are selected without analytic
+nonterminal values or gradients.  Selection uses held-out noisy tangent labels
+and a replicated common-state policy-value bank.  Final test references are
+opened only after the checkpoint is frozen.  A later screen of all checkpoints
+is descriptive and is never used to change the selected method.
+
+All GPU runs use one NVIDIA GH200 120 GB GPU.  Reported training and inference
+times are synchronized wall times.  Failed and restarted allocations remain in
+the resource audit.
+
+## Benchmarks
+
+| Benchmark | PDE and terminal condition | Native task | Independent reference | Eligibility |
+|---|---|---|---|---|
+| HJB-Log, `d=100`, `T=1` | `u_t + Delta u - ||grad u||^2 = 0`; `g(x)=log((1+||x||^2)/2)` | `u(0,0)` for Deep BSDE; distributed function task for SDGD | Hopf–Cole plus 1D Gauss–Laguerre quadrature | globally concave in `z=sqrt(2) grad u` |
+| OU/GMM HJB, `d=100`, `T=1` | official DPI drift, diffusion, quadratic-gradient driver, and five-component GMM terminal value | official `t`-uniform, `x|t~N(0,(4+t)I)` function task | exact evolving Gaussian mixture | known linear drift plus globally concave gradient driver |
+| Allen–Cahn, `d=100`, `T=0.3` | `u_t + Delta u + u-u^3 = 0`; `g(x)=1/(2+0.4||x||^2)` | `u(0,0)` | independent squared-radius PDE with mesh refinement | concave on the comparison-principle interval `[0,1]` |
+
+HJB-Rosenbrock was not used.  Its driver is compatible, but the official
+repository omits its generated test data, and the supplied 1,000-path reference
+generator has no numerical-error audit.  Changing that PDE or treating this
+reference as exact would violate the eligibility rule.
+
+## Reference validation
+
+The HJB-Log quadrature gives `u(0,0)=4.590161724604883`; orders 64, 128,
+256 and adaptive integration agree within `5.4e-15`.  The independent NumPy
+and Torch implementations of the DPI analytic solution agree within
+`1.9e-13`, and its maximum automatic-differentiation PDE residual is
+`1.2e-12`.  For Allen–Cahn, Richardson extrapolation gives
+`u(0,0)=0.05278135060749693` with a `9.64e-6` refinement-difference proxy.
+Allen–Cahn results near that scale are therefore labelled reference-limited.
+
+## Baseline reproduction before comparison
+
+Deep BSDE was ported from its official TensorFlow implementation to PyTorch
+because TensorFlow is absent on the GH200 image.  The port retains the scalar
+free initial value, free initial gradient, 19 nonshared time-slice networks,
+normalization, 20-step BSDE rollout, loss, float64 arithmetic, and published
+iteration schedules.  It remains a native single-point solver.
+
+| Fixed official method | Evaluation task | Seeds | Error | Mean training time |
+|---|---|---:|---:|---:|
+| Deep BSDE | HJB-Log `u(0,0)` | 3 | `0.0096785 ± 0.0027611` absolute | 65.15 s |
+| Deep BSDE | Allen–Cahn `u(0,0)` | 3 | `0.00016911 ± 0.00017982` absolute | 127.69 s |
+| DPI | OU/GMM common 960-state bank | 1 | `17.6638` RMSE | 627.42 s |
+| PINN-HTE | OU/GMM common 960-state bank | 1 | `38.6698` RMSE | 767.21 s |
+| D-DBSDE | OU/GMM common 960-state bank | 1 | `30.7247` RMSE | 453.05 s |
+
+The `±` entries are sample standard deviations across independent seeds.  The
+DPI-family entries have one fixed official run and provide no seed-stability
+estimate.  DPI's value at `x=0` is reported only as a diagnostic because its
+published benchmark is the distributed function task.
+
+## Fair task and cost separation
+
+Native single-point and amortized function approximation are kept in separate
+tables.  Deep BSDE is compared at its published initial point and would require
+an independent training run for every additional state.  Tangent-Actor, DPI,
+PINN-HTE, D-DBSDE, and SDGD are evaluated on common held-out state banks where
+their native models are amortized.  Query-count cost curves charge all Actor
+training and measured inference; they do not amortize training away at one
+query.
+
+For Tangent-Actor, the main solve cost includes label generation, Actor fitting,
+and final Monte Carlo policy evaluation.  Analytic-gradient Actor diagnostics,
+Bregman checks, and artifact I/O are recorded separately and also included in
+an auxiliary all-diagnostics total.  MCV factors are reported as estimator
+variance-reduction factors, never as RMSE-reduction factors.

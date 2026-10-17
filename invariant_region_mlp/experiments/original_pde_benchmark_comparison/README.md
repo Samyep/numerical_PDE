@@ -31,7 +31,9 @@ GH200.  Actor jobs take `BENCHMARK=hjb_log_d100`, `dpi_ou_gmm_d100`, or
    check at 16,384 points, 256 paths/label, and 64 label steps.
 4. `actor_final_seeds_serial.slurm` and
    `actor_final_evaluation_serial.slurm` reproduce the frozen selection with
-   three seeds and 32/64/128-step evaluation.
+   three seeds and 32/64/128-step evaluation.  The seed launcher accepts a
+   space-separated `SEEDS` export so an upper-budget two-round Actor can be
+   reproduced in separate allocations without changing its configuration.
 
 Official baseline launchers retain their source algorithms.  The Deep BSDE
 launcher is an audited PyTorch compatibility port; DPI, PINN-HTE, and D-DBSDE

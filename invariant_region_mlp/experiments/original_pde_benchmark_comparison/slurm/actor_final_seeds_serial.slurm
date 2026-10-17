@@ -17,6 +17,7 @@ set -euo pipefail
 
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
 : "${BENCHMARK:?set BENCHMARK to hjb_log_d100, dpi_ou_gmm_d100, or allen_cahn_d100}"
+: "${SEEDS:=1 2}"
 DECISION=$SOURCE_ROOT/invariant_region_mlp/results/original_pde_benchmark_comparison/final_actor_selection_${BENCHMARK}.json
 
 module load default
@@ -34,7 +35,8 @@ git rev-parse HEAD
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
 python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
 
-for SEED in 1 2; do
+read -r -a SEED_LIST <<< "$SEEDS"
+for SEED in "${SEED_LIST[@]}"; do
   srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.run_actor \
     --benchmark "$BENCHMARK" --trial "$TRIAL" --seed "$SEED" --iterations "$ITERATION"
 done

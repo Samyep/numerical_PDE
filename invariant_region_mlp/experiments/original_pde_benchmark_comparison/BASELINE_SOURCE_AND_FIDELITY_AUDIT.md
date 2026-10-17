@@ -73,3 +73,24 @@ an isolated dependency directory.  This changes only post-training file
 serialization; the official source, model, optimizer, losses, samples, and
 reporting frequency remain unchanged.
 
+## Fixed-configuration reproduction status
+
+The official configurations were run once for each amortized DPI-family
+method and with three independent seeds for each native Deep BSDE problem.
+These are fixed reproductions rather than baseline hyperparameter searches.
+
+| Method and native task | Seeds | Accuracy | Mean training time |
+|---|---:|---:|---:|
+| Deep BSDE, HJB-Log at `u(0,0)` | 3 | absolute error `0.0096785 ± 0.0027611` | 65.15 s |
+| Deep BSDE, Allen–Cahn at `u(0,0)` | 3 | absolute error `0.00016911 ± 0.00017982` | 127.69 s |
+| DPI, OU/GMM common 960-state bank | 1 | Value RMSE `17.6638` | 627.42 s |
+| PINN-HTE, OU/GMM common 960-state bank | 1 | Value RMSE `38.6698` | 767.21 s |
+| D-DBSDE, OU/GMM common 960-state bank | 1 | Value RMSE `30.7247` | 453.05 s |
+
+The uncertainty after `±` is the sample standard deviation across seeds, not
+a confidence interval.  DPI, PINN-HTE, and D-DBSDE have one official run each;
+their table entries must not be interpreted as seed-stability estimates.  The
+formal comparison report also keeps DPI's distributed function task separate
+from diagnostic values at `x=0`, which is not that benchmark's published
+native task.
+
