@@ -721,6 +721,7 @@ def total_compute_rows(
         if row["protocol"] not in {
             "amortized_function_common_bank",
             "postselection_descriptive_actor_envelope",
+            "native_single_point_retrained_per_query",
         }:
             continue
         key = (
