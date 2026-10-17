@@ -847,6 +847,10 @@ def accounting_rows() -> list[dict[str, Any]]:
 def baseline_audit(function: list[dict[str, Any]], native: list[dict[str, Any]]) -> dict[str, Any]:
     source_path = RESULTS_DIR / "pde_definitions_and_references.json"
     sources = _read(source_path)["source_commits"] if source_path.exists() else {}
+    sdgd_equivalence_path = RESULTS_DIR / "sdgd_resumable_equivalence_audit.json"
+    sdgd_equivalence = (
+        _read(sdgd_equivalence_path) if sdgd_equivalence_path.exists() else None
+    )
     methods: dict[str, Any] = {}
     for method in (
         "deep_bsde_official_pytorch_compatibility_port",
@@ -913,6 +917,7 @@ def baseline_audit(function: list[dict[str, Any]], native: list[dict[str, Any]])
             "dpi_checkpoint_compatibility": "restore pre-PyTorch-2.6 torch.load weights_only=False default for locally generated checkpoints",
             "d_dbsde_launcher_correction": "standalone solver executed once instead of inherited redundant outer N=40 loop",
             "sdgd_posttraining_dependency": "isolated openpyxl==3.1.5 for xlsx serialization",
+            "sdgd_resumable_loop_equivalence": sdgd_equivalence,
         },
         "calibration_is_headline_result": False,
     }
