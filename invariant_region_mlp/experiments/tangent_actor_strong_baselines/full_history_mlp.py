@@ -49,6 +49,7 @@ class GenericFullHistoryMLP:
     ) -> None:
         self.driver, self.M, self.device = driver, int(M), device
         self.dtype, self.time_beta_alpha = dtype, float(time_beta_alpha)
+        self.state_dim = 1 + (driver.d if driver.has_gradient else 0)
         self.generator = torch.Generator(device=device).manual_seed(seed)
         self.stats = MLPStats()
 
@@ -67,7 +68,7 @@ class GenericFullHistoryMLP:
         terminal_x = x[:, None, :] + self.driver.sigma * torch.sqrt(tau)[:, None, None] * normal
         terminal = self.driver.terminal(terminal_x.reshape(-1, d)).reshape(b, samples)
         parent_terminal = self.driver.terminal(x)
-        output = torch.zeros((b, d + 1), dtype=self.dtype, device=self.device)
+        output = torch.zeros((b, self.state_dim), dtype=self.dtype, device=self.device)
         # Centered terminal value estimator preserves its expectation.
         output[:, 0] = parent_terminal + torch.mean(
             terminal - parent_terminal[:, None], dim=1
@@ -99,7 +100,9 @@ class GenericFullHistoryMLP:
         self.stats.recursive_calls += 1
         self.stats.recursive_states += b
         if n <= 0:
-            return torch.zeros((b, d + 1), dtype=self.dtype, device=self.device)
+            return torch.zeros(
+                (b, self.state_dim), dtype=self.dtype, device=self.device
+            )
         output = self._terminal_estimate(n, t, x)
         remaining = torch.clamp(self.driver.T - t, min=0.0)
         alpha = self.time_beta_alpha
@@ -122,11 +125,15 @@ class GenericFullHistoryMLP:
             child_t = t[:, None] + delta
             flat_t = child_t.reshape(-1)
             flat_x = child_x.reshape(-1, d)
-            high = self.solve(level, flat_t, flat_x).reshape(b, siblings, d + 1)
+            high = self.solve(level, flat_t, flat_x).reshape(
+                b, siblings, self.state_dim
+            )
             difference = self._driver(high)
             self.stats.driver_evaluations += b * siblings
             if level > 1:
-                low = self.solve(level - 1, flat_t, flat_x).reshape(b, siblings, d + 1)
+                low = self.solve(level - 1, flat_t, flat_x).reshape(
+                    b, siblings, self.state_dim
+                )
                 difference = difference - self._driver(low)
                 self.stats.driver_evaluations += b * siblings
             importance = remaining[:, None] * fraction ** (1.0 - alpha) / alpha

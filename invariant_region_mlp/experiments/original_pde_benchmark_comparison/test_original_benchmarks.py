@@ -172,5 +172,6 @@ def test_full_history_value_only_path_skips_unused_gradient() -> None:
     )
     state = solver.solve(2, torch.zeros(2), torch.zeros((2, driver.d)))
     assert torch.isfinite(state).all()
+    assert state.shape == (2, 1)
     assert torch.count_nonzero(state[:, 1:]) == 0
 
