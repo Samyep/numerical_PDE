@@ -65,6 +65,19 @@ def run_official(method: str, seed: int, calibration: bool) -> dict[str, object]
     solutions.DiffusionSolution.train = diffusion_train_and_capture
 
     overrides = ["NAME", str(exp_dir), "FORCE", "True"]
+    launcher_correction = None
+    if method == "d_dbsde":
+        # The derived Diffusion YAML inherits PICARD.N=40 from the DPI base,
+        # although DiffusionSolution is a standalone 15,000-epoch method and
+        # run_one() does not update Picard state.  Leaving N=40 trains 40 fresh
+        # independent D-DBSDE networks and discards the first 39.  The README
+        # invokes this YAML as one D-DBSDE run, so execute that native solver
+        # once.  This changes no loss, architecture, epoch count, or output.
+        overrides += ["PICARD.N", "1"]
+        launcher_correction = (
+            "set inherited PICARD.N from 40 to 1 for standalone DiffusionSolution; "
+            "otherwise upstream PicardRunner redundantly trains and discards 39 full networks"
+        )
     if calibration:
         if method == "dpi":
             overrides += [
@@ -119,6 +132,7 @@ def run_official(method: str, seed: int, calibration: bool) -> dict[str, object]
             "fixed RNG seeds, wall/memory accounting, and final state_dict export only; "
             "upstream architecture, terminal construction, loss, optimizer, labels, and iterations unchanged"
         ),
+        "launcher_compatibility_correction": launcher_correction,
         "overrides": overrides,
         "terminal_aware_feature_added_by_us": False,
         "mcv_added_by_us": False,

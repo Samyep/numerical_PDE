@@ -5,7 +5,7 @@
 | Deep BSDE | `frankhan91/DeepBSDE` at `e76fed80b1995daf4a0dd6d3e2cf64a0931dabda` | `hjb_lq_d100.json`, `allencahn_d100.json` | Audited PyTorch 2.10 compatibility port because TensorFlow is absent on the GH200 image |
 | Deep Picard Iteration | `DeepOptimalControl/DeepPicardIteration` at `e8616c2f531c9f95299b246a13c1180b8f02822a` | `scripts/hjb/base_100d_T1.0_w0.1_0.yaml` | Fixed seeds, wall/memory logging, final state export |
 | PINN-HTE | Same DPI commit | `pinn_100d_T1.0_v16.yaml` | Fixed seeds, wall/memory logging, final state export |
-| D-DBSDE | Same DPI commit | `diffusion_100d_T1.0.yaml` | Fixed seeds, wall/memory logging, final state export |
+| D-DBSDE | Same DPI commit | `diffusion_100d_T1.0.yaml` | Fixed seeds, wall/memory logging, final state export; execute the standalone solver once as documented below |
 | SDGD-PINN | `zheyuanhu01/SDGD_PINN` at `c597cc4fe9caac0b3ca118ea84453405f25ff833` | `Section_5.3/HJB_Log.py` defaults | Supply the omitted test file from an independent exact reference; execute source unmodified with `runpy`; export final state afterward |
 
 ## Deep BSDE port
@@ -33,6 +33,16 @@ reason are in `prepared_inputs_manifest.json`.
 The DPI family keeps its native PISGradNet terminal construction.  That is an
 official method feature and is not removed merely because our Actor also has a
 terminal construction.  No MCV or Tangent-Actor feature is inserted.
+
+The D-DBSDE YAML inherits `PICARD.N=40` from the DPI base.  In the upstream
+runner, the `Diffusion` branch trains a fresh standalone D-DBSDE network and
+returns without updating Picard state; the outer loop therefore repeats the
+entire 15,000-epoch run 40 times, discards the first 39 networks, and exports
+only the last.  The repository README describes the YAML as one D-DBSDE run.
+We set only `PICARD.N=1` for this launcher defect.  The PISGradNet, terminal
+construction, loss, batch size, 50 SDE intervals, step size, optimizer, and
+15,000 epochs are unchanged.  Both the inherited value and this correction
+are recorded in every run artifact; no result is selected across repetitions.
 
 ## SDGD test data recovery
 
