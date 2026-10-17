@@ -123,6 +123,83 @@ the label-replication RMSE, below the predeclared factor-five upper-budget
 trigger.  The `max_quality` branch was therefore not run, and `focused a4`
 was frozen before the final-test reference was opened.
 
+## Frozen Tangent-Actor evaluation
+
+The table reports the mean and sample standard deviation across three fully
+independent `focused a4` training seeds.  Function inference uses 64 Euler
+steps, 256 paths per state, and four independent replicates.  Actor error is
+vector RMSE against `z=sigma^T grad(u)` for the two gradient problems and
+direct Value-Actor RMSE for Allen–Cahn.
+
+| Benchmark | Value RMSE | Relative L2 | Bias | Actor error | MCV variance reduction | Training | Function inference |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| HJB-Log | `0.0008535 ± 0.0000365` | `0.0001862 ± 0.0000080` | `+0.0003478 ± 0.0000218` | `0.04716 ± 0.00206` | `18.83 ± 0.93 x` | `1030.3 ± 75.9 s` | `101.6 ± 6.1 s` |
+| OU/GMM HJB | `0.22095 ± 0.00149` | `0.0007127 ± 0.0000048` | `-0.18458 ± 0.00128` | `0.59796 ± 0.00654` | `44.37 ± 0.35 x` | `1382.3 ± 136.8 s` | `134.2 ± 1.9 s` |
+| Allen–Cahn | `0.0001666 ± 0.0000083` | `0.003636 ± 0.000182` | `-0.0000005 ± 0.0000200` | `0.001347 ± 0.000041` | not used | `580.2 ± 63.8 s` | `44.3 ± 1.7 s` |
+
+There were no nonfinite values.  Mean exponential-weight ESS fractions were
+`1.000`, `1.000`, and `0.9924`, respectively.  On the official OU/GMM bank,
+the frozen 64-step Actor RMSE is far below DPI (`17.6638`), PINN-HTE
+(`38.6698`), and D-DBSDE (`30.7247`).  Those competitors have one fixed
+official seed, so the magnitude is compelling but is not presented as a
+multi-seed significance test.
+
+The native published-point comparison remains a different task:
+
+| Benchmark and method | Native absolute error | Training | Native inference | Interpretation |
+|---|---:|---:|---:|---|
+| HJB-Log Tangent-Actor | `0.003150 ± 0.000207` | `1030.3 ± 75.9 s` | `25.84 ± 1.14 s` | more accurate, substantially slower at one query |
+| HJB-Log Deep BSDE | `0.009678 ± 0.002761` | `65.15 s` | included in training output | native single-point baseline |
+| Allen–Cahn Tangent-Actor | `0.0000295 ± 0.0000241` | `580.2 ± 63.8 s` | `26.20 ± 1.04 s` | mean MC SE is `0.0000467`; reference-limited |
+| Allen–Cahn Deep BSDE | `0.0001691 ± 0.0001798` | `127.69 s` | included in training output | seed spread exceeds its mean error |
+
+Thus Tangent-Actor is more accurate on the HJB-Log native point but does not
+win on single-query runtime.  Its training cost is amortized only when the
+learned function is queried repeatedly.  On Allen–Cahn the Actor mean error is
+lower, but its MC standard error and the independent-reference uncertainty
+prevent a fine-grained ranking of very small point errors.
+
+### MC, time discretization, and Actor error
+
+At 64 steps the mean sampling-variance MSE components are `5.37e-7` for
+HJB-Log, `4.26e-4` for OU/GMM, and `2.76e-8` for Allen–Cahn.  Subtracting
+these from total MSE gives non-MC RMSE proxies `0.000435`, `0.21999`, and
+`0.0000284`.  HJB-Log and Allen–Cahn are substantially MC-limited at the
+declared path budget, whereas OU/GMM is dominated by systematic error.
+
+The frozen seed-0 discretization diagnostic is:
+
+| Benchmark | 32-step RMSE | 64-step RMSE | 128-step RMSE | 32 / 64 / 128 function inference |
+|---|---:|---:|---:|---:|
+| HJB-Log | `0.000911` | `0.000814` | `0.000706` | `50.7 / 99.3 / 183.0 s` |
+| OU/GMM HJB | `0.47401` | `0.21976` | `0.08768` | `73.4 / 136.4 / 253.9 s` |
+| Allen–Cahn | `0.0001717` | `0.0001734` | `0.0001727` | `22.2 / 43.9 / 81.9 s` |
+
+OU/GMM bias changes from `-0.39888` to `-0.18354` to `-0.06888`; its current
+accuracy ceiling is therefore controlled mainly by Euler discretization.
+The 128-step result is reported as a post-freeze numerical diagnostic, not as
+a replacement selected after seeing test error.  HJB-Log benefits modestly
+from finer steps.  Allen–Cahn is unchanged within MC noise.
+
+For HJB-Log, the 64-step Bregman diagnostic has observed mean policy gap
+`0.000279`, integrated quadratic gap `0.000241`, and identity residual
+`3.8e-5`.  For OU/GMM these are `-0.1860`, `0.04987`, and `-0.2359` at 64
+steps; the residual contracts from `-0.4443` at 32 steps to `-0.1187` at 128
+steps.  The sign violation is a finite-step bias diagnostic rather than a
+failure of the continuous-time identity.  The quadratic-gradient identity
+does not apply to Allen–Cahn's cubic value driver.
+
+### Postselection audit
+
+The descriptive, lower-path test screen agrees with the frozen HJB-Log choice:
+`focused a4` is best.  On OU/GMM it ranks `quality128 a3` first with RMSE
+`0.1367`, while frozen `focused a4` has `0.2266` under that noisy screen.  On
+Allen–Cahn it ranks `data8192 a1` first, but all leading candidates agree to
+about `1e-8` in screen RMSE.  These outcomes do not revise the declared
+reference-free selection.  The OU/GMM mismatch is an honest limitation of the
+policy-value selection statistic and is retained in the descriptive compute
+frontier rather than hidden by selecting on test RMSE.
+
 ## Numerical integrity and leakage controls
 
 Every Actor consumes time and all 100 ambient state coordinates.  The model
@@ -137,7 +214,7 @@ The HJB implementations consistently use `z=sigma^T grad(u)`.  For HJB-Log,
 linear drift stays in the forward SDE and only the concave quadratic driver is
 linearized.  Allen–Cahn uses a Value Actor constrained by its comparison-
 principle interval `[0,1]`; no Gradient head is added just to manufacture an
-MCV.  Eight automated tests cover terminal data, diffusion normalization,
+MCV.  Nine automated tests cover terminal data, diffusion normalization,
 sign conventions, exact-reference residuals, and tangent identities.
 
 Ground Truth is absent from label generation, fitting, early stopping, Actor
