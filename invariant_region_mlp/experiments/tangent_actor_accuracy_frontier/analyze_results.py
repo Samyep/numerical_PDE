@@ -92,8 +92,20 @@ def _full_history_rows() -> list[dict[str, Any]]:
 
 def _precision_rows() -> list[dict[str, Any]]:
     rows = []
+    payloads = []
     for path in sorted(RAW_DIR.glob("precision_primary_a4_seed*.json")):
-        payload = _load(path)
+        if path.name.startswith("environment_"):
+            continue
+        payloads.append(_load(path))
+    # Retain every raw run locally, while the headline table uses the largest
+    # completed path budget for each frozen training seed.
+    best_payload = {}
+    for payload in payloads:
+        seed = int(payload["training_seed"])
+        paths = int(payload["configuration"]["paths"])
+        if seed not in best_payload or paths > int(best_payload[seed]["configuration"]["paths"]):
+            best_payload[seed] = payload
+    for payload in [best_payload[key] for key in sorted(best_payload)]:
         refinement = {
             item["coarse_steps"]: item for item in payload["refinement_rows"]
         }
@@ -117,6 +129,7 @@ def _precision_rows() -> list[dict[str, Any]]:
                 "inference_seconds": row["wall_seconds"],
                 "total_production_seconds": training["wall_seconds_this_invocation"] + row["wall_seconds"],
                 "post_freeze_followup": True,
+                "evaluation_paths_selected_as_largest_completed_budget": True,
                 "coupled_prediction_difference_rms": refinement.get(row["steps"], {}).get("coupled_prediction_difference_rms"),
                 "noise_corrected_weak_difference_rms": refinement.get(row["steps"], {}).get("noise_corrected_weak_difference_rms"),
                 "observed_weak_order": refinement.get(row["steps"], {}).get("observed_order_using_next_difference"),
@@ -139,6 +152,7 @@ def _precision_rows() -> list[dict[str, Any]]:
                 "ess": row["weight_ess_fraction"], "nonfinite_count": row["nonfinite_count"],
                 "training_seconds": None, "inference_seconds": row["wall_seconds"],
                 "total_production_seconds": None, "post_freeze_followup": True,
+                "evaluation_paths_selected_as_largest_completed_budget": True,
                 "coupled_prediction_difference_rms": None,
                 "noise_corrected_weak_difference_rms": None,
                 "observed_weak_order": None,

@@ -35,7 +35,7 @@ nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
 python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available(), 'visible_devices', torch.cuda.device_count())"
 
 srun --network=no_vni python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.precision_evaluation \
-  --training-seed "$TRAINING_SEED" --paths 2048 --levels 64 128 256 512 \
+  --training-seed "$TRAINING_SEED" --paths 8192 --levels 64 128 256 512 \
   --fine-steps 512 --parent-batch 32 --path-chunk 128 --bootstrap-replicates 4000
 
 for M in 384 512; do

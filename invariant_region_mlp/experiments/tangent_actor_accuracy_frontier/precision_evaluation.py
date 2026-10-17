@@ -350,7 +350,8 @@ def run(
         second = refinement_rows[index + 1]["noise_corrected_weak_difference_rms"]
         order = None if first <= 0.0 or second <= 0.0 else math.log(first / second, 2.0)
         refinement_rows[index]["observed_order_using_next_difference"] = order
-    refinement_rows[-1]["observed_order_using_next_difference"] = None
+    if refinement_rows:
+        refinement_rows[-1]["observed_order_using_next_difference"] = None
 
     prediction_path = PREDICTION_DIR / (
         f"primary_a4_seed{training_seed}_crn_paths{paths}_fine{fine_steps}.npz"
@@ -386,7 +387,10 @@ def run(
             "bootstrap_replicates": bootstrap_replicates,
         },
     }
-    atomic_json(RAW_DIR / f"precision_primary_a4_seed{training_seed}.json", result)
+    atomic_json(
+        RAW_DIR / f"precision_primary_a4_seed{training_seed}_paths{paths}.json",
+        result,
+    )
     return result
 
 
@@ -406,7 +410,7 @@ def main() -> None:
         raise RuntimeError("CUDA allocation is required")
     ensure_dirs()
     atomic_json(
-        RAW_DIR / f"environment_precision_seed{args.training_seed}.json",
+        RAW_DIR / f"environment_precision_seed{args.training_seed}_paths{args.paths}.json",
         environment_payload("precision_evaluation"),
     )
     run(

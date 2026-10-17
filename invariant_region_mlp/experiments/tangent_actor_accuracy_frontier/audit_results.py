@@ -38,9 +38,17 @@ def run() -> dict:
     missing = [name for name in (*REQUIRED_REPORTS, *REQUIRED_TABLES, "reproducibility_manifest.json", "FINAL_SUMMARY.json") if not (RESULTS_DIR / name).exists()]
     if missing:
         raise RuntimeError(f"missing final artifacts: {missing}")
-    precision = sorted((RESULTS_DIR / "raw").glob("precision_primary_a4_seed*.json"))
+    precision_all = sorted((RESULTS_DIR / "raw").glob("precision_primary_a4_seed*.json"))
+    precision_by_seed = {}
+    for path in precision_all:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        seed = int(payload["training_seed"])
+        paths = int(payload["configuration"]["paths"])
+        if seed not in precision_by_seed or paths > precision_by_seed[seed][0]:
+            precision_by_seed[seed] = (paths, path)
+    precision = [precision_by_seed[seed][1] for seed in sorted(precision_by_seed)]
     if len(precision) != 3:
-        raise RuntimeError(f"expected three primary precision runs, found {len(precision)}")
+        raise RuntimeError(f"expected three primary precision seeds, found {len(precision)}")
     hashes, primary_rows = set(), 0
     for path in precision:
         payload = json.loads(path.read_text(encoding="utf-8"))
