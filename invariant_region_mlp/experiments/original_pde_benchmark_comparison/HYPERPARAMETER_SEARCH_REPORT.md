@@ -54,3 +54,24 @@ eligible to replace the declared MCV-training method in the primary
 reference-free selection.  All candidates may appear later in a descriptive
 postselection test-error plot, clearly marked as not used for selection.
 
+## HJB-Log frozen search outcome
+
+The three-replicate, 512-path, 64-step common-bank ranking selected
+`focused a4` after `993.72` seconds of cumulative training.  Its policy value
+was `4.575605754`, MC standard error `2.00e-5`, held-out gradient-label RMSE
+`0.006573`, and independent label-replication RMSE `0.000847`.  Relative to
+the selected checkpoint:
+
+| Candidate | Policy minus selected | Paired state SE | Interpretation |
+|---|---:|---:|---|
+| `focused a3` | `+6.70e-5` | `2.91e-5` | the fourth update gives a small replicated improvement |
+| `focused_plain a3` | `+1.03e-4` | `6.99e-5` | plain-FK training is competitive but does not beat MCV training |
+| `max_quality a1` | `+3.07e-4` | `1.01e-4` | twice the states and paths plus 64 steps is detectably worse |
+
+`max_quality a1` took `1977.89` seconds, used its 5,500-step checkpoint, and
+reduced label-replication RMSE to `0.000426`; nevertheless, its held-out RMSE
+remained `0.009486` and its policy value worsened.  The conditional continuation
+gate therefore stopped it before `a2`.  This result separates cleaner labels
+from better policies: supervision noise fell, but the chosen policy did not
+improve.
+
