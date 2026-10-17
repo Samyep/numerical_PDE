@@ -78,7 +78,16 @@ def run_official(method: str, seed: int, calibration: bool) -> dict[str, object]
             ]
         else:
             overrides += ["TRAIN.N_EPOCHS", "100", "EVAL.FREQ", "50"]
-    cfg = load_cfg(str(CONFIGS[method]), overrides)
+    # Upstream derived YAML files store ``BASE`` as a path relative to the
+    # official scripts/hjb directory.  Resolve the configuration under that
+    # native working directory, then return to the prepared GMM-tensor
+    # directory before constructing the equation.  No config value changes.
+    input_directory = Path.cwd()
+    os.chdir(CONFIGS[method].parent)
+    try:
+        cfg = load_cfg(str(CONFIGS[method]), overrides)
+    finally:
+        os.chdir(input_directory)
     cfg.freeze()
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
