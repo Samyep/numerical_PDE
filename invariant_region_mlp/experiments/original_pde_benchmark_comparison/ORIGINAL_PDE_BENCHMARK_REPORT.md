@@ -503,6 +503,7 @@ claim that it is a more efficient replacement for Full-History MLP.
 ## Generated artifacts
 
 The publication figures are
+[the intuitive accuracy overview](figures/intuitive_accuracy_comparison.png),
 [accuracy versus training time](figures/accuracy_vs_training_gpu_time.png),
 [the true total-compute envelope](figures/total_compute_budget_envelope.png),
 [Actor hyperparameter scaling](figures/tangent_actor_hyperparameter_scaling.png),
