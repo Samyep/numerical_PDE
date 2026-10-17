@@ -71,6 +71,21 @@ The post-freeze true-best column is an audit only; it was unavailable during che
 
 Across canonical MCV runs, the frozen selector matches the post-freeze best candidate in 85.7% of runs. This supports the score as a useful diagnostic in the tested regime, not as an error bound.
 
+## Euler-step sensitivity of frozen selections
+
+Each entry is an independently seeded MCV evaluation with the same number of states and paths. The spread therefore includes both discretization and finite-MC variation.
+
+| run | Actor | 32-step RMSE | 64-step RMSE | 128-step RMSE |
+|---|---|---:|---:|---:|
+| coupled_d100_k2_lam0p2_eta1_pilot_mcv_s0 | a2 | 0.00260464 | 0.00195547 | 0.00183591 |
+| primary_d100_k2_lam0_eta0_pilot_mcv_s0 | a2 | 0.00246529 | 0.00250321 | 0.00309355 |
+| primary_d100_k2_lam0p05_eta0_pilot_mcv_s0 | a2 | 0.00179946 | 0.00150893 | 0.0015301 |
+| primary_d100_k2_lam0p2_eta0_main_mcv_s0 | a4 | 0.00111405 | 0.000670375 | 0.000378794 |
+| primary_d100_k2_lam0p2_eta0_pilot_mcv_s0 | a2 | 0.00189639 | 0.00173641 | 0.00121496 |
+| primary_d100_k2_lam0p2_eta0_pilot_plain_s0 | a2 | 0.00193218 | 0.00165894 | 0.00166688 |
+| primary_d100_k2_lam0p5_eta0_pilot_mcv_s0 | a2 | 0.0102023 | 0.00863508 | 0.00848722 |
+| primary_d400_k2_lam0p2_eta0_pilot_mcv_s0 | a2 | 0.00685241 | 0.0061489 | 0.00639588 |
+
 ## Frozen endpoint comparison
 
 This table uses the reference-free selected main Actor, the predeclared highest Full-History endpoint `n=3,M=64`, and the PINN final step. No baseline row is selected by test RMSE.
@@ -121,6 +136,7 @@ The independent comparison uses raw Full-History MLP and a plain soft-terminal P
 - `ACTOR_CONSISTENCY_DIAGNOSTICS.csv`
 - `ACTOR_ITERATION_RESULTS.csv`
 - `SELECTION_RELIABILITY.csv`
+- `EULER_SENSITIVITY.csv`
 - `MCV_VARIANCE_RESULTS.csv`
 - `BASELINE_COMPARISON.csv`
 - `COMPUTE_ACCOUNTING.csv`

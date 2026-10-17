@@ -235,6 +235,23 @@ def iteration_rows(
     return rows
 
 
+def euler_rows(post_freeze: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for payload in post_freeze:
+        selection = payload["selection"]
+        for source in payload.get("euler_rows", []):
+            rows.append(
+                {
+                    **source,
+                    "selected": True,
+                    "selection_ranking_stable": selection[
+                        "ranking_stable_when_paths_and_steps_doubled"
+                    ],
+                }
+            )
+    return rows
+
+
 def mcv_rows(
     iterations: list[dict[str, Any]], training: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
@@ -706,6 +723,20 @@ def compute_rows(
                     "peak_gpu_bytes": None,
                 }
             )
+        for row in payload.get("euler_rows", []):
+            rows.append(
+                {
+                    **payload["spec"],
+                    "run_id": row["run_id"],
+                    "component": f"{row['iteration']}_euler_{row['time_steps']}_evaluation",
+                    "label_seconds": 0.0,
+                    "optimizer_seconds": 0.0,
+                    "inference_seconds": row["inference_seconds"],
+                    "total_seconds": row["inference_seconds"],
+                    "cumulative_training_seconds": None,
+                    "peak_gpu_bytes": None,
+                }
+            )
     for payload in baselines:
         if payload["method"] == "full_history_mlp_raw_adaptation":
             component = f"full_history_n{payload['n']}_M{payload['M']}_s{payload['baseline_seed']}"
@@ -1121,6 +1152,7 @@ def _summary(
             iterations
         ),
         "curvature_strength_results": _curvature_strength_results(iterations),
+        "euler_sensitivity": euler_rows(post_freeze),
         "frozen_endpoint_baseline_comparison": endpoint,
         "tangent_actor_beats_all_available_frozen_baseline_endpoints": endpoint_advantage,
         "ambient_scaling_diagnosis": _ambient_scaling_diagnosis(
@@ -1246,6 +1278,29 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
                 f"Across canonical MCV runs, the frozen selector matches the post-freeze best candidate in {100.0 * summary['canonical_selection_matches_postfreeze_best_fraction']:.1f}% of runs. This supports the score as a useful diagnostic in the tested regime, not as an error bound.",
             ]
         )
+    euler = summary["euler_sensitivity"]
+    if euler:
+        lines.extend(
+            [
+                "",
+                "## Euler-step sensitivity of frozen selections",
+                "",
+                "Each entry is an independently seeded MCV evaluation with the same number of states and paths. The spread therefore includes both discretization and finite-MC variation.",
+                "",
+                "| run | Actor | 32-step RMSE | 64-step RMSE | 128-step RMSE |",
+                "|---|---|---:|---:|---:|",
+            ]
+        )
+        for run_id, values in _group(euler, "run_id").items():
+            by_step = {int(row["time_steps"]): row for row in values}
+            if not {32, 64, 128}.issubset(by_step):
+                continue
+            lines.append(
+                f"| {run_id} | {values[0]['iteration']} | "
+                f"{by_step[32]['mcv_value_rmse']:.6g} | "
+                f"{by_step[64]['mcv_value_rmse']:.6g} | "
+                f"{by_step[128]['mcv_value_rmse']:.6g} |"
+            )
     endpoint = summary["frozen_endpoint_baseline_comparison"]
     if endpoint:
         lines.extend(
@@ -1332,6 +1387,7 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
             "- `ACTOR_CONSISTENCY_DIAGNOSTICS.csv`",
             "- `ACTOR_ITERATION_RESULTS.csv`",
             "- `SELECTION_RELIABILITY.csv`",
+            "- `EULER_SENSITIVITY.csv`",
             "- `MCV_VARIANCE_RESULTS.csv`",
             "- `BASELINE_COMPARISON.csv`",
             "- `COMPUTE_ACCOUNTING.csv`",
@@ -1354,6 +1410,7 @@ def main() -> None:
     ]
     consistency = consistency_rows(training)
     iterations = iteration_rows(post_freeze, consistency)
+    euler = euler_rows(post_freeze)
     reliability = _selection_reliability(iterations)
     mcv = mcv_rows(iterations, training)
     compute = compute_rows(training, post_freeze, baselines)
@@ -1365,6 +1422,8 @@ def main() -> None:
         write_csv(RESULTS_DIR / "MCV_VARIANCE_RESULTS.csv", mcv)
     if reliability:
         write_csv(RESULTS_DIR / "SELECTION_RELIABILITY.csv", reliability)
+    if euler:
+        write_csv(RESULTS_DIR / "EULER_SENSITIVITY.csv", euler)
     if comparison:
         write_csv(RESULTS_DIR / "BASELINE_COMPARISON.csv", comparison)
     if compute:
