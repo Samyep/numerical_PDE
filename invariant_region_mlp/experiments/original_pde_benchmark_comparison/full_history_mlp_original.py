@@ -198,6 +198,8 @@ def run(
         },
         "training_seconds": 0.0,
         "parameter_count": 0,
+        "function_inference_seconds": float(function_meta["wall_seconds"]),
+        "native_inference_seconds": float(native_meta["wall_seconds"]),
         "inference_seconds": total_seconds,
         "total_seconds": total_seconds,
         "pathwise_terminal_gradient": benchmark.actor_kind == "gradient",

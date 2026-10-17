@@ -226,12 +226,19 @@ def _actor_function_rows() -> list[dict[str, Any]]:
                 "variance_reduction": data["mean_variance_reduction"],
                 "weight_ess_fraction": data["mean_weight_ess_fraction"],
                 "training_seconds": data["training_seconds"],
-                "inference_seconds": data["evaluation_seconds"],
+                "inference_seconds": data.get(
+                    "function_evaluation_seconds", data["evaluation_seconds"]
+                ),
+                "combined_function_and_native_evaluation_seconds": data[
+                    "evaluation_seconds"
+                ],
                 "diagnostic_and_io_overhead_seconds": data.get(
                     "diagnostic_and_io_overhead_seconds"
                 ),
-                "total_seconds": data["total_seconds"],
-                "total_seconds_including_diagnostics": data.get(
+                "total_seconds": data.get(
+                    "function_total_seconds", data["total_seconds"]
+                ),
+                "allocation_total_seconds_including_diagnostics": data.get(
                     "total_seconds_including_diagnostics", data["total_seconds"]
                 ),
                 "parameter_count": data["parameter_count"],
@@ -346,8 +353,15 @@ def _official_function_rows() -> list[dict[str, Any]]:
                 "value_bias": metrics["bias"],
                 "value_mae": metrics["mae"],
                 "training_seconds": 0.0,
-                "inference_seconds": data["inference_seconds"],
-                "total_seconds": data["total_seconds"],
+                "inference_seconds": data.get(
+                    "function_inference_seconds", data["inference_seconds"]
+                ),
+                "combined_function_and_native_evaluation_seconds": data[
+                    "inference_seconds"
+                ],
+                "total_seconds": data.get(
+                    "function_inference_seconds", data["total_seconds"]
+                ),
                 "parameter_count": 0,
                 "peak_training_gpu_bytes": 0,
                 "peak_inference_gpu_bytes": max(
@@ -403,12 +417,16 @@ def native_rows(function: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "absolute_error": native["corrected_absolute_error"],
                 "mc_standard_error": native["corrected_replicate_standard_error"],
                 "training_seconds": data["training_seconds"],
-                "inference_seconds": data["evaluation_seconds"],
+                "inference_seconds": data.get(
+                    "native_evaluation_seconds", data["evaluation_seconds"]
+                ),
                 "diagnostic_and_io_overhead_seconds": data.get(
                     "diagnostic_and_io_overhead_seconds"
                 ),
-                "total_seconds": data["total_seconds"],
-                "total_seconds_including_diagnostics": data.get(
+                "total_seconds": data.get(
+                    "native_total_seconds", data["total_seconds"]
+                ),
+                "allocation_total_seconds_including_diagnostics": data.get(
                     "total_seconds_including_diagnostics", data["total_seconds"]
                 ),
                 "parameter_count": data["parameter_count"],
@@ -498,11 +516,19 @@ def native_rows(function: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "reference": native["reference"],
                     "absolute_error": absolute_error,
                     "training_seconds": data.get("training_seconds", 0.0),
-                    "inference_seconds": data.get("inference_seconds", 0.0),
+                    "inference_seconds": (
+                        data.get("native_inference_seconds", data["inference_seconds"])
+                        if method == "full_history_mlp_raw"
+                        else data.get("inference_seconds", 0.0)
+                    ),
                     "diagnostic_gradient_seconds": data.get(
                         "gradient_evaluation_seconds_reported_separately"
                     ),
-                    "total_seconds": data["total_seconds"],
+                    "total_seconds": (
+                        data.get("native_inference_seconds", data["total_seconds"])
+                        if method == "full_history_mlp_raw"
+                        else data["total_seconds"]
+                    ),
                     "parameter_count": data["parameter_count"],
                     "peak_training_gpu_bytes": training_peak,
                     "peak_inference_gpu_bytes": inference_peak,

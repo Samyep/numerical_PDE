@@ -80,7 +80,7 @@ def evaluate(
     predictions: list[np.ndarray] = []
     plain_predictions: list[np.ndarray] = []
     replicate_metadata: list[dict[str, Any]] = []
-    evaluation_seconds = 0.0
+    function_evaluation_seconds = 0.0
     for replicate in range(replicates):
         result, metadata = evaluate_policy(
             benchmark,
@@ -105,7 +105,7 @@ def evaluate(
         predictions.append(result[key])
         plain_predictions.append(result["plain"])
         replicate_metadata.append(metadata)
-        evaluation_seconds += float(metadata["wall_seconds"])
+        function_evaluation_seconds += float(metadata["wall_seconds"])
     matrix = np.asarray(predictions)
     plain_matrix = np.asarray(plain_predictions)
     mean_prediction = matrix.mean(axis=0)
@@ -154,6 +154,7 @@ def evaluate(
     native_replicates: list[float] = []
     native_plain_replicates: list[float] = []
     native_metadata: list[dict[str, Any]] = []
+    native_evaluation_seconds = 0.0
     for replicate in range(max(replicates, 4)):
         result, metadata = evaluate_policy(
             benchmark,
@@ -177,7 +178,7 @@ def evaluate(
         native_replicates.append(float(result[key][0]))
         native_plain_replicates.append(float(result["plain"][0]))
         native_metadata.append(metadata)
-        evaluation_seconds += float(metadata["wall_seconds"])
+        native_evaluation_seconds += float(metadata["wall_seconds"])
     native_reference = _native_reference(benchmark_name)
     native_mean = float(np.mean(native_replicates))
     native_plain_mean = float(np.mean(native_plain_replicates))
@@ -256,6 +257,8 @@ def evaluate(
         direct_actor=direct,
     )
     evaluation_process_seconds = time.perf_counter() - evaluation_process_started
+    evaluation_seconds = function_evaluation_seconds + native_evaluation_seconds
+    training_seconds = float(phase["cumulative_training_seconds"])
     result = {
         "method": "terminal_aware_tangent_actor_mcv",
         "benchmark": benchmark_name,
@@ -328,17 +331,18 @@ def evaluate(
                 np.mean([item["variance_reduction"] for item in native_metadata])
             ),
         },
-        "training_seconds": phase["cumulative_training_seconds"],
+        "training_seconds": training_seconds,
+        "function_evaluation_seconds": function_evaluation_seconds,
+        "native_evaluation_seconds": native_evaluation_seconds,
         "evaluation_seconds": evaluation_seconds,
         "evaluation_process_seconds_including_diagnostics": evaluation_process_seconds,
         "diagnostic_and_io_overhead_seconds": max(
             evaluation_process_seconds - evaluation_seconds, 0.0
         ),
-        "total_seconds": float(phase["cumulative_training_seconds"])
-        + evaluation_seconds,
-        "total_seconds_including_diagnostics": float(
-            phase["cumulative_training_seconds"]
-        )
+        "function_total_seconds": training_seconds + function_evaluation_seconds,
+        "native_total_seconds": training_seconds + native_evaluation_seconds,
+        "total_seconds": training_seconds + evaluation_seconds,
+        "total_seconds_including_diagnostics": training_seconds
         + evaluation_process_seconds,
         "prediction_file": str(prediction_path),
         "ground_truth_used_for_training_or_selection": False,
