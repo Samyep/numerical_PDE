@@ -918,18 +918,44 @@ def _plot_budget(total: list[dict[str, Any]]) -> None:
 def _plot_actor_scaling(trials: list[dict[str, Any]]) -> None:
     rows = [row for row in trials if row.get("descriptive_postselection_value_rmse")]
     fig, axes = plt.subplots(1, 3, figsize=(14.2, 4.0), constrained_layout=True)
+    trial_names = sorted({str(row["trial"]) for row in rows})
+    palette = plt.get_cmap("tab20")
+    colors = {
+        trial: palette(index % 20) for index, trial in enumerate(trial_names)
+    }
     for axis, benchmark in zip(axes, BENCHMARKS, strict=True):
         subset = [row for row in rows if row["benchmark"] == benchmark]
-        for row in subset:
-            selected = bool(row["reference_free_final_selected"])
-            axis.scatter(
-                row["cumulative_training_seconds"],
-                row["descriptive_postselection_value_rmse"],
-                s=75 if selected else 28,
-                marker="*" if selected else "o",
-                alpha=0.85,
+        for trial in trial_names:
+            local = sorted(
+                (row for row in subset if row["trial"] == trial),
+                key=lambda row: int(row["iteration"]),
             )
-            if selected:
+            if not local:
+                continue
+            axis.plot(
+                [float(row["cumulative_training_seconds"]) for row in local],
+                [float(row["descriptive_postselection_value_rmse"]) for row in local],
+                marker="o",
+                markersize=4.2,
+                linewidth=1.2 if len(local) > 1 else 0,
+                linestyle="--" if trial == "focused_plain" else "-",
+                color=colors[trial],
+                alpha=0.78,
+                label=trial,
+            )
+            for row in local:
+                if not row["reference_free_final_selected"]:
+                    continue
+                axis.scatter(
+                    row["cumulative_training_seconds"],
+                    row["descriptive_postselection_value_rmse"],
+                    s=100,
+                    marker="*",
+                    facecolor=colors[trial],
+                    edgecolor="black",
+                    linewidth=0.7,
+                    zorder=4,
+                )
                 axis.annotate(
                     f"{row['trial']} a{row['iteration']}",
                     (row["cumulative_training_seconds"], row["descriptive_postselection_value_rmse"]),
@@ -941,6 +967,18 @@ def _plot_actor_scaling(trials: list[dict[str, Any]]) -> None:
         axis.set_xlabel("Actor training seconds")
         axis.grid(True, which="both", alpha=0.22)
     axes[0].set_ylabel("descriptive postselection Value RMSE")
+    handles, labels = axes[0].get_legend_handles_labels()
+    for axis in axes[1:]:
+        local_handles, local_labels = axis.get_legend_handles_labels()
+        for handle, label in zip(local_handles, local_labels, strict=True):
+            if label not in labels:
+                handles.append(handle)
+                labels.append(label)
+    handles.append(
+        Line2D([0], [0], marker="*", linestyle="none", color="black", markersize=9)
+    )
+    labels.append("reference-free selected")
+    fig.legend(handles, labels, loc="outside lower center", ncol=6, frameon=False)
     fig.savefig(FIGURE_DIR / "tangent_actor_hyperparameter_scaling.png", dpi=220)
     fig.savefig(FIGURE_DIR / "tangent_actor_hyperparameter_scaling.pdf")
     plt.close(fig)
