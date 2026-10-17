@@ -81,6 +81,26 @@ def _actor_truth_metrics(
     inactive_q = predicted_q - predicted_reduced_q @ driver.B.T
     predicted_energy = np.mean(np.square(predicted_q).sum(axis=1))
     inactive_energy = np.mean(np.square(inactive_q).sum(axis=1))
+    terminal_q = driver.sigma * driver.terminal_gradient_torch(
+        torch.as_tensor(x, dtype=torch.float32, device=device)
+    ).double().cpu().numpy()
+    residual_q = predicted_q - terminal_q
+    singular_values = np.linalg.svd(
+        residual_q - residual_q.mean(axis=0, keepdims=True),
+        full_matrices=False,
+        compute_uv=False,
+    )
+    spectrum = np.square(singular_values)
+    spectrum_sum = float(spectrum.sum())
+    if spectrum_sum <= np.finfo(float).tiny:
+        participation_rank, rank_90, top_fraction = 0.0, 0, 0.0
+    else:
+        participation_rank = spectrum_sum**2 / max(
+            float(np.square(spectrum).sum()), np.finfo(float).tiny
+        )
+        cumulative = np.cumsum(spectrum) / spectrum_sum
+        rank_90 = int(np.searchsorted(cumulative, 0.9) + 1)
+        top_fraction = float(spectrum[0] / spectrum_sum)
     return {
         "actor_value_rmse": float(np.sqrt(np.mean(np.square(r_error)))),
         "actor_value_relative_l2": float(
@@ -115,6 +135,9 @@ def _actor_truth_metrics(
         "actor_gradient_norm_mean": float(
             np.mean(np.linalg.norm(predicted_q, axis=1))
         ),
+        "actor_residual_gradient_effective_rank": float(participation_rank),
+        "actor_residual_gradient_rank_90pct": rank_90,
+        "actor_residual_gradient_top_singular_fraction": top_fraction,
         "truth_gradient_norm_mean": float(np.mean(np.linalg.norm(exact_q, axis=1))),
         "actor_value_min": float(np.min(predicted_r)),
         "actor_value_max": float(np.max(predicted_r)),
