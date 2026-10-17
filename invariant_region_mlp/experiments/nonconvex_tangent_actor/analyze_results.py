@@ -385,17 +385,29 @@ def _frozen_endpoint_comparison(
         groups.setdefault((row["method"], configuration), []).append(row)
     output = []
     for (method, configuration), rows in groups.items():
-        rmse = np.asarray([row["value_rmse"] for row in rows], dtype=float)
+        finite_rows = [
+            row
+            for row in rows
+            if row.get("finite")
+            and row.get("value_rmse") is not None
+            and np.isfinite(row["value_rmse"])
+        ]
+        rmse = np.asarray(
+            [row["value_rmse"] for row in finite_rows], dtype=float
+        )
         cost = np.asarray([row["total_seconds"] for row in rows], dtype=float)
         output.append(
             {
                 "method": method,
                 "configuration": configuration,
                 "seeds": len(rows),
-                "value_rmse_mean": float(np.mean(rmse)),
+                "finite_seeds": len(finite_rows),
+                "value_rmse_mean": float(np.mean(rmse)) if len(rmse) else None,
                 "value_rmse_std": float(np.std(rmse, ddof=1))
                 if len(rmse) > 1
-                else 0.0,
+                else 0.0
+                if len(rmse) == 1
+                else None,
                 "total_seconds_mean": float(np.mean(cost)),
             }
         )
@@ -989,6 +1001,12 @@ def _plot_baseline_accuracy_cost(comparison: list[dict[str, Any]]) -> None:
         if row["family"] == "primary"
         and row["d"] == 100
         and math.isclose(row["lam"], 0.2)
+        and (
+            row["method"] != "Tangent-Actor + MCV"
+            or row["budget"] == "main"
+        )
+        and row.get("finite")
+        and row.get("value_rmse") is not None
         and row["value_rmse"] > 0.0
         and row["total_seconds"] > 0.0
     ]
@@ -1065,7 +1083,10 @@ def _summary(
         None,
     )
     baseline_endpoints = [
-        row for row in endpoint if row["method"] != "Tangent-Actor + MCV"
+        row
+        for row in endpoint
+        if row["method"] != "Tangent-Actor + MCV"
+        and row["value_rmse_mean"] is not None
     ]
     endpoint_advantage = bool(
         ours_endpoint
@@ -1182,19 +1203,44 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
             "",
             "## Frozen selected results",
             "",
-            "| family | d | lambda | budget | training labels | seed | Actor | Value RMSE | Relative L2 | Actor gradient-vector RMSE | MCV variance reduction | ESS |",
-            "|---|---:|---:|---|---|---:|---|---:|---:|---:|---:|---:|",
+            "| family | d | lambda | budget | training labels | seed | Actor | Policy Value RMSE | Relative L2 | systematic / MC RMSE | Value-Actor RMSE | Gradient-Actor vector RMSE | MCV variance reduction | ESS |",
+            "|---|---:|---:|---|---|---:|---|---:|---:|---:|---:|---:|---:|---:|",
         ]
     )
     for row in selected:
         lines.append(
             f"| {row['family']} | {row['d']} | {row['lambda']} | {row['budget']} | {row.get('training_estimator', '—')} | {row['seed']} | {row['iteration']} | "
-            f"{row['mcv_value_rmse']:.6g} | {row['mcv_relative_l2']:.6g} | "
-            f"{row['actor_gradient_vector_rmse']:.6g} | {row['mcv_variance_reduction']:.2f}× | "
+            f"{row['mcv_value_rmse']:.6g} | {row['mcv_relative_l2']:.6g} | {row['mcv_systematic_rmse']:.6g} / {row['mcv_mc_rmse_contribution']:.6g} | "
+            f"{row['actor_value_rmse']:.6g} | {row['actor_gradient_vector_rmse']:.6g} | {row['mcv_variance_reduction']:.2f}× | "
             f"{row['weight_ess_fraction']:.4f} |"
         )
     if not selected:
-        lines.append("| — | — | — | — | — | — | — | — | — | — | — | — |")
+        lines.append("| — | — | — | — | — | — | — | — | — | — | — | — | — | — |")
+    if rows:
+        lines.extend(
+            [
+                "",
+                "## Actor-iteration trajectories",
+                "",
+                "Arrows list `a0 -> a1 -> ...` in training order. Value and Gradient errors are post-freeze audits; the fixed-point trajectory is the reference-free ranking audit used for selection.",
+                "",
+                "| run | linear-policy mean (diagnostic) | Policy Value RMSE | Gradient-Actor vector RMSE | fixed-point inconsistency |",
+                "|---|---|---|---|---|",
+            ]
+        )
+        for run_id, values in _group(rows, "run_id").items():
+            ordered = sorted(values, key=lambda row: int(row["iteration"][1:]))
+            value_path = " → ".join(f"{row['mcv_value_rmse']:.4g}" for row in ordered)
+            mean_path = " → ".join(f"{row['mcv_value_mean']:.4g}" for row in ordered)
+            gradient_path = " → ".join(
+                f"{row['actor_gradient_vector_rmse']:.4g}" for row in ordered
+            )
+            fp_path = " → ".join(
+                f"{row['fixed_point_inconsistency']:.4g}" for row in ordered
+            )
+            lines.append(
+                f"| {run_id} | {mean_path} | {value_path} | {gradient_path} | {fp_path} |"
+            )
     label_ablation = summary["mcv_plain_a0_label_noise_ablation"]
     if label_ablation is not None:
         lines.extend(
@@ -1310,14 +1356,19 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
                 "",
                 "This table uses the reference-free selected main Actor, the predeclared highest Full-History endpoint `n=3,M=64`, and the PINN final step. No baseline row is selected by test RMSE.",
                 "",
-                "| method | frozen configuration | seeds | Value RMSE mean ± sd | mean total seconds |",
+                "| method | frozen configuration | finite / total seeds | Value RMSE mean ± sd | mean total seconds |",
                 "|---|---|---:|---:|---:|",
             ]
         )
         for row in endpoint:
+            accuracy = (
+                "nonfinite"
+                if row["value_rmse_mean"] is None
+                else f"{row['value_rmse_mean']:.6g} ± {row['value_rmse_std']:.3g}"
+            )
             lines.append(
-                f"| {row['method']} | {row['configuration']} | {row['seeds']} | "
-                f"{row['value_rmse_mean']:.6g} ± {row['value_rmse_std']:.3g} | "
+                f"| {row['method']} | {row['configuration']} | {row['finite_seeds']} / {row['seeds']} | "
+                f"{accuracy} | "
                 f"{row['total_seconds_mean']:.1f} |"
             )
     scaling = summary["ambient_scaling_diagnosis"]
@@ -1351,6 +1402,8 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
                     f"The d=400 Gradient-label replication noise is only {noise_ratio:.2f}× the d=100 value, while the selected error remains almost entirely in the two active directions and the inactive-output energy is negligible. Training after the first step nearly interpolates the training bank but worsens validation. The observed failure is therefore most consistent with full-ambient sample complexity/generalization under many irrelevant coordinates, rather than exponential-weight instability, MC-label noise alone, or spurious inactive Gradient output.",
                     "",
                     "The predeclared expansion rule therefore stopped before a coupled d=400 run or a costly d=400 budget increase. This is a retained scaling limitation, not a missing positive run.",
+                    "",
+                    "The 10% d=400 material-improvement threshold is used only for the final research GO/CONDITIONAL-GO judgment. It was introduced after freezing all training and checkpoint-selection rules and did not influence any Actor choice.",
                 ]
             )
     lines.extend(
@@ -1361,6 +1414,8 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
             f"Completed {summary['completed_training_runs']} training runs and {summary['completed_post_freeze_runs']} post-freeze evaluations. The rank correlation between the reference-free consistency score and post-freeze true Value error is {summary['fixed_point_true_error_spearman']}.",
             "",
             "No monotone policy-improvement theorem or nonnegative Bregman-regret identity is used for these drivers. Linear-policy values are diagnostics only. The experiment supports claims only for smooth bounded-curvature drivers in the tested locally stable regime.",
+            "",
+            "Every completed undamped run remained finite and above the ESS safety floor, so the predeclared trigger for a separate damping ablation was not met. No damped result is mixed into the primary method.",
             "",
             "The Actor always receives the full ambient state. Active coordinates and reference gradients are used only in the post-freeze audit. These are ambient 100D/400D tests with a two-dimensional reference structure, not evidence for arbitrary effective dimension.",
             "",
