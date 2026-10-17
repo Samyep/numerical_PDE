@@ -19,6 +19,7 @@ SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
 : "${BENCHMARKS:=hjb_log_d100 allen_cahn_d100}"
 : "${CONFIGURATIONS:=2:16 2:32 3:8 3:12 3:16 3:24}"
 : "${SEEDS:=0 1 2}"
+: "${SKIP_EXISTING:=1}"
 
 module load default
 source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
@@ -40,6 +41,11 @@ for BENCHMARK in "${BENCHMARK_LIST[@]}"; do
   for CONFIGURATION in "${CONFIGURATION_LIST[@]}"; do
     IFS=: read -r N M <<< "$CONFIGURATION"
     for SEED in "${SEED_LIST[@]}"; do
+      RESULT_PATH="$SOURCE_ROOT/invariant_region_mlp/results/original_pde_benchmark_comparison/raw/full_history_mlp_${BENCHMARK}_n${N}_M${M}_s${SEED}.json"
+      if [[ "$SKIP_EXISTING" -eq 1 && -s "$RESULT_PATH" ]]; then
+        echo "skip completed $BENCHMARK n=$N M=$M seed=$SEED"
+        continue
+      fi
       srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.full_history_mlp_original \
         --benchmark "$BENCHMARK" --n "$N" --M "$M" --seed "$SEED"
     done
