@@ -277,6 +277,52 @@ def _label_noise_ablation(training: list[dict[str, Any]]) -> dict[str, Any] | No
     }
 
 
+def _frozen_endpoint_comparison(
+    comparison: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Summarize only predeclared endpoints, never the best test-error row."""
+    eligible = []
+    for row in comparison:
+        primary = (
+            row["family"] == "primary"
+            and row["d"] == 100
+            and row["lam"] == 0.2
+        )
+        if not primary:
+            continue
+        if row["method"] == "Tangent-Actor + MCV" and row["budget"] == "main":
+            eligible.append(row)
+        elif row["method"] == "Full-History MLP" and row["configuration"] == "n=3,M=64":
+            eligible.append(row)
+        elif row["method"] == "Hutchinson PINN":
+            eligible.append(row)
+    groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for row in eligible:
+        configuration = (
+            "reference-free FP-selected Actor"
+            if row["method"] == "Tangent-Actor + MCV"
+            else row["configuration"]
+        )
+        groups.setdefault((row["method"], configuration), []).append(row)
+    output = []
+    for (method, configuration), rows in groups.items():
+        rmse = np.asarray([row["value_rmse"] for row in rows], dtype=float)
+        cost = np.asarray([row["total_seconds"] for row in rows], dtype=float)
+        output.append(
+            {
+                "method": method,
+                "configuration": configuration,
+                "seeds": len(rows),
+                "value_rmse_mean": float(np.mean(rmse)),
+                "value_rmse_std": float(np.std(rmse, ddof=1))
+                if len(rmse) > 1
+                else 0.0,
+                "total_seconds_mean": float(np.mean(cost)),
+            }
+        )
+    return sorted(output, key=lambda row: row["method"])
+
+
 def compute_rows(
     training: list[dict[str, Any]],
     post_freeze: list[dict[str, Any]],
@@ -544,6 +590,7 @@ def _summary(
     post_freeze: list[dict[str, Any]],
     iterations: list[dict[str, Any]],
     baselines: list[dict[str, Any]],
+    comparison: list[dict[str, Any]],
 ) -> dict[str, Any]:
     pilot_path = RESULTS_DIR / "pilot_decision.json"
     pilot = json.loads(pilot_path.read_text()) if pilot_path.exists() else None
@@ -597,6 +644,9 @@ def _summary(
             consistency_values, true_values
         ),
         "mcv_plain_a0_label_noise_ablation": _label_noise_ablation(training),
+        "frozen_endpoint_baseline_comparison": _frozen_endpoint_comparison(
+            comparison
+        ),
         "selected_results": selected,
         "scope_statement": "ambient d-dimensional benchmark with a two-dimensional independent reference structure",
         "global_convergence_claimed": False,
@@ -642,6 +692,25 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
                 f"| Gradient vector | {label_ablation['plain_gradient_vector_replication_rmse']:.6g} | {label_ablation['mcv_gradient_vector_replication_rmse']:.6g} | {label_ablation['gradient_noise_rmse_reduction_plain_over_mcv']:.2f}× |",
             ]
         )
+    endpoint = summary["frozen_endpoint_baseline_comparison"]
+    if endpoint:
+        lines.extend(
+            [
+                "",
+                "## Frozen endpoint comparison",
+                "",
+                "This table uses the reference-free selected main Actor, the predeclared highest Full-History endpoint `n=3,M=64`, and the PINN final step. No baseline row is selected by test RMSE.",
+                "",
+                "| method | frozen configuration | seeds | Value RMSE mean ± sd | mean total seconds |",
+                "|---|---|---:|---:|---:|",
+            ]
+        )
+        for row in endpoint:
+            lines.append(
+                f"| {row['method']} | {row['configuration']} | {row['seeds']} | "
+                f"{row['value_rmse_mean']:.6g} ± {row['value_rmse_std']:.3g} | "
+                f"{row['total_seconds_mean']:.1f} |"
+            )
     lines.extend(
         [
             "",
@@ -652,6 +721,8 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
             "No monotone policy-improvement theorem or nonnegative Bregman-regret identity is used for these drivers. Linear-policy values are diagnostics only. The experiment supports claims only for smooth bounded-curvature drivers in the tested locally stable regime.",
             "",
             "The Actor always receives the full ambient state. Active coordinates and reference gradients are used only in the post-freeze audit. These are ambient 100D/400D tests with a two-dimensional reference structure, not evidence for arbitrary effective dimension.",
+            "",
+            "The independent comparison uses raw Full-History MLP and a plain soft-terminal PINN. Native scalar Deep BSDE does not estimate the required random-time solution function, the available Deep Picard adaptation embeds our terminal-aware Actor, and the available DPI implementation is tied to a control-form HJB; they are excluded rather than modified into favorable but method-mismatched baselines.",
             "",
             "## Artifacts",
             "",
@@ -705,7 +776,7 @@ def main() -> None:
     _plot_fixed_point(iterations)
     _plot_curvature(preflight)
     _plot_mcv(iterations)
-    summary = _summary(training, post_freeze, iterations, baselines)
+    summary = _summary(training, post_freeze, iterations, baselines, comparison)
     atomic_json(RESULTS_DIR / "FINAL_SUMMARY.json", summary)
     _write_reproducibility_manifest()
     _write_report(summary, iterations)

@@ -18,6 +18,8 @@ No monotone policy-improvement theorem or nonnegative Bregman-regret identity is
 
 The Actor always receives the full ambient state. Active coordinates and reference gradients are used only in the post-freeze audit. These are ambient 100D/400D tests with a two-dimensional reference structure, not evidence for arbitrary effective dimension.
 
+The independent comparison uses raw Full-History MLP and a plain soft-terminal PINN. Native scalar Deep BSDE does not estimate the required random-time solution function, the available Deep Picard adaptation embeds our terminal-aware Actor, and the available DPI implementation is tied to a control-form HJB; they are excluded rather than modified into favorable but method-mismatched baselines.
+
 ## Artifacts
 
 - [Actor iteration behavior](figures/actor_iteration_behavior.png)
