@@ -149,7 +149,23 @@ def run_official(
         torch.cuda.synchronize()
     started = time.perf_counter()
     runner = PicardRunner(cfg)
-    runner.run()
+    # The repository was released before PyTorch 2.6, when torch.load used
+    # ``weights_only=False`` by default.  Picard checkpoints intentionally
+    # contain the equation object, so iteration 2 cannot read iteration 1
+    # under the new default.  Restore the legacy default only for calls where
+    # upstream omitted the keyword.  These checkpoints are generated locally
+    # in this same pinned-source process.
+    original_torch_load = torch.load
+
+    def torch_load_with_legacy_default(*args, **kwargs):
+        kwargs.setdefault("weights_only", False)
+        return original_torch_load(*args, **kwargs)
+
+    torch.load = torch_load_with_legacy_default
+    try:
+        runner.run()
+    finally:
+        torch.load = original_torch_load
     if torch.cuda.is_available():
         torch.cuda.synchronize()
     elapsed = time.perf_counter() - started
@@ -173,7 +189,8 @@ def run_official(
         else None,
         "instrumentation": (
             "fixed RNG seeds, wall/memory accounting, final state_dict export, and "
-            "non-numerical Rich progress display disabled; "
+            "non-numerical Rich progress display disabled; PyTorch >=2.6 "
+            "checkpoint loading restored to its legacy weights_only=False default; "
             "upstream architecture, terminal construction, loss, optimizer, labels, and iterations unchanged"
         ),
         "launcher_compatibility_correction": launcher_correction,

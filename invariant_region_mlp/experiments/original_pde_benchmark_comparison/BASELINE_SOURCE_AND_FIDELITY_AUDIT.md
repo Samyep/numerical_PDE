@@ -50,6 +50,13 @@ removes that display callback and sets Lightning's `enable_progress_bar=False`.
 Evaluation callbacks, model summaries, TensorBoard/W&B logging, data, labels,
 losses, precision, optimizers, and iteration counts remain unchanged.
 
+The pinned repository also predates PyTorch 2.6.  Its Picard checkpoints store
+the equation object and call `torch.load` without a `weights_only` argument.
+PyTorch 2.6 changed that default to `True`, causing iteration 2 to reject the
+locally generated iteration-1 checkpoint.  The launcher restores the former
+`weights_only=False` default only when upstream omits the keyword.  This is a
+checkpoint-format compatibility change and does not alter any numerical step.
+
 ## SDGD test data recovery
 
 The official script requires `HJB_Log_100_grad.pkl`, but the file is absent
