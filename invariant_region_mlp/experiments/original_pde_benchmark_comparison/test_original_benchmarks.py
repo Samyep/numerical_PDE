@@ -7,6 +7,7 @@ import torch
 
 from .benchmarks import AllenCahnBenchmark, DPIOUBenchmark, HJBLogBenchmark
 from .deep_bsde_port import CONFIGS, OfficialDeepBSDE
+from .diagnostics import exact_z_torch
 from .models import TerminalAwareActor
 from .references import dpi_exact_reference, hjb_log_quad_scalar, hjb_log_reference
 from .tangent_solver import _rollout_chunk, antithetic_normals
@@ -69,6 +70,25 @@ def test_dpi_numpy_and_torch_exact_solution_and_gradient() -> None:
     autograd = torch.autograd.grad(torch_value.sum(), xx)[0]
     np.testing.assert_allclose(value, torch_value.detach().numpy(), atol=2e-12)
     np.testing.assert_allclose(z, autograd.detach().numpy(), atol=2e-12)
+
+
+def test_torch_exact_z_matches_independent_numpy_references() -> None:
+    rng = np.random.default_rng(5103)
+    for benchmark in (HJBLogBenchmark(), DPIOUBenchmark()):
+        t = rng.uniform(0.0, benchmark.T, 7)
+        x = rng.normal(size=(7, benchmark.d))
+        if isinstance(benchmark, HJBLogBenchmark):
+            _, expected = hjb_log_reference(t, x, return_gradient=True)
+        else:
+            _, expected = dpi_exact_reference(
+                benchmark, t, x, return_gradient=True
+            )
+        actual = exact_z_torch(
+            benchmark,
+            torch.as_tensor(t, dtype=torch.float64),
+            torch.as_tensor(x, dtype=torch.float64),
+        ).numpy()
+        np.testing.assert_allclose(actual, expected, rtol=2e-10, atol=2e-10)
 
 
 def test_mcv_uses_unscaled_left_endpoint_dw() -> None:

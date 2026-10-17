@@ -21,6 +21,7 @@ from .common import (
     ensure_dirs,
     stable_seed,
 )
+from .diagnostics import quadratic_bregman_diagnostic
 from .models import load_actor
 from .references import dpi_exact_reference, hjb_log_reference
 from .tangent_solver import evaluate_policy
@@ -180,6 +181,43 @@ def evaluate(
     native_mean = float(np.mean(native_replicates))
     native_plain_mean = float(np.mean(native_plain_replicates))
 
+    if benchmark.actor_kind == "gradient":
+        diagnostic_indices = np.linspace(
+            0, len(reference) - 1, min(96, len(reference)), dtype=int
+        )
+        bregman = quadratic_bregman_diagnostic(
+            benchmark,
+            actor,
+            t[diagnostic_indices],
+            x[diagnostic_indices],
+            paths=128,
+            time_steps=time_steps,
+            seed=stable_seed(
+                "original_benchmark_bregman",
+                benchmark_name,
+                seed,
+                iteration,
+                time_steps,
+            ),
+            device=device,
+        )
+        observed_gap = float(
+            np.mean(mean_prediction[diagnostic_indices] - reference[diagnostic_indices])
+        )
+        bregman["observed_mcv_policy_minus_exact_mean"] = observed_gap
+        bregman["identity_residual"] = (
+            observed_gap - float(bregman["mean_integrated_bregman_gap"])
+        )
+        bregman["observed_gap_uses_frozen_final_evaluation"] = True
+    else:
+        bregman = {
+            "available": False,
+            "reason": (
+                "Allen-Cahn has a value-dependent cubic Bregman term; the "
+                "quadratic-gradient identity does not apply"
+            ),
+        }
+
     prediction_path = PREDICTION_DIR / (
         f"actor_{benchmark_name}_{trial}_s{seed}_a{iteration}_n{time_steps}.npz"
     )
@@ -235,6 +273,7 @@ def evaluate(
             np.mean([item["weight_ess_fraction"] for item in replicate_metadata])
         ),
         "actor_diagnostics": actor_diagnostics,
+        "bregman_diagnostics": bregman,
         "actor_inference_seconds": actor_inference_seconds,
         "native": {
             "point": "t=0,x=0",
