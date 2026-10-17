@@ -36,12 +36,14 @@ srun --network=no_vni python -m invariant_region_mlp.experiments.tangent_actor_a
   --family primary --d 100 --lam 0.2 --actor-seed 0 --baseline-seed 0 \
   --n 4 --M 2 --role profile
 
-for M in 384 512; do
-  srun --network=no_vni python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.full_history_frontier \
-    --family primary --d 100 --lam 0.2 --actor-seed 0 --baseline-seed 0 \
-    --n 3 --M "$M" --role endpoint
-done
+srun --network=no_vni python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.full_history_frontier \
+  --family primary --d 100 --lam 0.2 --actor-seed 0 --baseline-seed 0 \
+  --n 3 --M 384 --role endpoint
 
 srun --network=no_vni python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.precision_evaluation \
   --training-seed 0 --paths 2048 --levels 64 128 256 512 \
   --fine-steps 512 --parent-batch 32 --path-chunk 128 --bootstrap-replicates 4000
+
+srun --network=no_vni python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.full_history_frontier \
+  --family primary --d 100 --lam 0.2 --actor-seed 0 --baseline-seed 0 \
+  --n 3 --M 512 --role endpoint
