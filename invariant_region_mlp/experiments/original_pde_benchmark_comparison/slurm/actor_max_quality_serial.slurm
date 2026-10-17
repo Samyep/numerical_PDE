@@ -17,6 +17,7 @@ set -euo pipefail
 
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
 : "${BENCHMARK:?set BENCHMARK to hjb_log_d100, dpi_ou_gmm_d100, or allen_cahn_d100}"
+: "${MAX_ITERATIONS:=1}"
 
 module load default
 source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
@@ -32,6 +33,6 @@ nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
 python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
 
 srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.run_actor \
-  --benchmark "$BENCHMARK" --trial max_quality --seed 0 --iterations 1
+  --benchmark "$BENCHMARK" --trial max_quality --seed 0 --iterations "$MAX_ITERATIONS"
 srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.rank_actor_checkpoints \
   --benchmark "$BENCHMARK" --seed 0 --paths 512 --steps 64 --replicates 3

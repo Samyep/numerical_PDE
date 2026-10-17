@@ -27,7 +27,8 @@
       "training_points": 16384,
       "paths_per_label": 256,
       "label_time_steps": 64,
-      "launch_rule": "only when the staged reference-free results show continued benefit from supervision quality"
+      "launch_rule": "launch one update only if the staged runs stay finite and either continue to lower replicated policy value or leave held-out Actor error above five times independent label-replication RMSE; require projected wall time below the two-hour allocation limit",
+      "continuation_rule": "continue beyond one update only if the replicated common-bank ranking improves over the staged winner without Ground Truth"
     },
     "ablation": "focused_plain",
     "maximum_initial_actor_iterations": 6

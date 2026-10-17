@@ -265,6 +265,9 @@ def _official_function_rows() -> list[dict[str, Any]]:
                 "gradient_component_rmse": data["gradient_component_rmse"],
                 "training_seconds": data["training_seconds"],
                 "inference_seconds": data["inference_seconds"],
+                "diagnostic_gradient_seconds": data.get(
+                    "gradient_evaluation_seconds_reported_separately"
+                ),
                 "total_seconds": data["total_seconds"],
                 "parameter_count": data["parameter_count"],
                 "peak_training_gpu_bytes": training_peak,
@@ -302,6 +305,9 @@ def _official_function_rows() -> list[dict[str, Any]]:
                 ],
                 "training_seconds": data["training_seconds"],
                 "inference_seconds": data["inference_seconds"],
+                "diagnostic_gradient_seconds": data.get(
+                    "gradient_evaluation_seconds_reported_separately"
+                ),
                 "total_seconds": data["total_seconds"],
                 "parameter_count": data["parameter_count"],
                 "peak_training_gpu_bytes": training_peak,
@@ -486,6 +492,9 @@ def native_rows(function: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "absolute_error": absolute_error,
                     "training_seconds": data.get("training_seconds", 0.0),
                     "inference_seconds": data.get("inference_seconds", 0.0),
+                    "diagnostic_gradient_seconds": data.get(
+                        "gradient_evaluation_seconds_reported_separately"
+                    ),
                     "total_seconds": data["total_seconds"],
                     "parameter_count": data["parameter_count"],
                     "peak_training_gpu_bytes": training_peak,
@@ -673,9 +682,43 @@ def baseline_audit(function: list[dict[str, Any]], native: list[dict[str, Any]])
                 (float(row["absolute_error"]) for row in nrows), default=None
             ),
         }
+    calibration_trials: list[dict[str, Any]] = []
+    for pattern in (
+        "official_dpi_*_calibration_evaluation.json",
+        "official_dpi_*_full_data_one_iteration_evaluation.json",
+        "official_sdgd_*_calibration_evaluation.json",
+    ):
+        for path in sorted(RAW_DIR.glob(pattern)):
+            data = _read(path)
+            calibration_trials.append(
+                {
+                    "artifact": path.name,
+                    "method": data["method"],
+                    "benchmark": data["benchmark"],
+                    "training_seconds": data.get("training_seconds"),
+                    "value_rmse": data.get(
+                        "value_rmse", data.get("common_960_value_rmse")
+                    ),
+                    "headline": False,
+                }
+            )
+    accounting = accounting_rows()
+    unsuccessful_allocations = [
+        {
+            "job_id": row.get("JobIDRaw"),
+            "job_name": row.get("JobName"),
+            "state": row.get("State"),
+            "elapsed_seconds": row.get("elapsed_seconds"),
+            "exit_code": row.get("ExitCode"),
+        }
+        for row in accounting
+        if not str(row.get("State", "")).startswith(("COMPLETED", "RUNNING", "PENDING"))
+    ]
     result = {
         "source_commits": sources,
         "methods": methods,
+        "calibration_and_audit_trials": calibration_trials,
+        "failed_or_cancelled_allocations": unsuccessful_allocations,
         "fidelity_controls": {
             "baseline_terminal_aware_feature_added": False,
             "baseline_mcv_added": False,
