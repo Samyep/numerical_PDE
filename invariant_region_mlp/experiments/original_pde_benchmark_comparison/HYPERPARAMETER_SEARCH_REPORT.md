@@ -155,3 +155,18 @@ refinement proxy is `9.64e-6`, comparable to the `8.32e-6` Actor seed SD.
 These final-test numbers establish robustness of the frozen choice; they did
 not participate in the staged selection.
 
+The reference-free paired policy improvement also remained positive in every
+round and every independent seed.  The entries below are mean ± sample SD of
+`source_minus_new`; each seed uses an independent validation bank.
+
+| Benchmark | `a0 -> a1` | `a1 -> a2` | `a2 -> a3` | `a3 -> a4` |
+|---|---:|---:|---:|---:|
+| HJB-Log | `1.216e-3 ± 1.860e-4` | `2.837e-4 ± 1.664e-4` | `1.390e-4 ± 5.658e-5` | `1.419e-4 ± 8.070e-5` |
+| OU/GMM HJB | `18.7710 ± 0.0305` | `1.07664 ± 0.02315` | `0.08787 ± 0.00081` | `0.02773 ± 0.00113` |
+| Allen–Cahn | `2.477e-4 ± 5.063e-7` | `3.035e-7 ± 3.897e-8` | `3.718e-8 ± 7.816e-9` | `1.381e-8 ± 1.214e-9` |
+
+This supports real iterative improvement for the frozen procedure, especially
+on OU/GMM.  It also shows sharply diminishing returns: Allen–Cahn has already
+reached a practical plateau after the first update, while HJB-Log's later
+gains are comparable to their between-seed spread.
+
