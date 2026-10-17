@@ -1,0 +1,83 @@
+{
+  "allen_cahn_d100": {
+    "count": 512,
+    "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/evaluation_bank_allen_cahn_d100.npz",
+    "reference": {
+      "coarse": {
+        "dimension": 100,
+        "ds": 0.025,
+        "dt": 1.25e-05,
+        "horizon": 0.3,
+        "s_max": 200.0
+      },
+      "fine": {
+        "dimension": 100,
+        "ds": 0.0125,
+        "dt": 6.25e-06,
+        "horizon": 0.3,
+        "s_max": 200.0
+      },
+      "first_query_coarse": 0.05062571232968306,
+      "first_query_extrapolated": 0.05061124018489013,
+      "first_query_fine": 0.0506184762572866,
+      "maximum_coarse_fine_difference": 9.622528325169133e-06,
+      "maximum_extrapolation_correction": 9.622528325169133e-06,
+      "richardson_order": 1
+    },
+    "sampling_distribution": "native",
+    "sha256": "731dafc5aac912af3fa584857548e2e649b0eb82a0ea42c10fefb837f4daaad8",
+    "test_count": 410,
+    "validation_count": 102
+  },
+  "dpi_official_inputs": {
+    "directory": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/official_work/dpi_inputs",
+    "files": {
+      "mean_100d_ms=1.0_vs=2.0_5.pt": {
+        "origin": "tracked official DPI repository tensor",
+        "sha256": "c1e043e7f78339bdeed3bda571333fbb92c05bf53d586cce25b9cc549be54069"
+      },
+      "pi_100d_ms=1.0_vs=2.0_5.pt": {
+        "origin": "tracked official DPI repository tensor",
+        "sha256": "fb27a13c2af0f5650dd33c7c8c3081e6a4ed0dee47586daa55f84a2fd98468b1"
+      },
+      "var_100d_ms=1.0_vs=2.0_5.pt": {
+        "origin": "deterministically restored from official constructor var_scale=2",
+        "reason": "file referenced by source but absent from official git tree",
+        "sha256": "68ad96c8b14a4b463dd9d9129819f004a200edc2d320f9f43c2a27d710e06939"
+      }
+    }
+  },
+  "dpi_ou_gmm_d100": {
+    "count": 1200,
+    "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/evaluation_bank_dpi_ou_gmm_d100.npz",
+    "reference": {
+      "kind": "analytic evolving GMM"
+    },
+    "sampling_distribution": "official",
+    "sha256": "14426c76454e0ac11133090a188b782343a297702e0ca4e8f106748bbff028d4",
+    "test_count": 960,
+    "validation_count": 240
+  },
+  "hjb_log_d100": {
+    "count": 1200,
+    "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/evaluation_bank_hjb_log_d100.npz",
+    "reference": {
+      "kind": "Hopf-Cole quadrature",
+      "order": 128
+    },
+    "sampling_distribution": "function",
+    "sha256": "7f3f3b201d4f137712ffca28a546383527143b537ea16418966a909c2aac5ffb",
+    "test_count": 960,
+    "validation_count": 240
+  },
+  "sdgd_official_test_bank": {
+    "common_bank_is_exact_prefix": true,
+    "common_bank_prefix_count": 1200,
+    "count": 20000,
+    "labels_used_only_for_official_periodic_L2_reporting": true,
+    "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/official_work/sdgd/HJB_Log_100_grad.pkl",
+    "reference": "order-128 independent Hopf-Cole quadrature",
+    "sha256": "2c526d4218397716a37c32032d35ec671a4d01b156e3f6270a81f772b95923a5",
+    "training_loss_uses_labels": false
+  }
+}

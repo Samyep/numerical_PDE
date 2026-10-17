@@ -1,0 +1,38 @@
+{
+  "branch": "ir-mlp-original-pde-benchmark-comparison",
+  "benchmarks": [
+    "hjb_log_d100",
+    "dpi_ou_gmm_d100",
+    "allen_cahn_d100"
+  ],
+  "native_protocol": {
+    "hjb_log_d100": "u(0,0)",
+    "allen_cahn_d100": "u(0,0)",
+    "dpi_ou_gmm_d100": "official t-uniform, x|t~N(0,(4+t)I) function task"
+  },
+  "function_protocol": {
+    "hjb_log_d100": "960 held-out points with t~U[0,1], x~N(0,I)",
+    "dpi_ou_gmm_d100": "960 held-out points from the official sampling law",
+    "allen_cahn_d100": "410 held-out forward-law points; diagnostic because Deep BSDE is native single-point"
+  },
+  "actor_selection": "held-out noisy tangent-label loss plus a fixed reference-free policy-value bank",
+  "final_test_used_for_selection": false,
+  "actor_search": {
+    "stage_b": ["pilot192", "wide384", "deep_elu", "quality128"],
+    "successive_halving": "one update for all; continue the best two reference-free candidates",
+    "stage_c": ["data8192", "focused"],
+    "ablation": "focused_plain",
+    "maximum_initial_actor_iterations": 6
+  },
+  "mcv": {
+    "coefficient": 1.0,
+    "endpoint": "predictable left endpoint",
+    "training": "differentiate the complete corrected payoff",
+    "inference": "plain and corrected estimates share paths"
+  },
+  "baseline_policy": "official architecture and algorithm; no Tangent-Actor terminal feature or MCV added",
+  "final_seeds_when_affordable": [0, 1, 2],
+  "gpu": "NVIDIA GH200 120GB",
+  "cost_accounting": "synchronized wall time; training and total time both reported"
+}
+

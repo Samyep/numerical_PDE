@@ -1,0 +1,97 @@
+{
+  "allen_cahn": {
+    "extrapolation": {
+      "coarse": {
+        "dimension": 100,
+        "ds": 0.025,
+        "dt": 1.25e-05,
+        "horizon": 0.3,
+        "s_max": 200.0
+      },
+      "fine": {
+        "dimension": 100,
+        "ds": 0.0125,
+        "dt": 6.25e-06,
+        "horizon": 0.3,
+        "s_max": 200.0
+      },
+      "first_query_coarse": 0.05280063995786838,
+      "first_query_extrapolated": 0.05278135060749693,
+      "first_query_fine": 0.052790995282682655,
+      "maximum_coarse_fine_difference": 9.644675185722928e-06,
+      "maximum_extrapolation_correction": 9.644675185722928e-06,
+      "richardson_order": 1
+    },
+    "invariant_region_verified_numerically": true,
+    "method": "squared-radius PDE with monotone CN/Strang solver and Richardson extrapolation",
+    "native_u_0_0_extrapolated": 0.05278135060749693,
+    "passed": true,
+    "reference_uncertainty_proxy": 9.644675185722928e-06,
+    "refinements": [
+      {
+        "config": {
+          "dimension": 100,
+          "ds": 0.1,
+          "dt": 5e-05,
+          "horizon": 0.3,
+          "s_max": 180.0
+        },
+        "u_0_0": 0.05285865145368247
+      },
+      {
+        "config": {
+          "dimension": 100,
+          "ds": 0.05,
+          "dt": 2.5e-05,
+          "horizon": 0.3,
+          "s_max": 200.0
+        },
+        "u_0_0": 0.052819949757718594
+      },
+      {
+        "config": {
+          "dimension": 100,
+          "ds": 0.025,
+          "dt": 1.25e-05,
+          "horizon": 0.3,
+          "s_max": 200.0
+        },
+        "u_0_0": 0.05280063995786838
+      },
+      {
+        "config": {
+          "dimension": 100,
+          "ds": 0.0125,
+          "dt": 6.25e-06,
+          "horizon": 0.3,
+          "s_max": 200.0
+        },
+        "u_0_0": 0.052790995282682655
+      }
+    ],
+    "successive_native_differences": [
+      3.87016959638789e-05,
+      1.9309799850215914e-05,
+      9.644675185722928e-06
+    ]
+  },
+  "dpi_ou_gmm": {
+    "maximum_exact_pde_residual": 1.1937117960769683e-12,
+    "method": "closed-form evolving diagonal Gaussian mixture",
+    "numpy_vs_torch_value_max_abs": 1.1368683772161603e-13,
+    "numpy_vs_torch_z_max_abs": 1.8474111129762605e-13,
+    "passed": true,
+    "rms_exact_pde_residual": 8.283843522911907e-13,
+    "terminal_value_identity_max_abs": 5.684341886080802e-14
+  },
+  "hjb_log": {
+    "method": "Hopf-Cole plus scaled Gauss-Laguerre quadrature",
+    "native_u_0_0": 4.590161724604883,
+    "order128_vs_256_max_abs": 3.552713678800501e-15,
+    "order128_vs_adaptive_quad_max_abs_first8": 5.329070518200751e-15,
+    "order64_vs_128_max_abs": 3.552713678800501e-15,
+    "passed": true,
+    "states": 24
+  },
+  "passed": true
+}
