@@ -10,6 +10,7 @@ The experiment evaluates the unchanged undamped Terminal-Aware Tangent-Actor upd
 |---|---:|---:|---:|---|---:|---:|---:|---:|---:|
 | coupled | 100 | 0.2 | 0 | a2 | 0.00198365 | 0.00422741 | 0.0630903 | 7.44× | 0.9504 |
 | primary | 100 | 0.0 | 0 | a2 | 0.00278866 | 0.00556405 | 0.0525457 | 11.99× | 1.0000 |
+| primary | 100 | 0.05 | 0 | a2 | 0.00141132 | 0.00283456 | 0.0519344 | 14.65× | 0.9984 |
 | primary | 100 | 0.2 | 0 | a4 | 0.000684943 | 0.00137593 | 0.007139 | 51.75× | 0.9733 |
 | primary | 100 | 0.2 | 0 | a2 | 0.00150872 | 0.00303075 | 0.0607912 | 9.76× | 0.9736 |
 | primary | 400 | 0.2 | 0 | a2 | 0.00629103 | 0.0124982 | 0.153572 | 2.82× | 0.9781 |
@@ -33,7 +34,7 @@ The d=400 Gradient-label replication noise is only 1.13× the d=100 value, while
 
 ## Interpretation
 
-Completed 5 training runs and 5 post-freeze evaluations. The rank correlation between the reference-free consistency score and post-freeze true Value error is 0.982843137254902.
+Completed 6 training runs and 6 post-freeze evaluations. The rank correlation between the reference-free consistency score and post-freeze true Value error is 0.9639097744360902.
 
 No monotone policy-improvement theorem or nonnegative Bregman-regret identity is used for these drivers. Linear-policy values are diagnostics only. The experiment supports claims only for smooth bounded-curvature drivers in the tested locally stable regime.
 
