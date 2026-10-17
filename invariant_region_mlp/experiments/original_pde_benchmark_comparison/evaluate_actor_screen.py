@@ -15,6 +15,7 @@ import torch
 
 from .benchmarks import BENCHMARK_NAMES, make_benchmark
 from .common import RAW_DIR, RESULTS_DIR, atomic_json, stable_seed
+from .evaluate_actor import _select_reference_z
 from .models import load_actor
 from .tangent_solver import evaluate_policy
 
@@ -47,7 +48,7 @@ def evaluate_screen(
         t = bank["t"][indices]
         x = bank["x"][indices]
         reference = bank["value"][indices]
-        reference_z = bank["z"][indices]
+        reference_z = _select_reference_z(bank, indices, benchmark.actor_kind)
 
     rows: list[dict[str, Any]] = []
     started = time.perf_counter()
@@ -80,6 +81,8 @@ def evaluate_screen(
             direct = q if q is not None else r
             if direct is None:
                 raise RuntimeError("Actor returned no direct output")
+            if q is not None and reference_z is None:
+                raise RuntimeError("Gradient Actor screen has no gradient reference")
             target = reference_z if q is not None else reference
             direct_np = direct.detach().double().cpu().numpy()
             direct_error = direct_np - target

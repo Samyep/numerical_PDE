@@ -8,6 +8,7 @@ import torch
 from .benchmarks import AllenCahnBenchmark, DPIOUBenchmark, HJBLogBenchmark
 from .deep_bsde_port import CONFIGS, OfficialDeepBSDE
 from .diagnostics import exact_z_torch
+from .evaluate_actor import _select_reference_z
 from .models import TerminalAwareActor
 from .references import dpi_exact_reference, hjb_log_quad_scalar, hjb_log_reference
 from .tangent_solver import _rollout_chunk, antithetic_normals
@@ -138,4 +139,19 @@ def test_antithetic_normals_are_exact_pairs() -> None:
         device=torch.device("cpu"),
     )
     torch.testing.assert_close(normals[:, :4], -normals[:, 4:])
+
+
+def test_value_actor_evaluation_does_not_require_gradient_truth() -> None:
+    indices = np.asarray([0, 2])
+    value_bank = {"t": np.zeros(3), "z": np.empty((0, 100))}
+    assert _select_reference_z(value_bank, indices, "value") is None
+
+    gradient_bank = {
+        "t": np.zeros(3),
+        "z": np.arange(300, dtype=np.float64).reshape(3, 100),
+    }
+    np.testing.assert_array_equal(
+        _select_reference_z(gradient_bank, indices, "gradient"),
+        gradient_bank["z"][indices],
+    )
 

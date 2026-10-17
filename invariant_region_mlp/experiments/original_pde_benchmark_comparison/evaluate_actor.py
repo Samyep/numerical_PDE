@@ -51,6 +51,18 @@ def _metrics(prediction: np.ndarray, reference: np.ndarray) -> dict[str, float]:
     }
 
 
+def _select_reference_z(
+    bank: Any, indices: np.ndarray, actor_kind: str
+) -> np.ndarray | None:
+    """Read gradient truth only for benchmarks whose Actor predicts it."""
+    if actor_kind != "gradient":
+        return None
+    reference_z = bank["z"]
+    if len(reference_z) != len(bank["t"]):
+        raise ValueError("gradient Actor evaluation requires one z label per state")
+    return reference_z[indices]
+
+
 def evaluate(
     benchmark_name: str,
     trial: str,
@@ -75,7 +87,7 @@ def evaluate(
         t = bank["t"][indices]
         x = bank["x"][indices]
         reference = bank["value"][indices]
-        reference_z = bank["z"][indices]
+        reference_z = _select_reference_z(bank, indices, benchmark.actor_kind)
 
     predictions: list[np.ndarray] = []
     plain_predictions: list[np.ndarray] = []
@@ -128,6 +140,8 @@ def evaluate(
         torch.cuda.synchronize(device)
     actor_inference_seconds = time.perf_counter() - actor_started
     if q is not None:
+        if reference_z is None:
+            raise RuntimeError("Gradient Actor evaluation has no gradient reference")
         direct = q.detach().double().cpu().numpy()
         difference = direct - reference_z
         actor_diagnostics: dict[str, Any] = {
