@@ -172,17 +172,25 @@ def compute_rows(
                 }
             )
     for payload in baselines:
+        if payload["method"] == "full_history_mlp_raw_adaptation":
+            component = f"full_history_n{payload['n']}_M{payload['M']}_s{payload['baseline_seed']}"
+            inference_seconds = payload["runtime"]["wall_seconds"]
+            peak_gpu_bytes = payload["runtime"].get("peak_gpu_bytes")
+        else:
+            component = f"pinn_s{payload['baseline_seed']}"
+            inference_seconds = payload["inference_seconds"]
+            peak_gpu_bytes = payload["training"].get("peak_gpu_bytes")
         rows.append(
             {
                 **payload["spec"],
                 "run_id": payload["actor_test_bank_run_id"],
-                "component": f"full_history_n{payload['n']}_M{payload['M']}_s{payload['baseline_seed']}",
+                "component": component,
                 "label_seconds": 0.0,
-                "optimizer_seconds": 0.0,
-                "inference_seconds": payload["runtime"]["wall_seconds"],
-                "total_seconds": payload["runtime"]["wall_seconds"],
+                "optimizer_seconds": payload.get("training_seconds", 0.0),
+                "inference_seconds": inference_seconds,
+                "total_seconds": payload["total_seconds"],
                 "cumulative_training_seconds": 0.0,
-                "peak_gpu_bytes": payload["runtime"].get("peak_gpu_bytes"),
+                "peak_gpu_bytes": peak_gpu_bytes,
             }
         )
     return rows
@@ -227,18 +235,23 @@ def baseline_rows(
             }
         )
     for payload in baselines:
+        full_history = payload["method"] == "full_history_mlp_raw_adaptation"
         rows.append(
             {
-                "method": "Full-History MLP",
+                "method": "Full-History MLP" if full_history else "Hutchinson PINN",
                 **payload["spec"],
                 "run_id": payload["actor_test_bank_run_id"],
-                "configuration": f"n={payload['n']},M={payload['M']}",
+                "configuration": (
+                    f"n={payload['n']},M={payload['M']}"
+                    if full_history
+                    else "frozen 4x256, 5000 steps"
+                ),
                 "seed": payload["baseline_seed"],
                 "value_rmse": payload["metrics"]["rmse"],
                 "relative_l2": payload["metrics"]["relative_l2"],
                 "bias": payload["metrics"]["bias"],
                 "total_seconds": payload["total_seconds"],
-                "finite": payload["runtime"]["finite"],
+                "finite": payload["runtime"]["finite"] if full_history else True,
                 "original_algorithm_adaptation": True,
             }
         )
@@ -414,7 +427,12 @@ def _summary(
         "primary_main_seeds": sorted({row["seed"] for row in primary_main}),
         "coupled_completed": bool(coupled),
         "d400_completed": bool(d400),
-        "full_history_configurations_completed": len(baselines),
+        "full_history_configurations_completed": sum(
+            item["method"] == "full_history_mlp_raw_adaptation" for item in baselines
+        ),
+        "neural_baseline_runs_completed": sum(
+            item["method"] != "full_history_mlp_raw_adaptation" for item in baselines
+        ),
         "all_selected_runs_finite_and_ess_above_0p2": all_stable,
         "fixed_point_true_error_spearman": _rank_correlation(
             consistency_values, true_values
@@ -484,7 +502,8 @@ def main() -> None:
     post_freeze = _jsons("post_freeze_*.json")
     baselines = [
         json.loads(path.read_text(encoding="utf-8"))
-        for path in sorted(RAW_DIR.glob("baseline_full_history_*.json"))
+        for pattern in ("baseline_full_history_*.json", "baseline_pinn_*.json")
+        for path in sorted(RAW_DIR.glob(pattern))
     ]
     consistency = consistency_rows(training)
     iterations = iteration_rows(post_freeze, consistency)

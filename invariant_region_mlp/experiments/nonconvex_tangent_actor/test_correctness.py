@@ -18,6 +18,7 @@ from invariant_region_mlp.experiments.tangent_actor_scaling_diagnosis.models imp
 
 from .drivers import SineQuadraticDriver
 from .full_history_baseline import RawDriver
+from .pinn_baseline import PlainPINN, pde_residual
 from .reference2d import solve_strang_reference
 
 
@@ -174,3 +175,19 @@ def test_full_history_adapter_does_not_project_recursive_values() -> None:
     y = torch.tensor([1.2], dtype=torch.float64)
     z = torch.zeros(1, 4, dtype=torch.float64)
     torch.testing.assert_close(raw.driver(y, z), raw.original.driver(y, z))
+
+
+def test_plain_pinn_residual_supports_the_generic_joint_driver() -> None:
+    driver = SineQuadraticDriver(d=4, lam=0.2, eta=1.0)
+    model = PlainPINN(driver.d, width=16, depth=2)
+    generator = torch.Generator().manual_seed(97)
+    residual = pde_residual(
+        model,
+        driver,
+        torch.rand(6, generator=generator) * driver.T,
+        torch.randn(6, driver.d, generator=generator),
+        probes=2,
+        generator=generator,
+    )
+    assert residual.shape == (6,)
+    assert torch.isfinite(residual).all()
