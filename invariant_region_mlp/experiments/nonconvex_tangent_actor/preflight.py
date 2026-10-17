@@ -95,6 +95,38 @@ def _write_compatibility(audits: dict[str, dict[str, Any]]) -> None:
             f"{curvature['strong_positive_fraction']:.3f} | {curvature['strong_negative_fraction']:.3f} | "
             f"{curvature['joint_hessian_indefinite_fraction']:.3f} |"
         )
+    expansion_rows = []
+    for path in sorted(RESULTS_DIR.glob("preflight_primary_d100_k2_lam*_eta0.json")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        expansion_rows.append(
+            (float(payload["spec"]["lam"]), payload["reference"]["curvature_coverage"])
+        )
+    if expansion_rows:
+        primary = audits.get("primary")
+        if primary is not None:
+            expansion_rows.append(
+                (0.2, primary["reference"]["curvature_coverage"])
+            )
+        unique = {lam: coverage for lam, coverage in expansion_rows}
+        lines.extend(
+            [
+                "",
+                "## Controlled curvature-strength references",
+                "",
+                "All fractions use the same independent interior distribution and are frozen before Actor training.",
+                "",
+                "| lambda | Value mean ± std | Value q05 / q50 / q95 | f_uu>0 | f_uu<0 | strong positive | strong negative |",
+                "|---:|---:|---:|---:|---:|---:|---:|",
+            ]
+        )
+        for lam, curvature in sorted(unique.items()):
+            quantiles = curvature["value_quantiles"]
+            lines.append(
+                f"| {lam:g} | {curvature['value_mean']:.4f} ± {curvature['value_std']:.4f} | "
+                f"{quantiles[0]:.4f} / {quantiles[2]:.4f} / {quantiles[4]:.4f} | "
+                f"{curvature['f_uu_positive_fraction']:.3f} | {curvature['f_uu_negative_fraction']:.3f} | "
+                f"{curvature['strong_positive_fraction']:.3f} | {curvature['strong_negative_fraction']:.3f} |"
+            )
     lines.extend(
         [
             "",

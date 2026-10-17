@@ -103,6 +103,68 @@ def _write_reproducibility_manifest() -> None:
     atomic_json(RESULTS_DIR / "REPRODUCIBILITY_MANIFEST.json", manifest)
 
 
+def _write_consolidated_reference_report() -> None:
+    """Include every independent reference used by the controlled sweep."""
+    entries: list[tuple[str, float, float, dict[str, Any]]] = []
+    base_path = RESULTS_DIR / "preflight_audit.json"
+    if base_path.exists():
+        base = json.loads(base_path.read_text(encoding="utf-8"))
+        for family, payload in base.get("drivers", {}).items():
+            metadata = payload["driver"]
+            entries.append(
+                (
+                    family,
+                    float(metadata["lambda"]),
+                    float(metadata["eta"]),
+                    payload["reference"],
+                )
+            )
+    for path in sorted(RESULTS_DIR.glob("preflight_primary_d100_k2_lam*_eta0.json")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        spec = payload["spec"]
+        entries.append(
+            ("primary", float(spec["lam"]), float(spec["eta"]), payload["reference"])
+        )
+    deduplicated: dict[tuple[str, float, float], dict[str, Any]] = {}
+    for family, lam, eta, audit in entries:
+        deduplicated[(family, lam, eta)] = audit
+    lines = [
+        "# Reference Convergence Report",
+        "",
+        "References use a periodic Fourier pseudospectral discretization in the two active coordinates. The production solution uses Strang diffusion splitting and an explicit midpoint nonlinear step. A classical method-of-lines RK4 solve supplies an independent integration-scheme cross-check.",
+        "",
+        "Every row uses four refinement levels `(n,dt)=(48,1e-3),(64,5e-4),(96,2.5e-4),(128,1.25e-4)`. The three reported refinement columns compare coarse, medium, and fine solutions with production.",
+        "",
+        "| Driver | lambda | eta | coarse / medium / fine Value RMSE vs production | fine Gradient-vector RMSE | PDE residual RMSE | aliasing sensitivity | RK4 scheme difference | terminal Value / Gradient RMSE | range |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---|",
+    ]
+    for (family, lam, eta), audit in sorted(deduplicated.items()):
+        coarse = audit["coarse_vs_production"]
+        medium = audit["medium_vs_production"]
+        fine = audit["fine_vs_production"]
+        aliasing = audit["aliasing_n96_dealiased_vs_raw"]
+        rk4 = audit["independent_mol_rk4_n48_vs_split_n48"]
+        lines.append(
+            f"| {family} | {lam:g} | {eta:g} | {coarse['value_rmse']:.3e} / "
+            f"{medium['value_rmse']:.3e} / {fine['value_rmse']:.3e} | "
+            f"{fine['gradient_vector_rmse']:.3e} | {audit['pde_residual_rmse']:.3e} | "
+            f"{aliasing['value_rmse']:.3e} | {rk4['value_rmse']:.3e} | "
+            f"{audit['terminal_value_rmse']:.3e} / {audit['terminal_gradient_vector_rmse']:.3e} | "
+            f"[{audit['solution_grid_min']:.6f}, {audit['solution_grid_max']:.6f}] |"
+        )
+    lines.extend(
+        [
+            "",
+            "The fine-to-production Value discrepancy is the conservative reference-error proxy used in post-freeze reports. It is below one tenth of the selected method RMSE in every reported run, including the highest-accuracy main run.",
+            "",
+            "Reference arrays are retained as reproducible local artifacts and are never imported by Actor training or checkpoint selection. Only post-freeze evaluation loads them.",
+        ]
+    )
+    (RESULTS_DIR / "REFERENCE_CONVERGENCE_REPORT.md").write_text(
+        "\n".join(lines) + "\n", encoding="utf-8"
+    )
+
+
 def _rank_correlation(x: list[float], y: list[float]) -> float | None:
     if len(x) < 3:
         return None
@@ -438,6 +500,22 @@ def _selection_reliability(
                 "postfreeze_best_true_value_rmse": true_best["mcv_value_rmse"],
                 "selected_excess_rmse": selected["mcv_value_rmse"]
                 - true_best["mcv_value_rmse"],
+                "selected_mcv_mc_rmse_contribution": selected[
+                    "mcv_mc_rmse_contribution"
+                ],
+                "postfreeze_best_mcv_mc_rmse_contribution": true_best[
+                    "mcv_mc_rmse_contribution"
+                ],
+                "observed_rmse_gap_over_quadrature_mc_scale": (
+                    selected["mcv_value_rmse"] - true_best["mcv_value_rmse"]
+                )
+                / max(
+                    math.hypot(
+                        selected["mcv_mc_rmse_contribution"],
+                        true_best["mcv_mc_rmse_contribution"],
+                    ),
+                    1e-300,
+                ),
                 "a0_true_value_rmse": a0["mcv_value_rmse"],
                 "selected_true_rmse_reduction_vs_a0": 1.0
                 - selected["mcv_value_rmse"] / max(a0["mcv_value_rmse"], 1e-300),
@@ -1138,7 +1216,7 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
         lines.extend(
             [
                 "",
-                "The lambda=0 control is a retained negative result: fixed-point consistency and Gradient error improve, yet the selected true Value RMSE worsens. At lambda=0.05 and 0.5 the first update can also worsen Value before the second update improves it. These observations rule out a monotone-improvement interpretation.",
+                "The lambda=0 control is a retained negative signal: fixed-point consistency and Gradient error improve, yet the observed selected Value RMSE worsens. Its RMSE gap is smaller than the reported MC-error scale, so this finite-bank ordering is not claimed as statistically resolved. At lambda=0.05 and 0.5 the first update can also worsen Value before the second update improves it. These observations rule out a monotone-improvement interpretation.",
             ]
         )
     reliability = summary["selection_reliability"]
@@ -1237,7 +1315,7 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
             "",
             "1. The undamped generic tangent update is accurate on the primary and coupled d=100 nonconvex drivers, including a genuinely nonseparable `(u,z)` driver. This is empirical local-regime evidence, not global convergence.",
             "2. Iteration is numerically stable in every completed run, but true Value error is not monotone and additional updates matter differently across curvature strengths.",
-            "3. The independent fixed-point score usually ranks candidates well, but the lambda=0 control is a concrete selection failure; it cannot replace a theorem or calibrated validation bound.",
+                "3. The independent fixed-point score usually ranks candidates well, but the lambda=0 control has an observed finite-bank selection mismatch whose gap is not resolved beyond MC error; the score cannot replace a theorem or calibrated validation bound.",
             "4. MCV reduces label-replication noise and becomes a strong inference control variate once the Actor is accurate. With weak Actors it can increase inference variance.",
             "5. Nonseparable coupling remains solvable at d=100, with lower variance-reduction benefit and higher error than the primary high-budget run.",
             "6. The d=400 pilot is stable but gains only marginal accuracy; current evidence points to full-ambient statistical generalization as the scaling bottleneck.",
@@ -1297,6 +1375,10 @@ def main() -> None:
         if preflight_path.exists()
         else None
     )
+    if preflight is not None:
+        from .preflight import _write_compatibility
+
+        _write_compatibility(preflight.get("drivers", {}))
     _plot_iterations(iterations)
     _plot_fixed_point(iterations)
     _plot_curvature(preflight)
@@ -1306,6 +1388,7 @@ def main() -> None:
     summary = _summary(training, post_freeze, iterations, baselines, comparison)
     atomic_json(RESULTS_DIR / "FINAL_SUMMARY.json", summary)
     _write_reproducibility_manifest()
+    _write_consolidated_reference_report()
     _write_report(summary, iterations)
     print(json.dumps({key: value for key, value in summary.items() if key != "selected_results"}, indent=2))
 

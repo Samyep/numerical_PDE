@@ -52,7 +52,7 @@ The canonical seed-0 pilot sweep changes only lambda and retains the same full-a
 | 0.2 | a2 | 0.00577928 | 0.00150872 | 73.9% | 0.0607912 | 9.76× | 0.9736 |
 | 0.5 | a2 | 0.0242392 | 0.00954707 | 60.6% | 0.0970053 | 2.22× | 0.8513 |
 
-The lambda=0 control is a retained negative result: fixed-point consistency and Gradient error improve, yet the selected true Value RMSE worsens. At lambda=0.05 and 0.5 the first update can also worsen Value before the second update improves it. These observations rule out a monotone-improvement interpretation.
+The lambda=0 control is a retained negative signal: fixed-point consistency and Gradient error improve, yet the observed selected Value RMSE worsens. Its RMSE gap is smaller than the reported MC-error scale, so this finite-bank ordering is not claimed as statistically resolved. At lambda=0.05 and 0.5 the first update can also worsen Value before the second update improves it. These observations rule out a monotone-improvement interpretation.
 
 ## Reference-free selection audit
 
@@ -104,7 +104,7 @@ The independent comparison uses raw Full-History MLP and a plain soft-terminal P
 
 1. The undamped generic tangent update is accurate on the primary and coupled d=100 nonconvex drivers, including a genuinely nonseparable `(u,z)` driver. This is empirical local-regime evidence, not global convergence.
 2. Iteration is numerically stable in every completed run, but true Value error is not monotone and additional updates matter differently across curvature strengths.
-3. The independent fixed-point score usually ranks candidates well, but the lambda=0 control is a concrete selection failure; it cannot replace a theorem or calibrated validation bound.
+3. The independent fixed-point score usually ranks candidates well, but the lambda=0 control has an observed finite-bank selection mismatch whose gap is not resolved beyond MC error; the score cannot replace a theorem or calibrated validation bound.
 4. MCV reduces label-replication noise and becomes a strong inference control variate once the Actor is accurate. With weak Actors it can increase inference variance.
 5. Nonseparable coupling remains solvable at d=100, with lower variance-reduction benefit and higher error than the primary high-budget run.
 6. The d=400 pilot is stable but gains only marginal accuracy; current evidence points to full-ambient statistical generalization as the scaling bottleneck.
