@@ -617,11 +617,25 @@ def _summary(
         for row in selected
     )
     enough_breadth = len({row["seed"] for row in primary_main}) >= 2 and bool(coupled) and bool(d400)
+    endpoint = _frozen_endpoint_comparison(comparison)
+    ours_endpoint = next(
+        (row for row in endpoint if row["method"] == "Tangent-Actor + MCV"),
+        None,
+    )
+    baseline_endpoints = [
+        row for row in endpoint if row["method"] != "Tangent-Actor + MCV"
+    ]
+    endpoint_advantage = bool(
+        ours_endpoint
+        and baseline_endpoints
+        and ours_endpoint["value_rmse_mean"]
+        <= min(row["value_rmse_mean"] for row in baseline_endpoints)
+    )
     decision = (
         "NO-GO"
         if pilot is not None and not pilot["passed"]
         else "GO"
-        if enough_breadth and all_stable and baselines
+        if enough_breadth and all_stable and baselines and endpoint_advantage
         else "CONDITIONAL GO"
     )
     return {
@@ -644,9 +658,8 @@ def _summary(
             consistency_values, true_values
         ),
         "mcv_plain_a0_label_noise_ablation": _label_noise_ablation(training),
-        "frozen_endpoint_baseline_comparison": _frozen_endpoint_comparison(
-            comparison
-        ),
+        "frozen_endpoint_baseline_comparison": endpoint,
+        "tangent_actor_beats_all_available_frozen_baseline_endpoints": endpoint_advantage,
         "selected_results": selected,
         "scope_statement": "ambient d-dimensional benchmark with a two-dimensional independent reference structure",
         "global_convergence_claimed": False,
