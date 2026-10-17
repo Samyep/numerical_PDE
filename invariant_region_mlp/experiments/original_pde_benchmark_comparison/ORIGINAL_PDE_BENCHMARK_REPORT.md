@@ -27,7 +27,7 @@ the resource audit.
 | Benchmark | PDE and terminal condition | Native task | Independent reference | Eligibility |
 |---|---|---|---|---|
 | HJB-Log, `d=100`, `T=1` | `u_t + Delta u - ||grad u||^2 = 0`; `g(x)=log((1+||x||^2)/2)` | `u(0,0)` for Deep BSDE; distributed function task for SDGD | Hopf–Cole plus 1D Gauss–Laguerre quadrature | globally concave in `z=sqrt(2) grad u` |
-| OU/GMM HJB, `d=100`, `T=1` | official DPI drift, diffusion, quadratic-gradient driver, and five-component GMM terminal value | official `t`-uniform, `x|t~N(0,(4+t)I)` function task | exact evolving Gaussian mixture | known linear drift plus globally concave gradient driver |
+| OU/GMM HJB, `d=100`, `T=1` | `u_t + (alpha/2) Delta u - F.grad(u) - (alpha/2)||grad u||^2 - d theta = 0`, with `F=theta(mu-x)` and `alpha=theta=1`; terminal value is the negative log density of the official five-component GMM | official `t~U[0,1]`, `x|t~N(0,(4+t)I)` function task | exact evolving Gaussian mixture | known linear drift plus globally concave gradient driver |
 | Allen–Cahn, `d=100`, `T=0.3` | `u_t + Delta u + u-u^3 = 0`; `g(x)=1/(2+0.4||x||^2)` | `u(0,0)` | independent squared-radius PDE with mesh refinement | concave on the comparison-principle interval `[0,1]` |
 
 HJB-Rosenbrock was not used.  Its driver is compatible, but the official
