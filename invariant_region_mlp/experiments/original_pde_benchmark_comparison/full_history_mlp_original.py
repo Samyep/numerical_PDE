@@ -200,7 +200,7 @@ def run(
         "parameter_count": 0,
         "inference_seconds": total_seconds,
         "total_seconds": total_seconds,
-        "pathwise_terminal_gradient": True,
+        "pathwise_terminal_gradient": benchmark.actor_kind == "gradient",
         "recursive_value_projection": False,
         "terminal_aware_neural_feature": False,
         "mcv": False,

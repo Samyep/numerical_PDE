@@ -81,3 +81,72 @@ and final Monte Carlo policy evaluation.  Analytic-gradient Actor diagnostics,
 Bregman checks, and artifact I/O are recorded separately and also included in
 an auxiliary all-diagnostics total.  MCV factors are reported as estimator
 variance-reduction factors, never as RMSE-reduction factors.
+
+## Reference-free Actor tuning before final-test evaluation
+
+The staged search used no analytic nonterminal values or gradients.  The
+selection statistic was a replicated common-state linear-policy value with
+common Brownian paths across candidates; held-out tangent-label error broke
+ties.  Plain-FK training was retained as an ablation but was not eligible to
+replace the declared MCV-training method.
+
+| Benchmark | Frozen staged checkpoint | Training time | Common-bank policy value | Held-out label RMSE | Label-replication RMSE |
+|---|---|---:|---:|---:|---:|
+| HJB-Log | `focused a4` | 993.72 s | 4.575605754 | 0.006573 | 0.000847 |
+| OU/GMM HJB | `focused a4` | 1539.59 s | 308.7257452 | 0.059290 | 0.009644 |
+
+For HJB-Log, `focused a4` beat `focused a3` by `6.70e-5` with paired
+state SE `2.91e-5`.  A nominally larger `max_quality a1` used 16,384 points,
+256 paths per label, and 64 label steps, yet was worse by `3.07e-4` with
+paired SE `1.01e-4`; it was therefore stopped before a second round.
+
+For OU/GMM, the fourth focused update beat the third by `0.027388` with
+paired state SE `0.003114`.  At three matched rounds, MCV and plain-FK
+training had essentially the same policy value (`308.75313` versus
+`308.75442`).  MCV nevertheless reduced independent label-replication RMSE
+from `0.029624` to `0.010465` and modestly reduced held-out error from
+`0.077291` to `0.071546`.  This is evidence for cleaner supervision, while
+the matched-round policy gain is negligible.  One upper-budget OU/GMM update
+was admitted by the predeclared gate because iteration four still improved
+and Actor error remained well above label noise; its result is evaluated
+before the final checkpoint is frozen.
+
+## Numerical integrity and leakage controls
+
+Every Actor consumes time and all 100 ambient state coordinates.  The model
+receives no norm, active-subspace projection, GMM responsibility, exact
+nonterminal value, or exact nonterminal gradient.  The terminal value or
+terminal gradient appears only in our declared boundary-aware residual
+parameterization.  Competing methods retain their own original terminal
+construction and receive none of ours.
+
+The HJB implementations consistently use `z=sigma^T grad(u)`.  For HJB-Log,
+`sigma=sqrt(2) I`, so the tangent driver is `-|z|^2/2`; for OU/GMM the known
+linear drift stays in the forward SDE and only the concave quadratic driver is
+linearized.  Allen–Cahn uses a Value Actor constrained by its comparison-
+principle interval `[0,1]`; no Gradient head is added just to manufacture an
+MCV.  Eight automated tests cover terminal data, diffusion normalization,
+sign conventions, exact-reference residuals, and tangent identities.
+
+Ground Truth is absent from label generation, fitting, early stopping, Actor
+iteration, and frozen checkpoint ranking.  Analytic values and gradients are
+opened only for the final evaluation and Bregman diagnostics.  The later
+all-checkpoint test screen is marked descriptive and cannot revise the frozen
+selection.
+
+## Uncertainty and comparison rules
+
+Headline Tangent-Actor results use three independently trained Actors when
+the frozen configuration is affordable.  Each frozen Actor evaluation uses
+four independent MC replicates on the common held-out states.  The report
+separates the replicate sampling-variance component from the residual
+non-MC error proxy, and it reports seed variation separately from conditional
+MC standard error.
+
+Deep BSDE has three independent seeds on its native single-point tasks.
+DPI, PINN-HTE, D-DBSDE, and the full official SDGD run each have one fixed
+official seed, so their differences cannot be presented as multi-seed
+statistical dominance.  Allen–Cahn comparisons within roughly `1e-5` of the
+reference are labelled reference-limited.  A variance-reduction factor only
+compares estimator variances on shared paths; it is never interpreted as a
+factor reduction in Value RMSE or systematic bias.
