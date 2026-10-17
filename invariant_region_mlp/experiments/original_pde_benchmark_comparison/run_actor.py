@@ -27,6 +27,11 @@ from .tangent_solver import ActorConfig, evaluate_policy, fit_actor, generate_la
 
 
 TRIALS: dict[str, ActorConfig] = {
+    "compact128": ActorConfig(
+        training_points=2048, validation_points=256, paths_per_label=64,
+        label_time_steps=16, optimizer_steps=2000, width=128, depth=2,
+        activation="silu", learning_rate=2e-4, batch_size=512,
+    ),
     "pilot192": ActorConfig(
         training_points=2048, validation_points=256, paths_per_label=64,
         label_time_steps=16, optimizer_steps=2000, width=192, depth=3,
@@ -41,6 +46,16 @@ TRIALS: dict[str, ActorConfig] = {
         training_points=4096, validation_points=256, paths_per_label=64,
         label_time_steps=24, optimizer_steps=3000, width=256, depth=5,
         activation="elu", learning_rate=2e-4, batch_size=512,
+    ),
+    "wide512": ActorConfig(
+        training_points=4096, validation_points=256, paths_per_label=64,
+        label_time_steps=24, optimizer_steps=3000, width=512, depth=4,
+        activation="silu", learning_rate=2e-4, batch_size=512,
+    ),
+    "tanh256": ActorConfig(
+        training_points=4096, validation_points=256, paths_per_label=64,
+        label_time_steps=24, optimizer_steps=3000, width=256, depth=4,
+        activation="tanh", learning_rate=2e-4, batch_size=512,
     ),
     "data8192": ActorConfig(
         training_points=8192, validation_points=384, paths_per_label=64,

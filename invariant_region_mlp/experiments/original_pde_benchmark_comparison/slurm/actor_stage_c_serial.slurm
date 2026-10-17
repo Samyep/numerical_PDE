@@ -43,6 +43,11 @@ for TRIAL in "${SELECTED[@]}"; do
     --benchmark "$BENCHMARK" --trial "$TRIAL" --seed 0 --iterations 3
 done
 
+for TRIAL in compact128 wide512 tanh256; do
+  srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.run_actor \
+    --benchmark "$BENCHMARK" --trial "$TRIAL" --seed 0 --iterations 1
+done
+
 srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.run_actor \
   --benchmark "$BENCHMARK" --trial data8192 --seed 0 --iterations 3
 srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.run_actor \
