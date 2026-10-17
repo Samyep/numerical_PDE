@@ -6,7 +6,7 @@
 | Deep Picard Iteration | `DeepOptimalControl/DeepPicardIteration` at `e8616c2f531c9f95299b246a13c1180b8f02822a` | `scripts/hjb/base_100d_T1.0_w0.1_0.yaml` | Fixed seeds, wall/memory logging, final state export |
 | PINN-HTE | Same DPI commit | `pinn_100d_T1.0_v16.yaml` | Fixed seeds, wall/memory logging, final state export |
 | D-DBSDE | Same DPI commit | `diffusion_100d_T1.0.yaml` | Fixed seeds, wall/memory logging, final state export; execute the standalone solver once as documented below |
-| SDGD-PINN | `zheyuanhu01/SDGD_PINN` at `c597cc4fe9caac0b3ca118ea84453405f25ff833` | `Section_5.3/HJB_Log.py` defaults | Supply the omitted test file from an independent exact reference; execute source unmodified with `runpy`; export final state afterward |
+| SDGD-PINN | `zheyuanhu01/SDGD_PINN` at `c597cc4fe9caac0b3ca118ea84453405f25ff833` | `Section_5.3/HJB_Log.py` defaults | Supply the omitted test file from an independent exact reference; split its otherwise uncheckpointed loop at exact epoch boundaries; export final state afterward |
 
 ## Deep BSDE port
 
@@ -66,6 +66,18 @@ label them with independently converged Hopf-Cole quadrature.  The first 1,200
 states are the frozen common bank, which permits an exact shared 960-state
 test subset.  The official script still performs its native per-epoch test
 reporting, and that cost is charged.
+
+The monolithic 10,000-epoch script exceeds the queue's two-hour wall limit and
+has no resume hook.  The production launcher executes the official class
+definitions verbatim and transcribes only the body of `train_adam` into
+checkpointable epoch chunks.  It persists the model, Adam and scheduler
+states, current collocation points, recorded losses, and NumPy, Torch CPU, and
+all CUDA RNG states.  Before the full run, an independent uninterrupted
+100-epoch official execution and the checkpointable 100-epoch execution
+produced bitwise-identical values for every parameter tensor (maximum absolute
+difference exactly zero).  This is recorded in
+`sdgd_resumable_equivalence_audit.json`; the split changes neither an update nor
+the official terminal ansatz.
 
 The script writes its trajectory as `.xlsx` after training.  The cluster base
 environment lacked that optional writer, so `openpyxl==3.1.5` is installed in
