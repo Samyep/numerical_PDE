@@ -399,6 +399,145 @@ def _ambient_scaling_diagnosis(
     return output
 
 
+def _selection_reliability(
+    iterations: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Audit reference-free selection after the checkpoint is irrevocably frozen."""
+    output: list[dict[str, Any]] = []
+    for run_id, values in _group(iterations, "run_id").items():
+        ordered = sorted(values, key=lambda row: int(row["iteration"][1:]))
+        selected = next((row for row in ordered if row["selected"]), None)
+        eligible = [
+            row
+            for row in ordered
+            if row.get("fixed_point_inconsistency") is not None
+            and np.isfinite(row["fixed_point_inconsistency"])
+            and np.isfinite(row["mcv_value_rmse"])
+        ]
+        if selected is None or not eligible:
+            continue
+        true_ranking = sorted(eligible, key=lambda row: row["mcv_value_rmse"])
+        true_best = true_ranking[0]
+        a0 = next(row for row in ordered if row["iteration"] == "a0")
+        output.append(
+            {
+                "run_id": run_id,
+                "family": selected["family"],
+                "d": selected["d"],
+                "lambda": selected["lambda"],
+                "eta": selected["eta"],
+                "seed": selected["seed"],
+                "budget": selected["budget"],
+                "training_estimator": selected.get("training_estimator"),
+                "candidate_count": len(eligible),
+                "selected_actor": selected["iteration"],
+                "postfreeze_true_best_actor": true_best["iteration"],
+                "selected_matches_postfreeze_true_best": selected["iteration"]
+                == true_best["iteration"],
+                "selected_true_value_rmse": selected["mcv_value_rmse"],
+                "postfreeze_best_true_value_rmse": true_best["mcv_value_rmse"],
+                "selected_excess_rmse": selected["mcv_value_rmse"]
+                - true_best["mcv_value_rmse"],
+                "a0_true_value_rmse": a0["mcv_value_rmse"],
+                "selected_true_rmse_reduction_vs_a0": 1.0
+                - selected["mcv_value_rmse"] / max(a0["mcv_value_rmse"], 1e-300),
+                "selected_gradient_vector_rmse": selected[
+                    "actor_gradient_vector_rmse"
+                ],
+                "fixed_point_true_error_spearman_within_run": _rank_correlation(
+                    [row["fixed_point_inconsistency"] for row in eligible],
+                    [row["mcv_value_rmse"] for row in eligible],
+                ),
+                "selection_ranking_stable": selected["selection_ranking_stable"],
+                "minimum_selected_ess": selected["weight_ess_fraction"],
+            }
+        )
+    return output
+
+
+def _curvature_strength_results(
+    iterations: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Canonical seed-0 pilot sweep; excludes the separate coupled driver."""
+    output: list[dict[str, Any]] = []
+    for lam in (0.0, 0.05, 0.2, 0.5):
+        values = [
+            row
+            for row in iterations
+            if row["family"] == "primary"
+            and row["d"] == 100
+            and row["budget"] == "pilot"
+            and row["seed"] == 0
+            and row.get("training_estimator") == "mcv"
+            and math.isclose(row["lambda"], lam)
+        ]
+        if not values:
+            continue
+        selected = next((row for row in values if row["selected"]), None)
+        a0 = next((row for row in values if row["iteration"] == "a0"), None)
+        if selected is None or a0 is None:
+            continue
+        output.append(
+            {
+                "lambda": lam,
+                "selected_actor": selected["iteration"],
+                "a0_value_rmse": a0["mcv_value_rmse"],
+                "selected_value_rmse": selected["mcv_value_rmse"],
+                "true_rmse_reduction_vs_a0": 1.0
+                - selected["mcv_value_rmse"] / max(a0["mcv_value_rmse"], 1e-300),
+                "selected_gradient_vector_rmse": selected[
+                    "actor_gradient_vector_rmse"
+                ],
+                "selected_fixed_point_inconsistency": selected[
+                    "fixed_point_inconsistency"
+                ],
+                "selected_mcv_variance_reduction": selected[
+                    "mcv_variance_reduction"
+                ],
+                "selected_weight_ess_fraction": selected["weight_ess_fraction"],
+            }
+        )
+    return output
+
+
+def _training_estimator_effect(
+    iterations: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    selected: dict[str, dict[str, Any]] = {}
+    for row in iterations:
+        if (
+            row["family"] == "primary"
+            and row["d"] == 100
+            and row["budget"] == "pilot"
+            and row["seed"] == 0
+            and math.isclose(row["lambda"], 0.2)
+            and row["selected"]
+        ):
+            selected[row.get("training_estimator", "unknown")] = row
+    if not {"mcv", "plain"}.issubset(selected):
+        return None
+    mcv, plain = selected["mcv"], selected["plain"]
+    return {
+        "comparison": "frozen reference-free selected endpoints under identical pilot budgets",
+        "mcv_selected_actor": mcv["iteration"],
+        "plain_selected_actor": plain["iteration"],
+        "mcv_value_rmse": mcv["mcv_value_rmse"],
+        "plain_value_rmse": plain["mcv_value_rmse"],
+        "value_rmse_ratio_plain_over_mcv": plain["mcv_value_rmse"]
+        / max(mcv["mcv_value_rmse"], 1e-300),
+        "mcv_gradient_vector_rmse": mcv["actor_gradient_vector_rmse"],
+        "plain_gradient_vector_rmse": plain["actor_gradient_vector_rmse"],
+        "gradient_rmse_ratio_plain_over_mcv": plain[
+            "actor_gradient_vector_rmse"
+        ]
+        / max(mcv["actor_gradient_vector_rmse"], 1e-300),
+        "mcv_fixed_point_inconsistency": mcv["fixed_point_inconsistency"],
+        "plain_fixed_point_inconsistency": plain["fixed_point_inconsistency"],
+        "fixed_point_ratio_plain_over_mcv": plain["fixed_point_inconsistency"]
+        / max(mcv["fixed_point_inconsistency"], 1e-300),
+    }
+
+
 def compute_rows(
     training: list[dict[str, Any]],
     post_freeze: list[dict[str, Any]],
@@ -691,6 +830,91 @@ def _plot_mcv(rows: list[dict[str, Any]]) -> None:
     plt.close(fig)
 
 
+def _plot_curvature_strength(rows: list[dict[str, Any]]) -> None:
+    sweep = _curvature_strength_results(rows)
+    if not sweep:
+        return
+    x = np.asarray([row["lambda"] for row in sweep])
+    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.3))
+    axes[0].plot(
+        x,
+        [row["a0_value_rmse"] for row in sweep],
+        "o--",
+        label=r"initial $a_0$",
+        color="#777777",
+    )
+    axes[0].plot(
+        x,
+        [row["selected_value_rmse"] for row in sweep],
+        "o-",
+        label="FP-selected Actor",
+        color="#3A6EA5",
+    )
+    axes[0].set_yscale("log")
+    axes[0].set_xlabel(r"curvature strength $\lambda$")
+    axes[0].set_ylabel("post-freeze Value RMSE")
+    axes[0].legend()
+    axes[0].grid(alpha=0.25)
+    axes[1].plot(
+        x,
+        [row["selected_gradient_vector_rmse"] for row in sweep],
+        "o-",
+        color="#D1495B",
+        label="Gradient-vector RMSE",
+    )
+    axes[1].set_xlabel(r"curvature strength $\lambda$")
+    axes[1].set_ylabel("selected Actor Gradient error")
+    axes[1].grid(alpha=0.25)
+    axes[1].legend()
+    fig.suptitle("Accuracy across changing Value curvature", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(FIGURE_DIR / "curvature_strength_accuracy.png", dpi=220)
+    fig.savefig(FIGURE_DIR / "curvature_strength_accuracy.pdf")
+    plt.close(fig)
+
+
+def _plot_baseline_accuracy_cost(comparison: list[dict[str, Any]]) -> None:
+    rows = [
+        row
+        for row in comparison
+        if row["family"] == "primary"
+        and row["d"] == 100
+        and math.isclose(row["lam"], 0.2)
+        and row["value_rmse"] > 0.0
+        and row["total_seconds"] > 0.0
+    ]
+    if len({row["method"] for row in rows}) < 2:
+        return
+    styles = {
+        "Tangent-Actor + MCV": ("#3A6EA5", "*"),
+        "Full-History MLP": ("#D1495B", "o"),
+        "Hutchinson PINN": ("#5B8E7D", "s"),
+    }
+    fig, axis = plt.subplots(figsize=(7.0, 5.0))
+    for method, values in _group(rows, "method").items():
+        color, marker = styles.get(method, ("#777777", "o"))
+        axis.scatter(
+            [row["total_seconds"] for row in values],
+            [row["value_rmse"] for row in values],
+            label=method,
+            color=color,
+            marker=marker,
+            s=120 if marker == "*" else 50,
+            alpha=0.82,
+        )
+    axis.set_xscale("log")
+    axis.set_yscale("log")
+    axis.set_xlabel("measured total wall time (seconds)")
+    axis.set_ylabel("Value RMSE")
+    axis.set_title("Frozen nonconvex benchmark accuracy and cost")
+    axis.grid(alpha=0.25)
+    axis.legend()
+    fig.tight_layout()
+    fig.savefig(FIGURE_DIR / "baseline_accuracy_cost.png", dpi=220)
+    fig.savefig(FIGURE_DIR / "baseline_accuracy_cost.pdf")
+    plt.close(fig)
+
+
 def _summary(
     training: list[dict[str, Any]],
     post_freeze: list[dict[str, Any]],
@@ -708,6 +932,9 @@ def _summary(
     ]
     coupled = [row for row in selected if row["family"] == "coupled"]
     d400 = [row for row in selected if row["d"] == 400]
+    coupled_d400 = [
+        row for row in selected if row["family"] == "coupled" and row["d"] == 400
+    ]
     consistency_values = [
         row["fixed_point_inconsistency"]
         for row in iterations
@@ -737,11 +964,53 @@ def _summary(
         and ours_endpoint["value_rmse_mean"]
         <= min(row["value_rmse_mean"] for row in baseline_endpoints)
     )
+    reliability = _selection_reliability(iterations)
+    canonical_reliability = [
+        row for row in reliability if row.get("training_estimator") == "mcv"
+    ]
+    selection_match_fraction = (
+        sum(row["selected_matches_postfreeze_true_best"] for row in canonical_reliability)
+        / len(canonical_reliability)
+        if canonical_reliability
+        else 0.0
+    )
+    d400_primary = next(
+        (
+            row
+            for row in canonical_reliability
+            if row["family"] == "primary"
+            and row["d"] == 400
+            and row["budget"] == "pilot"
+            and math.isclose(row["lambda"], 0.2)
+            and row["seed"] == 0
+        ),
+        None,
+    )
+    d400_material_improvement = bool(
+        d400_primary
+        and d400_primary["selected_true_rmse_reduction_vs_a0"] >= 0.10
+    )
+    decision_reasons = []
+    if not enough_breadth:
+        decision_reasons.append("requested breadth or independent main seeds incomplete")
+    if not all_stable:
+        decision_reasons.append("at least one selected run failed finiteness or ESS checks")
+    if not endpoint_advantage:
+        decision_reasons.append("accuracy advantage over all frozen baseline endpoints not established")
+    if not d400_material_improvement:
+        decision_reasons.append("d=400 pilot did not achieve a material 10% true-RMSE reduction from a0")
+    if selection_match_fraction < 0.75:
+        decision_reasons.append("fixed-point checkpoint selection matched post-freeze best in fewer than 75% of canonical runs")
     decision = (
         "NO-GO"
         if pilot is not None and not pilot["passed"]
         else "GO"
-        if enough_breadth and all_stable and baselines and endpoint_advantage
+        if enough_breadth
+        and all_stable
+        and baselines
+        and endpoint_advantage
+        and d400_material_improvement
+        and selection_match_fraction >= 0.75
         else "CONDITIONAL GO"
     )
     return {
@@ -753,6 +1022,7 @@ def _summary(
         "primary_main_seeds": sorted({row["seed"] for row in primary_main}),
         "coupled_completed": bool(coupled),
         "d400_completed": bool(d400),
+        "coupled_d400_completed": bool(coupled_d400),
         "full_history_configurations_completed": sum(
             item["method"] == "full_history_mlp_raw_adaptation" for item in baselines
         ),
@@ -763,7 +1033,16 @@ def _summary(
         "fixed_point_true_error_spearman": _rank_correlation(
             consistency_values, true_values
         ),
+        "selection_reliability": reliability,
+        "canonical_selection_matches_postfreeze_best_fraction": selection_match_fraction,
+        "d400_material_improvement_threshold": 0.10,
+        "d400_material_improvement_achieved": d400_material_improvement,
+        "decision_reasons": decision_reasons,
         "mcv_plain_a0_label_noise_ablation": _label_noise_ablation(training),
+        "mcv_plain_training_endpoint_ablation": _training_estimator_effect(
+            iterations
+        ),
+        "curvature_strength_results": _curvature_strength_results(iterations),
         "frozen_endpoint_baseline_comparison": endpoint,
         "tangent_actor_beats_all_available_frozen_baseline_endpoints": endpoint_advantage,
         "ambient_scaling_diagnosis": _ambient_scaling_diagnosis(
@@ -784,21 +1063,28 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
         f"## Decision: **{summary['decision']}**",
         "",
         "The experiment evaluates the unchanged undamped Terminal-Aware Tangent-Actor update with alpha=1 martingale control variates. Checkpoints are selected by an independently replicated, noise-corrected fixed-point consistency score before the numerical reference is loaded.",
-        "",
-        "## Frozen selected results",
-        "",
-        "| family | d | lambda | seed | Actor | Value RMSE | Relative L2 | Actor gradient-vector RMSE | MCV variance reduction | ESS |",
-        "|---|---:|---:|---:|---|---:|---:|---:|---:|---:|",
     ]
+    if summary["decision_reasons"]:
+        lines.extend(["", "The current decision remains conditional because:", ""])
+        lines.extend(f"- {reason}." for reason in summary["decision_reasons"])
+    lines.extend(
+        [
+            "",
+            "## Frozen selected results",
+            "",
+            "| family | d | lambda | budget | training labels | seed | Actor | Value RMSE | Relative L2 | Actor gradient-vector RMSE | MCV variance reduction | ESS |",
+            "|---|---:|---:|---|---|---:|---|---:|---:|---:|---:|---:|",
+        ]
+    )
     for row in selected:
         lines.append(
-            f"| {row['family']} | {row['d']} | {row['lambda']} | {row['seed']} | {row['iteration']} | "
+            f"| {row['family']} | {row['d']} | {row['lambda']} | {row['budget']} | {row.get('training_estimator', '—')} | {row['seed']} | {row['iteration']} | "
             f"{row['mcv_value_rmse']:.6g} | {row['mcv_relative_l2']:.6g} | "
             f"{row['actor_gradient_vector_rmse']:.6g} | {row['mcv_variance_reduction']:.2f}× | "
             f"{row['weight_ess_fraction']:.4f} |"
         )
     if not selected:
-        lines.append("| — | — | — | — | — | — | — | — | — | — |")
+        lines.append("| — | — | — | — | — | — | — | — | — | — | — | — |")
     label_ablation = summary["mcv_plain_a0_label_noise_ablation"]
     if label_ablation is not None:
         lines.extend(
@@ -812,6 +1098,74 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
                 "|---|---:|---:|---:|",
                 f"| Value | {label_ablation['plain_value_replication_rmse']:.6g} | {label_ablation['mcv_value_replication_rmse']:.6g} | {label_ablation['value_noise_rmse_reduction_plain_over_mcv']:.2f}× |",
                 f"| Gradient vector | {label_ablation['plain_gradient_vector_replication_rmse']:.6g} | {label_ablation['mcv_gradient_vector_replication_rmse']:.6g} | {label_ablation['gradient_noise_rmse_reduction_plain_over_mcv']:.2f}× |",
+            ]
+        )
+    training_ablation = summary["mcv_plain_training_endpoint_ablation"]
+    if training_ablation is not None:
+        lines.extend(
+            [
+                "",
+                "The same-budget frozen training endpoints separate label quality from final Value accuracy:",
+                "",
+                "| training labels | selected Actor | Value RMSE | Gradient-vector RMSE | fixed-point inconsistency |",
+                "|---|---|---:|---:|---:|",
+                f"| MCV | {training_ablation['mcv_selected_actor']} | {training_ablation['mcv_value_rmse']:.6g} | {training_ablation['mcv_gradient_vector_rmse']:.6g} | {training_ablation['mcv_fixed_point_inconsistency']:.6g} |",
+                f"| plain FK | {training_ablation['plain_selected_actor']} | {training_ablation['plain_value_rmse']:.6g} | {training_ablation['plain_gradient_vector_rmse']:.6g} | {training_ablation['plain_fixed_point_inconsistency']:.6g} |",
+                "",
+                f"MCV lowers independent Value/Gradient label-replication RMSE by {label_ablation['value_noise_rmse_reduction_plain_over_mcv']:.2f}×/{label_ablation['gradient_noise_rmse_reduction_plain_over_mcv']:.2f}×. At the selected pilot endpoint, its Gradient RMSE is lower by a factor of {training_ablation['gradient_rmse_ratio_plain_over_mcv']:.2f} and its fixed-point score is lower by {training_ablation['fixed_point_ratio_plain_over_mcv']:.2f}×, while the final Value RMSE ratio is only {training_ablation['value_rmse_ratio_plain_over_mcv']:.3f}×. Thus this budget establishes a training-quality benefit, but not a material Value-accuracy advantage.",
+            ]
+        )
+    curvature = summary["curvature_strength_results"]
+    if curvature:
+        lines.extend(
+            [
+                "",
+                "## Accuracy versus curvature strength",
+                "",
+                "The canonical seed-0 pilot sweep changes only lambda and retains the same full-ambient architecture and budget.",
+                "",
+                "| lambda | selected Actor | a0 Value RMSE | selected Value RMSE | true reduction from a0 | Gradient-vector RMSE | MCV variance reduction | ESS |",
+                "|---:|---|---:|---:|---:|---:|---:|---:|",
+            ]
+        )
+        for row in curvature:
+            lines.append(
+                f"| {row['lambda']:.2g} | {row['selected_actor']} | {row['a0_value_rmse']:.6g} | "
+                f"{row['selected_value_rmse']:.6g} | {100.0 * row['true_rmse_reduction_vs_a0']:.1f}% | "
+                f"{row['selected_gradient_vector_rmse']:.6g} | {row['selected_mcv_variance_reduction']:.2f}× | "
+                f"{row['selected_weight_ess_fraction']:.4f} |"
+            )
+        lines.extend(
+            [
+                "",
+                "The lambda=0 control is a retained negative result: fixed-point consistency and Gradient error improve, yet the selected true Value RMSE worsens. At lambda=0.05 and 0.5 the first update can also worsen Value before the second update improves it. These observations rule out a monotone-improvement interpretation.",
+            ]
+        )
+    reliability = summary["selection_reliability"]
+    if reliability:
+        lines.extend(
+            [
+                "",
+                "## Reference-free selection audit",
+                "",
+                "The post-freeze true-best column is an audit only; it was unavailable during checkpoint selection.",
+                "",
+                "| run | selected | post-freeze true best | match | selected excess RMSE | within-run rank correlation |",
+                "|---|---|---|---:|---:|---:|",
+            ]
+        )
+        for row in reliability:
+            correlation = row["fixed_point_true_error_spearman_within_run"]
+            correlation_text = "—" if correlation is None else f"{correlation:.3f}"
+            lines.append(
+                f"| {row['run_id']} | {row['selected_actor']} | {row['postfreeze_true_best_actor']} | "
+                f"{'yes' if row['selected_matches_postfreeze_true_best'] else 'no'} | "
+                f"{row['selected_excess_rmse']:.6g} | {correlation_text} |"
+            )
+        lines.extend(
+            [
+                "",
+                f"Across canonical MCV runs, the frozen selector matches the post-freeze best candidate in {100.0 * summary['canonical_selection_matches_postfreeze_best_fraction']:.1f}% of runs. This supports the score as a useful diagnostic in the tested regime, not as an error bound.",
             ]
         )
     endpoint = summary["frozen_endpoint_baseline_comparison"]
@@ -862,6 +1216,8 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
                 [
                     "",
                     f"The d=400 Gradient-label replication noise is only {noise_ratio:.2f}× the d=100 value, while the selected error remains almost entirely in the two active directions and the inactive-output energy is negligible. Training after the first step nearly interpolates the training bank but worsens validation. The observed failure is therefore most consistent with full-ambient sample complexity/generalization under many irrelevant coordinates, rather than exponential-weight instability, MC-label noise alone, or spurious inactive Gradient output.",
+                    "",
+                    "The predeclared expansion rule therefore stopped before a coupled d=400 run or a costly d=400 budget increase. This is a retained scaling limitation, not a missing positive run.",
                 ]
             )
     lines.extend(
@@ -877,14 +1233,27 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
             "",
             "The independent comparison uses raw Full-History MLP and a plain soft-terminal PINN. Native scalar Deep BSDE does not estimate the required random-time solution function, the available Deep Picard adaptation embeds our terminal-aware Actor, and the available DPI implementation is tied to a control-form HJB; they are excluded rather than modified into favorable but method-mismatched baselines.",
             "",
+            "## Answers to the research questions",
+            "",
+            "1. The undamped generic tangent update is accurate on the primary and coupled d=100 nonconvex drivers, including a genuinely nonseparable `(u,z)` driver. This is empirical local-regime evidence, not global convergence.",
+            "2. Iteration is numerically stable in every completed run, but true Value error is not monotone and additional updates matter differently across curvature strengths.",
+            "3. The independent fixed-point score usually ranks candidates well, but the lambda=0 control is a concrete selection failure; it cannot replace a theorem or calibrated validation bound.",
+            "4. MCV reduces label-replication noise and becomes a strong inference control variate once the Actor is accurate. With weak Actors it can increase inference variance.",
+            "5. Nonseparable coupling remains solvable at d=100, with lower variance-reduction benefit and higher error than the primary high-budget run.",
+            "6. The d=400 pilot is stable but gains only marginal accuracy; current evidence points to full-ambient statistical generalization as the scaling bottleneck.",
+            "7. The resulting paper claim should remain restricted to smooth bounded-curvature, locally stable semilinear drivers with careful reference-free selection.",
+            "",
             "## Artifacts",
             "",
             "- [Actor iteration behavior](figures/actor_iteration_behavior.png)",
             "- [Fixed-point consistency versus true error](figures/fixed_point_vs_true_error.png)",
             "- [Curvature-region coverage](figures/curvature_region_coverage.png)",
+            "- [Accuracy versus curvature strength](figures/curvature_strength_accuracy.png)",
             "- [MCV variance reduction](figures/mcv_variance_reduction.png)",
+            "- [Baseline accuracy and cost](figures/baseline_accuracy_cost.png)",
             "- `ACTOR_CONSISTENCY_DIAGNOSTICS.csv`",
             "- `ACTOR_ITERATION_RESULTS.csv`",
+            "- `SELECTION_RELIABILITY.csv`",
             "- `MCV_VARIANCE_RESULTS.csv`",
             "- `BASELINE_COMPARISON.csv`",
             "- `COMPUTE_ACCOUNTING.csv`",
@@ -907,6 +1276,7 @@ def main() -> None:
     ]
     consistency = consistency_rows(training)
     iterations = iteration_rows(post_freeze, consistency)
+    reliability = _selection_reliability(iterations)
     mcv = mcv_rows(iterations, training)
     compute = compute_rows(training, post_freeze, baselines)
     comparison = baseline_rows(post_freeze, baselines)
@@ -915,6 +1285,8 @@ def main() -> None:
     if iterations:
         write_csv(RESULTS_DIR / "ACTOR_ITERATION_RESULTS.csv", iterations)
         write_csv(RESULTS_DIR / "MCV_VARIANCE_RESULTS.csv", mcv)
+    if reliability:
+        write_csv(RESULTS_DIR / "SELECTION_RELIABILITY.csv", reliability)
     if comparison:
         write_csv(RESULTS_DIR / "BASELINE_COMPARISON.csv", comparison)
     if compute:
@@ -928,7 +1300,9 @@ def main() -> None:
     _plot_iterations(iterations)
     _plot_fixed_point(iterations)
     _plot_curvature(preflight)
+    _plot_curvature_strength(iterations)
     _plot_mcv(iterations)
+    _plot_baseline_accuracy_cost(comparison)
     summary = _summary(training, post_freeze, iterations, baselines, comparison)
     atomic_json(RESULTS_DIR / "FINAL_SUMMARY.json", summary)
     _write_reproducibility_manifest()
