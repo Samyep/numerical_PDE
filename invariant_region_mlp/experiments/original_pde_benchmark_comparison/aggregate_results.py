@@ -1,0 +1,790 @@
+"""Build the frozen comparison tables, audits, and publication figures.
+
+The collector deliberately keeps native single-point and amortized function
+tasks in separate tables.  It can be rerun while jobs are arriving; missing
+methods are omitted rather than represented by invented numbers.
+"""
+
+from __future__ import annotations
+
+import csv
+import json
+import math
+from pathlib import Path
+from typing import Any
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+EXPERIMENT_DIR = Path(__file__).resolve().parent
+RESULTS_DIR = EXPERIMENT_DIR.parents[1] / "results/original_pde_benchmark_comparison"
+RAW_DIR = RESULTS_DIR / "raw"
+FIGURE_DIR = EXPERIMENT_DIR / "figures"
+BENCHMARKS = ("hjb_log_d100", "dpi_ou_gmm_d100", "allen_cahn_d100")
+BENCHMARK_LABELS = {
+    "hjb_log_d100": "HJB-Log (100D)",
+    "dpi_ou_gmm_d100": "OU/GMM HJB (100D)",
+    "allen_cahn_d100": "Allen–Cahn (100D)",
+}
+METHOD_LABELS = {
+    "terminal_aware_tangent_actor_mcv": "Tangent-Actor + MCV",
+    "deep_bsde_official_pytorch_compatibility_port": "Deep BSDE",
+    "dpi": "DPI",
+    "pinn_hte": "PINN-HTE",
+    "d_dbsde": "D-DBSDE",
+    "sdgd_pinn_official": "SDGD-PINN",
+    "full_history_mlp_raw": "Full-History MLP",
+}
+
+
+def _read(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text())
+
+
+def _finite(value: Any) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fields = sorted({key for row in rows for key in row})
+    with path.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(
+                {
+                    key: json.dumps(value, sort_keys=True)
+                    if isinstance(value, (dict, list, tuple))
+                    else value
+                    for key, value in row.items()
+                }
+            )
+
+
+def _actor_training_records() -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for path in sorted(RAW_DIR.glob("actor_*.json")):
+        record = _read(path)
+        if "phases" in record and record.get("method") == "terminal_aware_tangent_actor_mcv":
+            records.append(record)
+    return records
+
+
+def _selection(benchmark: str) -> dict[str, Any] | None:
+    path = RESULTS_DIR / f"final_actor_selection_{benchmark}.json"
+    return _read(path) if path.exists() else None
+
+
+def _screen_map(benchmark: str) -> dict[tuple[str, int], dict[str, Any]]:
+    path = RESULTS_DIR / f"actor_postselection_screen_{benchmark}.json"
+    if not path.exists():
+        return {}
+    return {
+        (str(row["trial"]), int(row["iteration"])): row
+        for row in _read(path)["rows"]
+    }
+
+
+def actor_trial_rows() -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for record in _actor_training_records():
+        benchmark = str(record["benchmark"])
+        trial = str(record["trial"])
+        config = record["configuration"]
+        selection = _selection(benchmark)
+        final_key = None
+        if selection:
+            selected = selection["selected"]
+            final_key = (str(selected["trial"]), int(selected["iteration"]))
+        stage_b_path = RESULTS_DIR / f"stage_b_selection_{benchmark}.json"
+        stage_b = _read(stage_b_path) if stage_b_path.exists() else {}
+        screen = _screen_map(benchmark)
+        for phase in record["phases"]:
+            iteration = int(phase["iteration"])
+            screen_row = screen.get((trial, iteration), {})
+            value_metrics = screen_row.get("value_metrics", {})
+            validation = phase["reference_free_policy_validation"]
+            training = phase["training"]
+            labels = phase["labels"]
+            train_label = labels.get("train", {})
+            rows.append(
+                {
+                    "benchmark": benchmark,
+                    "trial": trial,
+                    "seed": int(record["seed"]),
+                    "iteration": iteration,
+                    "width": config["width"],
+                    "depth": config["depth"],
+                    "activation": config["activation"],
+                    "training_points": config["training_points"],
+                    "paths_per_label": config["paths_per_label"],
+                    "label_time_steps": config["label_time_steps"],
+                    "optimizer_steps_per_iteration": config["optimizer_steps"],
+                    "label_estimator": config["label_estimator"],
+                    "parameters": training["parameters"],
+                    "cumulative_training_seconds": phase["cumulative_training_seconds"],
+                    "phase_seconds": phase["phase_seconds"],
+                    "label_seconds": phase["label_seconds_reported"],
+                    "fit_seconds": phase["fit_seconds_reported"],
+                    "heldout_tangent_label_rmse": training["selected_validation_rmse"],
+                    "label_replication_rmse": labels[
+                        "validation_label_replication_rmse"
+                    ],
+                    "reference_free_policy_value": validation["new_mean"],
+                    "reference_free_source_minus_new": validation[
+                        "source_minus_new_mean"
+                    ],
+                    "reference_free_policy_state_se": validation[
+                        "source_minus_new_state_se"
+                    ],
+                    "training_label_weight_ess_fraction": train_label.get(
+                        "weight_ess_fraction"
+                    ),
+                    "training_label_peak_gpu_bytes": train_label.get(
+                        "peak_gpu_bytes"
+                    ),
+                    "stage_b_continued": trial
+                    in stage_b.get("selected_for_continuation", []),
+                    "reference_free_final_selected": final_key == (trial, iteration),
+                    "descriptive_postselection_value_rmse": value_metrics.get("rmse"),
+                    "descriptive_postselection_relative_l2": value_metrics.get(
+                        "relative_l2"
+                    ),
+                    "descriptive_postselection_bias": value_metrics.get("bias"),
+                    "descriptive_test_used_for_selection": False,
+                    "ground_truth_used_for_training_or_selection": False,
+                }
+            )
+    rows.sort(key=lambda row: (
+        row["benchmark"], row["seed"], row["cumulative_training_seconds"], row["trial"]
+    ))
+    return rows
+
+
+def _actor_function_rows() -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for path in sorted(RAW_DIR.glob("actor_evaluation_*.json")):
+        data = _read(path)
+        corrected = data["corrected_metrics_of_replicate_mean"]
+        plain = data["plain_metrics_of_replicate_mean"]
+        sampling_mse = _finite(data.get("sampling_variance_component_mse"))
+        mse = float(corrected["rmse"]) ** 2
+        selection = _selection(str(data["benchmark"]))
+        selected = selection["selected"] if selection else {}
+        is_selected = (
+            str(data["trial"]) == str(selected.get("trial"))
+            and int(data["iteration"]) == int(selected.get("iteration", -1))
+        )
+        rows.append(
+            {
+                "benchmark": data["benchmark"],
+                "method": data["method"],
+                "method_label": METHOD_LABELS[data["method"]],
+                "variant": f"{data['trial']}/a{data['iteration']}",
+                "seed": data["seed"],
+                "protocol": "amortized_function_common_bank",
+                "evaluation_role": (
+                    "frozen_headline"
+                    if is_selected and int(data["time_steps"]) == 64
+                    else "frozen_discretization_diagnostic"
+                    if is_selected
+                    else "diagnostic"
+                ),
+                "states": data["states"],
+                "time_steps": data["time_steps"],
+                "paths_per_replicate": data["paths_per_replicate"],
+                "replicates": data["replicates"],
+                "value_rmse": corrected["rmse"],
+                "value_relative_l2": corrected["relative_l2"],
+                "value_bias": corrected["bias"],
+                "value_mae": corrected["mae"],
+                "plain_value_rmse": plain["rmse"],
+                "gradient_vector_rmse": data["actor_diagnostics"].get("vector_rmse"),
+                "gradient_component_rmse": data["actor_diagnostics"].get(
+                    "component_rmse"
+                ),
+                "direct_value_actor_rmse": data["actor_diagnostics"].get("rmse"),
+                "sampling_variance_component_mse": sampling_mse,
+                "non_mc_rmse_proxy": math.sqrt(max(mse - (sampling_mse or 0.0), 0.0)),
+                "variance_reduction": data["mean_variance_reduction"],
+                "weight_ess_fraction": data["mean_weight_ess_fraction"],
+                "training_seconds": data["training_seconds"],
+                "inference_seconds": data["evaluation_seconds"],
+                "total_seconds": data["total_seconds"],
+                "parameter_count": data["parameter_count"],
+                "frozen_before_test": data["frozen_before_test_reference"],
+                "ground_truth_used_for_selection": False,
+            }
+        )
+    return rows
+
+
+def _official_function_rows() -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for path in sorted(RAW_DIR.glob("official_dpi_*_s*_official_evaluation.json")):
+        data = _read(path)
+        rows.append(
+            {
+                "benchmark": data["benchmark"],
+                "method": data["method"],
+                "method_label": METHOD_LABELS[data["method"]],
+                "variant": "official",
+                "seed": data["seed"],
+                "protocol": "amortized_function_common_bank",
+                "evaluation_role": "official_fixed",
+                "states": data["states"],
+                "value_rmse": data["value_rmse"],
+                "value_relative_l2": data["value_relative_l2"],
+                "value_bias": data["value_bias"],
+                "gradient_vector_rmse": data["gradient_vector_rmse"],
+                "gradient_component_rmse": data["gradient_component_rmse"],
+                "training_seconds": data["training_seconds"],
+                "inference_seconds": data["inference_seconds"],
+                "total_seconds": data["total_seconds"],
+                "parameter_count": data["parameter_count"],
+                "ground_truth_used_for_selection": False,
+            }
+        )
+    for path in sorted(RAW_DIR.glob("official_sdgd_s*_official_evaluation.json")):
+        data = _read(path)
+        rows.append(
+            {
+                "benchmark": data["benchmark"],
+                "method": data["method"],
+                "method_label": METHOD_LABELS[data["method"]],
+                "variant": "official",
+                "seed": data["seed"],
+                "protocol": "amortized_function_common_bank",
+                "evaluation_role": "official_fixed",
+                "states": 960,
+                "value_rmse": data["common_960_value_rmse"],
+                "value_relative_l2": data["common_960_value_relative_l2"],
+                "value_bias": data["common_960_value_bias"],
+                "gradient_vector_rmse": data["common_960_gradient_vector_rmse"],
+                "gradient_component_rmse": data[
+                    "common_960_gradient_component_rmse"
+                ],
+                "training_seconds": data["training_seconds"],
+                "inference_seconds": data["inference_seconds"],
+                "total_seconds": data["total_seconds"],
+                "parameter_count": data["parameter_count"],
+                "ground_truth_used_for_selection": False,
+                "official_test_labels_reported_each_epoch": True,
+            }
+        )
+    for path in sorted(RAW_DIR.glob("full_history_mlp_*.json")):
+        data = _read(path)
+        metrics = data["function"]["metrics"]
+        rows.append(
+            {
+                "benchmark": data["benchmark"],
+                "method": data["method"],
+                "method_label": METHOD_LABELS[data["method"]],
+                "variant": f"n{data['n']}/M{data['M']}",
+                "seed": data["seed"],
+                "protocol": "amortized_function_common_bank",
+                "evaluation_role": "frozen_control_grid",
+                "states": data["function"]["states"],
+                "value_rmse": metrics["rmse"],
+                "value_relative_l2": metrics["relative_l2"],
+                "value_bias": metrics["bias"],
+                "value_mae": metrics["mae"],
+                "training_seconds": 0.0,
+                "inference_seconds": data["inference_seconds"],
+                "total_seconds": data["total_seconds"],
+                "parameter_count": 0,
+                "ground_truth_used_for_selection": False,
+            }
+        )
+    return rows
+
+
+def function_rows() -> list[dict[str, Any]]:
+    rows = _actor_function_rows() + _official_function_rows()
+    rows.sort(key=lambda row: (
+        row["benchmark"], row["method"], row["variant"], row["seed"], row.get("time_steps", 0)
+    ))
+    return rows
+
+
+def native_rows(function: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for path in sorted(RAW_DIR.glob("actor_evaluation_*.json")):
+        data = _read(path)
+        selection = _selection(str(data["benchmark"]))
+        selected = selection["selected"] if selection else {}
+        is_selected = (
+            str(data["trial"]) == str(selected.get("trial"))
+            and int(data["iteration"]) == int(selected.get("iteration", -1))
+        )
+        native = data["native"]
+        rows.append(
+            {
+                "benchmark": data["benchmark"],
+                "method": data["method"],
+                "method_label": METHOD_LABELS[data["method"]],
+                "variant": f"{data['trial']}/a{data['iteration']}/n{data['time_steps']}",
+                "seed": data["seed"],
+                "protocol": "native_published_point"
+                if native["is_published_native_point"]
+                else "native_diagnostic_only",
+                "published_native_point": native["is_published_native_point"],
+                "prediction": native["corrected_mean"],
+                "reference": native["reference"],
+                "absolute_error": native["corrected_absolute_error"],
+                "mc_standard_error": native["corrected_replicate_standard_error"],
+                "training_seconds": data["training_seconds"],
+                "inference_seconds": data["evaluation_seconds"],
+                "total_seconds": data["total_seconds"],
+                "parameter_count": data["parameter_count"],
+                "evaluation_role": "frozen_selected" if is_selected else "diagnostic",
+            }
+        )
+    for path in sorted(RAW_DIR.glob("deep_bsde_*.json")):
+        data = _read(path)
+        rows.append(
+            {
+                "benchmark": data["benchmark"],
+                "method": data["method"],
+                "method_label": METHOD_LABELS[data["method"]],
+                "variant": "official_fixed_iterations",
+                "seed": data["seed"],
+                "protocol": "native_published_point",
+                "published_native_point": True,
+                "prediction": data["reported_y0"],
+                "reference": data["native_reference"],
+                "absolute_error": data["native_absolute_error"],
+                "relative_error": data["native_relative_error"],
+                "training_seconds": data["training_seconds"],
+                "inference_seconds": 0.0,
+                "total_seconds": data["total_process_seconds"],
+                "parameter_count": data["parameter_count"],
+                "nonfinite_count": data["nonfinite_count"],
+                "evaluation_role": "official_fixed",
+            }
+        )
+    for pattern in (
+        "official_dpi_*_s*_official_evaluation.json",
+        "official_sdgd_s*_official_evaluation.json",
+        "full_history_mlp_*.json",
+    ):
+        for path in sorted(RAW_DIR.glob(pattern)):
+            data = _read(path)
+            native = data["native"]
+            prediction = native.get("prediction", native.get("corrected_mean"))
+            absolute_error = native.get(
+                "absolute_error", native.get("corrected_absolute_error")
+            )
+            method = data["method"]
+            rows.append(
+                {
+                    "benchmark": data["benchmark"],
+                    "method": method,
+                    "method_label": METHOD_LABELS[method],
+                    "variant": (
+                        f"n{data['n']}/M{data['M']}"
+                        if method == "full_history_mlp_raw"
+                        else "official"
+                    ),
+                    "seed": data["seed"],
+                    "protocol": "native_published_point"
+                    if data["benchmark"] in {"hjb_log_d100", "allen_cahn_d100"}
+                    else "native_diagnostic_only",
+                    "published_native_point": data["benchmark"]
+                    in {"hjb_log_d100", "allen_cahn_d100"},
+                    "prediction": prediction,
+                    "reference": native["reference"],
+                    "absolute_error": absolute_error,
+                    "training_seconds": data.get("training_seconds", 0.0),
+                    "inference_seconds": data.get("inference_seconds", 0.0),
+                    "total_seconds": data["total_seconds"],
+                    "parameter_count": data["parameter_count"],
+                    "evaluation_role": "official_fixed"
+                    if method != "full_history_mlp_raw"
+                    else "frozen_control_grid",
+                }
+            )
+    rows.sort(key=lambda row: (
+        row["benchmark"], row["method"], row["variant"], row["seed"]
+    ))
+    return rows
+
+
+def training_frontier_rows(
+    trials: list[dict[str, Any]], function: list[dict[str, Any]], native: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for row in trials:
+        if row.get("descriptive_postselection_value_rmse") is None:
+            continue
+        rows.append(
+            {
+                "benchmark": row["benchmark"],
+                "method": "terminal_aware_tangent_actor_mcv",
+                "method_label": METHOD_LABELS["terminal_aware_tangent_actor_mcv"],
+                "variant": f"{row['trial']}/a{row['iteration']}",
+                "seed": row["seed"],
+                "protocol": "amortized_function_common_bank",
+                "error_metric": "value_rmse",
+                "error": row["descriptive_postselection_value_rmse"],
+                "training_seconds": row["cumulative_training_seconds"],
+                "selection_role": "reference_free_selected"
+                if row["reference_free_final_selected"]
+                else "postselection_descriptive_only",
+            }
+        )
+    for row in function:
+        if row["method"] == "terminal_aware_tangent_actor_mcv":
+            continue
+        rows.append(
+            {
+                "benchmark": row["benchmark"],
+                "method": row["method"],
+                "method_label": row["method_label"],
+                "variant": row["variant"],
+                "seed": row["seed"],
+                "protocol": row["protocol"],
+                "error_metric": "value_rmse",
+                "error": row["value_rmse"],
+                "training_seconds": row["training_seconds"],
+                "selection_role": row["evaluation_role"],
+            }
+        )
+    for row in native:
+        if row["method"] != "deep_bsde_official_pytorch_compatibility_port":
+            continue
+        rows.append(
+            {
+                "benchmark": row["benchmark"],
+                "method": row["method"],
+                "method_label": row["method_label"],
+                "variant": row["variant"],
+                "seed": row["seed"],
+                "protocol": row["protocol"],
+                "error_metric": "native_absolute_error",
+                "error": row["absolute_error"],
+                "training_seconds": row["training_seconds"],
+                "selection_role": row["evaluation_role"],
+            }
+        )
+    rows.sort(key=lambda row: (row["benchmark"], row["training_seconds"], row["method"]))
+    return rows
+
+
+def total_compute_rows(
+    function: list[dict[str, Any]], native: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    workloads = (1, 16, 128, 960)
+    for row in function:
+        states = max(int(row["states"]), 1)
+        training = float(row["training_seconds"])
+        inference = float(row["inference_seconds"])
+        for queries in workloads:
+            scaled_inference = inference * queries / states
+            rows.append(
+                {
+                    "benchmark": row["benchmark"],
+                    "method": row["method"],
+                    "method_label": row["method_label"],
+                    "variant": row["variant"],
+                    "seed": row["seed"],
+                    "protocol": row["protocol"],
+                    "queries": queries,
+                    "error_metric": "value_rmse",
+                    "error": row["value_rmse"],
+                    "training_seconds": training,
+                    "inference_seconds_scaled": scaled_inference,
+                    "total_seconds": training + scaled_inference,
+                    "cost_note": (
+                        "measured batched inference scaled linearly by query count; "
+                        "Actor evaluation conservatively includes final audit overhead"
+                    ),
+                }
+            )
+    for row in native:
+        if row["method"] != "deep_bsde_official_pytorch_compatibility_port":
+            continue
+        for queries in workloads:
+            rows.append(
+                {
+                    "benchmark": row["benchmark"],
+                    "method": row["method"],
+                    "method_label": row["method_label"],
+                    "variant": row["variant"],
+                    "seed": row["seed"],
+                    "protocol": "native_single_point_retrained_per_query",
+                    "queries": queries,
+                    "error_metric": "native_absolute_error",
+                    "error": row["absolute_error"],
+                    "training_seconds": float(row["training_seconds"]) * queries,
+                    "inference_seconds_scaled": 0.0,
+                    "total_seconds": float(row["total_seconds"]) * queries,
+                    "cost_note": "native Deep BSDE requires an independent training run per state",
+                }
+            )
+    for benchmark in BENCHMARKS:
+        for queries in workloads:
+            subset = [
+                row for row in rows
+                if row["benchmark"] == benchmark
+                and row["queries"] == queries
+                and row["protocol"] == "amortized_function_common_bank"
+            ]
+            subset.sort(key=lambda row: row["total_seconds"])
+            best = float("inf")
+            for row in subset:
+                best = min(best, float(row["error"]))
+                row["budget_envelope_error"] = best
+    rows.sort(key=lambda row: (
+        row["benchmark"], row["queries"], row["protocol"], row["total_seconds"]
+    ))
+    return rows
+
+
+def accounting_rows() -> list[dict[str, Any]]:
+    path = RESULTS_DIR / "slurm_accounting.json"
+    if not path.exists():
+        return []
+    return _read(path)["records"]
+
+
+def baseline_audit(function: list[dict[str, Any]], native: list[dict[str, Any]]) -> dict[str, Any]:
+    source_path = RESULTS_DIR / "pde_definitions_and_references.json"
+    sources = _read(source_path)["source_commits"] if source_path.exists() else {}
+    methods: dict[str, Any] = {}
+    for method in (
+        "deep_bsde_official_pytorch_compatibility_port",
+        "dpi",
+        "pinn_hte",
+        "d_dbsde",
+        "sdgd_pinn_official",
+    ):
+        frows = [row for row in function if row["method"] == method]
+        nrows = [row for row in native if row["method"] == method]
+        methods[method] = {
+            "completed_function_evaluations": len(frows),
+            "completed_native_evaluations": len(nrows),
+            "benchmarks": sorted({row["benchmark"] for row in frows + nrows}),
+            "best_function_rmse": min(
+                (float(row["value_rmse"]) for row in frows), default=None
+            ),
+            "best_native_absolute_error": min(
+                (float(row["absolute_error"]) for row in nrows), default=None
+            ),
+        }
+    result = {
+        "source_commits": sources,
+        "methods": methods,
+        "fidelity_controls": {
+            "baseline_terminal_aware_feature_added": False,
+            "baseline_mcv_added": False,
+            "deep_bsde_framework_port_algorithmic_changes": [],
+            "dpi_non_numerical_change": "Rich progress display disabled under Slurm",
+            "dpi_checkpoint_compatibility": "restore pre-PyTorch-2.6 torch.load weights_only=False default for locally generated checkpoints",
+            "d_dbsde_launcher_correction": "standalone solver executed once instead of inherited redundant outer N=40 loop",
+            "sdgd_posttraining_dependency": "isolated openpyxl==3.1.5 for xlsx serialization",
+        },
+        "calibration_is_headline_result": False,
+    }
+    (EXPERIMENT_DIR / "baseline_reproduction_audit.json").write_text(
+        json.dumps(result, indent=2, sort_keys=True) + "\n"
+    )
+    return result
+
+
+def _plot_accuracy(training: list[dict[str, Any]]) -> None:
+    FIGURE_DIR.mkdir(parents=True, exist_ok=True)
+    fig, axes = plt.subplots(1, 3, figsize=(14.2, 4.1), constrained_layout=True)
+    colors = plt.get_cmap("tab10")
+    methods = sorted({row["method"] for row in training})
+    color = {method: colors(index % 10) for index, method in enumerate(methods)}
+    for axis, benchmark in zip(axes, BENCHMARKS, strict=True):
+        subset = [row for row in training if row["benchmark"] == benchmark]
+        for method in methods:
+            local = [row for row in subset if row["method"] == method]
+            if not local:
+                continue
+            marker = "*" if local[0]["protocol"] == "native_published_point" else "o"
+            axis.scatter(
+                [max(float(row["training_seconds"]), 1e-2) for row in local],
+                [float(row["error"]) for row in local],
+                label=METHOD_LABELS.get(method, method),
+                marker=marker,
+                s=55 if marker == "*" else 32,
+                color=color[method],
+                alpha=0.82,
+            )
+        axis.set_xscale("log")
+        axis.set_yscale("log")
+        axis.set_title(BENCHMARK_LABELS[benchmark])
+        axis.set_xlabel("cumulative training GPU seconds")
+        axis.grid(True, which="both", alpha=0.22)
+    axes[0].set_ylabel("error (RMSE; stars are native absolute error)")
+    handles, labels = axes[0].get_legend_handles_labels()
+    for axis in axes[1:]:
+        local_handles, local_labels = axis.get_legend_handles_labels()
+        for handle, label in zip(local_handles, local_labels, strict=True):
+            if label not in labels:
+                handles.append(handle)
+                labels.append(label)
+    fig.legend(handles, labels, loc="outside lower center", ncol=4, frameon=False)
+    fig.savefig(FIGURE_DIR / "accuracy_vs_training_gpu_time.png", dpi=220)
+    fig.savefig(FIGURE_DIR / "accuracy_vs_training_gpu_time.pdf")
+    plt.close(fig)
+
+
+def _plot_budget(total: list[dict[str, Any]]) -> None:
+    rows = [
+        row for row in total
+        if row["queries"] == 960
+        and row["protocol"] == "amortized_function_common_bank"
+        and row.get("budget_envelope_error") is not None
+    ]
+    fig, axes = plt.subplots(1, 3, figsize=(14.2, 4.0), constrained_layout=True)
+    for axis, benchmark in zip(axes, BENCHMARKS, strict=True):
+        subset = sorted(
+            (row for row in rows if row["benchmark"] == benchmark),
+            key=lambda row: float(row["total_seconds"]),
+        )
+        if subset:
+            axis.step(
+                [float(row["total_seconds"]) for row in subset],
+                [float(row["budget_envelope_error"]) for row in subset],
+                where="post",
+                color="#1f4e79",
+                linewidth=2.0,
+                label="true budget envelope",
+            )
+            axis.scatter(
+                [float(row["total_seconds"]) for row in subset],
+                [float(row["error"]) for row in subset],
+                c="#d6604d",
+                s=25,
+                alpha=0.75,
+                label="measured configurations",
+            )
+        axis.set_xscale("log")
+        axis.set_yscale("log")
+        axis.set_title(BENCHMARK_LABELS[benchmark])
+        axis.set_xlabel("total GPU seconds for K=960")
+        axis.grid(True, which="both", alpha=0.22)
+    axes[0].set_ylabel("function Value RMSE")
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="outside lower center", ncol=2, frameon=False)
+    fig.savefig(FIGURE_DIR / "total_compute_budget_envelope.png", dpi=220)
+    fig.savefig(FIGURE_DIR / "total_compute_budget_envelope.pdf")
+    plt.close(fig)
+
+
+def _plot_actor_scaling(trials: list[dict[str, Any]]) -> None:
+    rows = [row for row in trials if row.get("descriptive_postselection_value_rmse")]
+    fig, axes = plt.subplots(1, 3, figsize=(14.2, 4.0), constrained_layout=True)
+    for axis, benchmark in zip(axes, BENCHMARKS, strict=True):
+        subset = [row for row in rows if row["benchmark"] == benchmark]
+        for row in subset:
+            selected = bool(row["reference_free_final_selected"])
+            axis.scatter(
+                row["cumulative_training_seconds"],
+                row["descriptive_postselection_value_rmse"],
+                s=75 if selected else 28,
+                marker="*" if selected else "o",
+                alpha=0.85,
+            )
+            if selected:
+                axis.annotate(
+                    f"{row['trial']} a{row['iteration']}",
+                    (row["cumulative_training_seconds"], row["descriptive_postselection_value_rmse"]),
+                    xytext=(4, 5), textcoords="offset points", fontsize=7,
+                )
+        axis.set_xscale("log")
+        axis.set_yscale("log")
+        axis.set_title(BENCHMARK_LABELS[benchmark])
+        axis.set_xlabel("Actor training seconds")
+        axis.grid(True, which="both", alpha=0.22)
+    axes[0].set_ylabel("descriptive postselection Value RMSE")
+    fig.savefig(FIGURE_DIR / "tangent_actor_hyperparameter_scaling.png", dpi=220)
+    fig.savefig(FIGURE_DIR / "tangent_actor_hyperparameter_scaling.pdf")
+    plt.close(fig)
+
+
+def _plot_decomposition(function: list[dict[str, Any]]) -> None:
+    rows = [
+        row for row in function
+        if row["method"] == "terminal_aware_tangent_actor_mcv"
+        and row["evaluation_role"] == "frozen_headline"
+        and row.get("time_steps") == 64
+        and row["seed"] == 0
+    ]
+    if not rows:
+        return
+    rows.sort(key=lambda row: BENCHMARKS.index(row["benchmark"]))
+    labels = [BENCHMARK_LABELS[row["benchmark"]] for row in rows]
+    sampling = [math.sqrt(max(float(row.get("sampling_variance_component_mse") or 0), 0)) for row in rows]
+    non_mc = [float(row["non_mc_rmse_proxy"]) for row in rows]
+    training = [float(row["training_seconds"]) for row in rows]
+    inference = [float(row["inference_seconds"]) for row in rows]
+    x = np.arange(len(rows))
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.2), constrained_layout=True)
+    axes[0].bar(x, non_mc, label="non-MC RMSE proxy", color="#4c78a8")
+    axes[0].bar(x, sampling, bottom=non_mc, label="sampling RMSE component", color="#f58518")
+    axes[0].set_xticks(x, labels, rotation=18, ha="right")
+    axes[0].set_ylabel("RMSE component (diagnostic)")
+    axes[0].legend(frameon=False)
+    axes[0].grid(True, axis="y", alpha=0.22)
+    axes[1].bar(x, training, label="training", color="#54a24b")
+    axes[1].bar(x, inference, bottom=training, label="final evaluation", color="#e45756")
+    axes[1].set_yscale("log")
+    axes[1].set_xticks(x, labels, rotation=18, ha="right")
+    axes[1].set_ylabel("GPU seconds")
+    axes[1].legend(frameon=False)
+    axes[1].grid(True, axis="y", alpha=0.22)
+    fig.savefig(FIGURE_DIR / "error_and_compute_decomposition.png", dpi=220)
+    fig.savefig(FIGURE_DIR / "error_and_compute_decomposition.pdf")
+    plt.close(fig)
+
+
+def aggregate() -> dict[str, int]:
+    FIGURE_DIR.mkdir(parents=True, exist_ok=True)
+    trials = actor_trial_rows()
+    function = function_rows()
+    native = native_rows(function)
+    training = training_frontier_rows(trials, function, native)
+    total = total_compute_rows(function, native)
+    accounting = accounting_rows()
+    _write_csv(EXPERIMENT_DIR / "hyperparameter_trials.csv", trials)
+    _write_csv(EXPERIMENT_DIR / "function_approximation_comparison.csv", function)
+    _write_csv(EXPERIMENT_DIR / "native_task_comparison.csv", native)
+    _write_csv(EXPERIMENT_DIR / "training_compute_frontier.csv", training)
+    _write_csv(EXPERIMENT_DIR / "total_compute_frontier.csv", total)
+    _write_csv(EXPERIMENT_DIR / "runtime_resource_accounting.csv", accounting)
+    baseline_audit(function, native)
+    for name in ("pde_definitions_and_references.json", "reference_accuracy_audit.json"):
+        source = RESULTS_DIR / name
+        if source.exists():
+            (EXPERIMENT_DIR / name).write_text(source.read_text())
+    _plot_accuracy(training)
+    _plot_budget(total)
+    _plot_actor_scaling(trials)
+    _plot_decomposition(function)
+    return {
+        "hyperparameter_rows": len(trials),
+        "function_rows": len(function),
+        "native_rows": len(native),
+        "training_frontier_rows": len(training),
+        "total_compute_rows": len(total),
+        "accounting_rows": len(accounting),
+    }
+
+
+if __name__ == "__main__":
+    print(json.dumps(aggregate(), sort_keys=True))
