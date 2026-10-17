@@ -1,0 +1,58 @@
+{
+  "benchmark": "dpi_ou_gmm_d100",
+  "criterion": "lowest common-bank reference-free tangent-policy value; held-out tangent-label RMSE breaks exact ties",
+  "eliminated": [
+    "deep_elu",
+    "pilot192"
+  ],
+  "final_test_opened": false,
+  "ground_truth_used": false,
+  "ranking": [
+    {
+      "ground_truth_used": false,
+      "heldout_label_rmse": 0.284556593144081,
+      "label_replication_rmse": 0.019438800660819863,
+      "policy_improvement_state_se": 2.294443154946922,
+      "policy_value": 309.81450176239014,
+      "source_minus_new": 18.663800166298945,
+      "training_seconds": 69.39533651480451,
+      "trial": "wide384"
+    },
+    {
+      "ground_truth_used": false,
+      "heldout_label_rmse": 0.3470902975871207,
+      "label_replication_rmse": 0.015475451869901468,
+      "policy_improvement_state_se": 2.254896394049143,
+      "policy_value": 310.1762770327429,
+      "source_minus_new": 18.302024895946186,
+      "training_seconds": 186.58333633001894,
+      "trial": "quality128"
+    },
+    {
+      "ground_truth_used": false,
+      "heldout_label_rmse": 0.32613976447371873,
+      "label_replication_rmse": 0.022636567120572274,
+      "policy_improvement_state_se": 2.2198257905685987,
+      "policy_value": 310.37239519506693,
+      "source_minus_new": 18.105906733622152,
+      "training_seconds": 80.0919844279997,
+      "trial": "deep_elu"
+    },
+    {
+      "ground_truth_used": false,
+      "heldout_label_rmse": 0.6424243170803785,
+      "label_replication_rmse": 0.023289781914430614,
+      "policy_improvement_state_se": 1.8828873739508305,
+      "policy_value": 313.3133233723541,
+      "source_minus_new": 15.164978556334972,
+      "training_seconds": 32.57398822205141,
+      "trial": "pilot192"
+    }
+  ],
+  "seed": 0,
+  "selected_for_continuation": [
+    "wide384",
+    "quality128"
+  ],
+  "stage": "B broad one-update successive halving"
+}
