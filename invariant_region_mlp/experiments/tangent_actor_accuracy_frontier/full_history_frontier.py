@@ -5,13 +5,16 @@ from __future__ import annotations
 import argparse
 from dataclasses import asdict
 import json
+import time
 
 import numpy as np
 import torch
 
-from invariant_region_mlp.experiments.nonconvex_tangent_actor.full_history_baseline import (
-    RawDriver,
-    _predict,
+from invariant_region_mlp.experiments.nonconvex_tangent_actor.full_history_baseline import RawDriver
+from invariant_region_mlp.experiments.tangent_actor_strong_baselines.full_history_mlp import (
+    GenericFullHistoryMLP,
+    MLPStats,
+    recommended_chunk,
 )
 
 from .common import (
@@ -25,9 +28,88 @@ from .common import (
     ensure_dirs,
     environment_payload,
     metrics,
+    stable_seed,
+    synchronize,
 )
 from .configuration import ExperimentSpec
 from .reference2d import load_reference
+
+
+class MemoryTiledFullHistoryMLP(GenericFullHistoryMLP):
+    """The same estimator with terminal Monte Carlo accumulated in blocks."""
+
+    max_terminal_coordinates = 64_000_000
+
+    def _terminal_estimate(self, n, t, x):
+        b, d = len(t), self.driver.d
+        samples = self.M**n
+        tau = torch.clamp(self.driver.T - t, min=0.0)
+        parent_terminal = self.driver.terminal(x)
+        value_sum = torch.zeros(b, dtype=torch.float64, device=self.device)
+        gradient_sum = torch.zeros(
+            (b, d), dtype=torch.float64, device=self.device
+        ) if self.driver.has_gradient else None
+        sample_chunk = max(
+            1, min(samples, self.max_terminal_coordinates // max(b * d, 1))
+        )
+        for begin in range(0, samples, sample_chunk):
+            count = min(sample_chunk, samples - begin)
+            normal = self._normal((b, count, d))
+            terminal_x = x[:, None, :] + self.driver.sigma * torch.sqrt(tau)[:, None, None] * normal
+            terminal = self.driver.terminal(terminal_x.reshape(-1, d)).reshape(b, count)
+            value_sum += (terminal - parent_terminal[:, None]).double().sum(dim=1)
+            if gradient_sum is not None:
+                terminal_z = self.driver.sigma * self.driver.terminal_gradient_torch(
+                    terminal_x.reshape(-1, d)
+                ).reshape(b, count, d)
+                gradient_sum += terminal_z.double().sum(dim=1)
+            del normal, terminal_x, terminal
+            if gradient_sum is not None:
+                del terminal_z
+        output = torch.zeros((b, self.state_dim), dtype=self.dtype, device=self.device)
+        output[:, 0] = parent_terminal + (value_sum / samples).to(self.dtype)
+        if gradient_sum is not None:
+            output[:, 1:] = (gradient_sum / samples).to(self.dtype)
+        self.stats.terminal_samples += b * samples
+        return output
+
+
+@torch.no_grad()
+def _predict_tiled(raw_driver, t, x, *, n, M, seed, device):
+    states = np.asarray(x, dtype=np.float32)
+    times = np.asarray(t, dtype=np.float32)
+    prediction = np.empty(len(states), dtype=np.float64)
+    chunk = recommended_chunk(raw_driver.d, n, M)
+    total = MLPStats()
+    synchronize(device)
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
+    started = time.perf_counter()
+    for chunk_index, begin in enumerate(range(0, len(states), chunk)):
+        end = min(begin + chunk, len(states))
+        solver = MemoryTiledFullHistoryMLP(
+            raw_driver, M, device,
+            seed=stable_seed("nonconvex_full_history", seed, n, M, chunk_index),
+        )
+        output = solver.solve(
+            n,
+            torch.as_tensor(times[begin:end], dtype=torch.float32, device=device),
+            torch.as_tensor(states[begin:end], dtype=torch.float32, device=device),
+        )
+        prediction[begin:end] = output[:, 0].double().cpu().numpy()
+        total.merge(solver.stats)
+    synchronize(device)
+    elapsed = time.perf_counter() - started
+    return prediction, {
+        "wall_seconds": elapsed,
+        "chunk_size": chunk,
+        "stats": asdict(total),
+        "peak_gpu_bytes": int(torch.cuda.max_memory_allocated(device)) if device.type == "cuda" else None,
+        "finite": bool(total.nonfinite_count == 0 and np.all(np.isfinite(prediction))),
+        "terminal_sample_memory_tiling": True,
+        "terminal_tiling_max_coordinates": MemoryTiledFullHistoryMLP.max_terminal_coordinates,
+        "estimator_formula_changed": False,
+    }
 
 
 def _bank(spec: ExperimentSpec) -> tuple[np.ndarray, np.ndarray]:
@@ -65,7 +147,7 @@ def run(
     ensure_dirs()
     t, x = _bank(spec)
     truth, reference_path = _truth(spec, t, x)
-    prediction, runtime = _predict(
+    prediction, runtime = _predict_tiled(
         RawDriver(spec.driver()),
         t,
         x,

@@ -54,7 +54,15 @@ This is a conditional a posteriori result. It requires global control of the fix
 
 ## What the sampled consistency score certifies
 
-The implemented score estimates a normalized mean-square defect on a finite iid state bank. Two independent Monte Carlo label replications permit subtraction of the sampling variance of their average. Subject to bounded or sub-exponential squared defects, an independent evaluation bank permits a concentration interval for the corresponding population (L^2(\mu)) defect. When selecting among a finite set of Actors, simultaneous coverage requires a union bound or an independent post-selection bank.
+The implemented score estimates a normalized mean-square defect on a finite iid state bank. Two independent Monte Carlo label replications permit subtraction of the sampling variance of their average. For example, suppose the exact squared defect (D(S)^2) is bounded by (B^2), the states (S_i) are iid from (\mu), and exact fixed-Actor labels are available. Hoeffding's inequality gives, with probability at least (1-\delta),
+
+\[
+\mathbb E_\mu D(S)^2
+\le \frac1n\sum_{i=1}^n D(S_i)^2
++B^2\sqrt{\frac{\log(1/\delta)}{2n}}.
+\]
+
+For (m) predeclared Actors evaluated on the same independent bank, replacing (\delta) by (\delta/m) gives simultaneous coverage by a union bound. With Monte Carlo labels, an additional confidence bound for the independent label noise must be added; the two-replication subtraction used by the experiment is an unbiased noise correction, but a rigorous confidence bound further requires bounded or sub-exponential path payoffs. Alternatively, checkpoint selection and certification must use independent banks. These assumptions yield a population (L^2(\mu)) statement only.
 
 That statement does not imply a global sup-norm bound. A conversion to (L^\infty) would additionally require a compact domain, a known Lipschitz constant for the defect, and a state bank forming a sufficiently fine covering. If the fill distance is (h) and the defect is (K)-Lipschitz, then
 

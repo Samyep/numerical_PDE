@@ -18,6 +18,7 @@ from invariant_region_mlp.experiments.tangent_actor_scaling_diagnosis.models imp
 
 from .drivers import SineQuadraticDriver
 from .low_rank_actor import LearnedLowRankTerminalAwareActor
+from .full_history_frontier import MemoryTiledFullHistoryMLP
 from invariant_region_mlp.experiments.nonconvex_tangent_actor.full_history_baseline import (
     RawDriver,
 )
@@ -199,6 +200,21 @@ def test_full_history_adapter_does_not_project_recursive_values() -> None:
     y = torch.tensor([1.2], dtype=torch.float64)
     z = torch.zeros(1, 4, dtype=torch.float64)
     torch.testing.assert_close(raw.driver(y, z), raw.original.driver(y, z))
+
+
+def test_full_history_terminal_tiling_preserves_estimator() -> None:
+    from invariant_region_mlp.experiments.tangent_actor_strong_baselines.full_history_mlp import (
+        GenericFullHistoryMLP,
+    )
+
+    raw = RawDriver(SineQuadraticDriver(d=4, lam=0.2))
+    t = torch.tensor([0.1, 0.3])
+    x = torch.randn(2, 4, generator=torch.Generator().manual_seed(17))
+    original = GenericFullHistoryMLP(raw, 4, torch.device("cpu"), seed=29)
+    tiled = MemoryTiledFullHistoryMLP(raw, 4, torch.device("cpu"), seed=29)
+    expected = original.solve(2, t, x)
+    actual = tiled.solve(2, t, x)
+    torch.testing.assert_close(actual, expected, rtol=2e-6, atol=2e-6)
 
 
 def test_plain_pinn_residual_supports_the_generic_joint_driver() -> None:

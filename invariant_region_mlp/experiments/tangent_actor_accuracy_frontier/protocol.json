@@ -82,5 +82,25 @@
     "n4_profile": [[4, 2]],
     "replication_seeds": [0, 1, 2],
     "ground_truth_configuration_selection": false
+  },
+  "nonseparable_main": {
+    "family": "coupled",
+    "d": 100,
+    "lambda": 0.2,
+    "eta": 1.0,
+    "budget": "main",
+    "training_seeds": [0, 1, 2],
+    "selected_euler_steps": [64, 128, 256],
+    "add_512_if": "256-step CRN difference is not separated from MC and reference uncertainty"
+  },
+  "ambient_400": {
+    "matched_full_ambient_first": true,
+    "initial_seed": 0,
+    "meaningful_value_improvement_fraction": 0.1,
+    "replicate_full_ambient_if_meaningful": true,
+    "conditional_low_rank_trigger": "less than 10% selected Value-RMSE reduction from a0 together with persistent held-out Gradient generalization gap",
+    "learned_low_rank_ranks": [8, 16, 32],
+    "rank_matrix_initialization": "random orthonormal; no beta vectors, reference solution, or analytic gradients",
+    "transfer_to_coupled_if_helpful": true
   }
 }

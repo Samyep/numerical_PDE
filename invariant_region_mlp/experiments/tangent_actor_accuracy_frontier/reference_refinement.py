@@ -39,6 +39,8 @@ def run(*, n: int, dt: float, query_points: int) -> dict:
     driver = SineQuadraticDriver(d=100, lam=0.2, eta=0.0)
     old_path = OLD_REFERENCE_DIR / f"{driver.name}.npz"
     old = load_reference(old_path)
+    output_path = REFERENCE_DIR / f"{driver.name}_refined.npz"
+    previous = load_reference(output_path) if output_path.exists() else None
     started = time.perf_counter()
     refined = solve_strang_reference(driver, n=n, dt=dt, store_dt=0.002)
     wall = time.perf_counter() - started
@@ -54,13 +56,21 @@ def run(*, n: int, dt: float, query_points: int) -> dict:
         test_t = bank["test_t"].astype(np.float64)
         test_x = bank["test_x"].astype(np.float64)
     frozen_comparison = _comparison(old, refined, test_t, test_x @ driver.B)
-    output_path = REFERENCE_DIR / f"{driver.name}_refined.npz"
-    save_reference(output_path, refined)
-    # The full old-to-refined discrepancy is retained as a conservative
-    # uncertainty proxy; no Richardson order is assumed from two levels.
-    uncertainty = max(
-        random_comparison["value_rmse"], frozen_comparison["value_rmse"]
+    previous_random = None if previous is None else _comparison(
+        previous, refined, t, coordinates
     )
+    previous_frozen = None if previous is None else _comparison(
+        previous, refined, test_t, test_x @ driver.B
+    )
+    save_reference(output_path, refined)
+    # Once a third level exists, use the complete previous-to-current
+    # discrepancy without assuming a Richardson order. Otherwise retain the
+    # old-to-current discrepancy as a conservative two-level proxy.
+    uncertainty_source = (
+        (previous_random, previous_frozen)
+        if previous is not None else (random_comparison, frozen_comparison)
+    )
+    uncertainty = max(item["value_rmse"] for item in uncertainty_source)
     result = {
         "driver": driver.metadata(),
         "old_reference": str(old_path),
@@ -71,8 +81,16 @@ def run(*, n: int, dt: float, query_points: int) -> dict:
         "refined_dt": refined.dt,
         "random_periodic_query": random_comparison,
         "frozen_test_bank": frozen_comparison,
+        "previous_refined_n": None if previous is None else previous.n,
+        "previous_refined_dt": None if previous is None else previous.dt,
+        "previous_refined_random_query": previous_random,
+        "previous_refined_frozen_test_bank": previous_frozen,
         "reference_uncertainty_value_rmse": uncertainty,
-        "uncertainty_rule": "max old-vs-refined RMSE; conservative two-level proxy",
+        "uncertainty_rule": (
+            "max previous-refined-vs-current RMSE; no Richardson-order assumption"
+            if previous is not None
+            else "max old-vs-refined RMSE; conservative two-level proxy"
+        ),
         "query_points": query_points,
         "frozen_test_bank_sha256": array_sha256(test_t, test_x),
         "solution_grid_min": float(refined.values.min()),
@@ -90,8 +108,8 @@ def run(*, n: int, dt: float, query_points: int) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n", type=int, default=192)
-    parser.add_argument("--dt", type=float, default=0.0000625)
+    parser.add_argument("--n", type=int, default=256)
+    parser.add_argument("--dt", type=float, default=0.00003125)
     parser.add_argument("--query-points", type=int, default=32768)
     args = parser.parse_args()
     run(n=args.n, dt=args.dt, query_points=args.query_points)
