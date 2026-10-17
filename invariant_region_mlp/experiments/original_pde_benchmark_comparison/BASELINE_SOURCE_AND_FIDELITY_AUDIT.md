@@ -79,6 +79,14 @@ difference exactly zero).  This is recorded in
 `sdgd_resumable_equivalence_audit.json`; the split changes neither an update nor
 the official terminal ansatz.
 
+PyTorch's `map_location="cuda"` also relocates the serialized opaque RNG
+ByteTensors, while `torch.set_rng_state` and `torch.cuda.set_rng_state_all`
+require those state tensors on CPU.  The launcher moves only these RNG-state
+containers back to CPU before restoration.  An initial second-chunk allocation
+failed before any optimizer step exposed this device mismatch; that allocation
+is retained in the Slurm audit, and the unchanged epoch-5,000 checkpoint hash
+was used for the corrected resume.
+
 The script writes its trajectory as `.xlsx` after training.  The cluster base
 environment lacked that optional writer, so `openpyxl==3.1.5` is installed in
 an isolated dependency directory.  This changes only post-training file
