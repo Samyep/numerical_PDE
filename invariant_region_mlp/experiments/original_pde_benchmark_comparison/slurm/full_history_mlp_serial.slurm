@@ -16,7 +16,9 @@
 set -euo pipefail
 
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
-CONFIGURATIONS=("2 16" "2 32" "3 8" "3 12" "3 16" "3 24")
+: "${BENCHMARKS:=hjb_log_d100 allen_cahn_d100}"
+: "${CONFIGURATIONS:=2:16 2:32 3:8 3:12 3:16 3:24}"
+: "${SEEDS:=0 1 2}"
 
 module load default
 source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
@@ -31,10 +33,13 @@ git rev-parse HEAD
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
 python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
 
-for BENCHMARK in hjb_log_d100 allen_cahn_d100; do
-  for CONFIGURATION in "${CONFIGURATIONS[@]}"; do
-    read -r N M <<< "$CONFIGURATION"
-    for SEED in 0 1 2; do
+read -r -a BENCHMARK_LIST <<< "$BENCHMARKS"
+read -r -a CONFIGURATION_LIST <<< "$CONFIGURATIONS"
+read -r -a SEED_LIST <<< "$SEEDS"
+for BENCHMARK in "${BENCHMARK_LIST[@]}"; do
+  for CONFIGURATION in "${CONFIGURATION_LIST[@]}"; do
+    IFS=: read -r N M <<< "$CONFIGURATION"
+    for SEED in "${SEED_LIST[@]}"; do
       srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.full_history_mlp_original \
         --benchmark "$BENCHMARK" --n "$N" --M "$M" --seed "$SEED"
     done
