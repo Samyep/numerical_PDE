@@ -1,0 +1,337 @@
+{
+  "algorithmic_changes": [],
+  "amortized_y0": false,
+  "benchmark": "allen_cahn_d100",
+  "checkpoint": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/checkpoints/deep_bsde_allen_cahn_d100_s0.pt",
+  "configuration": {
+    "batch_size": 64,
+    "benchmark": "allen_cahn_d100",
+    "dtype": "float64",
+    "hidden_widths": [
+      110,
+      110
+    ],
+    "intervals": 20,
+    "iterations": 4000,
+    "learning_rate": 0.0005,
+    "logging_frequency": 100,
+    "total_time": 0.3,
+    "validation_size": 256,
+    "y_init_range": [
+      0.3,
+      0.5
+    ]
+  },
+  "framework_change": "TensorFlow/Keras to PyTorch 2.10",
+  "history": [
+    {
+      "elapsed_seconds": 0.10451574064791203,
+      "nonfinite_count_cumulative": 0,
+      "step": 0,
+      "validation_terminal_clipped_mse": 0.06709397285610934,
+      "y_init": 0.3765997588634491
+    },
+    {
+      "elapsed_seconds": 3.393534720875323,
+      "nonfinite_count_cumulative": 0,
+      "step": 100,
+      "validation_terminal_clipped_mse": 0.047321539424170916,
+      "y_init": 0.32834621676610287
+    },
+    {
+      "elapsed_seconds": 6.550383965484798,
+      "nonfinite_count_cumulative": 0,
+      "step": 200,
+      "validation_terminal_clipped_mse": 0.03282443026673432,
+      "y_init": 0.28461438021217167
+    },
+    {
+      "elapsed_seconds": 9.689337495714426,
+      "nonfinite_count_cumulative": 0,
+      "step": 300,
+      "validation_terminal_clipped_mse": 0.02226296057228297,
+      "y_init": 0.24528109624691047
+    },
+    {
+      "elapsed_seconds": 12.83871085755527,
+      "nonfinite_count_cumulative": 0,
+      "step": 400,
+      "validation_terminal_clipped_mse": 0.014710417458791985,
+      "y_init": 0.2106448266142423
+    },
+    {
+      "elapsed_seconds": 15.98232345469296,
+      "nonfinite_count_cumulative": 0,
+      "step": 500,
+      "validation_terminal_clipped_mse": 0.0095790640264377,
+      "y_init": 0.1801673226452262
+    },
+    {
+      "elapsed_seconds": 19.155909661203623,
+      "nonfinite_count_cumulative": 0,
+      "step": 600,
+      "validation_terminal_clipped_mse": 0.006017081676492297,
+      "y_init": 0.15385649892817904
+    },
+    {
+      "elapsed_seconds": 22.326786186546087,
+      "nonfinite_count_cumulative": 0,
+      "step": 700,
+      "validation_terminal_clipped_mse": 0.003672441818331539,
+      "y_init": 0.13132590891380103
+    },
+    {
+      "elapsed_seconds": 25.544705209322274,
+      "nonfinite_count_cumulative": 0,
+      "step": 800,
+      "validation_terminal_clipped_mse": 0.002154318302313209,
+      "y_init": 0.1124531218169426
+    },
+    {
+      "elapsed_seconds": 28.74053276795894,
+      "nonfinite_count_cumulative": 0,
+      "step": 900,
+      "validation_terminal_clipped_mse": 0.0012782973250748558,
+      "y_init": 0.0971509481313683
+    },
+    {
+      "elapsed_seconds": 32.030964059755206,
+      "nonfinite_count_cumulative": 0,
+      "step": 1000,
+      "validation_terminal_clipped_mse": 0.0007616833854960777,
+      "y_init": 0.08509549453768127
+    },
+    {
+      "elapsed_seconds": 35.272447595372796,
+      "nonfinite_count_cumulative": 0,
+      "step": 1100,
+      "validation_terminal_clipped_mse": 0.0004883104938914535,
+      "y_init": 0.07578108204276175
+    },
+    {
+      "elapsed_seconds": 38.48412734083831,
+      "nonfinite_count_cumulative": 0,
+      "step": 1200,
+      "validation_terminal_clipped_mse": 0.00034078910535101245,
+      "y_init": 0.06870734048692824
+    },
+    {
+      "elapsed_seconds": 41.68122084531933,
+      "nonfinite_count_cumulative": 0,
+      "step": 1300,
+      "validation_terminal_clipped_mse": 0.0002699629522818614,
+      "y_init": 0.06344662640363136
+    },
+    {
+      "elapsed_seconds": 44.88475730270147,
+      "nonfinite_count_cumulative": 0,
+      "step": 1400,
+      "validation_terminal_clipped_mse": 0.00023990056304485475,
+      "y_init": 0.05986341214204815
+    },
+    {
+      "elapsed_seconds": 48.08081528544426,
+      "nonfinite_count_cumulative": 0,
+      "step": 1500,
+      "validation_terminal_clipped_mse": 0.0002285319809780916,
+      "y_init": 0.05737979902548871
+    },
+    {
+      "elapsed_seconds": 51.28249022830278,
+      "nonfinite_count_cumulative": 0,
+      "step": 1600,
+      "validation_terminal_clipped_mse": 0.000224046546267653,
+      "y_init": 0.055820463957820136
+    },
+    {
+      "elapsed_seconds": 54.47335395962,
+      "nonfinite_count_cumulative": 0,
+      "step": 1700,
+      "validation_terminal_clipped_mse": 0.00022064460050745543,
+      "y_init": 0.05475628854712522
+    },
+    {
+      "elapsed_seconds": 57.6642109695822,
+      "nonfinite_count_cumulative": 0,
+      "step": 1800,
+      "validation_terminal_clipped_mse": 0.00022220029757913094,
+      "y_init": 0.05393139366549804
+    },
+    {
+      "elapsed_seconds": 60.875730655156076,
+      "nonfinite_count_cumulative": 0,
+      "step": 1900,
+      "validation_terminal_clipped_mse": 0.00022151788662551597,
+      "y_init": 0.05341923507184704
+    },
+    {
+      "elapsed_seconds": 64.10040343832225,
+      "nonfinite_count_cumulative": 0,
+      "step": 2000,
+      "validation_terminal_clipped_mse": 0.00022065040356232757,
+      "y_init": 0.05320588740472784
+    },
+    {
+      "elapsed_seconds": 67.29917795117944,
+      "nonfinite_count_cumulative": 0,
+      "step": 2100,
+      "validation_terminal_clipped_mse": 0.0002169220913805265,
+      "y_init": 0.05291243829019812
+    },
+    {
+      "elapsed_seconds": 70.45782538410276,
+      "nonfinite_count_cumulative": 0,
+      "step": 2200,
+      "validation_terminal_clipped_mse": 0.00021627043483288697,
+      "y_init": 0.0529019403844178
+    },
+    {
+      "elapsed_seconds": 73.62229262012988,
+      "nonfinite_count_cumulative": 0,
+      "step": 2300,
+      "validation_terminal_clipped_mse": 0.0002114007011970139,
+      "y_init": 0.05298688745031246
+    },
+    {
+      "elapsed_seconds": 76.72701215092093,
+      "nonfinite_count_cumulative": 0,
+      "step": 2400,
+      "validation_terminal_clipped_mse": 0.00021159806468197426,
+      "y_init": 0.0529061796134532
+    },
+    {
+      "elapsed_seconds": 79.84824538510293,
+      "nonfinite_count_cumulative": 0,
+      "step": 2500,
+      "validation_terminal_clipped_mse": 0.00020763418338081566,
+      "y_init": 0.05271781561335044
+    },
+    {
+      "elapsed_seconds": 82.95446663349867,
+      "nonfinite_count_cumulative": 0,
+      "step": 2600,
+      "validation_terminal_clipped_mse": 0.00020342449587699608,
+      "y_init": 0.05304764096393335
+    },
+    {
+      "elapsed_seconds": 86.07493985816836,
+      "nonfinite_count_cumulative": 0,
+      "step": 2700,
+      "validation_terminal_clipped_mse": 0.00019995877295906728,
+      "y_init": 0.052920337006526104
+    },
+    {
+      "elapsed_seconds": 89.25834559462965,
+      "nonfinite_count_cumulative": 0,
+      "step": 2800,
+      "validation_terminal_clipped_mse": 0.00020321618828557416,
+      "y_init": 0.05259606387008964
+    },
+    {
+      "elapsed_seconds": 92.56772101856768,
+      "nonfinite_count_cumulative": 0,
+      "step": 2900,
+      "validation_terminal_clipped_mse": 0.00019635479977675923,
+      "y_init": 0.052940295275491586
+    },
+    {
+      "elapsed_seconds": 95.81127915065736,
+      "nonfinite_count_cumulative": 0,
+      "step": 3000,
+      "validation_terminal_clipped_mse": 0.00019459790212925164,
+      "y_init": 0.05309697030189187
+    },
+    {
+      "elapsed_seconds": 99.0312080681324,
+      "nonfinite_count_cumulative": 0,
+      "step": 3100,
+      "validation_terminal_clipped_mse": 0.0001925539709461901,
+      "y_init": 0.05290003717523197
+    },
+    {
+      "elapsed_seconds": 102.22218818031251,
+      "nonfinite_count_cumulative": 0,
+      "step": 3200,
+      "validation_terminal_clipped_mse": 0.00018873544854603532,
+      "y_init": 0.052706837209719797
+    },
+    {
+      "elapsed_seconds": 105.38540117815137,
+      "nonfinite_count_cumulative": 0,
+      "step": 3300,
+      "validation_terminal_clipped_mse": 0.0001764838110349765,
+      "y_init": 0.05305557630412311
+    },
+    {
+      "elapsed_seconds": 108.56385956797749,
+      "nonfinite_count_cumulative": 0,
+      "step": 3400,
+      "validation_terminal_clipped_mse": 0.0001734493730976573,
+      "y_init": 0.05273005390423247
+    },
+    {
+      "elapsed_seconds": 111.74260020069778,
+      "nonfinite_count_cumulative": 0,
+      "step": 3500,
+      "validation_terminal_clipped_mse": 0.00016732942984900431,
+      "y_init": 0.05281972384054613
+    },
+    {
+      "elapsed_seconds": 114.93017849419266,
+      "nonfinite_count_cumulative": 0,
+      "step": 3600,
+      "validation_terminal_clipped_mse": 0.00016548553850385345,
+      "y_init": 0.0528955055050585
+    },
+    {
+      "elapsed_seconds": 118.11558683309704,
+      "nonfinite_count_cumulative": 0,
+      "step": 3700,
+      "validation_terminal_clipped_mse": 0.00015721274812488832,
+      "y_init": 0.052790166984756595
+    },
+    {
+      "elapsed_seconds": 121.30560636986047,
+      "nonfinite_count_cumulative": 0,
+      "step": 3800,
+      "validation_terminal_clipped_mse": 0.00015292039198575784,
+      "y_init": 0.05293630936827841
+    },
+    {
+      "elapsed_seconds": 124.50307004433125,
+      "nonfinite_count_cumulative": 0,
+      "step": 3900,
+      "validation_terminal_clipped_mse": 0.00014696823598389858,
+      "y_init": 0.05295362846330558
+    },
+    {
+      "elapsed_seconds": 127.68954126536846,
+      "nonfinite_count_cumulative": 0,
+      "step": 4000,
+      "validation_terminal_clipped_mse": 0.00014545384236631475,
+      "y_init": 0.05315383058342112
+    }
+  ],
+  "mcv": false,
+  "method": "deep_bsde_official_pytorch_compatibility_port",
+  "model_data_optimizer_initialization_seconds": 1.9471402065828443,
+  "native_absolute_error": 0.00037247997592419063,
+  "native_exact_z0": "zero by radial symmetry",
+  "native_reference": 0.05278135060749693,
+  "native_reference_status": "independent radial numerical reference",
+  "native_relative_error": 0.007057037602051897,
+  "native_scalar_y0": true,
+  "nonfinite_count": 0,
+  "official_source_commit": "e76fed80b1995daf4a0dd6d3e2cf64a0931dabda",
+  "parameter_count": 665861,
+  "peak_gpu_bytes": 102528000,
+  "post_final_update_y0": 0.053159243700212806,
+  "post_final_update_z0_component_rmse": 0.001449865125205509,
+  "post_final_update_z0_vector_rmse": 0.014498651252055088,
+  "reported_y0": 0.05315383058342112,
+  "seed": 0,
+  "selection": "published fixed iteration count; no reference used",
+  "terminal_aware_features": false,
+  "total_process_seconds": 129.70267072692513,
+  "training_seconds": 127.72120666690171
+}
