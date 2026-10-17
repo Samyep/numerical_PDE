@@ -17,6 +17,7 @@ from invariant_region_mlp.experiments.tangent_actor_scaling_diagnosis.models imp
 )
 
 from .drivers import SineQuadraticDriver
+from .low_rank_actor import LearnedLowRankTerminalAwareActor
 from invariant_region_mlp.experiments.nonconvex_tangent_actor.full_history_baseline import (
     RawDriver,
 )
@@ -91,6 +92,24 @@ def test_terminal_aware_actor_is_exact_and_uses_full_ambient_input() -> None:
     r, q = actor.predict(t, x, driver.T)
     torch.testing.assert_close(r, driver.terminal(x), atol=2e-7, rtol=2e-7)
     assert q is not None
+    torch.testing.assert_close(
+        q, math.sqrt(2.0) * driver.terminal_gradient_torch(x), atol=2e-7, rtol=2e-7
+    )
+
+
+def test_learned_low_rank_actor_is_terminal_exact_and_nonoracle() -> None:
+    driver = SineQuadraticDriver(d=11, lam=0.2)
+    actor = LearnedLowRankTerminalAwareActor(
+        driver, width=32, depth=2, rank=4, seed=83
+    )
+    assert actor.network[0].in_features == driver.d + 1
+    assert actor.gradient_basis.shape == (driver.d, 4)
+    source = inspect.getsource(LearnedLowRankTerminalAwareActor)
+    assert ".B" not in source and "beta_" not in source
+    x = torch.randn(17, driver.d)
+    t = torch.full((17,), driver.T)
+    r, q = actor.predict(t, x, driver.T)
+    torch.testing.assert_close(r, driver.terminal(x), atol=2e-7, rtol=2e-7)
     torch.testing.assert_close(
         q, math.sqrt(2.0) * driver.terminal_gradient_torch(x), atol=2e-7, rtol=2e-7
     )
