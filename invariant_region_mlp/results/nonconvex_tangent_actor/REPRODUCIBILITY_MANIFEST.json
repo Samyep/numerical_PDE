@@ -15,7 +15,7 @@
     "seed_derivation": "SHA-256 stable_seed in common.py"
   },
   "experiment": "nonconvex_nonconcave_tangent_actor_v1",
-  "generated_from_git_commit": "ca3b2f4727b9d24520ccb21286704b222f7f9325",
+  "generated_from_git_commit": "f70e11a7cc63db2e1bf1b8b22cf83eae57db076a",
   "large_local_artifacts": {
     "compact_results_and_audits_tracked": true,
     "directories": [
@@ -31,6 +31,101 @@
   "protocol": {
     "frozen_configuration": {
       "actor_input": "full ambient (t,x)",
+      "baselines": {
+        "full_history": {
+          "endpoint": [
+            3,
+            64
+          ],
+          "endpoint_replication_seeds": [
+            0,
+            1,
+            2
+          ],
+          "grid": [
+            [
+              1,
+              64
+            ],
+            [
+              1,
+              256
+            ],
+            [
+              2,
+              8
+            ],
+            [
+              2,
+              16
+            ],
+            [
+              2,
+              32
+            ],
+            [
+              2,
+              64
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              3,
+              8
+            ],
+            [
+              3,
+              12
+            ],
+            [
+              3,
+              16
+            ],
+            [
+              3,
+              24
+            ],
+            [
+              3,
+              32
+            ],
+            [
+              3,
+              48
+            ],
+            [
+              3,
+              64
+            ]
+          ],
+          "mcv": false,
+          "oracle_projection": false,
+          "primary_seed": 0,
+          "terminal_aware_feature": false,
+          "value_projection": false
+        },
+        "ground_truth_used_for_training_or_selection": false,
+        "pinn": {
+          "activation": "tanh",
+          "checkpoint_selection": "final optimizer step",
+          "depth": 4,
+          "hutchinson_probes": 2,
+          "interior_batch": 256,
+          "learning_rate": 0.0005,
+          "mcv": false,
+          "optimizer_steps": 5000,
+          "oracle_projection": false,
+          "seeds": [
+            0
+          ],
+          "terminal_aware_parameterization": false,
+          "terminal_batch": 256,
+          "terminal_weight": 10.0,
+          "width": 256
+        }
+      },
       "branch": "ir-mlp-nonconvex-nonconcave-tangent-actor",
       "controlled_expansion": {
         "coupled_eta": 1.0,
@@ -147,7 +242,7 @@
       "selection": "minimum noise-corrected normalized fixed-point inconsistency among finite stable candidates; Ground Truth unavailable until selection is written"
     },
     "path": "experiments/nonconvex_tangent_actor/protocol.json",
-    "sha256": "2dc15f34d2f2244970f31e51adfaa0168ab171613e3ddaa32a503cae7bee9ae0"
+    "sha256": "09f124fd9b59193a2e0f6689ce1ec97480c1ac07431f1f24b4c1ec3a9a3cd4ce"
   },
   "recorded_runtime_environments": [
     {
@@ -208,6 +303,18 @@
       "record": "environment_evaluation_primary_d100_k2_lam0p2_eta0_main_mcv_s1.json",
       "stage": "post_freeze_evaluation",
       "started_unix": 1792266635.4862182,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
+      "git_commit_at_start": "f70e11a7cc63db2e1bf1b8b22cf83eae57db076a",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh112.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_evaluation_primary_d100_k2_lam0p2_eta0_main_mcv_s2.json",
+      "stage": "post_freeze_evaluation",
+      "started_unix": 1792270088.2918944,
       "torch": "2.10.0+cu129"
     },
     {
@@ -320,6 +427,18 @@
     },
     {
       "cuda_runtime": "12.9",
+      "git_commit_at_start": "b0389b1540fc75160196aea36649f5a1f76a286d",
+      "gpu": "NVIDIA GH200 120GB",
+      "host": "gh112.hsn.cm.delta.internal.ncsa.edu",
+      "numpy": "2.4.6",
+      "python": "3.12.9",
+      "record": "environment_training_primary_d100_k2_lam0p2_eta0_main_mcv_s2.json",
+      "stage": "training",
+      "started_unix": 1792267373.4525113,
+      "torch": "2.10.0+cu129"
+    },
+    {
+      "cuda_runtime": "12.9",
       "git_commit_at_start": "d7a37e038c2f1385f85592adf3db29ecbfcaaecc",
       "gpu": "NVIDIA GH200 120GB",
       "host": "gh005.hsn.cm.delta.internal.ncsa.edu",
@@ -374,12 +493,20 @@
   },
   "slurm_scripts": [
     {
+      "path": "experiments/nonconvex_tangent_actor/slurm/run_full_history_baselines.slurm",
+      "sha256": "ebe2824ef5a211976f95bccfb7ab62933abd946d7a8f048cf60e40ef6fd87891"
+    },
+    {
       "path": "experiments/nonconvex_tangent_actor/slurm/run_main_primary.slurm",
       "sha256": "a769030d7d919a8179efe4b381be618659ecf8583c86946a9e2b4a86a91b630a"
     },
     {
       "path": "experiments/nonconvex_tangent_actor/slurm/run_pilot.slurm",
       "sha256": "6f3d83602b723e92406abb01b9692ba250a8cff7bf7f8a65ffde3c3ce74bb517"
+    },
+    {
+      "path": "experiments/nonconvex_tangent_actor/slurm/run_pinn_baseline.slurm",
+      "sha256": "f79edfa51a30426352a8dea1362ddf21f5da20359547388b41d9bdc71467630e"
     },
     {
       "path": "experiments/nonconvex_tangent_actor/slurm/run_primary_baselines.slurm",
