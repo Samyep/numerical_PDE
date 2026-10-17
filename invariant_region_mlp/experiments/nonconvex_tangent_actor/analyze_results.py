@@ -414,6 +414,57 @@ def _frozen_endpoint_comparison(
     return sorted(output, key=lambda row: row["method"])
 
 
+def _full_history_grid(
+    comparison: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    rows = [
+        row
+        for row in comparison
+        if row["method"] == "Full-History MLP"
+        and row["family"] == "primary"
+        and row["d"] == 100
+        and math.isclose(row["lam"], 0.2)
+        and row["seed"] == 0
+    ]
+
+    def key(row: dict[str, Any]) -> tuple[int, int]:
+        fields = dict(item.split("=") for item in row["configuration"].split(","))
+        return int(fields["n"]), int(fields["M"])
+
+    return sorted(rows, key=key)
+
+
+def _pinn_diagnostics(baselines: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    output = []
+    for payload in baselines:
+        if payload["method"] == "full_history_mlp_raw_adaptation":
+            continue
+        trace = payload["training"]["trace"]
+        final = trace[-1] if trace else {}
+        output.append(
+            {
+                "run_id": payload["actor_test_bank_run_id"],
+                "seed": payload["baseline_seed"],
+                "optimizer_steps": payload["training"]["config"][
+                    "optimizer_steps"
+                ],
+                "final_validation_residual_rmse": final.get(
+                    "validation_residual_rmse"
+                ),
+                "final_validation_terminal_rmse": final.get(
+                    "validation_terminal_rmse"
+                ),
+                "value_rmse": payload["metrics"]["rmse"],
+                "relative_l2": payload["metrics"]["relative_l2"],
+                "total_seconds": payload["total_seconds"],
+                "checkpoint_selection": payload["training"][
+                    "checkpoint_selection"
+                ],
+            }
+        )
+    return output
+
+
 def _ambient_scaling_diagnosis(
     training: list[dict[str, Any]], iterations: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
@@ -1175,6 +1226,8 @@ def _summary(
         "curvature_strength_results": _curvature_strength_results(iterations),
         "euler_sensitivity": euler_rows(post_freeze),
         "frozen_endpoint_baseline_comparison": endpoint,
+        "full_history_frozen_grid": _full_history_grid(comparison),
+        "pinn_final_diagnostics": _pinn_diagnostics(baselines),
         "tangent_actor_beats_all_available_frozen_baseline_endpoints": endpoint_advantage,
         "ambient_scaling_diagnosis": _ambient_scaling_diagnosis(
             training, iterations
@@ -1370,6 +1423,45 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
                 f"| {row['method']} | {row['configuration']} | {row['finite_seeds']} / {row['seeds']} | "
                 f"{accuracy} | "
                 f"{row['total_seconds_mean']:.1f} |"
+            )
+    full_history_grid = summary["full_history_frozen_grid"]
+    if full_history_grid:
+        lines.extend(
+            [
+                "",
+                "### Full-History frozen grid (seed 0)",
+                "",
+                "Every predeclared configuration is shown. Test RMSE is reported for audit and is not used to retune or replace the frozen endpoint.",
+                "",
+                "| configuration | finite | Value RMSE | Relative L2 | wall seconds |",
+                "|---|---:|---:|---:|---:|",
+            ]
+        )
+        for row in full_history_grid:
+            rmse = "—" if row["value_rmse"] is None else f"{row['value_rmse']:.6g}"
+            relative = "—" if row["relative_l2"] is None else f"{row['relative_l2']:.6g}"
+            lines.append(
+                f"| {row['configuration']} | {'yes' if row['finite'] else 'no'} | "
+                f"{rmse} | {relative} | {row['total_seconds']:.3f} |"
+            )
+    pinn = summary["pinn_final_diagnostics"]
+    if pinn:
+        lines.extend(
+            [
+                "",
+                "### Plain PINN final-step diagnostics",
+                "",
+                "| seed | steps | validation PDE residual RMSE | validation terminal RMSE | test Value RMSE | Relative L2 | wall seconds |",
+                "|---:|---:|---:|---:|---:|---:|---:|",
+            ]
+        )
+        for row in pinn:
+            lines.append(
+                f"| {row['seed']} | {row['optimizer_steps']} | "
+                f"{row['final_validation_residual_rmse']:.6g} | "
+                f"{row['final_validation_terminal_rmse']:.6g} | "
+                f"{row['value_rmse']:.6g} | {row['relative_l2']:.6g} | "
+                f"{row['total_seconds']:.1f} |"
             )
     scaling = summary["ambient_scaling_diagnosis"]
     if scaling:

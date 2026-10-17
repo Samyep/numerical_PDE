@@ -90,6 +90,50 @@
     "coupled_eta": 1.0,
     "expand_only_after_primary_gate": true
   },
+  "baselines": {
+    "full_history": {
+      "grid": [
+        [1, 64],
+        [1, 256],
+        [2, 8],
+        [2, 16],
+        [2, 32],
+        [2, 64],
+        [3, 4],
+        [3, 8],
+        [3, 12],
+        [3, 16],
+        [3, 24],
+        [3, 32],
+        [3, 48],
+        [3, 64]
+      ],
+      "primary_seed": 0,
+      "endpoint": [3, 64],
+      "endpoint_replication_seeds": [0, 1, 2],
+      "value_projection": false,
+      "terminal_aware_feature": false,
+      "mcv": false,
+      "oracle_projection": false
+    },
+    "pinn": {
+      "width": 256,
+      "depth": 4,
+      "activation": "tanh",
+      "optimizer_steps": 5000,
+      "interior_batch": 256,
+      "terminal_batch": 256,
+      "hutchinson_probes": 2,
+      "learning_rate": 0.0005,
+      "terminal_weight": 10.0,
+      "checkpoint_selection": "final optimizer step",
+      "terminal_aware_parameterization": false,
+      "mcv": false,
+      "oracle_projection": false,
+      "seeds": [0]
+    },
+    "ground_truth_used_for_training_or_selection": false
+  },
   "selection": "minimum noise-corrected normalized fixed-point inconsistency among finite stable candidates; Ground Truth unavailable until selection is written",
   "actor_input": "full ambient (t,x)",
   "oracle_projection": false,
