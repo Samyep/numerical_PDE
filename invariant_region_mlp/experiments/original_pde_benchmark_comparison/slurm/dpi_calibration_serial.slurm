@@ -32,8 +32,9 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 python -V
 git -C "$SOURCE_ROOT" rev-parse HEAD
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
+python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
 
 for METHOD in "${METHODS[@]}"; do
-  python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.official_dpi_runner \
+  srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.official_dpi_runner \
     --method "$METHOD" --seed 0 --calibration
 done

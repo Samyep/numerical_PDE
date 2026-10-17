@@ -16,7 +16,7 @@
 set -euo pipefail
 
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
-: "${BENCHMARK:?submit with --export=ALL,BENCHMARK=<name>}"
+: "${BENCHMARK:?set BENCHMARK to hjb_log_d100, dpi_ou_gmm_d100, or allen_cahn_d100}"
 TRIALS=(pilot192 wide384 deep_elu quality128)
 
 module load default
@@ -30,9 +30,10 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 python -V
 git rev-parse HEAD
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
+python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
 
 for TRIAL in "${TRIALS[@]}"; do
-  python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.run_actor \
+  srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.run_actor \
     --benchmark "$BENCHMARK" --trial "$TRIAL" --seed 0 --iterations 1
 done
 

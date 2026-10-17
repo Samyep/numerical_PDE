@@ -27,10 +27,11 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 python -V
 git rev-parse HEAD
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
+python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
 
 for BENCHMARK in hjb_log_d100 allen_cahn_d100; do
   for SEED in 0 1 2; do
-    python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.deep_bsde_port \
+    srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.deep_bsde_port \
       --benchmark "$BENCHMARK" --seed "$SEED"
   done
 done
