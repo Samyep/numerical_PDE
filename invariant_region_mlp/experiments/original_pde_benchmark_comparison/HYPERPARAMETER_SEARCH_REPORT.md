@@ -104,3 +104,12 @@ held-out error was still `6.15` times the label-replication RMSE, the
 predeclared gate admits one `max_quality` update.  Further upper-budget rounds
 remain conditional on that checkpoint improving the same replicated bank.
 
+That upper-budget update took `2674.63` seconds and did not pass the
+continuation gate.  Its replicated policy value was `309.8506646`, worse than
+`focused a4` by `1.124919 ± 0.124412` (paired state SE).  Held-out RMSE also
+worsened to `0.250733`, although label-replication RMSE fell to `0.008390`.
+All values stayed finite and ESS remained one.  This cleanly separates label
+noise from approximation quality: the larger label budget was quieter but
+produced a much worse first-update Actor.  No `max_quality a2` was run, and the
+OU/GMM checkpoint remains frozen at `focused a4`.
+

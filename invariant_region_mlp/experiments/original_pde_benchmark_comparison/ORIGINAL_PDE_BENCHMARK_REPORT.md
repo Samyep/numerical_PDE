@@ -108,8 +108,11 @@ from `0.029624` to `0.010465` and modestly reduced held-out error from
 `0.077291` to `0.071546`.  This is evidence for cleaner supervision, while
 the matched-round policy gain is negligible.  One upper-budget OU/GMM update
 was admitted by the predeclared gate because iteration four still improved
-and Actor error remained well above label noise; its result is evaluated
-before the final checkpoint is frozen.
+and Actor error remained well above label noise.  It was worse than
+`focused a4` by `1.124919 ± 0.124412` on the replicated bank and worsened
+held-out RMSE to `0.250733`, despite reducing label-replication RMSE to
+`0.008390`.  The max-budget branch therefore stopped before `a2`; the final
+OU/GMM checkpoint remains `focused a4`.
 
 ## Numerical integrity and leakage controls
 
