@@ -106,11 +106,16 @@ These are fixed reproductions rather than baseline hyperparameter searches.
 | DPI, OU/GMM common 960-state bank | 1 | Value RMSE `17.6638` | 627.42 s |
 | PINN-HTE, OU/GMM common 960-state bank | 1 | Value RMSE `38.6698` | 767.21 s |
 | D-DBSDE, OU/GMM common 960-state bank | 1 | Value RMSE `30.7247` | 453.05 s |
+| SDGD-PINN, HJB-Log common 960-state bank | 1 | Value RMSE `0.0299212` | 11,402.80 s |
+| SDGD-PINN, HJB-Log at `u(0,0)` | 1 | absolute error `2.06813` | 11,402.80 s |
 
 The uncertainty after `±` is the sample standard deviation across seeds, not
-a confidence interval.  DPI, PINN-HTE, and D-DBSDE have one official run each;
-their table entries must not be interpreted as seed-stability estimates.  The
-formal comparison report also keeps DPI's distributed function task separate
-from diagnostic values at `x=0`, which is not that benchmark's published
-native task.
+a confidence interval.  DPI, PINN-HTE, D-DBSDE, and SDGD-PINN have one official
+run each; their table entries must not be interpreted as seed-stability
+estimates.  SDGD-PINN's full 20,000-state native test gives RMSE `0.0276622`;
+the smaller common-bank result above is measured directly on the identical 960
+states used for Tangent-Actor.  Its `u(0,0)` value is evaluated separately and
+is not inferred from the distributed RMSE.  The formal comparison report also
+keeps DPI's distributed function task separate from diagnostic values at
+`x=0`, which is not that benchmark's published native task.
 

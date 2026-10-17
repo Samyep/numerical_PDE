@@ -60,11 +60,24 @@ iteration schedules.  It remains a native single-point solver.
 | DPI | OU/GMM common 960-state bank | 1 | `17.6638` RMSE | 627.42 s |
 | PINN-HTE | OU/GMM common 960-state bank | 1 | `38.6698` RMSE | 767.21 s |
 | D-DBSDE | OU/GMM common 960-state bank | 1 | `30.7247` RMSE | 453.05 s |
+| SDGD-PINN | HJB-Log common 960-state bank | 1 | `0.0299212` RMSE | 11,402.80 s |
 
 The `±` entries are sample standard deviations across independent seeds.  The
 DPI-family entries have one fixed official run and provide no seed-stability
 estimate.  DPI's value at `x=0` is reported only as a diagnostic because its
 published benchmark is the distributed function task.
+
+The official SDGD-PINN run completed all 10,000 published epochs.  Its
+otherwise monolithic loop was split at epoch 5,000 while preserving model,
+Adam, scheduler, collocation points, and every random-number state; a 100-epoch
+audit matched the uninterrupted official loop bit-for-bit.  The 10,000-epoch
+checkpoint contains all 10,000 loss and L2 entries.  On the full official
+20,000-state test it obtains RMSE `0.0276622`, relative L2 `0.00606570`, and
+bias `+0.0157126`.  Direct evaluation on the common 960-state bank gives RMSE
+`0.0299212`, relative L2 `0.00652670`, bias `+0.0177013`, and Gradient-Actor
+vector RMSE `0.0247201`.  Its native `u(0,0)` prediction is `2.5220323` versus
+the independent reference `4.5901617`, an absolute error of `2.06813`.
+Distributed and single-point results are therefore reported separately.
 
 ## Fair task and cost separation
 
@@ -158,6 +171,7 @@ The native published-point comparison remains a different task:
 |---|---:|---:|---:|---|
 | HJB-Log Tangent-Actor | `0.003150 ± 0.000207` | `1030.3 ± 75.9 s` | `25.84 ± 1.14 s` | more accurate, substantially slower at one query |
 | HJB-Log Deep BSDE | `0.009678 ± 0.002761` | `65.15 s` | included in training output | native single-point baseline |
+| HJB-Log SDGD-PINN | `2.06813` | `11402.80 s` | `0.00068 s` | official amortized model evaluated at the native point |
 | Allen–Cahn Tangent-Actor | `0.0000295 ± 0.0000241` | `580.2 ± 63.8 s` | `26.20 ± 1.04 s` | mean MC SE is `0.0000467`; reference-limited |
 | Allen–Cahn Deep BSDE | `0.0001691 ± 0.0001798` | `127.69 s` | included in training output | seed spread exceeds its mean error |
 
@@ -252,8 +266,9 @@ The HJB implementations consistently use `z=sigma^T grad(u)`.  For HJB-Log,
 linear drift stays in the forward SDE and only the concave quadratic driver is
 linearized.  Allen–Cahn uses a Value Actor constrained by its comparison-
 principle interval `[0,1]`; no Gradient head is added just to manufacture an
-MCV.  Nine automated tests cover terminal data, diffusion normalization,
-sign conventions, exact-reference residuals, and tangent identities.
+MCV.  Eleven automated tests cover terminal data, diffusion normalization,
+sign conventions, exact-reference residuals, tangent identities, the
+value-only Full-History path, and exact SDGD random-state restoration.
 
 Ground Truth is absent from label generation, fitting, early stopping, Actor
 iteration, and frozen checkpoint ranking.  Analytic values and gradients are
