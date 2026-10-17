@@ -17,6 +17,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 
 
@@ -219,8 +220,19 @@ def _actor_function_rows() -> list[dict[str, Any]]:
                 "weight_ess_fraction": data["mean_weight_ess_fraction"],
                 "training_seconds": data["training_seconds"],
                 "inference_seconds": data["evaluation_seconds"],
+                "diagnostic_and_io_overhead_seconds": data.get(
+                    "diagnostic_and_io_overhead_seconds"
+                ),
                 "total_seconds": data["total_seconds"],
+                "total_seconds_including_diagnostics": data.get(
+                    "total_seconds_including_diagnostics", data["total_seconds"]
+                ),
                 "parameter_count": data["parameter_count"],
+                "peak_training_gpu_bytes": data.get("peak_training_gpu_bytes"),
+                "peak_inference_gpu_bytes": data.get("peak_inference_gpu_bytes"),
+                "peak_gpu_bytes": data.get("peak_gpu_bytes"),
+                "nonfinite_count": int(data.get("training_nonfinite_count", 0))
+                + int(data.get("evaluation_nonfinite_count", 0)),
                 "frozen_before_test": data["frozen_before_test_reference"],
                 "ground_truth_used_for_selection": False,
             }
@@ -232,6 +244,10 @@ def _official_function_rows() -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for path in sorted(RAW_DIR.glob("official_dpi_*_s*_official_evaluation.json")):
         data = _read(path)
+        training_path = Path(str(path).removesuffix("_evaluation.json") + ".json")
+        training_record = _read(training_path) if training_path.exists() else {}
+        training_peak = training_record.get("peak_gpu_bytes")
+        inference_peak = data.get("peak_gpu_bytes_inference")
         rows.append(
             {
                 "benchmark": data["benchmark"],
@@ -251,11 +267,22 @@ def _official_function_rows() -> list[dict[str, Any]]:
                 "inference_seconds": data["inference_seconds"],
                 "total_seconds": data["total_seconds"],
                 "parameter_count": data["parameter_count"],
+                "peak_training_gpu_bytes": training_peak,
+                "peak_inference_gpu_bytes": inference_peak,
+                "peak_gpu_bytes": max(
+                    [value for value in (training_peak, inference_peak) if value is not None],
+                    default=None,
+                ),
+                "nonfinite_count": data.get("nonfinite_count", 0),
                 "ground_truth_used_for_selection": False,
             }
         )
     for path in sorted(RAW_DIR.glob("official_sdgd_s*_official_evaluation.json")):
         data = _read(path)
+        training_path = Path(str(path).removesuffix("_evaluation.json") + ".json")
+        training_record = _read(training_path) if training_path.exists() else {}
+        training_peak = training_record.get("peak_gpu_bytes")
+        inference_peak = data.get("peak_gpu_bytes_inference")
         rows.append(
             {
                 "benchmark": data["benchmark"],
@@ -277,6 +304,13 @@ def _official_function_rows() -> list[dict[str, Any]]:
                 "inference_seconds": data["inference_seconds"],
                 "total_seconds": data["total_seconds"],
                 "parameter_count": data["parameter_count"],
+                "peak_training_gpu_bytes": training_peak,
+                "peak_inference_gpu_bytes": inference_peak,
+                "peak_gpu_bytes": max(
+                    [value for value in (training_peak, inference_peak) if value is not None],
+                    default=None,
+                ),
+                "nonfinite_count": data.get("nonfinite_count", 0),
                 "ground_truth_used_for_selection": False,
                 "official_test_labels_reported_each_epoch": True,
             }
@@ -302,6 +336,19 @@ def _official_function_rows() -> list[dict[str, Any]]:
                 "inference_seconds": data["inference_seconds"],
                 "total_seconds": data["total_seconds"],
                 "parameter_count": 0,
+                "peak_training_gpu_bytes": 0,
+                "peak_inference_gpu_bytes": max(
+                    data["function"].get("peak_gpu_bytes") or 0,
+                    data["native"].get("peak_gpu_bytes") or 0,
+                ),
+                "peak_gpu_bytes": max(
+                    data["function"].get("peak_gpu_bytes") or 0,
+                    data["native"].get("peak_gpu_bytes") or 0,
+                ),
+                "nonfinite_count": data["function"]["stats"].get(
+                    "nonfinite_count", 0
+                )
+                + data["native"]["stats"].get("nonfinite_count", 0),
                 "ground_truth_used_for_selection": False,
             }
         )
@@ -344,8 +391,19 @@ def native_rows(function: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "mc_standard_error": native["corrected_replicate_standard_error"],
                 "training_seconds": data["training_seconds"],
                 "inference_seconds": data["evaluation_seconds"],
+                "diagnostic_and_io_overhead_seconds": data.get(
+                    "diagnostic_and_io_overhead_seconds"
+                ),
                 "total_seconds": data["total_seconds"],
+                "total_seconds_including_diagnostics": data.get(
+                    "total_seconds_including_diagnostics", data["total_seconds"]
+                ),
                 "parameter_count": data["parameter_count"],
+                "peak_training_gpu_bytes": data.get("peak_training_gpu_bytes"),
+                "peak_inference_gpu_bytes": data.get("peak_inference_gpu_bytes"),
+                "peak_gpu_bytes": data.get("peak_gpu_bytes"),
+                "nonfinite_count": int(data.get("training_nonfinite_count", 0))
+                + int(data.get("evaluation_nonfinite_count", 0)),
                 "evaluation_role": "frozen_selected" if is_selected else "diagnostic",
             }
         )
@@ -369,6 +427,9 @@ def native_rows(function: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "total_seconds": data["total_process_seconds"],
                 "parameter_count": data["parameter_count"],
                 "nonfinite_count": data["nonfinite_count"],
+                "peak_training_gpu_bytes": data.get("peak_gpu_bytes"),
+                "peak_inference_gpu_bytes": 0,
+                "peak_gpu_bytes": data.get("peak_gpu_bytes"),
                 "evaluation_role": "official_fixed",
             }
         )
@@ -379,12 +440,31 @@ def native_rows(function: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ):
         for path in sorted(RAW_DIR.glob(pattern)):
             data = _read(path)
+            training_record: dict[str, Any] = {}
+            if method := data.get("method"):
+                if method in {"dpi", "pinn_hte", "d_dbsde", "sdgd_pinn_official"}:
+                    training_path = Path(str(path).removesuffix("_evaluation.json") + ".json")
+                    if training_path.exists():
+                        training_record = _read(training_path)
             native = data["native"]
             prediction = native.get("prediction", native.get("corrected_mean"))
             absolute_error = native.get(
                 "absolute_error", native.get("corrected_absolute_error")
             )
             method = data["method"]
+            if method == "full_history_mlp_raw":
+                inference_peak = max(
+                    data["function"].get("peak_gpu_bytes") or 0,
+                    data["native"].get("peak_gpu_bytes") or 0,
+                )
+                training_peak = 0
+                nonfinite_count = data["function"]["stats"].get(
+                    "nonfinite_count", 0
+                ) + data["native"]["stats"].get("nonfinite_count", 0)
+            else:
+                training_peak = training_record.get("peak_gpu_bytes")
+                inference_peak = data.get("peak_gpu_bytes_inference")
+                nonfinite_count = data.get("nonfinite_count", 0)
             rows.append(
                 {
                     "benchmark": data["benchmark"],
@@ -408,6 +488,17 @@ def native_rows(function: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "inference_seconds": data.get("inference_seconds", 0.0),
                     "total_seconds": data["total_seconds"],
                     "parameter_count": data["parameter_count"],
+                    "peak_training_gpu_bytes": training_peak,
+                    "peak_inference_gpu_bytes": inference_peak,
+                    "peak_gpu_bytes": max(
+                        [
+                            value
+                            for value in (training_peak, inference_peak)
+                            if value is not None
+                        ],
+                        default=None,
+                    ),
+                    "nonfinite_count": nonfinite_count,
                     "evaluation_role": "official_fixed"
                     if method != "full_history_mlp_raw"
                     else "frozen_control_grid",
@@ -614,22 +705,31 @@ def _plot_accuracy(training: list[dict[str, Any]]) -> None:
             local = [row for row in subset if row["method"] == method]
             if not local:
                 continue
-            marker = "*" if local[0]["protocol"] == "native_published_point" else "o"
-            axis.scatter(
-                [max(float(row["training_seconds"]), 1e-2) for row in local],
-                [float(row["error"]) for row in local],
-                label=METHOD_LABELS.get(method, method),
-                marker=marker,
-                s=55 if marker == "*" else 32,
-                color=color[method],
-                alpha=0.82,
-            )
+            for index, row in enumerate(local):
+                if row["protocol"] == "native_published_point":
+                    marker, size, face = "X", 48, color[method]
+                elif row["selection_role"] == "reference_free_selected":
+                    marker, size, face = "*", 85, color[method]
+                elif row["selection_role"] == "postselection_descriptive_only":
+                    marker, size, face = "o", 32, "none"
+                else:
+                    marker, size, face = "s", 34, color[method]
+                axis.scatter(
+                    [max(float(row["training_seconds"]), 1e-2)],
+                    [float(row["error"])],
+                    label=METHOD_LABELS.get(method, method) if index == 0 else None,
+                    marker=marker,
+                    s=size,
+                    facecolors=face,
+                    edgecolors=color[method],
+                    alpha=0.85,
+                )
         axis.set_xscale("log")
         axis.set_yscale("log")
         axis.set_title(BENCHMARK_LABELS[benchmark])
         axis.set_xlabel("cumulative training GPU seconds")
         axis.grid(True, which="both", alpha=0.22)
-    axes[0].set_ylabel("error (RMSE; stars are native absolute error)")
+    axes[0].set_ylabel("error (function RMSE; X marks native absolute error)")
     handles, labels = axes[0].get_legend_handles_labels()
     for axis in axes[1:]:
         local_handles, local_labels = axis.get_legend_handles_labels()
@@ -637,6 +737,23 @@ def _plot_accuracy(training: list[dict[str, Any]]) -> None:
             if label not in labels:
                 handles.append(handle)
                 labels.append(label)
+    handles.extend(
+        [
+            Line2D([0], [0], marker="*", linestyle="none", color="0.25", markersize=9),
+            Line2D(
+                [0], [0], marker="o", linestyle="none", markerfacecolor="none",
+                markeredgecolor="0.25", color="0.25", markersize=6,
+            ),
+            Line2D([0], [0], marker="X", linestyle="none", color="0.25", markersize=6),
+        ]
+    )
+    labels.extend(
+        [
+            "reference-free selected Actor",
+            "descriptive postselection Actor",
+            "native single-point task",
+        ]
+    )
     fig.legend(handles, labels, loc="outside lower center", ncol=4, frameon=False)
     fig.savefig(FIGURE_DIR / "accuracy_vs_training_gpu_time.png", dpi=220)
     fig.savefig(FIGURE_DIR / "accuracy_vs_training_gpu_time.pdf")
@@ -731,23 +848,84 @@ def _plot_decomposition(function: list[dict[str, Any]]) -> None:
     labels = [BENCHMARK_LABELS[row["benchmark"]] for row in rows]
     sampling = [math.sqrt(max(float(row.get("sampling_variance_component_mse") or 0), 0)) for row in rows]
     non_mc = [float(row["non_mc_rmse_proxy"]) for row in rows]
+    observed = [float(row["value_rmse"]) for row in rows]
+    actor_error = [
+        float(
+            row.get("gradient_vector_rmse")
+            if row.get("gradient_vector_rmse") is not None
+            else row.get("direct_value_actor_rmse")
+        )
+        for row in rows
+    ]
     training = [float(row["training_seconds"]) for row in rows]
     inference = [float(row["inference_seconds"]) for row in rows]
+    selected_variants = {
+        row["benchmark"]: row["variant"]
+        for row in rows
+    }
     x = np.arange(len(rows))
-    fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.2), constrained_layout=True)
-    axes[0].bar(x, non_mc, label="non-MC RMSE proxy", color="#4c78a8")
-    axes[0].bar(x, sampling, bottom=non_mc, label="sampling RMSE component", color="#f58518")
-    axes[0].set_xticks(x, labels, rotation=18, ha="right")
-    axes[0].set_ylabel("RMSE component (diagnostic)")
-    axes[0].legend(frameon=False)
-    axes[0].grid(True, axis="y", alpha=0.22)
-    axes[1].bar(x, training, label="training", color="#54a24b")
-    axes[1].bar(x, inference, bottom=training, label="final evaluation", color="#e45756")
-    axes[1].set_yscale("log")
-    axes[1].set_xticks(x, labels, rotation=18, ha="right")
-    axes[1].set_ylabel("GPU seconds")
-    axes[1].legend(frameon=False)
-    axes[1].grid(True, axis="y", alpha=0.22)
+    fig, axes = plt.subplots(2, 2, figsize=(11.8, 8.1), constrained_layout=True)
+    width = 0.24
+    axes[0, 0].bar(x - width, observed, width, label="observed RMSE", color="#4c78a8")
+    axes[0, 0].bar(x, non_mc, width, label="non-MC proxy", color="#72b7b2")
+    axes[0, 0].bar(x + width, sampling, width, label="MC sampling component", color="#f58518")
+    axes[0, 0].set_yscale("log")
+    axes[0, 0].set_xticks(x, labels, rotation=15, ha="right")
+    axes[0, 0].set_ylabel("Value error")
+    axes[0, 0].set_title("MC and non-MC error")
+    axes[0, 0].legend(frameon=False, fontsize=8)
+    axes[0, 0].grid(True, axis="y", which="both", alpha=0.22)
+
+    for benchmark in BENCHMARKS:
+        variant = selected_variants.get(benchmark)
+        local = sorted(
+            (
+                row for row in function
+                if row["method"] == "terminal_aware_tangent_actor_mcv"
+                and row["benchmark"] == benchmark
+                and row["seed"] == 0
+                and row["variant"] == variant
+                and row.get("time_steps") in {32, 64, 128}
+            ),
+            key=lambda row: int(row["time_steps"]),
+        )
+        if local:
+            axes[0, 1].plot(
+                [int(row["time_steps"]) for row in local],
+                [float(row["value_rmse"]) for row in local],
+                marker="o",
+                linewidth=1.8,
+                label=BENCHMARK_LABELS[benchmark],
+            )
+    axes[0, 1].set_yscale("log")
+    axes[0, 1].set_xticks((32, 64, 128))
+    axes[0, 1].set_xlabel("Euler time steps")
+    axes[0, 1].set_ylabel("Value RMSE")
+    axes[0, 1].set_title("Euler sensitivity")
+    axes[0, 1].legend(frameon=False, fontsize=8)
+    axes[0, 1].grid(True, which="both", alpha=0.22)
+
+    axes[1, 0].bar(x, actor_error, color="#b279a2")
+    axes[1, 0].set_yscale("log")
+    axes[1, 0].set_xticks(x, labels, rotation=15, ha="right")
+    axes[1, 0].set_ylabel("direct Actor RMSE")
+    axes[1, 0].set_title("Actor approximation (gradient vector; Allen value)")
+    axes[1, 0].grid(True, axis="y", which="both", alpha=0.22)
+
+    axes[1, 1].bar(x, training, label="training", color="#54a24b")
+    axes[1, 1].bar(
+        x,
+        inference,
+        bottom=training,
+        label="frozen evaluation",
+        color="#e45756",
+    )
+    axes[1, 1].set_yscale("log")
+    axes[1, 1].set_xticks(x, labels, rotation=15, ha="right")
+    axes[1, 1].set_ylabel("GPU seconds")
+    axes[1, 1].set_title("Training and inference cost")
+    axes[1, 1].legend(frameon=False, fontsize=8)
+    axes[1, 1].grid(True, axis="y", which="both", alpha=0.22)
     fig.savefig(FIGURE_DIR / "error_and_compute_decomposition.png", dpi=220)
     fig.savefig(FIGURE_DIR / "error_and_compute_decomposition.pdf")
     plt.close(fig)

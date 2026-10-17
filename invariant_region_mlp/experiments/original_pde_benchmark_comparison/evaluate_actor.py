@@ -64,6 +64,7 @@ def evaluate(
     native_paths: int,
 ) -> dict[str, Any]:
     ensure_dirs()
+    evaluation_process_started = time.perf_counter()
     benchmark = make_benchmark(benchmark_name)
     training_path = RAW_DIR / f"actor_{benchmark_name}_{trial}_s{seed}.json"
     training = json.loads(training_path.read_text())
@@ -181,6 +182,30 @@ def evaluate(
     native_mean = float(np.mean(native_replicates))
     native_plain_mean = float(np.mean(native_plain_replicates))
 
+    training_peak_candidates: list[int] = []
+    training_nonfinite_count = 0
+    for completed_phase in training["phases"][:iteration]:
+        fit_peak = completed_phase["training"].get("peak_gpu_bytes")
+        if fit_peak is not None:
+            training_peak_candidates.append(int(fit_peak))
+        for label_split in ("train", "validation", "replication"):
+            label_metadata = completed_phase["labels"].get(label_split, {})
+            label_peak = label_metadata.get("peak_gpu_bytes")
+            if label_peak is not None:
+                training_peak_candidates.append(int(label_peak))
+            training_nonfinite_count += int(
+                label_metadata.get("nonfinite_count", 0)
+            )
+    evaluation_peak_candidates = [
+        int(metadata["peak_gpu_bytes"])
+        for metadata in replicate_metadata + native_metadata
+        if metadata.get("peak_gpu_bytes") is not None
+    ]
+    evaluation_nonfinite_count = sum(
+        int(metadata.get("nonfinite_count", 0))
+        for metadata in replicate_metadata + native_metadata
+    )
+
     if benchmark.actor_kind == "gradient":
         diagnostic_indices = np.linspace(
             0, len(reference) - 1, min(96, len(reference)), dtype=int
@@ -230,6 +255,7 @@ def evaluate(
         native_plain=np.asarray(native_plain_replicates),
         direct_actor=direct,
     )
+    evaluation_process_seconds = time.perf_counter() - evaluation_process_started
     result = {
         "method": "terminal_aware_tangent_actor_mcv",
         "benchmark": benchmark_name,
@@ -276,6 +302,14 @@ def evaluate(
         "actor_diagnostics": actor_diagnostics,
         "bregman_diagnostics": bregman,
         "actor_inference_seconds": actor_inference_seconds,
+        "peak_training_gpu_bytes": max(training_peak_candidates, default=None),
+        "peak_inference_gpu_bytes": max(evaluation_peak_candidates, default=None),
+        "peak_gpu_bytes": max(
+            training_peak_candidates + evaluation_peak_candidates,
+            default=None,
+        ),
+        "training_nonfinite_count": training_nonfinite_count,
+        "evaluation_nonfinite_count": evaluation_nonfinite_count,
         "native": {
             "point": "t=0,x=0",
             "is_published_native_point": benchmark_name
@@ -296,8 +330,16 @@ def evaluate(
         },
         "training_seconds": phase["cumulative_training_seconds"],
         "evaluation_seconds": evaluation_seconds,
+        "evaluation_process_seconds_including_diagnostics": evaluation_process_seconds,
+        "diagnostic_and_io_overhead_seconds": max(
+            evaluation_process_seconds - evaluation_seconds, 0.0
+        ),
         "total_seconds": float(phase["cumulative_training_seconds"])
         + evaluation_seconds,
+        "total_seconds_including_diagnostics": float(
+            phase["cumulative_training_seconds"]
+        )
+        + evaluation_process_seconds,
         "prediction_file": str(prediction_path),
         "ground_truth_used_for_training_or_selection": False,
         "frozen_before_test_reference": True,

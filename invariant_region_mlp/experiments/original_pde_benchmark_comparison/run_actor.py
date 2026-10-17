@@ -78,6 +78,13 @@ TRIALS: dict[str, ActorConfig] = {
         activation="silu", learning_rate=1.5e-4, batch_size=512,
         label_estimator="plain",
     ),
+    # Single-update upper-budget checkpoint.  It is launched only after the
+    # staged search shows that more supervision remains informative.
+    "max_quality": ActorConfig(
+        training_points=16384, validation_points=512, paths_per_label=256,
+        label_time_steps=64, optimizer_steps=6000, width=384, depth=4,
+        activation="silu", learning_rate=1.0e-4, batch_size=512,
+    ),
 }
 
 

@@ -21,6 +21,14 @@
     "stage_b": ["pilot192", "wide384", "deep_elu", "quality128"],
     "successive_halving": "one update for all; continue the best two reference-free candidates",
     "stage_c": ["data8192", "focused"],
+    "conditional_upper_budget": {
+      "trial": "max_quality",
+      "iterations": 1,
+      "training_points": 16384,
+      "paths_per_label": 256,
+      "label_time_steps": 64,
+      "launch_rule": "only when the staged reference-free results show continued benefit from supervision quality"
+    },
     "ablation": "focused_plain",
     "maximum_initial_actor_iterations": 6
   },
