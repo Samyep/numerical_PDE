@@ -171,9 +171,13 @@ prevent a fine-grained ranking of very small point errors.
 
 At 64 steps the mean sampling-variance MSE components are `5.37e-7` for
 HJB-Log, `4.26e-4` for OU/GMM, and `2.76e-8` for Allen–Cahn.  Subtracting
-these from total MSE gives non-MC RMSE proxies `0.000435`, `0.21999`, and
-`0.0000284`.  HJB-Log and Allen–Cahn are substantially MC-limited at the
-declared path budget, whereas OU/GMM is dominated by systematic error.
+the sampling component from each seed's total MSE, truncating at zero, and
+then averaging gives non-MC RMSE proxies `0.000435`, `0.21999`, and
+`0.0000284`.  The Allen–Cahn decomposition is itself noisy: one seed has an
+estimated sampling component just above its observed MSE, and pooling the
+three seed MSEs before subtraction instead gives `0.0000127`.  HJB-Log and
+Allen–Cahn are substantially MC-limited at the declared path budget, whereas
+OU/GMM is dominated by systematic error.
 
 The frozen seed-0 discretization diagnostic is:
 
