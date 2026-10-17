@@ -114,7 +114,13 @@ def actor_trial_rows() -> list[dict[str, Any]]:
         screen, screen_states = _screen_map(benchmark)
         for phase in record["phases"]:
             iteration = int(phase["iteration"])
-            screen_row = screen.get((trial, iteration), {})
+            # The descriptive screen explicitly evaluates seed-0 checkpoints.
+            # Never copy those test metrics onto independently trained seeds.
+            screen_row = (
+                screen.get((trial, iteration), {})
+                if int(record["seed"]) == 0
+                else {}
+            )
             value_metrics = screen_row.get("value_metrics", {})
             validation = phase["reference_free_policy_validation"]
             training = phase["training"]
@@ -167,7 +173,12 @@ def actor_trial_rows() -> list[dict[str, Any]]:
                     "descriptive_postselection_evaluation_seconds": screen_row.get(
                         "evaluation_seconds"
                     ),
-                    "descriptive_postselection_states": screen_states,
+                    "descriptive_postselection_states": (
+                        screen_states if screen_row else None
+                    ),
+                    "descriptive_postselection_training_seed": (
+                        0 if screen_row else None
+                    ),
                     "descriptive_test_used_for_selection": False,
                     "ground_truth_used_for_training_or_selection": False,
                 }
@@ -577,6 +588,24 @@ def training_frontier_rows(
         )
     for row in function:
         if row["method"] == "terminal_aware_tangent_actor_mcv":
+            if (
+                row["evaluation_role"] == "frozen_headline"
+                and row.get("time_steps") == 64
+            ):
+                rows.append(
+                    {
+                        "benchmark": row["benchmark"],
+                        "method": row["method"],
+                        "method_label": row["method_label"],
+                        "variant": row["variant"],
+                        "seed": row["seed"],
+                        "protocol": row["protocol"],
+                        "error_metric": "value_rmse",
+                        "error": row["value_rmse"],
+                        "training_seconds": row["training_seconds"],
+                        "selection_role": "frozen_headline_actor",
+                    }
+                )
             continue
         rows.append(
             {
@@ -908,6 +937,8 @@ def _plot_accuracy(training: list[dict[str, Any]]) -> None:
             for index, row in enumerate(local):
                 if row["protocol"] == "native_published_point":
                     marker, size, face = "X", 48, color[method]
+                elif row["selection_role"] == "frozen_headline_actor":
+                    marker, size, face = "D", 42, color[method]
                 elif row["selection_role"] == "reference_free_selected":
                     marker, size, face = "*", 85, color[method]
                 elif row["selection_role"] == "postselection_descriptive_only":
@@ -940,6 +971,7 @@ def _plot_accuracy(training: list[dict[str, Any]]) -> None:
     handles.extend(
         [
             Line2D([0], [0], marker="*", linestyle="none", color="0.25", markersize=9),
+            Line2D([0], [0], marker="D", linestyle="none", color="0.25", markersize=6),
             Line2D(
                 [0], [0], marker="o", linestyle="none", markerfacecolor="none",
                 markeredgecolor="0.25", color="0.25", markersize=6,
@@ -950,6 +982,7 @@ def _plot_accuracy(training: list[dict[str, Any]]) -> None:
     labels.extend(
         [
             "reference-free selected Actor",
+            "frozen headline Actor",
             "descriptive postselection Actor",
             "native single-point task",
         ]
@@ -1174,11 +1207,18 @@ def _plot_decomposition(function: list[dict[str, Any]]) -> None:
     axes[1, 0].set_title("Actor approximation (gradient vector; Allen value)")
     axes[1, 0].grid(True, axis="y", which="both", alpha=0.22)
 
-    axes[1, 1].bar(x, training, label="training", color="#54a24b")
+    cost_width = 0.34
     axes[1, 1].bar(
-        x,
+        x - cost_width / 2,
+        training,
+        cost_width,
+        label="training",
+        color="#54a24b",
+    )
+    axes[1, 1].bar(
+        x + cost_width / 2,
         inference,
-        bottom=training,
+        cost_width,
         label="frozen evaluation",
         color="#e45756",
     )
