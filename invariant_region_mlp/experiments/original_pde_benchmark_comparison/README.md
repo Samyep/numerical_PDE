@@ -8,7 +8,10 @@ selection before reading final-test references.
 
 The generated test banks, checkpoints, official working directories, and
 Slurm logs remain local.  Their hashes and scalar outcomes are recorded in the
-tracked result manifests and tables.
+tracked result manifests and tables.  `reproducibility_metadata.json` records
+the software/hardware environment, source commits, bank hashes, Slurm resource
+contract, and seed policy; `protocol.json` records the frozen scientific
+protocol.
 
 Run correctness and source-independent reference preparation with:
 

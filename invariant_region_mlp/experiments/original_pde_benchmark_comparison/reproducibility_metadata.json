@@ -1,0 +1,43 @@
+{
+  "artifact_policy": {
+    "compact_json_csv_reports_and_figures_tracked": true,
+    "large_checkpoints_predictions_official_workdirs_and_slurm_logs_local": true,
+    "slurm_logs_record_git_head_at_job_start": true
+  },
+  "branch": "ir-mlp-original-pde-benchmark-comparison",
+  "environment": {
+    "conda_activation_script": "/sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh",
+    "cuda_available": true,
+    "gpu": "NVIDIA GH200 120GB",
+    "gpu_memory_reported_mib": 97871,
+    "nvidia_driver": "595.71.05",
+    "python": "3.12.9",
+    "torch": "2.10.0+cu129"
+  },
+  "evaluation_bank_sha256": {
+    "allen_cahn_d100": "731dafc5aac912af3fa584857548e2e649b0eb82a0ea42c10fefb837f4daaad8",
+    "dpi_ou_gmm_d100": "14426c76454e0ac11133090a188b782343a297702e0ca4e8f106748bbff028d4",
+    "hjb_log_d100": "7f3f3b201d4f137712ffca28a546383527143b537ea16418966a909c2aac5ffb",
+    "sdgd_official_test_bank": "2c526d4218397716a37c32032d35ec671a4d01b156e3f6270a81f772b95923a5"
+  },
+  "official_source_commits": {
+    "DeepBSDE": "e76fed80b1995daf4a0dd6d3e2cf64a0931dabda",
+    "DeepPicardIteration": "e8616c2f531c9f95299b246a13c1180b8f02822a",
+    "HTE_PINN": "8b9ca6310cc9d050a54f92528401573413567fe4",
+    "SDGD_PINN": "c597cc4fe9caac0b3ca118ea84453405f25ff833"
+  },
+  "randomness": {
+    "actor_final_seeds": [0, 1, 2],
+    "deterministic_named_seed_derivation": true,
+    "selection_common_random_numbers_across_candidates": true
+  },
+  "slurm": {
+    "account": "bgvf-dtai-gh",
+    "cpus_per_gpu_job": 12,
+    "excluded_node": "gh097",
+    "gpus_per_node": 1,
+    "memory_per_job": "120G",
+    "partition": "ghx4-interactive",
+    "standard_time_limit": "02:00:00"
+  }
+}
