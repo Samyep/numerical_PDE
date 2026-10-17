@@ -17,6 +17,7 @@ from invariant_region_mlp.experiments.tangent_actor_scaling_diagnosis.models imp
 )
 
 from .drivers import SineQuadraticDriver
+from .full_history_baseline import RawDriver
 from .reference2d import solve_strang_reference
 
 
@@ -164,3 +165,12 @@ def test_training_dependencies_do_not_import_reference_or_active_coordinates() -
     assert "reference2d" not in source
     assert "@ driver.B" not in source
     assert "@driver.B" not in source
+
+
+def test_full_history_adapter_does_not_project_recursive_values() -> None:
+    raw = RawDriver(SineQuadraticDriver(d=4, lam=0.2))
+    assert raw.r_low == -float("inf")
+    assert raw.r_high == float("inf")
+    y = torch.tensor([1.2], dtype=torch.float64)
+    z = torch.zeros(1, 4, dtype=torch.float64)
+    torch.testing.assert_close(raw.driver(y, z), raw.original.driver(y, z))
