@@ -9,9 +9,13 @@ from .benchmarks import AllenCahnBenchmark, DPIOUBenchmark, HJBLogBenchmark
 from .deep_bsde_port import CONFIGS, OfficialDeepBSDE
 from .diagnostics import exact_z_torch
 from .evaluate_actor import _select_reference_z
+from .full_history_mlp_original import OriginalPDEMLPDriver
 from .models import TerminalAwareActor
 from .references import dpi_exact_reference, hjb_log_quad_scalar, hjb_log_reference
 from .tangent_solver import _rollout_chunk, antithetic_normals
+from invariant_region_mlp.experiments.tangent_actor_strong_baselines.full_history_mlp import (
+    GenericFullHistoryMLP,
+)
 
 
 def test_hjb_reference_matches_adaptive_integral() -> None:
@@ -154,4 +158,19 @@ def test_value_actor_evaluation_does_not_require_gradient_truth() -> None:
         _select_reference_z(gradient_bank, indices, "gradient"),
         gradient_bank["z"][indices],
     )
+
+
+def test_full_history_value_only_path_skips_unused_gradient() -> None:
+    driver = OriginalPDEMLPDriver(AllenCahnBenchmark())
+
+    def forbidden_gradient(_: torch.Tensor) -> torch.Tensor:
+        raise AssertionError("a value-only recursion must not request terminal gradients")
+
+    driver.terminal_gradient_torch = forbidden_gradient  # type: ignore[method-assign]
+    solver = GenericFullHistoryMLP(
+        driver, M=4, device=torch.device("cpu"), seed=81
+    )
+    state = solver.solve(2, torch.zeros(2), torch.zeros((2, driver.d)))
+    assert torch.isfinite(state).all()
+    assert torch.count_nonzero(state[:, 1:]) == 0
 

@@ -72,10 +72,14 @@ class GenericFullHistoryMLP:
         output[:, 0] = parent_terminal + torch.mean(
             terminal - parent_terminal[:, None], dim=1
         )
-        terminal_z = self.driver.sigma * self.driver.terminal_gradient_torch(
-            terminal_x.reshape(-1, d)
-        ).reshape(b, samples, d)
-        output[:, 1:] = terminal_z.mean(dim=1)
+        # A value-only driver never consumes the gradient coordinates.  Keep
+        # their slots at zero so the generic recursion interface is unchanged,
+        # while avoiding an otherwise substantial d-dimensional calculation.
+        if self.driver.has_gradient:
+            terminal_z = self.driver.sigma * self.driver.terminal_gradient_torch(
+                terminal_x.reshape(-1, d)
+            ).reshape(b, samples, d)
+            output[:, 1:] = terminal_z.mean(dim=1)
         self.stats.terminal_samples += b * samples
         return output
 
@@ -127,10 +131,11 @@ class GenericFullHistoryMLP:
                 self.stats.driver_evaluations += b * siblings
             importance = remaining[:, None] * fraction ** (1.0 - alpha) / alpha
             output[:, 0] += torch.mean(importance * difference, dim=1)
-            bismut = normal / torch.sqrt(torch.clamp(delta, min=1e-7))[:, :, None]
-            output[:, 1:] += torch.mean(
-                importance[:, :, None] * difference[:, :, None] * bismut, dim=1
-            )
+            if self.driver.has_gradient:
+                bismut = normal / torch.sqrt(torch.clamp(delta, min=1e-7))[:, :, None]
+                output[:, 1:] += torch.mean(
+                    importance[:, :, None] * difference[:, :, None] * bismut, dim=1
+                )
             self.stats.transition_samples += b * siblings
         return output
 

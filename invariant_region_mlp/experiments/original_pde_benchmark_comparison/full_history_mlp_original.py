@@ -203,6 +203,7 @@ def run(
         "inference_seconds": total_seconds,
         "total_seconds": total_seconds,
         "pathwise_terminal_gradient": benchmark.actor_kind == "gradient",
+        "value_only_gradient_work_skipped": benchmark.actor_kind != "gradient",
         "recursive_value_projection": False,
         "terminal_aware_neural_feature": False,
         "mcv": False,

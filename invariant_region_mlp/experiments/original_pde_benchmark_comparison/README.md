@@ -18,6 +18,7 @@ Run correctness and source-independent reference preparation with:
 ```bash
 source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
 conda activate base
+export PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}"
 python -m pytest \
   invariant_region_mlp/experiments/original_pde_benchmark_comparison/test_original_benchmarks.py -q
 python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.prepare
