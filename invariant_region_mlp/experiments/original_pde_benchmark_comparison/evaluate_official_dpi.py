@@ -15,12 +15,15 @@ from .common import PREDICTION_DIR, RAW_DIR, RESULTS_DIR, atomic_json, ensure_di
 from .official_dpi_runner import CONFIGS
 
 
-def evaluate(method: str, seed: int, device: torch.device) -> dict[str, object]:
+def evaluate(
+    method: str, seed: int, device: torch.device, *, calibration: bool = False
+) -> dict[str, object]:
     from picard import load_cfg, PicardRunner
     from picard.solution_jac import PicardSolutionGradientWrapper
 
     ensure_dirs()
-    record_path = RAW_DIR / f"official_dpi_{method}_s{seed}_official.json"
+    suffix = "calibration" if calibration else "official"
+    record_path = RAW_DIR / f"official_dpi_{method}_s{seed}_{suffix}.json"
     record = json.loads(record_path.read_text())
     cfg = load_cfg(record["expanded_config"])
     equation = PicardRunner.get_equation(cfg).to(device=device)
@@ -68,12 +71,13 @@ def evaluate(method: str, seed: int, device: torch.device) -> dict[str, object]:
     gradient = np.concatenate(gradients)
     error = prediction - reference
     gradient_error = gradient - reference_z  # alpha=1, so z=grad(u)
-    output = PREDICTION_DIR / f"official_dpi_{method}_s{seed}.npz"
+    output = PREDICTION_DIR / f"official_dpi_{method}_s{seed}_{suffix}.npz"
     np.savez_compressed(output, prediction=prediction, gradient=gradient)
     result: dict[str, object] = {
         "method": method,
         "benchmark": "dpi_ou_gmm_d100",
         "seed": seed,
+        "calibration": calibration,
         "states": len(reference),
         "value_rmse": float(np.sqrt(np.mean(np.square(error)))),
         "value_relative_l2": float(
@@ -95,7 +99,10 @@ def evaluate(method: str, seed: int, device: torch.device) -> dict[str, object]:
         "prediction_file": str(output),
         "test_bank_used_for_training_or_selection": False,
     }
-    atomic_json(RAW_DIR / f"official_dpi_{method}_s{seed}_evaluation.json", result)
+    atomic_json(
+        RAW_DIR / f"official_dpi_{method}_s{seed}_{suffix}_evaluation.json",
+        result,
+    )
     return result
 
 
@@ -104,8 +111,14 @@ def main() -> None:
     parser.add_argument("--method", choices=tuple(CONFIGS), required=True)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--calibration", action="store_true")
     args = parser.parse_args()
-    result = evaluate(args.method, args.seed, torch.device(args.device))
+    result = evaluate(
+        args.method,
+        args.seed,
+        torch.device(args.device),
+        calibration=args.calibration,
+    )
     print(json.dumps(result, sort_keys=True))
 
 

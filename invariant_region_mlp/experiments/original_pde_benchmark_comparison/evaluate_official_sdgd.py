@@ -38,9 +38,12 @@ class OfficialSDGDMLP(nn.Module):
         return self.nn(tx) * (1.0 - t) + terminal
 
 
-def evaluate(seed: int, device: torch.device) -> dict[str, object]:
+def evaluate(
+    seed: int, device: torch.device, *, calibration: bool = False
+) -> dict[str, object]:
     ensure_dirs()
-    record = json.loads((RAW_DIR / f"official_sdgd_s{seed}_official.json").read_text())
+    suffix = "calibration" if calibration else "official"
+    record = json.loads((RAW_DIR / f"official_sdgd_s{seed}_{suffix}.json").read_text())
     model = OfficialSDGDMLP().to(device)
     model.load_state_dict(
         torch.load(record["checkpoint"], map_location=device, weights_only=False)
@@ -71,12 +74,13 @@ def evaluate(seed: int, device: torch.device) -> dict[str, object]:
         common_indices = common["test_indices"]
         common_reference = common["value"][common_indices]
     common_error = prediction[common_indices] - common_reference
-    output = PREDICTION_DIR / f"official_sdgd_s{seed}.npz"
+    output = PREDICTION_DIR / f"official_sdgd_s{seed}_{suffix}.npz"
     np.savez_compressed(output, prediction=prediction)
     result: dict[str, object] = {
         "method": "sdgd_pinn_official",
         "benchmark": "hjb_log_d100",
         "seed": seed,
+        "calibration": calibration,
         "states": len(reference),
         "value_rmse": float(np.sqrt(np.mean(np.square(error)))),
         "value_relative_l2": float(
@@ -106,7 +110,7 @@ def evaluate(seed: int, device: torch.device) -> dict[str, object]:
         "test_labels_used_by_official_code_for_reporting_each_epoch": True,
         "test_labels_used_in_training_loss": False,
     }
-    atomic_json(RAW_DIR / f"official_sdgd_s{seed}_evaluation.json", result)
+    atomic_json(RAW_DIR / f"official_sdgd_s{seed}_{suffix}_evaluation.json", result)
     return result
 
 
@@ -114,8 +118,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--calibration", action="store_true")
     args = parser.parse_args()
-    result = evaluate(args.seed, torch.device(args.device))
+    result = evaluate(
+        args.seed, torch.device(args.device), calibration=args.calibration
+    )
     print(json.dumps(result, sort_keys=True))
 
 

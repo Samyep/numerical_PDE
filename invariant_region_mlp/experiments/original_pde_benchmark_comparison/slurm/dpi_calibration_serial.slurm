@@ -37,4 +37,6 @@ python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is
 for METHOD in "${METHODS[@]}"; do
   srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.official_dpi_runner \
     --method "$METHOD" --seed 0 --calibration
+  srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.evaluate_official_dpi \
+    --method "$METHOD" --seed 0 --calibration
 done
