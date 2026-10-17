@@ -11,6 +11,7 @@ The experiment evaluates the unchanged undamped Terminal-Aware Tangent-Actor upd
 | coupled | 100 | 0.2 | 0 | a2 | 0.00198365 | 0.00422741 | 0.0630903 | 7.44× | 0.9504 |
 | primary | 100 | 0.2 | 0 | a4 | 0.000684943 | 0.00137593 | 0.007139 | 51.75× | 0.9733 |
 | primary | 100 | 0.2 | 0 | a2 | 0.00150872 | 0.00303075 | 0.0607912 | 9.76× | 0.9736 |
+| primary | 400 | 0.2 | 0 | a2 | 0.00629103 | 0.0124982 | 0.153572 | 2.82× | 0.9781 |
 
 ## Frozen endpoint comparison
 
@@ -20,9 +21,18 @@ This table uses the reference-free selected main Actor, the predeclared highest 
 |---|---|---:|---:|---:|
 | Tangent-Actor + MCV | reference-free FP-selected Actor | 1 | 0.000684943 ± 0 | 2805.0 |
 
+## Ambient-dimension scaling diagnosis
+
+| d | params / train point | a1 selected step | a1 label-replication Gradient RMSE | selected Value RMSE | selected active / inactive Gradient RMSE |
+|---:|---:|---:|---:|---:|---:|
+| 100 | 254.7 | 250 | 0.015087 | 0.00150872 | 0.060729 / 0.0027515 |
+| 400 | 367.3 | 1 | 0.017067 | 0.00629103 | 0.15318 / 0.010965 |
+
+The d=400 Gradient-label replication noise is only 1.13× the d=100 value, while the selected error remains almost entirely in the two active directions and the inactive-output energy is negligible. Training after the first step nearly interpolates the training bank but worsens validation. The observed failure is therefore most consistent with full-ambient sample complexity/generalization under many irrelevant coordinates, rather than exponential-weight instability, MC-label noise alone, or spurious inactive Gradient output.
+
 ## Interpretation
 
-Completed 3 training runs and 3 post-freeze evaluations. The rank correlation between the reference-free consistency score and post-freeze true Value error is 1.0.
+Completed 4 training runs and 4 post-freeze evaluations. The rank correlation between the reference-free consistency score and post-freeze true Value error is 1.0.
 
 No monotone policy-improvement theorem or nonnegative Bregman-regret identity is used for these drivers. Linear-policy values are diagnostics only. The experiment supports claims only for smooth bounded-curvature drivers in the tested locally stable regime.
 

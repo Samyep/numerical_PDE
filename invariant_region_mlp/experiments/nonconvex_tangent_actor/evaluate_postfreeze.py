@@ -71,9 +71,15 @@ def _actor_truth_metrics(
     coordinates = x @ driver.B
     exact_r = reference.value(t, coordinates)
     exact_reduced_gradient = reference.gradient(t, coordinates)
-    exact_q = math.sqrt(2.0) * (exact_reduced_gradient @ driver.B.T)
+    exact_reduced_q = math.sqrt(2.0) * exact_reduced_gradient
+    exact_q = exact_reduced_q @ driver.B.T
     r_error = predicted_r - exact_r
     q_error = predicted_q - exact_q
+    predicted_reduced_q = predicted_q @ driver.B
+    active_error = predicted_reduced_q - exact_reduced_q
+    inactive_q = predicted_q - predicted_reduced_q @ driver.B.T
+    predicted_energy = np.mean(np.square(predicted_q).sum(axis=1))
+    inactive_energy = np.mean(np.square(inactive_q).sum(axis=1))
     return {
         "actor_value_rmse": float(np.sqrt(np.mean(np.square(r_error)))),
         "actor_value_relative_l2": float(
@@ -85,6 +91,21 @@ def _actor_truth_metrics(
         ),
         "actor_gradient_vector_rmse": float(
             np.sqrt(np.mean(np.square(q_error).sum(axis=1)))
+        ),
+        "actor_gradient_active_vector_rmse": float(
+            np.sqrt(np.mean(np.square(active_error).sum(axis=1)))
+        ),
+        "actor_gradient_inactive_vector_rms": float(
+            np.sqrt(inactive_energy)
+        ),
+        "actor_gradient_inactive_energy_fraction": float(
+            inactive_energy / max(predicted_energy, np.finfo(float).tiny)
+        ),
+        "actor_gradient_predicted_active_vector_rms": float(
+            np.sqrt(np.mean(np.square(predicted_reduced_q).sum(axis=1)))
+        ),
+        "actor_gradient_truth_active_vector_rms": float(
+            np.sqrt(np.mean(np.square(exact_reduced_q).sum(axis=1)))
         ),
         "actor_gradient_relative_l2": float(
             np.linalg.norm(q_error)

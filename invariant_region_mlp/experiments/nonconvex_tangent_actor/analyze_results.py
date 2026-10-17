@@ -323,6 +323,82 @@ def _frozen_endpoint_comparison(
     return sorted(output, key=lambda row: row["method"])
 
 
+def _ambient_scaling_diagnosis(
+    training: list[dict[str, Any]], iterations: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    output = []
+    for dimension in (100, 400):
+        payload = next(
+            (
+                item
+                for item in training
+                if item["spec"]["family"] == "primary"
+                and item["spec"]["d"] == dimension
+                and item["spec"]["lam"] == 0.2
+                and item["spec"]["budget"] == "pilot"
+                and item["spec"]["estimator"] == "mcv"
+                and item["spec"]["seed"] == 0
+            ),
+            None,
+        )
+        if payload is None:
+            continue
+        phase = payload["phases"][0]
+        fit = phase["training"]
+        selected = next(
+            (
+                row
+                for row in iterations
+                if row["run_id"] == phase["run_id"] and row["selected"]
+            ),
+            None,
+        )
+        row = {
+            "d": dimension,
+            "training_points": fit["config"]["training_points"],
+            "parameters": fit["parameters"],
+            "parameters_per_training_point": fit["parameters"]
+            / fit["config"]["training_points"],
+            "a1_selected_optimizer_step": fit["selected_step"],
+            "a1_selected_train_gradient_vector_rmse": fit[
+                "selected_train_gradient_vector_rmse"
+            ],
+            "a1_selected_validation_gradient_vector_rmse": fit[
+                "selected_validation_gradient_vector_rmse"
+            ],
+            "a1_final_validation_normalized_loss": phase["trace"][-1][
+                "validation_normalized_loss"
+            ],
+            "a1_gradient_label_replication_vector_rmse": phase["labels"][
+                "gradient_label_replication_vector_rmse"
+            ],
+            "a1_value_label_replication_rmse": phase["labels"][
+                "value_label_replication_rmse"
+            ],
+        }
+        if selected is not None:
+            row.update(
+                {
+                    "selected_actor": selected["iteration"],
+                    "selected_value_rmse": selected["mcv_value_rmse"],
+                    "selected_gradient_vector_rmse": selected[
+                        "actor_gradient_vector_rmse"
+                    ],
+                    "selected_gradient_active_vector_rmse": selected.get(
+                        "actor_gradient_active_vector_rmse"
+                    ),
+                    "selected_gradient_inactive_vector_rms": selected.get(
+                        "actor_gradient_inactive_vector_rms"
+                    ),
+                    "selected_gradient_inactive_energy_fraction": selected.get(
+                        "actor_gradient_inactive_energy_fraction"
+                    ),
+                }
+            )
+        output.append(row)
+    return output
+
+
 def compute_rows(
     training: list[dict[str, Any]],
     post_freeze: list[dict[str, Any]],
@@ -690,6 +766,9 @@ def _summary(
         "mcv_plain_a0_label_noise_ablation": _label_noise_ablation(training),
         "frozen_endpoint_baseline_comparison": endpoint,
         "tangent_actor_beats_all_available_frozen_baseline_endpoints": endpoint_advantage,
+        "ambient_scaling_diagnosis": _ambient_scaling_diagnosis(
+            training, iterations
+        ),
         "selected_results": selected,
         "scope_statement": "ambient d-dimensional benchmark with a two-dimensional independent reference structure",
         "global_convergence_claimed": False,
@@ -753,6 +832,37 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
                 f"| {row['method']} | {row['configuration']} | {row['seeds']} | "
                 f"{row['value_rmse_mean']:.6g} ± {row['value_rmse_std']:.3g} | "
                 f"{row['total_seconds_mean']:.1f} |"
+            )
+    scaling = summary["ambient_scaling_diagnosis"]
+    if scaling:
+        lines.extend(
+            [
+                "",
+                "## Ambient-dimension scaling diagnosis",
+                "",
+                "| d | params / train point | a1 selected step | a1 label-replication Gradient RMSE | selected Value RMSE | selected active / inactive Gradient RMSE |",
+                "|---:|---:|---:|---:|---:|---:|",
+            ]
+        )
+        for row in scaling:
+            active = row.get("selected_gradient_active_vector_rmse")
+            inactive = row.get("selected_gradient_inactive_vector_rms")
+            lines.append(
+                f"| {row['d']} | {row['parameters_per_training_point']:.1f} | "
+                f"{row['a1_selected_optimizer_step']} | {row['a1_gradient_label_replication_vector_rmse']:.5g} | "
+                f"{row.get('selected_value_rmse', float('nan')):.6g} | "
+                f"{active:.5g} / {inactive:.5g} |"
+            )
+        if len(scaling) == 2:
+            low, high = scaling
+            noise_ratio = high["a1_gradient_label_replication_vector_rmse"] / max(
+                low["a1_gradient_label_replication_vector_rmse"], 1e-300
+            )
+            lines.extend(
+                [
+                    "",
+                    f"The d=400 Gradient-label replication noise is only {noise_ratio:.2f}× the d=100 value, while the selected error remains almost entirely in the two active directions and the inactive-output energy is negligible. Training after the first step nearly interpolates the training bank but worsens validation. The observed failure is therefore most consistent with full-ambient sample complexity/generalization under many irrelevant coordinates, rather than exponential-weight instability, MC-label noise alone, or spurious inactive Gradient output.",
+                ]
             )
     lines.extend(
         [

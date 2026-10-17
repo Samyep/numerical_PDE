@@ -238,7 +238,14 @@ def train_and_select(spec: ExperimentSpec, device: torch.device) -> dict[str, An
         "wall_seconds_this_invocation": time.perf_counter() - started,
     }
     atomic_json(RESULTS_DIR / f"training_{spec.run_id}.json", result)
-    if spec.budget == "pilot" and spec.family == "primary" and spec.seed == 0:
+    if (
+        spec.budget == "pilot"
+        and spec.family == "primary"
+        and spec.d == 100
+        and spec.lam == 0.2
+        and spec.estimator == "mcv"
+        and spec.seed == 0
+    ):
         atomic_json(
             RESULTS_DIR / "pilot_decision.json",
             {
