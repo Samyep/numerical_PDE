@@ -334,7 +334,7 @@ def fixed_point_diagnostic(
         "time_steps": time_steps,
         "device": device,
         "parent_batch": 8,
-        "path_chunk": min(32, paths),
+        "path_chunk": min(64, paths),
     }
     first_r, first_q, first_meta = mcv_tangent_labels(
         driver,
