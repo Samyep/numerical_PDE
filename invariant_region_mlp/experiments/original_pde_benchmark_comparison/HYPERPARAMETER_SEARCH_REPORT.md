@@ -113,3 +113,25 @@ noise from approximation quality: the larger label budget was quieter but
 produced a much worse first-update Actor.  No `max_quality a2` was run, and the
 OU/GMM checkpoint remains frozen at `focused a4`.
 
+## Allen–Cahn frozen search outcome
+
+The replicated common-bank ranking selected `focused a4` after `635.78`
+seconds of cumulative training.  Its policy value was `0.04632316949`, MC
+standard error `8.78e-6`, held-out value-label RMSE `0.001436`, and independent
+label-replication RMSE `0.000603`.  Exponential weights remained stable (mean
+ESS fraction `0.9929`) and there were no nonfinite values.
+
+| Candidate | Policy minus selected | Paired state SE | Interpretation |
+|---|---:|---:|---|
+| `focused a3` | `+1.47e-8` | `2.31e-9` | resolved statistically, but negligible in practical scale |
+| `quality128 a3` | `+3.54e-8` | `5.90e-9` | similarly on the same policy plateau |
+| `data8192 a3` | `+3.76e-8` | `5.47e-9` | more states alone does not materially change the policy |
+| `deep_elu a3` | `+4.41e-8` | `6.21e-9` | architecture choice is immaterial at this accuracy scale |
+
+The selected held-out/replication RMSE ratio is `2.38`, below the predeclared
+factor-five trigger, and later policy gains are only order `1e-8`.  Therefore
+the upper-budget `max_quality` branch was not run for Allen–Cahn.  This is a
+protocol decision made before opening the final-test reference, rather than a
+result-based compute truncation.  The frozen final configuration is
+`focused a4`.
+

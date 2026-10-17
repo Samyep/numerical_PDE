@@ -94,6 +94,7 @@ replace the declared MCV-training method.
 |---|---|---:|---:|---:|---:|
 | HJB-Log | `focused a4` | 993.72 s | 4.575605754 | 0.006573 | 0.000847 |
 | OU/GMM HJB | `focused a4` | 1539.59 s | 308.7257452 | 0.059290 | 0.009644 |
+| Allen–Cahn | `focused a4` | 635.78 s | 0.04632316949 | 0.001436 | 0.000603 |
 
 For HJB-Log, `focused a4` beat `focused a3` by `6.70e-5` with paired
 state SE `2.91e-5`.  A nominally larger `max_quality a1` used 16,384 points,
@@ -113,6 +114,14 @@ and Actor error remained well above label noise.  It was worse than
 held-out RMSE to `0.250733`, despite reducing label-replication RMSE to
 `0.008390`.  The max-budget branch therefore stopped before `a2`; the final
 OU/GMM checkpoint remains `focused a4`.
+
+For Allen–Cahn, `focused a4` beat `focused a3` by only `1.47e-8` with
+paired state SE `2.31e-9`.  The leading `focused`, `quality128`, `data8192`,
+and `deep_elu` third/fourth-round checkpoints all lie within `4.5e-8` in
+common-bank policy value.  The selected held-out error was only `2.38` times
+the label-replication RMSE, below the predeclared factor-five upper-budget
+trigger.  The `max_quality` branch was therefore not run, and `focused a4`
+was frozen before the final-test reference was opened.
 
 ## Numerical integrity and leakage controls
 
