@@ -90,6 +90,14 @@ common Brownian paths across candidates; held-out tangent-label error broke
 ties.  Plain-FK training was retained as an ablation but was not eligible to
 replace the declared MCV-training method.
 
+The ultimately selected `focused` configuration uses 8,192 spatial training
+points, 128 paths per label, 32 label-time steps, a four-hidden-layer
+width-384 SiLU Actor, and 5,000 optimizer steps in each of four tangent updates.
+Successive Actors warm-start from the preceding round.  Direct MCV with
+coefficient one is used for eligible gradient-policy labels and final
+inference; Allen–Cahn retains its Value-only Actor and does not receive an
+extra Gradient head merely to enable MCV.
+
 | Benchmark | Frozen staged checkpoint | Training time | Common-bank policy value | Held-out label RMSE | Label-replication RMSE |
 |---|---|---:|---:|---:|---:|
 | HJB-Log | `focused a4` | 993.72 s | 4.575605754 | 0.006573 | 0.000847 |
