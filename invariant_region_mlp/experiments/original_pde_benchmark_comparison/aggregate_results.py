@@ -329,11 +329,15 @@ def _official_function_rows() -> list[dict[str, Any]]:
                     "common_960_gradient_component_rmse"
                 ],
                 "training_seconds": data["training_seconds"],
-                "inference_seconds": data["inference_seconds"],
+                "inference_seconds": data.get(
+                    "common_960_inference_seconds", data["inference_seconds"]
+                ),
                 "diagnostic_gradient_seconds": data.get(
                     "gradient_evaluation_seconds_reported_separately"
                 ),
-                "total_seconds": data["total_seconds"],
+                "total_seconds": data.get(
+                    "common_960_total_seconds", data["total_seconds"]
+                ),
                 "parameter_count": data["parameter_count"],
                 "peak_training_gpu_bytes": training_peak,
                 "peak_inference_gpu_bytes": inference_peak,
@@ -527,10 +531,8 @@ def native_rows(function: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "reference": native["reference"],
                     "absolute_error": absolute_error,
                     "training_seconds": data.get("training_seconds", 0.0),
-                    "inference_seconds": (
-                        data.get("native_inference_seconds", data["inference_seconds"])
-                        if method == "full_history_mlp_raw"
-                        else data.get("inference_seconds", 0.0)
+                    "inference_seconds": data.get(
+                        "native_inference_seconds", data.get("inference_seconds", 0.0)
                     ),
                     "diagnostic_gradient_seconds": data.get(
                         "gradient_evaluation_seconds_reported_separately"
@@ -538,7 +540,7 @@ def native_rows(function: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "total_seconds": (
                         data.get("native_inference_seconds", data["total_seconds"])
                         if method == "full_history_mlp_raw"
-                        else data["total_seconds"]
+                        else data.get("native_total_seconds", data["total_seconds"])
                     ),
                     "parameter_count": data["parameter_count"],
                     "peak_training_gpu_bytes": training_peak,
