@@ -80,6 +80,24 @@ def _write_compatibility(audits: dict[str, dict[str, Any]]) -> None:
     lines.extend(
         [
             "",
+            "The curvature audit samples `t ~ Uniform(0,0.8T)` and `x ~ N(0,I_d)` from the independent reference, so it excludes the terminal boundary where sign changes could be inherited trivially from the terminal condition.",
+            "",
+            "| Driver | Value mean ± std | Value q05 / q50 / q95 | strong f_uu>0 | strong f_uu<0 | joint Hessian indefinite |",
+            "|---|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for name, payload in audits.items():
+        curvature = payload["reference"]["curvature_coverage"]
+        quantiles = curvature["value_quantiles"]
+        lines.append(
+            f"| {name} | {curvature['value_mean']:.4f} ± {curvature['value_std']:.4f} | "
+            f"{quantiles[0]:.4f} / {quantiles[2]:.4f} / {quantiles[4]:.4f} | "
+            f"{curvature['strong_positive_fraction']:.3f} | {curvature['strong_negative_fraction']:.3f} | "
+            f"{curvature['joint_hessian_indefinite_fraction']:.3f} |"
+        )
+    lines.extend(
+        [
+            "",
             "The interval check uses the forward-time form `w_tau = Delta w + f(w,sqrt(2) grad w)`: 0 is a subsolution and 1 is a supersolution for both drivers. The numerical reference independently remains inside this interval.",
             "",
             "The joint Hessian is bounded on the invariant Value interval: the Value curvature has magnitude at most `4*pi^2*lambda + eta^2`, the Gradient block is `-I`, and the mixed block has norm `eta`. Therefore the tangent remainder is quadratically bounded whenever the Actor Gradient remains in a bounded neighborhood.",
