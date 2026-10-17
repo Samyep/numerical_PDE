@@ -173,7 +173,9 @@ def iteration_rows(
     return rows
 
 
-def mcv_rows(iterations: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def mcv_rows(
+    iterations: list[dict[str, Any]], training: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     fields = (
         "run_id",
         "family",
@@ -195,7 +197,84 @@ def mcv_rows(iterations: list[dict[str, Any]]) -> list[dict[str, Any]]:
         "paths",
         "time_steps",
     )
-    return [{key: row.get(key) for key in fields} for row in iterations]
+    rows = [
+        {"record_kind": "postfreeze_value_inference", **{key: row.get(key) for key in fields}}
+        for row in iterations
+    ]
+    for payload in training:
+        spec = payload["spec"]
+        for phase in payload["phases"]:
+            labels = phase["labels"]
+            rows.append(
+                {
+                    "record_kind": "training_label_replication",
+                    "run_id": phase["run_id"],
+                    "family": spec["family"],
+                    "d": spec["d"],
+                    "lambda": spec["lam"],
+                    "eta": spec["eta"],
+                    "seed": spec["seed"],
+                    "budget": spec["budget"],
+                    "iteration": f"a{phase['iteration']}",
+                    "training_estimator": spec["estimator"],
+                    "source_actor": phase["source"],
+                    "value_label_replication_rmse": labels[
+                        "value_label_replication_rmse"
+                    ],
+                    "gradient_label_replication_component_rmse": labels[
+                        "gradient_label_replication_component_rmse"
+                    ],
+                    "gradient_label_replication_vector_rmse": labels[
+                        "gradient_label_replication_vector_rmse"
+                    ],
+                    "paths_per_label": labels["validation"]["paths"],
+                    "label_time_steps": labels["validation"]["time_steps"],
+                    "weight_ess_fraction": labels["validation"][
+                        "weight_ess_fraction"
+                    ],
+                }
+            )
+    return rows
+
+
+def _label_noise_ablation(training: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Compare MCV/plain labels only at a1, where both use the identical a0."""
+    candidates: dict[str, dict[str, Any]] = {}
+    for payload in training:
+        spec = payload["spec"]
+        if (
+            spec["family"] == "primary"
+            and spec["d"] == 100
+            and spec["lam"] == 0.2
+            and spec["seed"] == 0
+            and spec["budget"] == "pilot"
+            and payload["phases"]
+        ):
+            candidates[spec["estimator"]] = payload["phases"][0]["labels"]
+    if not {"mcv", "plain"}.issubset(candidates):
+        return None
+    mcv, plain = candidates["mcv"], candidates["plain"]
+    return {
+        "comparison": "independent label replications for the identical a0 source and validation state bank",
+        "paths_per_replication": mcv["validation"]["paths"],
+        "time_steps": mcv["validation"]["time_steps"],
+        "mcv_value_replication_rmse": mcv["value_label_replication_rmse"],
+        "plain_value_replication_rmse": plain["value_label_replication_rmse"],
+        "value_noise_rmse_reduction_plain_over_mcv": plain[
+            "value_label_replication_rmse"
+        ]
+        / max(mcv["value_label_replication_rmse"], 1e-300),
+        "mcv_gradient_vector_replication_rmse": mcv[
+            "gradient_label_replication_vector_rmse"
+        ],
+        "plain_gradient_vector_replication_rmse": plain[
+            "gradient_label_replication_vector_rmse"
+        ],
+        "gradient_noise_rmse_reduction_plain_over_mcv": plain[
+            "gradient_label_replication_vector_rmse"
+        ]
+        / max(mcv["gradient_label_replication_vector_rmse"], 1e-300),
+    }
 
 
 def compute_rows(
@@ -517,6 +596,7 @@ def _summary(
         "fixed_point_true_error_spearman": _rank_correlation(
             consistency_values, true_values
         ),
+        "mcv_plain_a0_label_noise_ablation": _label_noise_ablation(training),
         "selected_results": selected,
         "scope_statement": "ambient d-dimensional benchmark with a two-dimensional independent reference structure",
         "global_convergence_claimed": False,
@@ -547,6 +627,21 @@ def _write_report(summary: dict[str, Any], rows: list[dict[str, Any]]) -> None:
         )
     if not selected:
         lines.append("| — | — | — | — | — | — | — | — | — | — |")
+    label_ablation = summary["mcv_plain_a0_label_noise_ablation"]
+    if label_ablation is not None:
+        lines.extend(
+            [
+                "",
+                "## MCV label-noise control",
+                "",
+                "For the identical frozen `a0`, state bank, path count, and Euler grid, independent label replications give:",
+                "",
+                "| label | plain replication RMSE | MCV replication RMSE | RMSE reduction |",
+                "|---|---:|---:|---:|",
+                f"| Value | {label_ablation['plain_value_replication_rmse']:.6g} | {label_ablation['mcv_value_replication_rmse']:.6g} | {label_ablation['value_noise_rmse_reduction_plain_over_mcv']:.2f}× |",
+                f"| Gradient vector | {label_ablation['plain_gradient_vector_replication_rmse']:.6g} | {label_ablation['mcv_gradient_vector_replication_rmse']:.6g} | {label_ablation['gradient_noise_rmse_reduction_plain_over_mcv']:.2f}× |",
+            ]
+        )
     lines.extend(
         [
             "",
@@ -588,7 +683,7 @@ def main() -> None:
     ]
     consistency = consistency_rows(training)
     iterations = iteration_rows(post_freeze, consistency)
-    mcv = mcv_rows(iterations)
+    mcv = mcv_rows(iterations, training)
     compute = compute_rows(training, post_freeze, baselines)
     comparison = baseline_rows(post_freeze, baselines)
     if consistency:
