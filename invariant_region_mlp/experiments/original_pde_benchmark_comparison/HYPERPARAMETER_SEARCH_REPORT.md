@@ -135,3 +135,23 @@ protocol decision made before opening the final-test reference, rather than a
 result-based compute truncation.  The frozen final configuration is
 `focused a4`.
 
+## Frozen-configuration seed stability
+
+After the three configurations were frozen, the complete `focused a4`
+training procedure was repeated with two new independent training seeds.  The
+64-step final evaluations therefore contain three independently trained
+Actors per benchmark, rather than three Monte Carlo evaluations of one
+checkpoint.
+
+| Benchmark | Seed-0 / seed-1 / seed-2 Value RMSE | Mean ± sample SD | Actor-error mean ± sample SD |
+|---|---:|---:|---:|
+| HJB-Log | `0.0008140 / 0.0008606 / 0.0008860` | `0.0008535 ± 0.0000365` | `0.04716 ± 0.00206` gradient vector RMSE |
+| OU/GMM HJB | `0.21976 / 0.22047 / 0.22263` | `0.22095 ± 0.00149` | `0.59796 ± 0.00654` gradient vector RMSE |
+| Allen–Cahn | `0.0001734 / 0.0001573 / 0.0001690` | `0.0001666 ± 0.0000083` | `0.001347 ± 0.000041` direct Value-Actor RMSE |
+
+The seed spread is small relative to the cross-method gaps on HJB-Log and
+OU/GMM.  Allen–Cahn remains reference-limited: the numerical-reference
+refinement proxy is `9.64e-6`, comparable to the `8.32e-6` Actor seed SD.
+These final-test numbers establish robustness of the frozen choice; they did
+not participate in the staged selection.
+
