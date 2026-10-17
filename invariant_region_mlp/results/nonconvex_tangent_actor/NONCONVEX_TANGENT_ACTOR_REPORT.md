@@ -8,6 +8,7 @@ The experiment evaluates the unchanged undamped Terminal-Aware Tangent-Actor upd
 
 | family | d | lambda | seed | Actor | Value RMSE | Relative L2 | Actor gradient-vector RMSE | MCV variance reduction | ESS |
 |---|---:|---:|---:|---|---:|---:|---:|---:|---:|
+| coupled | 100 | 0.2 | 0 | a2 | 0.00198365 | 0.00422741 | 0.0630903 | 7.44× | 0.9504 |
 | primary | 100 | 0.2 | 0 | a4 | 0.000684943 | 0.00137593 | 0.007139 | 51.75× | 0.9733 |
 | primary | 100 | 0.2 | 0 | a2 | 0.00150872 | 0.00303075 | 0.0607912 | 9.76× | 0.9736 |
 
@@ -21,7 +22,7 @@ This table uses the reference-free selected main Actor, the predeclared highest 
 
 ## Interpretation
 
-Completed 2 training runs and 2 post-freeze evaluations. The rank correlation between the reference-free consistency score and post-freeze true Value error is 1.0.
+Completed 3 training runs and 3 post-freeze evaluations. The rank correlation between the reference-free consistency score and post-freeze true Value error is 1.0.
 
 No monotone policy-improvement theorem or nonnegative Bregman-regret identity is used for these drivers. Linear-policy values are diagnostics only. The experiment supports claims only for smooth bounded-curvature drivers in the tested locally stable regime.
 
