@@ -85,14 +85,17 @@ def _selection(benchmark: str) -> dict[str, Any] | None:
     return _read(path) if path.exists() else None
 
 
-def _screen_map(benchmark: str) -> dict[tuple[str, int], dict[str, Any]]:
+def _screen_map(
+    benchmark: str,
+) -> tuple[dict[tuple[str, int], dict[str, Any]], int | None]:
     path = RESULTS_DIR / f"actor_postselection_screen_{benchmark}.json"
     if not path.exists():
-        return {}
+        return {}, None
+    data = _read(path)
     return {
         (str(row["trial"]), int(row["iteration"])): row
-        for row in _read(path)["rows"]
-    }
+        for row in data["rows"]
+    }, int(data["states"])
 
 
 def actor_trial_rows() -> list[dict[str, Any]]:
@@ -108,7 +111,7 @@ def actor_trial_rows() -> list[dict[str, Any]]:
             final_key = (str(selected["trial"]), int(selected["iteration"]))
         stage_b_path = RESULTS_DIR / f"stage_b_selection_{benchmark}.json"
         stage_b = _read(stage_b_path) if stage_b_path.exists() else {}
-        screen = _screen_map(benchmark)
+        screen, screen_states = _screen_map(benchmark)
         for phase in record["phases"]:
             iteration = int(phase["iteration"])
             screen_row = screen.get((trial, iteration), {})
@@ -161,6 +164,10 @@ def actor_trial_rows() -> list[dict[str, Any]]:
                         "relative_l2"
                     ),
                     "descriptive_postselection_bias": value_metrics.get("bias"),
+                    "descriptive_postselection_evaluation_seconds": screen_row.get(
+                        "evaluation_seconds"
+                    ),
+                    "descriptive_postselection_states": screen_states,
                     "descriptive_test_used_for_selection": False,
                     "ground_truth_used_for_training_or_selection": False,
                 }
@@ -581,7 +588,9 @@ def training_frontier_rows(
 
 
 def total_compute_rows(
-    function: list[dict[str, Any]], native: list[dict[str, Any]]
+    trials: list[dict[str, Any]],
+    function: list[dict[str, Any]],
+    native: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     workloads = (1, 16, 128, 960)
@@ -632,19 +641,59 @@ def total_compute_rows(
                     "cost_note": "native Deep BSDE requires an independent training run per state",
                 }
             )
+    for row in trials:
+        error = _finite(row.get("descriptive_postselection_value_rmse"))
+        inference = _finite(row.get("descriptive_postselection_evaluation_seconds"))
+        states = row.get("descriptive_postselection_states")
+        if error is None or inference is None or not states:
+            continue
+        for queries in workloads:
+            scaled_inference = inference * queries / int(states)
+            rows.append(
+                {
+                    "benchmark": row["benchmark"],
+                    "method": "terminal_aware_tangent_actor_mcv",
+                    "method_label": METHOD_LABELS[
+                        "terminal_aware_tangent_actor_mcv"
+                    ],
+                    "variant": f"{row['trial']}/a{row['iteration']}",
+                    "seed": row["seed"],
+                    "protocol": "postselection_descriptive_actor_envelope",
+                    "queries": queries,
+                    "error_metric": "value_rmse",
+                    "error": error,
+                    "training_seconds": row["cumulative_training_seconds"],
+                    "inference_seconds_scaled": scaled_inference,
+                    "total_seconds": float(row["cumulative_training_seconds"])
+                    + scaled_inference,
+                    "cost_note": (
+                        "descriptive final-test screen after checkpoint freeze; "
+                        "not used to select the reported Actor"
+                    ),
+                    "selection_role": (
+                        "reference_free_selected"
+                        if row["reference_free_final_selected"]
+                        else "postselection_descriptive_only"
+                    ),
+                }
+            )
     for benchmark in BENCHMARKS:
         for queries in workloads:
-            subset = [
-                row for row in rows
-                if row["benchmark"] == benchmark
-                and row["queries"] == queries
-                and row["protocol"] == "amortized_function_common_bank"
-            ]
-            subset.sort(key=lambda row: row["total_seconds"])
-            best = float("inf")
-            for row in subset:
-                best = min(best, float(row["error"]))
-                row["budget_envelope_error"] = best
+            for protocol in (
+                "amortized_function_common_bank",
+                "postselection_descriptive_actor_envelope",
+            ):
+                subset = [
+                    row for row in rows
+                    if row["benchmark"] == benchmark
+                    and row["queries"] == queries
+                    and row["protocol"] == protocol
+                ]
+                subset.sort(key=lambda row: row["total_seconds"])
+                best = float("inf")
+                for row in subset:
+                    best = min(best, float(row["error"]))
+                    row["budget_envelope_error"] = best
     rows.sort(key=lambda row: (
         row["benchmark"], row["queries"], row["protocol"], row["total_seconds"]
     ))
@@ -804,16 +853,22 @@ def _plot_accuracy(training: list[dict[str, Any]]) -> None:
 
 
 def _plot_budget(total: list[dict[str, Any]]) -> None:
-    rows = [
+    primary_rows = [
         row for row in total
         if row["queries"] == 960
         and row["protocol"] == "amortized_function_common_bank"
         and row.get("budget_envelope_error") is not None
     ]
+    descriptive_rows = [
+        row for row in total
+        if row["queries"] == 960
+        and row["protocol"] == "postselection_descriptive_actor_envelope"
+        and row.get("budget_envelope_error") is not None
+    ]
     fig, axes = plt.subplots(1, 3, figsize=(14.2, 4.0), constrained_layout=True)
     for axis, benchmark in zip(axes, BENCHMARKS, strict=True):
         subset = sorted(
-            (row for row in rows if row["benchmark"] == benchmark),
+            (row for row in primary_rows if row["benchmark"] == benchmark),
             key=lambda row: float(row["total_seconds"]),
         )
         if subset:
@@ -832,6 +887,20 @@ def _plot_budget(total: list[dict[str, Any]]) -> None:
                 s=25,
                 alpha=0.75,
                 label="measured configurations",
+            )
+        descriptive = sorted(
+            (row for row in descriptive_rows if row["benchmark"] == benchmark),
+            key=lambda row: float(row["total_seconds"]),
+        )
+        if descriptive:
+            axis.step(
+                [float(row["total_seconds"]) for row in descriptive],
+                [float(row["budget_envelope_error"]) for row in descriptive],
+                where="post",
+                color="#f28e2b",
+                linewidth=1.7,
+                linestyle="--",
+                label="descriptive Actor test envelope",
             )
         axis.set_xscale("log")
         axis.set_yscale("log")
@@ -980,7 +1049,7 @@ def aggregate() -> dict[str, int]:
     function = function_rows()
     native = native_rows(function)
     training = training_frontier_rows(trials, function, native)
-    total = total_compute_rows(function, native)
+    total = total_compute_rows(trials, function, native)
     accounting = accounting_rows()
     _write_csv(EXPERIMENT_DIR / "hyperparameter_trials.csv", trials)
     _write_csv(EXPERIMENT_DIR / "function_approximation_comparison.csv", function)
