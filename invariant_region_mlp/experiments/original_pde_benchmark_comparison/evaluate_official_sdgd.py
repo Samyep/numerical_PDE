@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import subprocess
 import time
 
 import numpy as np
@@ -141,11 +142,19 @@ def evaluate(
     nonfinite_count += int((~np.isfinite(common_z)).sum())
     nonfinite_count += int(not np.isfinite(native_prediction))
     nonfinite_count += int((~torch.isfinite(native_gradient)).sum().item())
+    evaluation_repository_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=Path(__file__).resolve().parents[3],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
     result: dict[str, object] = {
         "method": "sdgd_pinn_official",
         "benchmark": "hjb_log_d100",
         "seed": seed,
         "calibration": calibration,
+        "evaluation_repository_commit": evaluation_repository_commit,
         "states": len(reference),
         "value_rmse": float(np.sqrt(np.mean(np.square(error)))),
         "value_relative_l2": float(
