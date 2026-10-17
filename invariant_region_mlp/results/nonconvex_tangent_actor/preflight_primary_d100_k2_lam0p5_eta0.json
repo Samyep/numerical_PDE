@@ -1,0 +1,178 @@
+{
+  "curvature_sign_change_required": true,
+  "ground_truth_visible_to_training": false,
+  "lambda_zero_control": false,
+  "passed": true,
+  "reference": {
+    "aliasing_n96_dealiased_vs_raw": {
+      "gradient_max_norm": 2.3947188504789212e-14,
+      "gradient_vector_rmse": 6.058437337922107e-15,
+      "value_max_abs": 7.105427357601002e-15,
+      "value_rmse": 3.1068629051498023e-15
+    },
+    "coarse_vs_production": {
+      "gradient_max_norm": 0.0011167294359476563,
+      "gradient_vector_rmse": 0.0002603554099573554,
+      "value_max_abs": 0.0012101888765373159,
+      "value_rmse": 0.00018105722699806136
+    },
+    "curvature_coverage": {
+      "distribution": "t~Uniform(0,0.8T), x~N(0,I_d), reference only",
+      "f_uu_negative_fraction": 0.536468505859375,
+      "f_uu_positive_fraction": 0.463531494140625,
+      "f_uu_quantiles": [
+        -14.913510670715901,
+        -6.897528126801846,
+        -0.21990836684742626,
+        6.3716466955830215,
+        14.83056599577402
+      ],
+      "joint_hessian_indefinite_fraction": 0.463531494140625,
+      "joint_hessian_negative_definite_fraction": 0.536468505859375,
+      "meaningful_sign_change_gate": true,
+      "samples": 32768,
+      "strong_negative_fraction": 0.495147705078125,
+      "strong_positive_fraction": 0.43280029296875,
+      "time_max": 0.4,
+      "value_max": 0.6907739402518482,
+      "value_mean": 0.4978742581704063,
+      "value_min": 0.3042424821078914,
+      "value_quantiles": [
+        0.36369037865972936,
+        0.44318713874477683,
+        0.4982268677536306,
+        0.5523106135417413,
+        0.6352925165713876
+      ],
+      "value_std": 0.04772271362363958
+    },
+    "driver": {
+      "T": 0.5,
+      "actor_input": "full ambient x",
+      "basis_orthogonality_max_abs": 1.1102230246251565e-16,
+      "basis_seed": 61511,
+      "d": 100,
+      "e_equals_beta_1": true,
+      "eta": 0.0,
+      "family": "sine_quadratic",
+      "has_gradient": true,
+      "invariant_interval": [
+        0.0,
+        1.0
+      ],
+      "k": 2,
+      "lambda": 0.5,
+      "mixed_derivative": "-eta*e",
+      "name": "sine_quadratic_d100_k2_lam0p5_eta0p0",
+      "oracle_projection_used": false,
+      "reconstruction_sign": 1.0,
+      "sigma": 1.4142135623730951,
+      "tangent_domain": [
+        0.0,
+        1.0
+      ],
+      "terminal": "0.5+0.3*sin(beta1.x)*cos(beta2.x)",
+      "value_curvature_changes_sign": true
+    },
+    "fine_vs_production": {
+      "gradient_max_norm": 0.00024445151174326774,
+      "gradient_vector_rmse": 3.992814783701272e-05,
+      "value_max_abs": 0.00023716985688571057,
+      "value_rmse": 2.8038697923803726e-05
+    },
+    "heun_n64_vs_midpoint_production": {
+      "gradient_max_norm": 0.000571503235759943,
+      "gradient_vector_rmse": 0.0001285318272396004,
+      "value_max_abs": 0.0006424968320485336,
+      "value_rmse": 8.931508645067765e-05
+    },
+    "independent_mol_rk4_n48_vs_split_n48": {
+      "gradient_max_norm": 7.799059328816096e-08,
+      "gradient_vector_rmse": 2.6512261476774563e-08,
+      "value_max_abs": 4.714335555267013e-08,
+      "value_rmse": 2.1662020282564506e-08
+    },
+    "inside_invariant_interval": true,
+    "levels": [
+      {
+        "dt": 0.001,
+        "n": 48,
+        "name": "coarse"
+      },
+      {
+        "dt": 0.0005,
+        "n": 64,
+        "name": "medium"
+      },
+      {
+        "dt": 0.00025,
+        "n": 96,
+        "name": "fine"
+      },
+      {
+        "dt": 0.000125,
+        "n": 128,
+        "name": "production"
+      }
+    ],
+    "medium_vs_production": {
+      "gradient_max_norm": 0.0005715029729878984,
+      "gradient_vector_rmse": 0.00012853328208172732,
+      "value_max_abs": 0.0006424982645906185,
+      "value_rmse": 8.931580619217981e-05
+    },
+    "pde_residual_max_abs": 3.385282007473123e-05,
+    "pde_residual_rmse": 5.005168306729452e-06,
+    "production": {
+      "dt": 0.000125,
+      "n": 128,
+      "store_dt": 0.002
+    },
+    "query_points": 16384,
+    "reference_error_proxy_value_rmse": 2.8038697923803726e-05,
+    "solution_grid_max": 0.8,
+    "solution_grid_min": 0.2,
+    "solver": "periodic Fourier Strang splitting + explicit midpoint",
+    "terminal_gradient_vector_rmse": 8.928977419179659e-05,
+    "terminal_value_rmse": 6.335490689186372e-05,
+    "wall_seconds": 33.94496442610398
+  },
+  "reference_driver": {
+    "T": 0.5,
+    "actor_input": "full ambient x",
+    "basis_orthogonality_max_abs": 1.1102230246251565e-16,
+    "basis_seed": 61511,
+    "d": 100,
+    "e_equals_beta_1": true,
+    "eta": 0.0,
+    "family": "sine_quadratic",
+    "has_gradient": true,
+    "invariant_interval": [
+      0.0,
+      1.0
+    ],
+    "k": 2,
+    "lambda": 0.5,
+    "mixed_derivative": "-eta*e",
+    "name": "sine_quadratic_d100_k2_lam0p5_eta0p0",
+    "oracle_projection_used": false,
+    "reconstruction_sign": 1.0,
+    "sigma": 1.4142135623730951,
+    "tangent_domain": [
+      0.0,
+      1.0
+    ],
+    "terminal": "0.5+0.3*sin(beta1.x)*cos(beta2.x)",
+    "value_curvature_changes_sign": true
+  },
+  "reference_path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/nonconvex_tangent_actor/references/sine_quadratic_d100_k2_lam0p5_eta0p0.npz",
+  "spec": {
+    "budget": "main",
+    "d": 100,
+    "estimator": "mcv",
+    "eta": 0.0,
+    "family": "primary",
+    "lam": 0.5,
+    "seed": 0
+  }
+}

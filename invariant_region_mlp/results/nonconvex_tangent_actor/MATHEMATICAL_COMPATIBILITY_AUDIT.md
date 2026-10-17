@@ -5,6 +5,7 @@ The implementation uses the existing generic tangent-coefficient and weighted Fe
 | Driver | max tangent error | max Hessian error | f_uu>0 fraction | f_uu<0 fraction | invariant [0,1] | gate |
 |---|---:|---:|---:|---:|---|---|
 | primary | 4.441e-16 | 0.000e+00 | 0.457 | 0.543 | True | PASS |
+| coupled | 4.441e-16 | 0.000e+00 | 0.136 | 0.864 | True | PASS |
 
 The interval check uses the forward-time form `w_tau = Delta w + f(w,sqrt(2) grad w)`: 0 is a subsolution and 1 is a supersolution for both drivers. The numerical reference independently remains inside this interval.
 
