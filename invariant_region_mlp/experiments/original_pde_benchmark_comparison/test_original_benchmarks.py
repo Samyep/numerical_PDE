@@ -11,6 +11,7 @@ from .diagnostics import exact_z_torch
 from .evaluate_actor import _select_reference_z
 from .full_history_mlp_original import OriginalPDEMLPDriver
 from .models import TerminalAwareActor
+from .official_sdgd_resumable import _restore_rng
 from .references import dpi_exact_reference, hjb_log_quad_scalar, hjb_log_reference
 from .tangent_solver import _rollout_chunk, antithetic_normals
 from invariant_region_mlp.experiments.tangent_actor_strong_baselines.full_history_mlp import (
@@ -174,4 +175,22 @@ def test_full_history_value_only_path_skips_unused_gradient() -> None:
     assert torch.isfinite(state).all()
     assert state.shape == (2, 1)
     assert torch.count_nonzero(state[:, 1:]) == 0
+
+
+def test_sdgd_resume_restores_numpy_and_torch_rng_exactly() -> None:
+    np.random.seed(214)
+    torch.manual_seed(214)
+    state = {
+        "numpy": np.random.get_state(),
+        "torch_cpu": torch.get_rng_state(),
+        "torch_cuda": [],
+    }
+    expected_numpy = np.random.standard_normal(8)
+    expected_torch = torch.randn(8)
+
+    np.random.seed(999)
+    torch.manual_seed(999)
+    _restore_rng(state)
+    np.testing.assert_array_equal(np.random.standard_normal(8), expected_numpy)
+    torch.testing.assert_close(torch.randn(8), expected_torch, rtol=0.0, atol=0.0)
 

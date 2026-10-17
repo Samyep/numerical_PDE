@@ -66,8 +66,15 @@ def _rng_state() -> dict[str, Any]:
 
 def _restore_rng(state: dict[str, Any]) -> None:
     np.random.set_state(state["numpy"])
-    torch.set_rng_state(state["torch_cpu"])
-    torch.cuda.set_rng_state_all(state["torch_cuda"])
+    # ``map_location='cuda'`` is used for the continuation payload so model
+    # and optimizer tensors resume on the allocated GPU.  RNG APIs, however,
+    # require their serialized ByteTensor states on CPU, including CUDA
+    # generator states.  Moving only these opaque state tensors back to CPU
+    # changes no random bits.
+    torch.set_rng_state(state["torch_cpu"].detach().cpu())
+    torch.cuda.set_rng_state_all(
+        [value.detach().cpu() for value in state["torch_cuda"]]
+    )
 
 
 def _move_optimizer_state(optimizer: torch.optim.Optimizer, device: torch.device) -> None:
