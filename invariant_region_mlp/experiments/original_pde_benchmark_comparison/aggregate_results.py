@@ -626,6 +626,7 @@ def total_compute_rows(
         inference = float(row["inference_seconds"])
         for queries in workloads:
             scaled_inference = inference * queries / states
+            is_actor = row["method"] == "terminal_aware_tangent_actor_mcv"
             rows.append(
                 {
                     "benchmark": row["benchmark"],
@@ -634,15 +635,23 @@ def total_compute_rows(
                     "variant": row["variant"],
                     "seed": row["seed"],
                     "protocol": row["protocol"],
+                    "time_steps": row.get("time_steps"),
                     "queries": queries,
                     "error_metric": "value_rmse",
                     "error": row["value_rmse"],
                     "training_seconds": training,
                     "inference_seconds_scaled": scaled_inference,
                     "total_seconds": training + scaled_inference,
+                    "selection_role": row["evaluation_role"],
+                    "envelope_eligible": (
+                        row["evaluation_role"] == "frozen_headline"
+                        if is_actor
+                        else True
+                    ),
+                    "row_kind": "individual_seed",
                     "cost_note": (
-                        "measured batched inference scaled linearly by query count; "
-                        "Actor evaluation conservatively includes final audit overhead"
+                        "measured protocol-specific batched inference scaled "
+                        "linearly by query count"
                     ),
                 }
             )
@@ -664,6 +673,8 @@ def total_compute_rows(
                     "training_seconds": float(row["training_seconds"]) * queries,
                     "inference_seconds_scaled": 0.0,
                     "total_seconds": float(row["total_seconds"]) * queries,
+                    "envelope_eligible": False,
+                    "row_kind": "individual_seed",
                     "cost_note": "native Deep BSDE requires an independent training run per state",
                 }
             )
@@ -701,8 +712,76 @@ def total_compute_rows(
                         if row["reference_free_final_selected"]
                         else "postselection_descriptive_only"
                     ),
+                    "envelope_eligible": True,
+                    "row_kind": "individual_seed",
                 }
             )
+    grouped: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
+    for row in rows:
+        if row["protocol"] not in {
+            "amortized_function_common_bank",
+            "postselection_descriptive_actor_envelope",
+        }:
+            continue
+        key = (
+            row["benchmark"],
+            row["method"],
+            row["method_label"],
+            row["variant"],
+            row["protocol"],
+            row["queries"],
+            row.get("time_steps"),
+            row.get("selection_role"),
+            bool(row["envelope_eligible"]),
+        )
+        grouped.setdefault(key, []).append(row)
+    configuration_means: list[dict[str, Any]] = []
+    for key, members in grouped.items():
+        (
+            benchmark,
+            method,
+            method_label,
+            variant,
+            protocol,
+            queries,
+            time_steps,
+            selection_role,
+            envelope_eligible,
+        ) = key
+        configuration_means.append(
+            {
+                "benchmark": benchmark,
+                "method": method,
+                "method_label": method_label,
+                "variant": variant,
+                "seed": "mean",
+                "seed_count": len(members),
+                "protocol": protocol,
+                "time_steps": time_steps,
+                "queries": queries,
+                "error_metric": members[0]["error_metric"],
+                "error": float(np.mean([float(row["error"]) for row in members])),
+                "training_seconds": float(
+                    np.mean([float(row["training_seconds"]) for row in members])
+                ),
+                "inference_seconds_scaled": float(
+                    np.mean(
+                        [float(row["inference_seconds_scaled"]) for row in members]
+                    )
+                ),
+                "total_seconds": float(
+                    np.mean([float(row["total_seconds"]) for row in members])
+                ),
+                "cost_note": (
+                    "configuration mean across independent seeds; budget envelope "
+                    "never selects the best seed"
+                ),
+                "selection_role": selection_role,
+                "envelope_eligible": envelope_eligible,
+                "row_kind": "configuration_seed_mean",
+            }
+        )
+    rows.extend(configuration_means)
     for benchmark in BENCHMARKS:
         for queries in workloads:
             for protocol in (
@@ -714,6 +793,8 @@ def total_compute_rows(
                     if row["benchmark"] == benchmark
                     and row["queries"] == queries
                     and row["protocol"] == protocol
+                    and row.get("row_kind") == "configuration_seed_mean"
+                    and row.get("envelope_eligible") is True
                 ]
                 subset.sort(key=lambda row: row["total_seconds"])
                 best = float("inf")
@@ -883,12 +964,16 @@ def _plot_budget(total: list[dict[str, Any]]) -> None:
         row for row in total
         if row["queries"] == 960
         and row["protocol"] == "amortized_function_common_bank"
+        and row.get("row_kind") == "configuration_seed_mean"
+        and row.get("envelope_eligible") is True
         and row.get("budget_envelope_error") is not None
     ]
     descriptive_rows = [
         row for row in total
         if row["queries"] == 960
         and row["protocol"] == "postselection_descriptive_actor_envelope"
+        and row.get("row_kind") == "configuration_seed_mean"
+        and row.get("envelope_eligible") is True
         and row.get("budget_envelope_error") is not None
     ]
     fig, axes = plt.subplots(1, 3, figsize=(14.2, 4.0), constrained_layout=True)
