@@ -17,15 +17,24 @@ from .official_dpi_runner import CONFIGS
 
 def evaluate(method: str, seed: int, device: torch.device) -> dict[str, object]:
     from picard import load_cfg, PicardRunner
+    from picard.solution_jac import PicardSolutionGradientWrapper
 
     ensure_dirs()
     record_path = RAW_DIR / f"official_dpi_{method}_s{seed}_official.json"
     record = json.loads(record_path.read_text())
     cfg = load_cfg(record["expanded_config"])
     equation = PicardRunner.get_equation(cfg).to(device=device)
-    solution_cls = PicardRunner.get_solution_cls(cfg)
-    dummy = SimpleNamespace(equation=equation, cfg=cfg)
-    model = solution_cls.construct_solution(dummy).to(device=device)
+
+    class ReconstructionRunner(SimpleNamespace):
+        def get_solution_plain(self):
+            solution_cls = PicardRunner.get_solution_cls(self.cfg)
+            return solution_cls.construct_solution(self)
+
+    dummy = ReconstructionRunner(equation=equation, cfg=cfg)
+    # All three official methods first call PicardRunner.get_solution().  The
+    # selected equation contains a gradient term, so the trained network is
+    # the authors' gradient-supervised wrapper around the PISGradNet.
+    model = PicardSolutionGradientWrapper.construct_solution(dummy).to(device=device)
     payload = torch.load(record["final_model"], map_location=device, weights_only=False)
     state_dict = payload["state_dict"] if "state_dict" in payload else payload
     model.load_state_dict(state_dict)
