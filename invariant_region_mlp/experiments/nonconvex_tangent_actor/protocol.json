@@ -1,0 +1,99 @@
+{
+  "experiment": "nonconvex_nonconcave_tangent_actor_v1",
+  "branch": "ir-mlp-nonconvex-nonconcave-tangent-actor",
+  "primary": {
+    "d": 100,
+    "k": 2,
+    "T": 0.5,
+    "lambda": 0.2,
+    "eta": 0.0,
+    "terminal": "0.5+0.3*sin(beta1.x)*cos(beta2.x)"
+  },
+  "coupled": {
+    "d": 100,
+    "k": 2,
+    "T": 0.5,
+    "lambda": 0.2,
+    "eta": 1.0
+  },
+  "predeclared_nonconvexity_gate": {
+    "f_uu_positive_fraction_min": 0.1,
+    "f_uu_negative_fraction_min": 0.1,
+    "strong_positive_fraction_min": 0.05,
+    "strong_negative_fraction_min": 0.05,
+    "strong_abs_threshold": 0.25,
+    "fallback_if_failed": "do not train; audit terminal amplitude/offset using the independent reference and freeze a revised benchmark before Actor results"
+  },
+  "pilot": {
+    "training_points": 2048,
+    "validation_points": 256,
+    "paths_per_label": 64,
+    "label_time_steps": 16,
+    "optimizer_steps": 2000,
+    "width": 384,
+    "depth": 4,
+    "learning_rate": 0.00015,
+    "batch_size": 512,
+    "parent_batch": 8,
+    "path_chunk": 32,
+    "checkpoint_interval": 250,
+    "gradient_clip": 10.0,
+    "updates": 2,
+    "seeds": [0]
+  },
+  "main": {
+    "training_points": 8192,
+    "validation_points": 512,
+    "paths_per_label": 128,
+    "label_time_steps": 32,
+    "optimizer_steps": 5000,
+    "width": 384,
+    "depth": 4,
+    "learning_rate": 0.00015,
+    "batch_size": 512,
+    "parent_batch": 8,
+    "path_chunk": 32,
+    "checkpoint_interval": 250,
+    "gradient_clip": 10.0,
+    "updates": 4,
+    "seeds": [0, 1, 2]
+  },
+  "fixed_point": {
+    "states": 128,
+    "pilot_paths": 128,
+    "pilot_steps": 32,
+    "main_paths": 256,
+    "main_steps": 64,
+    "ranking_audit_paths": 512,
+    "ranking_audit_steps": 128,
+    "value_scale_floor": 0.05,
+    "gradient_component_scale_floor": 0.001
+  },
+  "post_freeze_evaluation": {
+    "states": 512,
+    "paths": 512,
+    "steps": 64,
+    "euler_steps": [32, 64, 128],
+    "actor_audit_states": 2048,
+    "parent_batch": 8,
+    "path_chunk": 64
+  },
+  "pilot_gate": {
+    "all_finite": true,
+    "minimum_weight_ess_fraction": 0.2,
+    "minimum_fixed_point_reduction_fraction": 0.05,
+    "ranking_audit_required": true
+  },
+  "controlled_expansion": {
+    "primary_dimensions": [100, 400],
+    "lambdas": [0.0, 0.05, 0.2, 0.5],
+    "coupled_eta": 1.0,
+    "expand_only_after_primary_gate": true
+  },
+  "selection": "minimum noise-corrected normalized fixed-point inconsistency among finite stable candidates; Ground Truth unavailable until selection is written",
+  "actor_input": "full ambient (t,x)",
+  "oracle_projection": false,
+  "ground_truth_training_labels": false,
+  "primary_update": "undamped",
+  "mcv_alpha": 1.0
+}
