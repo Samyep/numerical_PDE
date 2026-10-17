@@ -40,6 +40,20 @@
     "inference": "plain and corrected estimates share paths"
   },
   "baseline_policy": "official architecture and algorithm; no Tangent-Actor terminal feature or MCV added",
+  "official_baseline_seeds": {
+    "deep_bsde_hjb_log": [0, 1, 2],
+    "deep_bsde_allen_cahn": [0, 1, 2],
+    "dpi_ou_gmm": [0],
+    "pinn_hte_ou_gmm": [0],
+    "d_dbsde_ou_gmm": [0],
+    "sdgd_pinn_hjb_log": [0]
+  },
+  "full_history_control": {
+    "benchmarks": ["hjb_log_d100", "allen_cahn_d100"],
+    "configurations_n_M": [[2, 16], [2, 32], [3, 8], [3, 12], [3, 16], [3, 24]],
+    "seeds": [0, 1, 2],
+    "configuration_selection": "fixed before results; all completed configurations are reported"
+  },
   "final_seeds_when_affordable": [0, 1, 2],
   "gpu": "NVIDIA GH200 120GB",
   "cost_accounting": "synchronized wall time; training and total time both reported"
