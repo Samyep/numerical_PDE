@@ -1,13 +1,22 @@
 {
   "all_selected_runs_finite_and_ess_above_0p2": true,
   "bregman_regret_identity_reported": false,
-  "completed_post_freeze_runs": 1,
-  "completed_training_runs": 1,
+  "completed_post_freeze_runs": 2,
+  "completed_training_runs": 2,
   "coupled_completed": false,
   "d400_completed": false,
   "decision": "CONDITIONAL GO",
   "fixed_point_true_error_spearman": 1.0,
-  "frozen_endpoint_baseline_comparison": [],
+  "frozen_endpoint_baseline_comparison": [
+    {
+      "configuration": "reference-free FP-selected Actor",
+      "method": "Tangent-Actor + MCV",
+      "seeds": 1,
+      "total_seconds_mean": 2805.019955095835,
+      "value_rmse_mean": 0.0006849425770810992,
+      "value_rmse_std": 0.0
+    }
+  ],
   "full_history_configurations_completed": 0,
   "global_convergence_claimed": false,
   "mcv_plain_a0_label_noise_ablation": null,
@@ -21,9 +30,59 @@
     "run_id": "primary_d100_k2_lam0p2_eta0_pilot_mcv_s0",
     "selected_actor": "a2"
   },
-  "primary_main_seeds": [],
+  "primary_main_seeds": [
+    0
+  ],
   "scope_statement": "ambient d-dimensional benchmark with a two-dimensional independent reference structure",
   "selected_results": [
+    {
+      "actor_gradient_component_rmse": 0.0007138999315780773,
+      "actor_gradient_norm_mean": 0.14988115414725045,
+      "actor_gradient_relative_l2": 0.04177420129037431,
+      "actor_gradient_vector_rmse": 0.007138999315780774,
+      "actor_value_max": 0.7927696704864502,
+      "actor_value_min": 0.203774556517601,
+      "actor_value_relative_l2": 0.008343472015430245,
+      "actor_value_rmse": 0.004213436680137757,
+      "budget": "main",
+      "d": 100,
+      "eta": 0.0,
+      "family": "primary",
+      "fixed_point_gradient_vector_rmse": 0.007255156294794071,
+      "fixed_point_inconsistency": 0.0035376106445949183,
+      "fixed_point_value_rmse": 0.0037213970119039028,
+      "inference_seconds": 56.044126140885055,
+      "iteration": "a4",
+      "lambda": 0.2,
+      "mcv_bias": 0.00039133603800822303,
+      "mcv_mc_rmse_contribution": 0.0003950772359609985,
+      "mcv_relative_l2": 0.0013759283703402854,
+      "mcv_systematic_rmse": 0.0005595179277949144,
+      "mcv_value_mean": 0.49174764664678605,
+      "mcv_value_rmse": 0.0006849425770810992,
+      "mcv_variance_reduction": 51.748808325827966,
+      "mean_mcv_mc_se": 1.7460112040028736e-05,
+      "mean_plain_mc_se": 0.00012560218740478033,
+      "nonfinite_count": 0,
+      "paths": 512,
+      "plain_bias": 0.0005377947485684053,
+      "plain_mc_rmse_contribution": 0.0028420530702650795,
+      "plain_relative_l2": 0.005425970760168549,
+      "plain_systematic_rmse": 0.0,
+      "plain_value_mean": 0.49189410535734623,
+      "plain_value_rmse": 0.0027010696746643885,
+      "run_id": "primary_d100_k2_lam0p2_eta0_main_mcv_s0",
+      "seed": 0,
+      "selected": true,
+      "selection_ranking_stable": true,
+      "time_steps": 64,
+      "training_estimator": "mcv",
+      "truth_gradient_norm_mean": 0.1496919324301355,
+      "truth_value_mean": 0.4913563106087778,
+      "weight_ess_fraction": 0.9732849774307808,
+      "weight_max": 1.0121729373931885,
+      "weight_min": 0.5343973636627197
+    },
     {
       "actor_gradient_component_rmse": 0.006079117485546467,
       "actor_gradient_norm_mean": 0.15955212513585573,
@@ -73,6 +132,6 @@
       "weight_min": 0.5351237654685974
     }
   ],
-  "selected_runs": 1,
+  "selected_runs": 2,
   "tangent_actor_beats_all_available_frozen_baseline_endpoints": false
 }

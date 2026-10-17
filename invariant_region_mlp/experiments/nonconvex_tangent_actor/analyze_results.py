@@ -361,6 +361,43 @@ def compute_rows(
                     ),
                 }
             )
+        diagnostic_seconds = 0.0
+        for key, level in (
+            ("primary_diagnostics", "primary"),
+            ("ranking_audit_diagnostics", "ranking_audit"),
+        ):
+            for diagnostic in payload["selection"][key]:
+                seconds = diagnostic["wall_seconds"]
+                diagnostic_seconds += seconds
+                rows.append(
+                    {
+                        **spec,
+                        "run_id": diagnostic["run_id"],
+                        "component": f"{diagnostic['actor']}_{level}_selection_diagnostic",
+                        "label_seconds": 0.0,
+                        "optimizer_seconds": 0.0,
+                        "inference_seconds": seconds,
+                        "total_seconds": seconds,
+                        "cumulative_training_seconds": None,
+                        "peak_gpu_bytes": None,
+                    }
+                )
+        accounted = cumulative + diagnostic_seconds
+        overhead = max(payload["wall_seconds_this_invocation"] - accounted, 0.0)
+        if overhead > 0.0:
+            rows.append(
+                {
+                    **spec,
+                    "run_id": payload["phases"][0]["run_id"],
+                    "component": "training_selection_io_overhead",
+                    "label_seconds": 0.0,
+                    "optimizer_seconds": 0.0,
+                    "inference_seconds": 0.0,
+                    "total_seconds": overhead,
+                    "cumulative_training_seconds": None,
+                    "peak_gpu_bytes": None,
+                }
+            )
     for payload in post_freeze:
         for row in payload["iteration_rows"]:
             rows.append(
@@ -407,6 +444,11 @@ def baseline_rows(
     rows: list[dict[str, Any]] = []
     for payload in post_freeze:
         selected = payload["selected_row"]
+        training_payload = next(
+            item
+            for item in _jsons("training_*.json")
+            if item["selection"]["spec"] == payload["spec"]
+        )
         rows.append(
             {
                 "method": "Tangent-Actor + MCV",
@@ -417,23 +459,7 @@ def baseline_rows(
                 "value_rmse": selected["mcv_value_rmse"],
                 "relative_l2": selected["mcv_relative_l2"],
                 "bias": selected["mcv_bias"],
-                "total_seconds": sum(
-                    phase["labels"][split]["wall_seconds"]
-                    for phase in next(
-                        item
-                        for item in _jsons("training_*.json")
-                        if item["selection"]["spec"] == payload["spec"]
-                    )["phases"]
-                    for split in ("train", "validation", "replication")
-                )
-                + sum(
-                    phase["training"]["wall_seconds"]
-                    for phase in next(
-                        item
-                        for item in _jsons("training_*.json")
-                        if item["selection"]["spec"] == payload["spec"]
-                    )["phases"]
-                )
+                "total_seconds": training_payload["wall_seconds_this_invocation"]
                 + selected["inference_seconds"],
                 "finite": selected["nonfinite_count"] == 0,
                 "original_algorithm_adaptation": False,
@@ -478,7 +504,11 @@ def _plot_iterations(rows: list[dict[str, Any]]) -> None:
     for run_id, values in groups.items():
         values = sorted(values, key=lambda row: int(row["iteration"][1:]))
         x = [int(row["iteration"][1:]) for row in values]
-        label = run_id.replace("_main_mcv_", "_").replace("_pilot_mcv_", "_")
+        first = values[0]
+        label = (
+            f"{first['family']} d{first['d']} lambda={first['lambda']} "
+            f"{first['budget']} s{first['seed']}"
+        )
         axes[0].plot(x, [row["mcv_value_rmse"] for row in values], "o-", label=label)
         axes[1].plot(
             x, [row["actor_gradient_vector_rmse"] for row in values], "o-"
@@ -522,7 +552,7 @@ def _plot_fixed_point(rows: list[dict[str, Any]]) -> None:
             alpha=0.8,
         )
         axis.annotate(
-            f"{row['iteration']} s{row['seed']}",
+            f"{row['iteration']} {row['budget']} s{row['seed']}",
             (row["fixed_point_inconsistency"], row["mcv_value_rmse"]),
             xytext=(4, 4),
             textcoords="offset points",
