@@ -23,6 +23,7 @@ from .benchmarks import AllenCahnBenchmark, HJBLogBenchmark, OriginalBenchmark
 from .common import (
     CHECKPOINT_DIR,
     RAW_DIR,
+    RESULTS_DIR,
     atomic_json,
     atomic_torch_save,
     ensure_dirs,
@@ -30,6 +31,7 @@ from .common import (
     stable_seed,
     synchronize,
 )
+from .references import hjb_log_reference
 
 
 @dataclass(frozen=True)
@@ -257,6 +259,21 @@ def train_deep_bsde(
             "official_reported_y": official_reported_y,
         },
     )
+    if benchmark_name == "hjb_log_d100":
+        native_reference = float(
+            hjb_log_reference(
+                np.asarray([0.0]), np.zeros((1, benchmark.d), dtype=np.float64)
+            )[0]
+        )
+        reference_status = "analytic Hopf-Cole quadrature"
+    else:
+        reference_audit = json.loads(
+            (RESULTS_DIR / "reference_accuracy_audit.json").read_text()
+        )
+        native_reference = float(
+            reference_audit["allen_cahn"]["native_u_0_0_extrapolated"]
+        )
+        reference_status = "independent radial numerical reference"
     result = {
         "method": "deep_bsde_official_pytorch_compatibility_port",
         "benchmark": benchmark_name,
@@ -271,6 +288,11 @@ def train_deep_bsde(
         "mcv": False,
         "reported_y0": official_reported_y,
         "post_final_update_y0": float(model.y_init.detach().item()),
+        "native_reference": native_reference,
+        "native_reference_status": reference_status,
+        "native_absolute_error": abs(official_reported_y - native_reference),
+        "native_relative_error": abs(official_reported_y - native_reference)
+        / abs(native_reference),
         "history": history,
         "training_seconds": elapsed,
         "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
