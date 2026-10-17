@@ -45,3 +45,6 @@ for STEPS in 32 128; do
     --benchmark "$BENCHMARK" --trial "$TRIAL" --seed 0 --iteration "$ITERATION" \
     --paths 256 --steps "$STEPS" --replicates 4 --native-paths 8192
 done
+
+srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.evaluate_actor_screen \
+  --benchmark "$BENCHMARK" --paths 128 --steps 64

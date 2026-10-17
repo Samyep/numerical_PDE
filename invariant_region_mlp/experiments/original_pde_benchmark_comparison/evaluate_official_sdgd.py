@@ -19,6 +19,7 @@ from .common import (
     atomic_json,
     ensure_dirs,
 )
+from .references import hjb_log_reference
 
 
 class OfficialSDGDMLP(nn.Module):
@@ -90,6 +91,12 @@ def evaluate(
     gradient_evaluation_seconds = time.perf_counter() - gradient_started
     common_z = np.concatenate(gradient_chunks)
     common_z_error = common_z - common_reference_z
+    native_tx = torch.zeros((1, 101), dtype=torch.float32, device=device).requires_grad_(True)
+    native_value_tensor = model(native_tx)[:, 0]
+    native_gradient = torch.autograd.grad(native_value_tensor.sum(), native_tx)[0][0, :-1]
+    native_reference = float(
+        hjb_log_reference(np.asarray([0.0]), np.zeros((1, 100)))[0]
+    )
     output = PREDICTION_DIR / f"official_sdgd_s{seed}_{suffix}.npz"
     np.savez_compressed(output, prediction=prediction)
     result: dict[str, object] = {
@@ -120,6 +127,18 @@ def evaluate(
             np.linalg.norm(common_z_error) / np.linalg.norm(common_reference_z)
         ),
         "gradient_evaluation_seconds_reported_separately": gradient_evaluation_seconds,
+        "native": {
+            "point": "t=0,x=0",
+            "prediction": float(native_value_tensor.detach().item()),
+            "reference": native_reference,
+            "absolute_error": abs(
+                float(native_value_tensor.detach().item()) - native_reference
+            ),
+            "gradient_vector_error": float(
+                np.sqrt(2.0) * torch.linalg.vector_norm(native_gradient).item()
+            ),
+            "exact_gradient": "zero by radial symmetry",
+        },
         "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
         "training_seconds": record[
             "training_seconds_including_official_per_epoch_test_reporting"

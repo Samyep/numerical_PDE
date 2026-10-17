@@ -11,8 +11,10 @@ import time
 import numpy as np
 import torch
 
+from .benchmarks import DPIOUBenchmark
 from .common import PREDICTION_DIR, RAW_DIR, RESULTS_DIR, atomic_json, ensure_dirs
 from .official_dpi_runner import CONFIGS
+from .references import dpi_exact_reference
 
 
 def evaluate(
@@ -71,6 +73,19 @@ def evaluate(
     gradient = np.concatenate(gradients)
     error = prediction - reference
     gradient_error = gradient - reference_z  # alpha=1, so z=grad(u)
+    native_t = torch.zeros(1, dtype=torch.float64, device=device)
+    native_x = torch.zeros((1, 100), dtype=torch.float64, device=device).requires_grad_(True)
+    native_value_tensor = model(torch.cat((native_t[:, None], native_x), dim=1))[:, 0]
+    native_gradient_tensor = torch.autograd.grad(native_value_tensor.sum(), native_x)[0]
+    reference_benchmark = DPIOUBenchmark()
+    native_reference, native_reference_z = dpi_exact_reference(
+        reference_benchmark,
+        np.asarray([0.0]),
+        np.zeros((1, 100)),
+        return_gradient=True,
+    )
+    native_value = float(native_value_tensor.detach().item())
+    native_gradient = native_gradient_tensor.detach().cpu().numpy()[0]
     output = PREDICTION_DIR / f"official_dpi_{method}_s{seed}_{suffix}.npz"
     np.savez_compressed(output, prediction=prediction, gradient=gradient)
     result: dict[str, object] = {
@@ -90,6 +105,15 @@ def evaluate(
         "gradient_vector_rmse": float(
             np.sqrt(np.mean(np.square(gradient_error).sum(axis=1)))
         ),
+        "native": {
+            "point": "t=0,x=0 (diagnostic; DPI's published task is distributed)",
+            "prediction": native_value,
+            "reference": float(native_reference[0]),
+            "absolute_error": abs(native_value - float(native_reference[0])),
+            "gradient_vector_error": float(
+                np.linalg.norm(native_gradient - native_reference_z[0])
+            ),
+        },
         "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
         "inference_seconds": inference_seconds,
         "training_seconds": record["training_seconds"],
