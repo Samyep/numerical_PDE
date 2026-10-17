@@ -47,8 +47,10 @@ srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_be
   --benchmark "$BENCHMARK" --trial data8192 --seed 0 --iterations 3
 srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.run_actor \
   --benchmark "$BENCHMARK" --trial focused --seed 0 --iterations 4
-srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.run_actor \
-  --benchmark "$BENCHMARK" --trial focused_plain --seed 0 --iterations 3
+if [[ "$BENCHMARK" != "allen_cahn_d100" ]]; then
+  srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.run_actor \
+    --benchmark "$BENCHMARK" --trial focused_plain --seed 0 --iterations 3
+fi
 
 srun --network=no_vni python -m invariant_region_mlp.experiments.original_pde_benchmark_comparison.rank_actor_checkpoints \
   --benchmark "$BENCHMARK" --seed 0 --paths 512 --steps 64 --replicates 3
