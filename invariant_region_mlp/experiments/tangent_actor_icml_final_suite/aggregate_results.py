@@ -861,6 +861,14 @@ def aggregate() -> dict[str, Any]:
     _write_csv(RESULTS_DIR / "DIMENSION_SCALING.csv", scaling)
     _write_csv(RESULTS_DIR / "ABLATION_RESULTS.csv", ablations)
     _write_csv(RESULTS_DIR / "HISTORICAL_AND_NONPRIMARY_RESULTS.csv", excluded)
+    review_rows = [
+        {**row, "comparison_task": "whole_function"}
+        for row in main if int(row["dimension"]) == 100
+    ] + [
+        {**row, "comparison_task": "single_initial_state"}
+        for row in native if int(row["dimension"]) == 100
+    ]
+    _write_csv(RESULTS_DIR / "100D_RESULTS.csv", review_rows)
     manifest = _update_manifest(main, native)
     summary = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
@@ -868,6 +876,7 @@ def aggregate() -> dict[str, Any]:
         "frontier_rows": len(frontier), "dimension_scaling_rows": len(scaling),
         "ablation_rows": len(ablations),
         "historical_and_nonprimary_rows": len(excluded),
+        "review_100d_rows": len(review_rows),
         "completed_method_cells": sum(
             item["execution_status"].startswith("completed")
             for item in manifest["method_cells"]
