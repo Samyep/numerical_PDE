@@ -460,6 +460,136 @@ def _dimension_scaling(main: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return output
 
 
+def _ablation_rows(frontier: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    # Paired estimators share the frozen Actor, Brownian budget and test bank.
+    # Require both variants explicitly: a lone MCV frontier point is not an
+    # ablation and must not be presented as one.
+    paired: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
+    for row in frontier:
+        if row["method"] == "tangent_actor" and row.get("estimator") in {"plain", "mcv"}:
+            paired[(
+                row["pde"], row["dimension"], row["seed"], row["steps"],
+                row["paths"], row["source_artifact"],
+            )].append(row)
+    for candidates in paired.values():
+        if {row["estimator"] for row in candidates} != {"plain", "mcv"}:
+            continue
+        for row in candidates:
+            rows.append({
+                "component": "martingale_control_variate", "pde": row["pde"],
+                "dimension": row["dimension"], "seed": row["seed"],
+                "variant": row["estimator"], "iteration": None,
+                "steps": row["steps"], "paths": row["paths"],
+                "value_rmse": row["value_rmse"],
+                "value_relative_l2": row["value_relative_l2"],
+                "mc_rmse_contribution": row["mc_rmse_contribution"],
+                "variance_reduction": row["variance_reduction"],
+                "actor_value_rmse": row["actor_value_rmse"],
+                "actor_gradient_vector_rmse": row["actor_gradient_vector_rmse"],
+                "selection_metric": None, "training_seconds": row["training_seconds"],
+                "source_artifact": row["source_artifact"],
+                "evidence_role": "paired post-freeze inference ablation",
+            })
+
+    # Original 100D package stored plain and MCV errors in the same paired row.
+    original_path = ORIGINAL_EXP / "function_approximation_comparison.csv"
+    original = pd.read_csv(original_path)
+    original = original[
+        (original["method"] == "terminal_aware_tangent_actor_mcv")
+        & (original["evaluation_role"] == "frozen_headline")
+    ]
+    for _, item in original.iterrows():
+        pde = _pde_from_benchmark(str(item["benchmark"]))
+        # The Allen--Cahn implementation is deliberately value-only and has no
+        # learned gradient integrand.  Its identical direct columns therefore
+        # do not constitute an MCV comparison.
+        if pde == "allen_cahn":
+            continue
+        for variant, error in (("plain", item["plain_value_rmse"]), ("mcv", item["value_rmse"])):
+            rows.append({
+                "component": "martingale_control_variate", "pde": pde,
+                "dimension": 100, "seed": int(item["seed"]), "variant": variant,
+                "iteration": "a4", "steps": item["time_steps"],
+                "paths": int(item["paths_per_replicate"] * item["replicates"]),
+                "value_rmse": error,
+                "value_relative_l2": item["value_relative_l2"] if variant == "mcv" else None,
+                "mc_rmse_contribution": (
+                    np.sqrt(item["sampling_variance_component_mse"])
+                    if variant == "mcv" and pd.notna(item["sampling_variance_component_mse"]) else None
+                ),
+                "variance_reduction": item["variance_reduction"],
+                "actor_value_rmse": item["direct_value_actor_rmse"],
+                "actor_gradient_vector_rmse": item["gradient_vector_rmse"],
+                "selection_metric": None, "training_seconds": item["training_seconds"],
+                "source_artifact": str(original_path.relative_to(SOURCE_ROOT)),
+                "evidence_role": "paired post-freeze inference ablation; exact historical reuse",
+            })
+
+    # Mature nonconvex run exposes every update under a common post-freeze bank.
+    for seed in (0, 1, 2):
+        path = FRONTIER / f"post_freeze_coupled_d100_k2_lam0p2_eta1_main_mcv_s{seed}.json"
+        if not path.exists():
+            continue
+        payload = json.loads(path.read_text())
+        for item in payload["iteration_rows"]:
+            for variant in ("plain", "mcv"):
+                rows.append({
+                    "component": "martingale_control_variate", "pde": "nonconvex_coupled",
+                    "dimension": 100, "seed": seed, "variant": variant,
+                    "iteration": item["iteration"], "steps": item["time_steps"],
+                    "paths": item["paths"],
+                    "value_rmse": item[f"{variant}_value_rmse"],
+                    "value_relative_l2": item[f"{variant}_relative_l2"],
+                    "mc_rmse_contribution": item[f"{variant}_mc_rmse_contribution"],
+                    "variance_reduction": item["mcv_variance_reduction"],
+                    "actor_value_rmse": item["actor_value_rmse"],
+                    "actor_gradient_vector_rmse": item["actor_gradient_vector_rmse"],
+                    "selection_metric": None, "training_seconds": None,
+                    "source_artifact": str(path.relative_to(SOURCE_ROOT)),
+                    "evidence_role": "paired post-freeze inference ablation; mature historical reuse",
+                })
+            rows.append({
+                "component": "learned_tangent_updates", "pde": "nonconvex_coupled",
+                "dimension": 100, "seed": seed, "variant": "terminal_aware_tangent_actor",
+                "iteration": item["iteration"], "steps": item["time_steps"],
+                "paths": item["paths"], "value_rmse": item["mcv_value_rmse"],
+                "value_relative_l2": item["mcv_relative_l2"],
+                "mc_rmse_contribution": item["mcv_mc_rmse_contribution"],
+                "variance_reduction": item["mcv_variance_reduction"],
+                "actor_value_rmse": item["actor_value_rmse"],
+                "actor_gradient_vector_rmse": item["actor_gradient_vector_rmse"],
+                "selection_metric": None, "training_seconds": None,
+                "source_artifact": str(path.relative_to(SOURCE_ROOT)),
+                "evidence_role": "mature update-by-update diagnostic; test truth not used for selection",
+            })
+
+    # Earlier controlled pilots isolate terminal-aware parameterization. They
+    # are supporting ablations and never populate the main benchmark table.
+    terminal_path = SOURCE_ROOT / "invariant_region_mlp/results/tangent_actor_strong_baselines/convergence_diagnostics.csv"
+    if terminal_path.exists():
+        diagnostic = pd.read_csv(terminal_path)
+        diagnostic = diagnostic[diagnostic["method"].isin((
+            "standard_tangent_actor", "tangent_actor", "terminal_tangent_Ag",
+        ))]
+        for _, item in diagnostic.iterrows():
+            pde = "joint_concave" if str(item["benchmark"]).startswith("joint_concave") else "nonseparable_supporting"
+            rows.append({
+                "component": "terminal_aware_parameterization", "pde": pde,
+                "dimension": int(str(item["benchmark"]).split("_d", 1)[1].split("_", 1)[0]),
+                "seed": int(item["seed"]), "variant": item["method"],
+                "iteration": "last", "steps": None, "paths": None,
+                "value_rmse": item["last_rmse_posthoc"], "value_relative_l2": None,
+                "mc_rmse_contribution": None, "variance_reduction": None,
+                "actor_value_rmse": None, "actor_gradient_vector_rmse": None,
+                "selection_metric": item["validation_objective_last"],
+                "training_seconds": item["last_training_seconds"],
+                "source_artifact": str(terminal_path.relative_to(SOURCE_ROOT)),
+                "evidence_role": "supporting earlier controlled ablation; excluded from main table",
+            })
+    return rows
+
+
 def _update_manifest(main: list[dict[str, Any]], native: list[dict[str, Any]]) -> dict[str, Any]:
     path = RESULTS_DIR / "EXECUTION_MANIFEST.json"
     manifest = json.loads(path.read_text())
@@ -535,15 +665,18 @@ def aggregate() -> dict[str, Any]:
         ("pde", "dimension", "method", "seed", "steps", "paths", "estimator"),
     )
     scaling = _dimension_scaling(main)
+    ablations = _ablation_rows(frontier)
     _write_csv(RESULTS_DIR / "MAIN_RESULTS.csv", main)
     _write_csv(RESULTS_DIR / "NATIVE_POINT_RESULTS.csv", native)
     _write_csv(RESULTS_DIR / "ACCURACY_COMPUTE_FRONTIER.csv", frontier)
     _write_csv(RESULTS_DIR / "DIMENSION_SCALING.csv", scaling)
+    _write_csv(RESULTS_DIR / "ABLATION_RESULTS.csv", ablations)
     manifest = _update_manifest(main, native)
     summary = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "git_head": _git_head(), "main_rows": len(main), "native_rows": len(native),
         "frontier_rows": len(frontier), "dimension_scaling_rows": len(scaling),
+        "ablation_rows": len(ablations),
         "completed_method_cells": sum(
             item["execution_status"].startswith("completed")
             for item in manifest["method_cells"]
