@@ -36,8 +36,9 @@ excluded from final aggregation.
 For high-dimensional DPI transfers, the pinned upstream implementation's own
 `GPUMemoryTracker` may split one data-generation call into smaller resident
 chunks. This does not change `DATA_SIZE=4096`, the 4,096 terminal/integral
-paths per target, the 40 Picard rounds, or the 16 optimizer epochs per round.
-It is source-native memory scheduling rather than a reduced-budget adaptation.
+paths per target, the configured 40 OU/GMM or 80 semilinear Picard rounds, or
+the 16 optimizer epochs per round. It is source-native memory scheduling
+rather than a reduced-budget adaptation.
 
 The pinned DPI source calls `torch.load` without a `weights_only` argument.
 PyTorch 2.6 changed that default and rejects the source's own Lightning
