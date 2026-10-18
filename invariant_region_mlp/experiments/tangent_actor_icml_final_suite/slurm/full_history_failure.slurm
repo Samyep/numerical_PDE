@@ -5,6 +5,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
+#SBATCH --gpus-per-node=1
+#SBATCH --gpu-bind=verbose,closest
 #SBATCH --mem=160G
 #SBATCH --time=02:00:00
 #SBATCH --output=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/slurm/%x_%j.out
@@ -26,5 +28,7 @@ export MKL_NUM_THREADS=${SLURM_CPUS_PER_TASK:-16}
 
 echo "git_head=$(git rev-parse HEAD)"
 echo "host=$(hostname) dimensions=$DIMENSIONS"
+nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
+python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available(), 'visible_devices', torch.cuda.device_count())"
 srun --network=no_vni python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.run_full_history_failure \
   --dimensions "$DIMENSIONS"
