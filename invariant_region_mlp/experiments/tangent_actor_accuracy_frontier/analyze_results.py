@@ -413,7 +413,21 @@ def run() -> dict[str, Any]:
         for key, values in sorted(endpoint_groups.items())
     ]
     strongest = min(endpoint_summary, key=lambda row: row["rmse_mean"]) if endpoint_summary else None
+    coupled_endpoint_groups = {}
+    for row in full_history:
+        if row["family"] == "coupled" and row["source"] == "accuracy_frontier" and row["role"] == "endpoint" and row["finite"]:
+            coupled_endpoint_groups.setdefault((row["n"], row["M"]), []).append(row["value_rmse"])
+    coupled_endpoint_summary = [
+        {"n": key[0], "M": key[1], "seeds": len(values), "rmse_mean": _mean_sd(values)[0], "rmse_sd": _mean_sd(values)[1]}
+        for key, values in sorted(coupled_endpoint_groups.items())
+    ]
+    strongest_coupled = min(coupled_endpoint_summary, key=lambda row: row["rmse_mean"]) if coupled_endpoint_summary else None
     coupled_selected = [row for row in nonseparable if row["selected"]]
+    coupled_precision = [row for row in precision if row["family"] == "coupled"]
+    coupled_finest_steps = max((row["steps"] for row in coupled_precision), default=None)
+    coupled_finest = [row for row in coupled_precision if row["steps"] == coupled_finest_steps]
+    coupled_actor_finest_mean = None if not coupled_finest else _mean_sd([row["value_rmse"] for row in coupled_finest])[0]
+    coupled_actor_finest_sd = None if not coupled_finest else _mean_sd([row["value_rmse"] for row in coupled_finest])[1]
     d400 = [row for row in ambient if row["source"] == "frontier" and row["d"] == 400]
     low_rank = [row for row in ambient if row["source"] == "low_rank"]
     primary_advantage = None if strongest is None or not primary512 else strongest["rmse_mean"] - primary_actor_mean
@@ -490,6 +504,21 @@ def run() -> dict[str, Any]:
         "full_history_minimum_cost_to_threshold": None if not fh_threshold else min(fh_threshold, key=lambda row: row["seconds_mean"]),
         "nonseparable_selected_runs": len(coupled_selected),
         "nonseparable_support": nonseparable_support,
+        "nonseparable_all_selected_improve_over_a0": bool(
+            len(coupled_selected) >= 3
+            and all(
+                row["value_rmse_64"] < next(
+                    initial["value_rmse_64"] for initial in nonseparable
+                    if initial["seed"] == row["seed"] and initial["iteration"] == "a0"
+                )
+                for row in coupled_selected
+            )
+        ),
+        "coupled_actor_finest_steps": coupled_finest_steps,
+        "coupled_actor_finest_rmse_mean": coupled_actor_finest_mean,
+        "coupled_actor_finest_rmse_sd": coupled_actor_finest_sd,
+        "strongest_coupled_full_history_endpoint": strongest_coupled,
+        "coupled_actor_beats_full_history": None if strongest_coupled is None or coupled_actor_finest_mean is None else coupled_actor_finest_mean < strongest_coupled["rmse_mean"],
         "d400_fixed": d400_fixed,
         "d400_seed0_meaningful": d400_seed0_meaningful,
         "d400_completed_seeds": len(d400),

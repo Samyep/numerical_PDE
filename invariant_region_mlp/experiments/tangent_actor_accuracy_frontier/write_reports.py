@@ -113,7 +113,7 @@ def _full_history_report(full: list[dict[str, str]], summary: dict) -> None:
     _write("STRONG_FULL_HISTORY_COMPARISON.md", lines)
 
 
-def _nonseparable_report(rows: list[dict[str, str]], precision: list[dict[str, str]]) -> None:
+def _nonseparable_report(rows: list[dict[str, str]], precision: list[dict[str, str]], summary: dict) -> None:
     lines = [
         "# Nonseparable High-Budget Report",
         "",
@@ -151,6 +151,14 @@ def _nonseparable_report(rows: list[dict[str, str]], precision: list[dict[str, s
             local = [row for row in coupled_precision if int(row["steps"]) == steps]
             mean, sd = _mean_sd(_f(row["value_rmse"]) for row in local)
             lines.append(f"| {steps} | {mean:.6g} ± {sd:.2g} | {np.mean([_f(r['mc_rmse_contribution']) for r in local]):.6g} |")
+    strongest = summary.get("strongest_coupled_full_history_endpoint")
+    if strongest and summary.get("coupled_actor_finest_rmse_mean") is not None:
+        lines.extend([
+            "",
+            "## Strong baseline conclusion",
+            "",
+            f"At the finest completed Actor evaluation ({summary['coupled_actor_finest_steps']} Euler steps), the three-seed mean RMSE is `{summary['coupled_actor_finest_rmse_mean']:.6g}`. The strongest replicated raw Full-History endpoint is `n={strongest['n']}, M={strongest['M']}` at `{strongest['rmse_mean']:.6g}`. Tangent-Actor has the lower mean error: **{summary['coupled_actor_beats_full_history']}**.",
+        ])
     _write("NONSEPARABLE_HIGH_BUDGET_REPORT.md", lines)
 
 
@@ -224,7 +232,7 @@ def _main_report(summary: dict, euler, full, nonsep, ambient) -> None:
         lines.append("- No completed Full-History configuration reaches that frozen accuracy threshold.")
     lines.extend([
         f"- A primary accuracy advantage that clears MC and reference uncertainty is `{summary['robust_primary_advantage']}`.",
-        f"- The three-seed high-budget nonseparable support criterion is `{summary['nonseparable_support']}`.",
+        f"- The three-seed high-budget nonseparable support criterion is `{summary['nonseparable_support']}`; every selected Actor improves over its own `a0`: `{summary['nonseparable_all_selected_improve_over_a0']}`.",
         f"- Matched-budget full-ambient training fixes the 400D degradation across the required replications: `{summary['d400_fixed']}` ({summary['d400_completed_seeds']} completed seed(s)).",
         "",
         "## Answers to the research questions",
@@ -233,7 +241,7 @@ def _main_report(summary: dict, euler, full, nonsep, ambient) -> None:
         "2. **256 and 512 steps.** The Euler table reports raw, MC, reference, and residual components and measured weak differences.",
         "3. **Full-History ceiling.** `STRONG_FULL_HISTORY_COMPARISON.md` retains every completed or failed depth/budget row.",
         f"4. **Strongest primary comparison.** Robust Tangent-Actor advantage: **{summary['robust_primary_advantage']}**.",
-        f"5. **Nonseparable improvement.** Three-seed supporting result: **{summary['nonseparable_support']}**.",
+        f"5. **Nonseparable improvement.** Three-seed supporting result: **{summary['nonseparable_support']}**; lower mean error than the strongest coupled Full-History endpoint: **{summary['coupled_actor_beats_full_history']}**.",
         f"6. **Seed stability.** The primary 512-step seed standard deviation is `{summary.get('primary_actor_512_rmse_sd', math.nan):.3g}`; nonseparable trajectories are reported without selecting the best seed.",
         f"7. **400D matched budget.** Seed 0 crossed the predeclared 10% gate: **{summary['d400_seed0_meaningful']}**. Replicated success criterion met: **{summary['d400_fixed']}**.",
         f"8. **Learned low rank.** `{summary['low_rank_runs']}` completed ablation rows are reported individually; no oracle subspace is used.",
@@ -266,7 +274,7 @@ def run() -> None:
     ambient = _rows("ambient_scaling_comparison.csv")
     _high_precision(euler, reference)
     _full_history_report(full, summary)
-    _nonseparable_report(nonsep, euler)
+    _nonseparable_report(nonsep, euler, summary)
     _ambient_report(ambient)
     _main_report(summary, euler, full, nonsep, ambient)
 
