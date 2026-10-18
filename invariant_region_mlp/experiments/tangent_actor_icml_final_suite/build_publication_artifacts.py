@@ -98,8 +98,21 @@ def _read(name: str) -> pd.DataFrame:
 def _save_figure(fig: plt.Figure, stem: str) -> list[Path]:
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     outputs = [FIGURE_DIR / f"{stem}.pdf", FIGURE_DIR / f"{stem}.png"]
-    fig.savefig(outputs[0], bbox_inches="tight")
-    fig.savefig(outputs[1], dpi=300, bbox_inches="tight")
+    # Matplotlib otherwise embeds the wall-clock creation time in each PDF,
+    # changing artifact hashes even when the numerical data and rendering are
+    # identical.  Omit volatile timestamps so repeated builds are byte stable.
+    fig.savefig(
+        outputs[0], bbox_inches="tight",
+        metadata={
+            "Creator": "Tangent-Actor ICML final-suite artifact builder",
+            "CreationDate": None,
+            "ModDate": None,
+        },
+    )
+    fig.savefig(
+        outputs[1], dpi=300, bbox_inches="tight",
+        metadata={"Software": "Tangent-Actor ICML final-suite artifact builder"},
+    )
     plt.close(fig)
     return outputs
 
