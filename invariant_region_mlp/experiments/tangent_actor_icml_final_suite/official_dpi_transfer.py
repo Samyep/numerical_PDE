@@ -482,6 +482,12 @@ def execute(method: str, pde: str, d: int, seed: int, mode: str) -> dict[str, An
     cfg, config_path, overrides, run_id, exp_dir = _config(
         method, pde, d, seed, mode, names[pde]
     )
+    output = RAW_DIR / f"{run_id}.json"
+    if output.exists():
+        existing = json.loads(output.read_text())
+        expected_status = "complete" if mode == "official" else f"{mode}_nonresult"
+        if existing.get("status") == expected_status:
+            return existing
     capture = CHECKPOINT_DIR / f"{run_id}_final.pt"
     _patch_upstream(capture)
     from picard import PicardRunner
@@ -599,7 +605,7 @@ def execute(method: str, pde: str, d: int, seed: int, mode: str) -> dict[str, An
             "gradient_vector_rmse": float(np.sqrt(np.mean(np.sum(delta**2, axis=1)))),
             "gradient_relative_l2": float(np.linalg.norm(delta) / max(np.linalg.norm(truth_gradient), 1e-300)),
         })
-    write_json(RAW_DIR / f"{run_id}.json", result)
+    write_json(output, result)
     return result
 
 
