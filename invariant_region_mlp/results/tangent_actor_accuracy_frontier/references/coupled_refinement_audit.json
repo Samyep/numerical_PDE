@@ -1,0 +1,70 @@
+{
+  "driver": {
+    "T": 0.5,
+    "actor_input": "full ambient x",
+    "basis_orthogonality_max_abs": 1.1102230246251565e-16,
+    "basis_seed": 61511,
+    "d": 100,
+    "e_equals_beta_1": true,
+    "eta": 1.0,
+    "family": "sine_quadratic_coupled",
+    "has_gradient": true,
+    "invariant_interval": [
+      0.0,
+      1.0
+    ],
+    "k": 2,
+    "lambda": 0.2,
+    "mixed_derivative": "-eta*e",
+    "name": "sine_quadratic_coupled_d100_k2_lam0p2_eta1p0",
+    "oracle_projection_used": false,
+    "reconstruction_sign": 1.0,
+    "sigma": 1.4142135623730951,
+    "tangent_domain": [
+      0.0,
+      1.0
+    ],
+    "terminal": "0.5+0.3*sin(beta1.x)*cos(beta2.x)",
+    "value_curvature_changes_sign": true
+  },
+  "frozen_test_bank": {
+    "gradient_max_norm": 0.00013296056567560206,
+    "gradient_vector_rmse": 3.521101356154247e-05,
+    "value_max_abs": 0.00012366897042548342,
+    "value_rmse": 2.3694398093844477e-05
+  },
+  "frozen_test_bank_sha256": "85a9430c6f60762f5964a9de46122e8010cd1d96b67b286a6997a824d20c2180",
+  "inside_invariant_interval": true,
+  "old_dt": 0.000125,
+  "old_n": 128,
+  "old_reference": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/nonconvex_tangent_actor/references/sine_quadratic_coupled_d100_k2_lam0p2_eta1p0.npz",
+  "previous_refined_dt": 6.25e-05,
+  "previous_refined_frozen_test_bank": {
+    "gradient_max_norm": 4.4450356352846255e-05,
+    "gradient_vector_rmse": 1.0939559816261979e-05,
+    "value_max_abs": 5.382959465113912e-05,
+    "value_rmse": 7.933944667442297e-06
+  },
+  "previous_refined_n": 192,
+  "previous_refined_random_query": {
+    "gradient_max_norm": 6.333242890597672e-05,
+    "gradient_vector_rmse": 1.1510632894138066e-05,
+    "value_max_abs": 6.0315505509001e-05,
+    "value_rmse": 8.079690914758104e-06
+  },
+  "query_points": 32768,
+  "random_periodic_query": {
+    "gradient_max_norm": 0.0001636982054303112,
+    "gradient_vector_rmse": 3.6759952566703486e-05,
+    "value_max_abs": 0.00015619021189697269,
+    "value_rmse": 2.5870545112429392e-05
+  },
+  "reference_uncertainty_value_rmse": 8.079690914758104e-06,
+  "refined_dt": 3.125e-05,
+  "refined_n": 256,
+  "refined_reference": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/references/sine_quadratic_coupled_d100_k2_lam0p2_eta1p0_refined.npz",
+  "solution_grid_max": 0.8,
+  "solution_grid_min": 0.2,
+  "uncertainty_rule": "max previous-refined-vs-current RMSE; no Richardson-order assumption",
+  "wall_seconds": 202.30123798176646
+}

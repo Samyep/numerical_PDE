@@ -113,11 +113,16 @@ def _full_history_report(full: list[dict[str, str]], summary: dict) -> None:
     _write("STRONG_FULL_HISTORY_COMPARISON.md", lines)
 
 
-def _nonseparable_report(rows: list[dict[str, str]], precision: list[dict[str, str]], summary: dict) -> None:
+def _nonseparable_report(
+    rows: list[dict[str, str]], precision: list[dict[str, str]],
+    summary: dict, reference: dict,
+) -> None:
     lines = [
         "# Nonseparable High-Budget Report",
         "",
         "The unchanged undamped generic tangent update was trained on `f(u,z)=0.2 sin(2πu)-0.5||z+u e||²` with full ambient inputs. Three seeds use the same mature budget and reference-free selection rule as the primary experiment.",
+        "",
+        f"The independent periodic reference was refined to `n={reference['refined_n']}`, `dt={reference['refined_dt']:.7g}`. Its conservative previous-to-current Value RMSE is `{reference['reference_uncertainty_value_rmse']:.3e}`, and the computed solution remains in `[0,1]`.",
         "",
         "| iteration | seeds | 64-step Value RMSE mean ± sd | Gradient-vector RMSE | Value-Actor RMSE | fixed-point score | MCV VR | ESS |",
         "|---|---:|---:|---:|---:|---:|---:|---:|",
@@ -268,13 +273,16 @@ def _main_report(summary: dict, euler, full, nonsep, ambient) -> None:
 def run() -> None:
     summary = json.loads((RESULTS_DIR / "FINAL_SUMMARY.json").read_text(encoding="utf-8"))
     reference = json.loads((REFERENCE_DIR := RESULTS_DIR / "references" / "primary_refinement_audit.json").read_text(encoding="utf-8"))
+    coupled_reference = json.loads(
+        (RESULTS_DIR / "references" / "coupled_refinement_audit.json").read_text(encoding="utf-8")
+    )
     euler = _rows("euler_convergence.csv")
     full = _rows("full_history_extended_grid.csv")
     nonsep = _rows("nonseparable_three_seed_results.csv")
     ambient = _rows("ambient_scaling_comparison.csv")
     _high_precision(euler, reference)
     _full_history_report(full, summary)
-    _nonseparable_report(nonsep, euler, summary)
+    _nonseparable_report(nonsep, euler, summary, coupled_reference)
     _ambient_report(ambient)
     _main_report(summary, euler, full, nonsep, ambient)
 

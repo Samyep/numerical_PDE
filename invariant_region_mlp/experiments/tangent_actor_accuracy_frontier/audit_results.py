@@ -139,6 +139,13 @@ def run() -> dict:
         raise RuntimeError("reference uncertainty did not reach the precision gate")
     if not reference["inside_invariant_interval"]:
         raise RuntimeError("refined reference left the invariant interval")
+    coupled_reference = json.loads(
+        (RESULTS_DIR / "references" / "coupled_refinement_audit.json").read_text()
+    )
+    if coupled_reference["reference_uncertainty_value_rmse"] >= 1e-5:
+        raise RuntimeError("coupled reference uncertainty did not reach the precision gate")
+    if not coupled_reference["inside_invariant_interval"]:
+        raise RuntimeError("refined coupled reference left the invariant interval")
     manifest = json.loads((RESULTS_DIR / "reproducibility_manifest.json").read_text())
     if manifest["oracle_subspace_used"] or manifest["historical_results_overwritten"]:
         raise RuntimeError("manifest boundary violation")
@@ -153,6 +160,7 @@ def run() -> dict:
         "d400_persistent_generalization_gap": persistent_gap,
         "shared_primary_test_bank_sha256": next(iter(hashes)),
         "reference_uncertainty_value_rmse": reference["reference_uncertainty_value_rmse"],
+        "coupled_reference_uncertainty_value_rmse": coupled_reference["reference_uncertainty_value_rmse"],
         "decision": summary["decision"],
     }
     (RESULTS_DIR / "FINAL_ARTIFACT_AUDIT.json").write_text(
