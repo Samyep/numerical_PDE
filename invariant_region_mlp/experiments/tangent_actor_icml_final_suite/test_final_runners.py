@@ -71,6 +71,10 @@ def test_external_baseline_budgets_and_terminal_embedding() -> None:
     deep = deep_config("joint_concave", 50, smoke=False)
     assert deep.intervals == 20 and deep.iterations == 2000
     assert deep.hidden_widths == (60, 60) and deep.batch_size == 64
+    deep_allen = deep_config("allen_cahn", 100, smoke=False)
+    assert deep_allen.iterations == 4000
+    assert deep_allen.learning_rate == 5e-4
+    assert deep_allen.y_init_range == (0.3, 0.5)
 
     config = Config()
     assert config.epochs == 10_000
@@ -85,3 +89,72 @@ def test_external_baseline_budgets_and_terminal_embedding() -> None:
     assert torch.allclose(
         model(torch.cat((x, terminal_t), 1))[:, 0], benchmark.terminal(x), atol=1e-7,
     )
+
+
+def test_dpi_and_pinn_profiles_are_selected_before_metrics() -> None:
+    from .official_dpi_transfer import _config, _resolve_profile, register_equations
+
+    assert _resolve_profile("ou_gmm", "auto") == "hjb_pis"
+    for family in (
+        "hjb_log", "joint_concave", "joint_convex",
+        "nonconvex_coupled", "mlp_failure", "allen_cahn",
+    ):
+        assert _resolve_profile(family, "auto") == "semilinear_paper"
+
+    names = register_equations()
+    dpi, _, _, _, _, profile = _config(
+        "dpi", "joint_concave", 100, 0, "official",
+        names["joint_concave"], "auto",
+    )
+    assert profile == "semilinear_paper"
+    assert dpi.PICARD.N == 80
+    assert dpi.DATA.DATA_SIZE == 4096
+    assert dpi.DATA.kwargs.n_estimate_terminal == 4096
+    assert dpi.DATA.kwargs.n_estimate_integral == 4096
+    assert dpi.TRAIN.N_EPOCHS == 16 and dpi.TRAIN.BATCH_SIZE == 512
+    assert list(dpi.NETWORK.NEURONS) == [128, 128, 128, 128]
+    assert list(dpi.NETWORK.ACTIVATIONS) == ["ELU"] * 4
+
+    pinn, _, _, _, _, profile = _config(
+        "pinn_hte", "joint_concave", 100, 0, "official",
+        names["joint_concave"], "auto",
+    )
+    assert profile == "semilinear_paper"
+    assert pinn.METHOD.num_v_samples == 16
+    assert pinn.TRAIN.N_EPOCHS == 30_000
+    assert pinn.TRAIN.LOSS.beta == 10.0
+    assert list(pinn.NETWORK.NEURONS) == [128, 128, 128, 128]
+
+    native, _, _, _, _, profile = _config(
+        "dpi", "ou_gmm", 100, 0, "official", names["ou_gmm"], "auto",
+    )
+    assert profile == "hjb_pis"
+    assert native.PICARD.N == 40
+    assert list(native.NETWORK.NEURONS) == [512, 512, 512, 512]
+    assert native.NETWORK.PISGRADNET is True
+
+
+def test_sdgd_profiles_match_the_two_published_training_protocols() -> None:
+    from .sdgd_transfer import _configuration, resolve_profile
+
+    assert resolve_profile("hjb_log", "auto") == "hjb_adversarial"
+    assert resolve_profile("ou_gmm", "auto") == "hjb_adversarial"
+    for family in (
+        "joint_concave", "joint_convex", "nonconvex_coupled",
+        "mlp_failure", "allen_cahn",
+    ):
+        assert resolve_profile(family, "auto") == "semilinear_sde"
+
+    hjb = _configuration("hjb_adversarial", smoke=False)
+    assert hjb.epochs == 10_000 and hjb.collocation_points == 100
+    assert hjb.pgd_steps == 20 and hjb.pgd_step_size == 0.05
+    assert hjb.training_dimension_samples == 100
+    assert hjb.adversarial_dimension_samples == 10
+
+    semilinear = _configuration("semilinear_sde", smoke=False)
+    assert semilinear.epochs == 10_000
+    assert semilinear.trajectories == 100 and semilinear.time_steps == 20
+    assert semilinear.training_dimension_samples == 10
+    assert semilinear.terminal_value_weight == 20.0
+    assert semilinear.terminal_gradient_weight == 1.0
+    assert semilinear.exponential_lr_gamma == 0.9995
