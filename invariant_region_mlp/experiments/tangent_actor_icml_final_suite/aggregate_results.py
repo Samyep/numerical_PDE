@@ -829,8 +829,11 @@ def aggregate() -> dict[str, Any]:
         ("pde", "dimension", "method", "seed", "steps", "estimator"),
     )
     excluded = []
-    primary_main_ids = {id(row) for row in primary_main_candidates}
-    primary_native_ids = {id(row) for row in primary_native_candidates}
+    # Compare against the final de-duplicated rows, not every candidate.  This
+    # keeps superseded-but-valid primary runs visible in the historical export
+    # after a corrected profile replaces the same scientific cell.
+    primary_main_ids = {id(row) for row in main}
+    primary_native_ids = {id(row) for row in native}
     for table_kind, rows, kept in (
         ("whole_function", all_main, primary_main_ids),
         ("native_point", all_native, primary_native_ids),
@@ -842,7 +845,11 @@ def aggregate() -> dict[str, Any]:
                 **row, "table_kind": table_kind,
                 "primary_exclusion_reason": (
                     "historical_nonzero_seed" if int(row["seed"]) != 0
-                    else row.get("profile_role", "nonprimary_profile")
+                    else (
+                        row.get("profile_role", "nonprimary_profile")
+                        if row.get("profile_role", "primary") != "primary"
+                        else "superseded_primary_duplicate"
+                    )
                 ),
             })
     frontier_candidates = [
