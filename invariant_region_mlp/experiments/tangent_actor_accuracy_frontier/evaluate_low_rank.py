@@ -15,6 +15,7 @@ from .common import (
     OLD_REFERENCE_DIR,
     PREDICTION_DIR,
     RAW_DIR,
+    REFERENCE_DIR,
     RESULTS_DIR,
     array_sha256,
     atomic_json,
@@ -56,7 +57,8 @@ def run(spec: ExperimentSpec, rank: int, device: torch.device) -> dict:
         T=driver.T, seed=20261017,
     )
     reference_driver = type(driver)(d=100, lam=spec.lam, eta=spec.eta if spec.coupled else 0.0)
-    reference_path = OLD_REFERENCE_DIR / f"{reference_driver.name}.npz"
+    refined_path = REFERENCE_DIR / f"{reference_driver.name}_refined.npz"
+    reference_path = refined_path if refined_path.exists() else OLD_REFERENCE_DIR / f"{reference_driver.name}.npz"
     reference = load_reference(reference_path)
     truth = reference.value(test_t, test_x @ driver.B)
     common_seed = stable_seed(run_id, "post_freeze_common_policy_paths")

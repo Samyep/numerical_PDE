@@ -16,6 +16,7 @@ from .common import (
     OLD_RESULTS_DIR,
     PREDICTION_DIR,
     RAW_DIR,
+    REFERENCE_DIR,
     RESULTS_DIR,
     array_sha256,
     atomic_json,
@@ -62,15 +63,19 @@ def run(
     reference_driver = type(driver)(
         d=100, lam=spec.lam, eta=spec.eta if spec.coupled else 0.0
     )
-    reference_path = OLD_REFERENCE_DIR / f"{reference_driver.name}.npz"
+    refined_path = REFERENCE_DIR / f"{reference_driver.name}_refined.npz"
+    reference_path = refined_path if refined_path.exists() else OLD_REFERENCE_DIR / f"{reference_driver.name}.npz"
     reference = load_reference(reference_path)
     truth = reference.value(t, x @ driver.B)
     preflight = json.loads(
         (OLD_RESULTS_DIR / "preflight_audit.json").read_text(encoding="utf-8")
     )
     key = "coupled" if spec.coupled else "primary"
+    refinement_audit_path = REFERENCE_DIR / f"{key}_refinement_audit.json"
     reference_uncertainty = float(
-        preflight["drivers"][key]["reference"]["reference_error_proxy_value_rmse"]
+        json.loads(refinement_audit_path.read_text(encoding="utf-8"))["reference_uncertainty_value_rmse"]
+        if refinement_audit_path.exists()
+        else preflight["drivers"][key]["reference"]["reference_error_proxy_value_rmse"]
     )
     common_seed = stable_seed("frontier_selected_precision", spec.run_id, paths, fine_steps)
     rows, outputs = [], {}

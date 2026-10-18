@@ -18,6 +18,7 @@ from .common import (
     PREDICTION_DIR,
     RAW_DIR,
     OLD_REFERENCE_DIR,
+    REFERENCE_DIR,
     RESULTS_DIR,
     array_sha256,
     atomic_json,
@@ -40,7 +41,8 @@ def _reference_path(spec: ExperimentSpec):
     reference_driver = SineQuadraticDriver(
         d=100, lam=spec.lam, eta=spec.eta if spec.coupled else 0.0
     )
-    return OLD_REFERENCE_DIR / f"{reference_driver.name}.npz"
+    refined = REFERENCE_DIR / f"{reference_driver.name}_refined.npz"
+    return refined if refined.exists() else OLD_REFERENCE_DIR / f"{reference_driver.name}.npz"
 
 
 def _load_actors(
@@ -300,11 +302,17 @@ def evaluate(spec: ExperimentSpec, device: torch.device) -> dict[str, Any]:
     reference_key = "coupled" if spec.coupled else "primary"
     reference_audit = preflight.get("drivers", {}).get(reference_key)
     selected_row = rows[selected_index]
-    reference_proxy = (
-        None
-        if reference_audit is None
-        else reference_audit["reference"]["reference_error_proxy_value_rmse"]
-    )
+    refinement_audit_path = REFERENCE_DIR / f"{reference_key}_refinement_audit.json"
+    if refinement_audit_path.exists():
+        reference_proxy = json.loads(
+            refinement_audit_path.read_text(encoding="utf-8")
+        )["reference_uncertainty_value_rmse"]
+    else:
+        reference_proxy = (
+            None
+            if reference_audit is None
+            else reference_audit["reference"]["reference_error_proxy_value_rmse"]
+        )
     result = {
         "spec": asdict(spec),
         "selection": selection,

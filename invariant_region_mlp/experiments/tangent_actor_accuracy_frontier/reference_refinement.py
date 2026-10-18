@@ -1,4 +1,4 @@
-"""Independent refinement of the two-dimensional primary numerical reference."""
+"""Independent refinement of a two-dimensional numerical reference."""
 
 from __future__ import annotations
 
@@ -9,13 +9,13 @@ import time
 import numpy as np
 
 from .common import (
-    OLD_PREDICTION_DIR,
     OLD_REFERENCE_DIR,
     RAW_DIR,
     REFERENCE_DIR,
     array_sha256,
     atomic_json,
     ensure_dirs,
+    state_bank,
 )
 from .drivers import SineQuadraticDriver
 from .reference2d import load_reference, save_reference, solve_strang_reference
@@ -34,9 +34,13 @@ def _comparison(left, right, t: np.ndarray, coordinates: np.ndarray) -> dict[str
     }
 
 
-def run(*, n: int, dt: float, query_points: int) -> dict:
+def run(*, family: str, n: int, dt: float, query_points: int) -> dict:
     ensure_dirs()
-    driver = SineQuadraticDriver(d=100, lam=0.2, eta=0.0)
+    if family not in {"primary", "coupled"}:
+        raise ValueError(family)
+    driver = SineQuadraticDriver(
+        d=100, lam=0.2, eta=1.0 if family == "coupled" else 0.0
+    )
     old_path = OLD_REFERENCE_DIR / f"{driver.name}.npz"
     old = load_reference(old_path)
     output_path = REFERENCE_DIR / f"{driver.name}_refined.npz"
@@ -44,17 +48,15 @@ def run(*, n: int, dt: float, query_points: int) -> dict:
     started = time.perf_counter()
     refined = solve_strang_reference(driver, n=n, dt=dt, store_dt=0.002)
     wall = time.perf_counter() - started
-    rng = np.random.default_rng(2026101707)
+    rng = np.random.default_rng(2026101707 + int(driver.eta != 0.0))
     t = rng.uniform(0.0, driver.T, query_points)
     coordinates = rng.uniform(0.0, 2.0 * np.pi, (query_points, 2))
     random_comparison = _comparison(old, refined, t, coordinates)
 
-    bank_path = OLD_PREDICTION_DIR / (
-        "post_freeze_primary_d100_k2_lam0p2_eta0_main_mcv_s0.npz"
+    test_t, test_x = state_bank(
+        driver.name, driver.d, "post_freeze_common_test", 512,
+        T=driver.T, seed=20261017,
     )
-    with np.load(bank_path) as bank:
-        test_t = bank["test_t"].astype(np.float64)
-        test_x = bank["test_x"].astype(np.float64)
     frozen_comparison = _comparison(old, refined, test_t, test_x @ driver.B)
     previous_random = None if previous is None else _comparison(
         previous, refined, t, coordinates
@@ -100,19 +102,20 @@ def run(*, n: int, dt: float, query_points: int) -> dict:
         ),
         "wall_seconds": wall,
     }
-    atomic_json(REFERENCE_DIR / "primary_refinement_audit.json", result)
-    atomic_json(RAW_DIR / "reference_refinement_primary.json", result)
+    atomic_json(REFERENCE_DIR / f"{family}_refinement_audit.json", result)
+    atomic_json(RAW_DIR / f"reference_refinement_{family}.json", result)
     print(json.dumps(result, indent=2), flush=True)
     return result
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--family", choices=("primary", "coupled"), default="primary")
     parser.add_argument("--n", type=int, default=256)
     parser.add_argument("--dt", type=float, default=0.00003125)
     parser.add_argument("--query-points", type=int, default=32768)
     args = parser.parse_args()
-    run(n=args.n, dt=args.dt, query_points=args.query_points)
+    run(family=args.family, n=args.n, dt=args.dt, query_points=args.query_points)
 
 
 if __name__ == "__main__":
