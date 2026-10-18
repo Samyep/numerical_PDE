@@ -1,0 +1,152 @@
+{
+  "counterexample_full_history": {
+    "artifacts": [
+      {
+        "bytes": 40734,
+        "path": "invariant_region_mlp/results/counterexample_rescue/summary_all.csv",
+        "sha256": "0b85718467a02a48aab2b9dcc2f2f24ac9921ff8bf037eb03b57fb121dcf84b0"
+      },
+      {
+        "bytes": 3277,
+        "path": "invariant_region_mlp/results/counterexample_rescue/independent_validation.json",
+        "sha256": "8593612ad7d6f72f125783ac64f56dfdb63c68c1a8f197d27f447ca089e665f8"
+      }
+    ],
+    "method_cell": false,
+    "missing_dimensions": [
+      400
+    ],
+    "passed": true,
+    "reason_not_tangent_actor": "projection-based IR modes are not Tangent-Actor and remain excluded",
+    "reusable_dimensions": [
+      20,
+      50,
+      100,
+      200,
+      1000
+    ],
+    "role": "secondary raw Full-History MLP dimensional-failure series"
+  },
+  "excluded_or_anchor_only": [
+    {
+      "path": "invariant_region_mlp/results/convex_concave_semilinear_extended",
+      "reason": "2048 states, 16 label steps, 3x192 network, 2500 steps and only a0-a3 do not match the mature frozen budget",
+      "status": "anchor_only"
+    },
+    {
+      "path": "invariant_region_mlp/results/tangent_actor_strong_baselines",
+      "reason": "compute-matched amortized/adapted baseline architectures are not the authors' fixed official configurations",
+      "status": "supplementary_only"
+    }
+  ],
+  "nonconvex_100d": {
+    "artifacts": [
+      {
+        "bytes": 4608,
+        "path": "invariant_region_mlp/results/tangent_actor_accuracy_frontier/nonseparable_three_seed_results.csv",
+        "sha256": "a3ed83cfb998466afed002f68d858ff1effd8da098219fd6dee7027f8c085632"
+      },
+      {
+        "bytes": 9097,
+        "path": "invariant_region_mlp/results/tangent_actor_accuracy_frontier/euler_convergence.csv",
+        "sha256": "cc02c286211ca269071ab159674b94360b8abca1b2065559526c86127a77dcde"
+      },
+      {
+        "bytes": 19593,
+        "path": "invariant_region_mlp/results/tangent_actor_accuracy_frontier/compute_accounting.csv",
+        "sha256": "fde282ab9dbc218c7c3939862e6191c20008d971fcfa33e8ae812ff66e71cbce"
+      },
+      {
+        "bytes": 4341,
+        "path": "invariant_region_mlp/results/tangent_actor_accuracy_frontier/FINAL_SUMMARY.json",
+        "sha256": "343725032771ad913a140d2a27911731482601fad6ec64b3da10964b742f6340"
+      }
+    ],
+    "ground_truth_excluded_from_selection": true,
+    "passed": true,
+    "pde_match": {
+      "dimension": 100,
+      "effective_dimension": 2,
+      "eta": 1.0,
+      "horizon": 0.5,
+      "lambda": 0.2
+    },
+    "selected_rows": 3,
+    "test_bank_sha256": "85a9430c6f60762f5964a9de46122e8010cd1d96b67b286a6997a824d20c2180",
+    "training_seeds": [
+      0,
+      1,
+      2
+    ]
+  },
+  "original_100d": {
+    "artifacts": [
+      {
+        "bytes": 21107,
+        "path": "invariant_region_mlp/experiments/original_pde_benchmark_comparison/function_approximation_comparison.csv",
+        "sha256": "07ad51bf38ce43a5d60754d350cf605133c6cd4a362ce71fa30e0ab0fc606aff"
+      },
+      {
+        "bytes": 17186,
+        "path": "invariant_region_mlp/experiments/original_pde_benchmark_comparison/native_task_comparison.csv",
+        "sha256": "87901a6ff7d06aaf413bac7464a1162537fea03de74daff7d8abe92901edc285"
+      },
+      {
+        "bytes": 5942,
+        "path": "invariant_region_mlp/experiments/original_pde_benchmark_comparison/runtime_resource_accounting.csv",
+        "sha256": "287638d709f2b6a2a20e5d87e924f7265ca8b4cd9de794956f9a7bc3cb7d6213"
+      }
+    ],
+    "bank_checks": {
+      "allen_cahn_d100": {
+        "actual_sha256": "731dafc5aac912af3fa584857548e2e649b0eb82a0ea42c10fefb837f4daaad8",
+        "expected_sha256": "731dafc5aac912af3fa584857548e2e649b0eb82a0ea42c10fefb837f4daaad8",
+        "matches": true,
+        "path": "invariant_region_mlp/results/original_pde_benchmark_comparison/evaluation_bank_allen_cahn_d100.npz"
+      },
+      "dpi_ou_gmm_d100": {
+        "actual_sha256": "14426c76454e0ac11133090a188b782343a297702e0ca4e8f106748bbff028d4",
+        "expected_sha256": "14426c76454e0ac11133090a188b782343a297702e0ca4e8f106748bbff028d4",
+        "matches": true,
+        "path": "invariant_region_mlp/results/original_pde_benchmark_comparison/evaluation_bank_dpi_ou_gmm_d100.npz"
+      },
+      "hjb_log_d100": {
+        "actual_sha256": "7f3f3b201d4f137712ffca28a546383527143b537ea16418966a909c2aac5ffb",
+        "expected_sha256": "7f3f3b201d4f137712ffca28a546383527143b537ea16418966a909c2aac5ffb",
+        "matches": true,
+        "path": "invariant_region_mlp/results/original_pde_benchmark_comparison/evaluation_bank_hjb_log_d100.npz"
+      }
+    },
+    "definition_checks": {
+      "allen_cahn": true,
+      "hjb_log": true,
+      "ou_gmm": true
+    },
+    "passed": true,
+    "selection_checks": {
+      "allen_cahn_d100": {
+        "final_test_opened": false,
+        "ground_truth_used": false,
+        "passes": true
+      },
+      "dpi_ou_gmm_d100": {
+        "final_test_opened": false,
+        "ground_truth_used": false,
+        "passes": true
+      },
+      "hjb_log_d100": {
+        "final_test_opened": false,
+        "ground_truth_used": false,
+        "passes": true
+      }
+    },
+    "source_checks": {
+      "DeepBSDE": true,
+      "DeepPicardIteration": true,
+      "SDGD_PINN": true
+    }
+  },
+  "passed": true,
+  "rule": "reuse requires identical equation, dimension, test bank, estimator convention, and checkpoint-selection protocol",
+  "schema_version": 1
+}

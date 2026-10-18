@@ -1,0 +1,131 @@
+{
+  "base_commit": "d36ab9e79d0e6ffe49c43d60cdb28a064dc9ac09",
+  "branch": "ir-mlp-tangent-actor-icml-final-suite",
+  "dimensions": [
+    10,
+    20,
+    50,
+    100,
+    200,
+    400
+  ],
+  "methods": [
+    "tangent_actor",
+    "pinn_hte",
+    "sdgd_pinn",
+    "dpi",
+    "deep_bsde"
+  ],
+  "mlp_failure_dimensions": [
+    20,
+    50,
+    100,
+    200,
+    400,
+    1000
+  ],
+  "pdes": [
+    {
+      "effective_dimension": null,
+      "equation": "u_t + Delta u - ||grad u||^2 = 0",
+      "horizon": 1.0,
+      "key": "hjb_log",
+      "reference": "independent Hopf-Cole one-dimensional quadrature",
+      "sigma": "sqrt(2) I",
+      "terminal": "log((1+||x||^2)/2)",
+      "test_distribution": "t~Uniform[0,T), x~N(0,I_d); d=100 reuses the frozen common bank",
+      "title": "HJB-Log"
+    },
+    {
+      "effective_dimension": null,
+      "equation": "u_t + 0.5 Delta u - (mu-x).grad u - 0.5||grad u||^2 - d = 0",
+      "horizon": 1.0,
+      "key": "ou_gmm",
+      "reference": "exact evolving Gaussian-mixture density",
+      "sigma": "I",
+      "terminal": "negative log density of the frozen five-component GMM",
+      "test_distribution": "t~Uniform[0,T), x|t~N(0,(4+t)I_d); d=100 uses official tensors/bank",
+      "title": "OU/GMM HJB"
+    },
+    {
+      "effective_dimension": 2,
+      "equation": "u_t + Delta u + u-u^3-0.5||sqrt(2)grad u||^2 = 0",
+      "horizon": 0.5,
+      "key": "joint_concave",
+      "reference": "independently refined two-dimensional periodic spectral solve",
+      "sigma": "sqrt(2) I",
+      "terminal": "0.5+0.15(sin(b1.x)+sin(b2.x))",
+      "test_distribution": "t~Uniform[0,T), x~N(0,I_d)",
+      "title": "Jointly concave value-gradient PDE"
+    },
+    {
+      "effective_dimension": 2,
+      "equation": "u_t + Delta u + u^3-u+0.5||sqrt(2)grad u||^2 = 0",
+      "horizon": 0.5,
+      "key": "joint_convex",
+      "reference": "independently refined two-dimensional periodic spectral solve",
+      "sigma": "sqrt(2) I",
+      "terminal": "0.5+0.15(sin(b1.x)+sin(b2.x))",
+      "test_distribution": "t~Uniform[0,T), x~N(0,I_d)",
+      "title": "Jointly convex value-gradient PDE"
+    },
+    {
+      "effective_dimension": 2,
+      "equation": "u_t + Delta u + 0.2 sin(2pi u)-0.5||sqrt(2)grad u+u e||^2 = 0",
+      "horizon": 0.5,
+      "key": "nonconvex_coupled",
+      "reference": "independently refined two-dimensional Fourier solve",
+      "sigma": "sqrt(2) I",
+      "terminal": "0.5+0.3 sin(b1.x) cos(b2.x)",
+      "test_distribution": "t~Uniform[0,T), x~N(0,I_d)",
+      "title": "Nonconvex-nonconcave coupled PDE"
+    },
+    {
+      "effective_dimension": 1,
+      "equation": "u_t + 0.5 Delta u + ||grad(u)_{2:d}|| = 0",
+      "horizon": 1.0,
+      "key": "mlp_failure",
+      "reference": "exact E|x_1+sqrt(1-t)Z|",
+      "sigma": "I",
+      "terminal": "|x_1|",
+      "test_distribution": "t~Uniform[0,T), x~N(0,I_d); native point x=0 reported separately",
+      "title": "Hutzenthaler-Nguyen MLP failure example"
+    },
+    {
+      "effective_dimension": null,
+      "equation": "u_t + Delta u + u-u^3 = 0",
+      "horizon": 0.3,
+      "key": "allen_cahn",
+      "reference": "dimension-specific radial PDE with mesh/time refinement and Richardson audit",
+      "sigma": "sqrt(2) I",
+      "terminal": "1/(2+0.4||x||^2)",
+      "test_distribution": "t~Uniform[0,T), x|t~N(0,2t I_d); d=100 reuses the frozen common bank",
+      "title": "Allen-Cahn"
+    }
+  ],
+  "protocol_sha256": "44e27f2cb7dcaf6697d7dc6037c648a1b9b4f05c227e0b9abe0442d3628253e4",
+  "selection": {
+    "euler_grid": [
+      64,
+      128,
+      256,
+      512
+    ],
+    "euler_role": "predeclared post-freeze numerical refinement audit",
+    "external_baselines": "published fixed budget; no final-test checkpoint selection",
+    "tangent_actor": "reference-free held-out tangent labels and paired policy-value consistency"
+  },
+  "source_commits": {
+    "deep_bsde": "e76fed80b1995daf4a0dd6d3e2cf64a0931dabda",
+    "dpi": "e8616c2f531c9f95299b246a13c1180b8f02822a",
+    "pinn_hte": "e8616c2f531c9f95299b246a13c1180b8f02822a",
+    "sdgd_pinn": "c597cc4fe9caac0b3ca118ea84453405f25ff833",
+    "tangent_actor": "d36ab9e79d0e6ffe49c43d60cdb28a064dc9ac09"
+  },
+  "test_states_default": 960,
+  "training_seeds": [
+    0,
+    1,
+    2
+  ]
+}
