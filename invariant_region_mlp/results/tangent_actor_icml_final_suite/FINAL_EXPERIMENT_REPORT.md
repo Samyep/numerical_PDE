@@ -30,24 +30,25 @@ and selection decision are frozen.
 
 ## Current coverage
 
-The current canonical aggregation contains 11 completed PDE–dimension–method
-cells out of 210 requested cells, 17 whole-function rows, 26 native-point rows,
-32 accuracy-frontier rows, and 92 ablation rows. These counts include exact,
+The current canonical aggregation contains 12 completed PDE–dimension–method
+cells out of 210 requested cells, 18 whole-function rows, 30 native-point rows,
+36 accuracy-frontier rows, and 111 ablation rows. These counts include exact,
 hash-audited historical reuse. Smoke runs are excluded. The execution manifest
 records the actual seed count for every cell rather than manufacturing
 replication intervals.
 
 Completed 100D evidence currently includes:
 
-- Tangent-Actor on HJB-Log, OU/GMM, joint concave, nonconvex coupled, the
+- Tangent-Actor on HJB-Log, OU/GMM, joint concave, joint convex, nonconvex coupled, the
   nonsmooth MLP-failure PDE, and Allen–Cahn.
 - Native SDGD-PINN on HJB-Log.
 - Native DPI and PINN-HTE on OU/GMM.
 - Native Deep BSDE on HJB-Log and Allen–Cahn, reported only in the separate
   single-point table.
 
-The mature 100D joint-convex Tangent-Actor cell is currently executing. The
-remaining external 100D transfers, dimension extremes, intermediate
+The mature 100D joint-convex Tangent-Actor cell and its common-bank
+all-iteration diagnostic are complete. The remaining external 100D transfers,
+dimension extremes, intermediate
 dimensions, and missing independent seeds remain pending.
 
 ## Audited numerical findings to date
@@ -64,6 +65,7 @@ rows use the frozen 64-step protocol; finer Euler results remain in
 | OU/GMM, DPI | 1 | `1.766e1` | `5.697e-2` | native official reuse |
 | OU/GMM, PINN-HTE | 1 | `3.867e1` | `1.247e-1` | native official reuse |
 | Joint concave, Tangent-Actor + MCV | 1 | `3.231e-4` | `5.441e-4` | new final-suite run |
+| Joint convex, Tangent-Actor + MCV | 1 | `2.116e-4` | `4.830e-4` | new final-suite run |
 | Nonconvex coupled, Tangent-Actor + MCV | 3 | mean `8.093e-4` | mean `1.725e-3` | exact historical reuse |
 | MLP failure, Tangent-Actor + MCV | 1 | `6.662e-3` | `6.144e-3` | adapted minimum-norm subgradient |
 | Allen–Cahn, value-only Tangent-Actor | 3 | mean `1.666e-4` | mean `3.636e-3` | exact historical reuse |
@@ -107,6 +109,43 @@ continued to reduce Actor value and gradient errors, while the final policy
 estimate became MC limited. The reference-free choice of `a3` agrees with this
 post-hoc truth diagnostic to the available resolution.
 
+### Joint-convex mature run
+
+The new mature joint-convex run completed in Slurm job `3406335`. Four Actor
+updates reduced held-out noisy tangent-label loss as follows:
+
+`0.004118 -> 0.001517 -> 0.0008143 -> 0.0005582`.
+
+The independent noise-corrected fixed-point selector chose `a4`, with total
+inconsistency decreasing from `0.8132` at `a0` to `3.78926e-4` at `a4`.
+Numerical truth was not used for this decision. At 128 Euler steps and 1,024
+paths, the frozen Actor gave:
+
+- plain policy RMSE `1.50891e-3`;
+- MCV policy RMSE `1.43167e-4` and relative L2 `3.26811e-4`;
+- MCV finite-path contribution `1.45160e-4`;
+- variance reduction `117.51x`;
+- exponential-weight ESS fraction `0.98982`;
+- zero nonfinite values.
+
+The independent 2D reference uncertainty is `7.784e-5`. The MCV result is
+therefore already at the combined MC/reference resolution. The primary frozen
+64-step row is RMSE `2.11576e-4`; finer-step values are numerical audits and
+did not participate in Actor selection.
+
+The common-random-number post-freeze diagnostic (job `3406472`, seed
+`683824272`) found 64-step MCV policy RMSEs
+
+`a0 0.005115, a1 0.0003368, a2 0.0003062, a3 0.0002991, a4 0.0002984`.
+
+The reference-free selector therefore chose the smallest observed error, but
+the `a3`--`a4` difference is far below the finite-path contribution of about
+`2.9e-4` and is not statistically resolved. Actor value RMSE decreased from
+`0.1007` at `a0` to `0.001969` at `a4`, and Actor gradient-vector RMSE
+decreased from `0.06865` to `0.002562`; all ten estimator rows were finite.
+The evidence supports a decisive first update and progressively better Actor
+fits, while the policy-value metric becomes MC limited after `a1`.
+
 ### MLP dimensional-failure mechanism
 
 At 100D, raw Full-History MLP with the audited `n=m=3` recursion has RMSE
@@ -143,8 +182,8 @@ refinement and remain pending until their own audit succeeds.
 
 ## Compute accounting
 
-Through the completed joint-concave iteration diagnostic, the final-suite
-incremental allocation is `1.2964` GH200 GPU-hours. The separately labeled
+Through the completed joint-convex iteration diagnostic, the final-suite
+incremental allocation is `2.0978` GH200 GPU-hours. The separately labeled
 historical source experiments account for `21.9911` GPU-hours and are not
 double counted. Failed and cancelled scheduler attempts remain visible in
 `RESOURCE_ACCOUNTING.csv`; the corrected pre-allocation cancellation consumed
@@ -167,15 +206,13 @@ present, and Allen–Cahn has no artificial MCV row. The suite status remains
 
 ## Remaining work before a final verdict
 
-1. Finish and audit the mature 100D joint-convex Actor and its all-iteration
-   diagnostic.
-2. Run the source-faithful 100D Deep BSDE native solves and DPI, PINN-HTE, and
+1. Run the source-faithful 100D Deep BSDE native solves and DPI, PINN-HTE, and
    SDGD-PINN whole-function transfers.
-3. Reproduce the six-dimensional raw Full-History MLP curve, including 400D.
-4. Execute dimension extremes, then the intermediate dimension grid.
-5. Complete missing independent training seeds and the frozen
+2. Reproduce the six-dimensional raw Full-History MLP curve, including 400D.
+3. Execute dimension extremes, then the intermediate dimension grid.
+4. Complete missing independent training seeds and the frozen
    64/128/256/512 evaluation frontier.
-6. Regenerate all tables and figures, quantify incomplete or resource-limited
+5. Regenerate all tables and figures, quantify incomplete or resource-limited
    cells, and only then assign Scientific GO, Benchmark GO, and compute
    efficiency separately.
 

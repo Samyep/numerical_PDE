@@ -24,12 +24,15 @@ coverage and unit tests. Four GPU entry points for standard Tangent-Actor,
 DPI/PINN-HTE, Deep BSDE, and SDGD-PINN passed the cluster Slurm validator; the
 joint and MLP-failure Tangent-Actor entry points were validated when added.
 
-Stage B has completed and audited the missing mature 100D MLP-failure and
-joint-concave Tangent-Actor cells.  The joint-concave run also has a common-bank
-post-freeze diagnostic for every `a0,...,a4` checkpoint.  Its reference-free
-selector chose `a3`; no test truth entered training or selection.  The next
-scientific cell is the missing mature 100D joint-convex Tangent-Actor run,
-followed by the serial 100D external-baseline batches.
+Stage B has completed and audited the missing mature 100D MLP-failure,
+joint-concave, and joint-convex Tangent-Actor cells. The joint-concave run also
+has a common-bank post-freeze diagnostic for every `a0,...,a4` checkpoint; its
+reference-free selector chose `a3`, and no test truth entered training or
+selection. The corresponding joint-convex diagnostic is also complete; its
+reference-free selector chose `a4`, which had the smallest common-bank MCV
+error, though the `a3`--`a4` difference is below MC resolution. The next
+scheduled cells are the reproduced Full-History MLP dimension curve and the
+serial 100D external-baseline batches.
 
 Validated resumable launchers now cover the Stage B baselines, Stage C Actor
 dimension extremes, Stage D remaining Actor dimensions, baseline dimension
