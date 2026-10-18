@@ -64,7 +64,10 @@ def run() -> dict:
         primary_rows += len(payload["rows"])
     if len(hashes) != 1:
         raise RuntimeError("primary precision test banks differ")
-    coupled = sorted(RESULTS_DIR.glob("post_freeze_coupled_d100*_main_mcv_s*.json"))
+    coupled = [
+        path for path in sorted(RESULTS_DIR.glob("post_freeze_coupled_d100*_main_mcv_s*.json"))
+        if "lowrank" not in path.name
+    ]
     if len(coupled) != 3:
         raise RuntimeError(f"expected three coupled main runs, found {len(coupled)}")
     coupled_hashes = set()

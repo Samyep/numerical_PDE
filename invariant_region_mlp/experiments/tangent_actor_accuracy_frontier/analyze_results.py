@@ -180,6 +180,8 @@ def _precision_rows() -> list[dict[str, Any]]:
 def _nonseparable_rows() -> list[dict[str, Any]]:
     rows = []
     for path in sorted(RESULTS_DIR.glob("post_freeze_coupled_d100*_main_mcv_s*.json")):
+        if "lowrank" in path.name:
+            continue
         payload = _load(path)
         selection = payload["selection"]
         training_path = RESULTS_DIR / f"training_{payload['spec']['family']}_d100_k2_lam0p2_eta1_main_mcv_s{payload['spec']['seed']}.json"
@@ -220,6 +222,8 @@ def _ambient_rows() -> list[dict[str, Any]]:
     candidates.extend(("low_rank", path) for path in sorted(RESULTS_DIR.glob("post_freeze_primary_d*_lowrank_r*.json")))
     rows = []
     for source, path in candidates:
+        if source == "frontier" and "lowrank" in path.name:
+            continue
         payload = _load(path)
         d = int(payload["spec"]["d"])
         if d not in (100, 400):
