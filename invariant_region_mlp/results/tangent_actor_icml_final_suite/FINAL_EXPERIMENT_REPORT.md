@@ -30,26 +30,28 @@ and selection decision are frozen.
 
 ## Current coverage
 
-The current canonical aggregation contains 17 completed PDE–dimension–method
-cells out of 210 requested cells, 18 whole-function rows, 35 native-point rows,
-36 accuracy-frontier rows, and 111 ablation rows. These counts include exact,
-hash-audited historical reuse. Smoke runs are excluded. The execution manifest
+The current canonical aggregation contains 23 completed PDE–dimension–method
+cells out of 210 requested cells, 24 whole-function rows, 41 native-point rows,
+42 accuracy-frontier rows, 16 dimension-scaling rows, and 111 ablation rows.
+These counts include exact, hash-audited historical reuse. Smoke runs are
+excluded. The execution manifest
 records the actual seed count for every cell rather than manufacturing
 replication intervals.
 
 Completed 100D evidence currently includes:
 
-- Tangent-Actor on HJB-Log, OU/GMM, joint concave, joint convex, nonconvex coupled, the
-  nonsmooth MLP-failure PDE, and Allen–Cahn.
+- Tangent-Actor on HJB-Log, OU/GMM, joint concave, joint convex, nonconvex
+  coupled, the nonsmooth MLP-failure PDE, and Allen–Cahn.
 - Native SDGD-PINN on HJB-Log.
 - Native DPI and PINN-HTE on OU/GMM.
+- DPI whole-function results on all seven families.
 - Native Deep BSDE on all seven 100D families, reported only in the separate
   single-point table.
 
 The mature 100D joint-convex Tangent-Actor cell and its common-bank
 all-iteration diagnostic are complete. The remaining external 100D transfers,
-dimension extremes, intermediate
-dimensions, and missing independent seeds remain pending.
+dimension extremes, intermediate dimensions, and missing independent seeds
+remain pending.
 
 ## Audited numerical findings to date
 
@@ -175,6 +177,38 @@ compute limited or poorly matched to this transfer rather than converged.
 These scalar comparisons remain separate from the amortized whole-function
 table.
 
+### DPI whole-function 100D task
+
+The six missing DPI transfers completed in Slurm job `3406624`; the native
+OU/GMM result remains exact audited reuse. Every new run used the pinned
+upstream commit `e8616c2f531c9f95299b246a13c1180b8f02822a`, all 40 Picard
+rounds, 16 optimizer epochs per round, 4,096 training states, the full source
+path budget, and the source PISGradNet. PyTorch 2.6 initially rejected the
+source's trusted Lightning checkpoint objects after round one. Job `3406600`
+preserves that 56-second failed attempt. The corrected runner restores the
+pre-2.6 `torch.load` semantics without changing the pinned checkout or any
+numerical update; a real failed-run checkpoint and all later round reloads
+passed the compatibility audit.
+
+| 100D whole-function PDE | DPI RMSE | Relative L2 | Training seconds |
+|---|---:|---:|---:|
+| HJB-Log | `0.31236` | `0.06813` | `404.2` |
+| Joint concave | `0.009068` | `0.01527` | `835.6` |
+| Joint convex | `0.011836` | `0.02702` | `822.9` |
+| Nonconvex coupled | `0.013287` | `0.02832` | `2258.1` |
+| MLP failure | `0.050436` | `0.04651` | `390.6` |
+| Allen–Cahn | `0.002286` | `0.04991` | `314.1` |
+
+Together with the reused OU/GMM DPI RMSE `17.66`, Tangent-Actor currently has
+lower measured 100D whole-function error on all seven families. This is a
+single-seed DPI comparison outside its native OU/GMM problem, and
+Tangent-Actor usually spends substantially more fitting time; it is evidence
+for an accuracy advantage under the frozen budgets, not a universal method or
+speed claim. The nonconvex DPI transfer is a useful cost exception: it used
+about 2,258 seconds, slightly more than one mature Tangent-Actor training run,
+because its full recursive label generation was much slower for the coupled
+driver.
+
 ### MLP dimensional-failure mechanism
 
 The reproduced raw Full-History MLP curve uses the audited `n=m=3` recursion
@@ -237,6 +271,11 @@ GH200 time. The current incremental total is `2.2006` GPU-hours. Two pending
 jobs were cancelled before allocation solely to obtain an appropriate
 backfill walltime; both remain in the accounting log with zero usage.
 
+The completed six-cell DPI batch used 1 hour 26 minutes 25 seconds. Including
+its preserved 56-second failed compatibility attempt, the current incremental
+allocation is `3.6564` GPU-hours: `3.6408` completed and `0.0156`
+failed/cancelled hours.
+
 No speed claim is currently supported. The final comparison will separate
 Actor fitting, reference-free model selection, frozen-model inference, and
 total allocated compute. Published baselines that are still improving at
@@ -254,8 +293,7 @@ present, and Allen–Cahn has no artificial MCV row. The suite status remains
 
 ## Remaining work before a final verdict
 
-1. Run the source-faithful 100D DPI, PINN-HTE, and SDGD-PINN whole-function
-   transfers.
+1. Run the source-faithful 100D PINN-HTE and SDGD-PINN whole-function transfers.
 2. Execute dimension extremes, then the intermediate dimension grid.
 3. Complete missing independent training seeds and the frozen
    64/128/256/512 evaluation frontier.

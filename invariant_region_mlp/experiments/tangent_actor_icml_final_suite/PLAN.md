@@ -36,7 +36,10 @@ previously missing 400D point, with 512 repetitions and bootstrap intervals at
 every dimension. The next scheduled cells are the serial 100D external-baseline
 batches. Deep BSDE is complete on all seven 100D native single-point tasks;
 the five new faithful transfers all finished at the pinned source budget and
-remain excluded from the amortized whole-function table. DPI, PINN-HTE, and
+remain excluded from the amortized whole-function table. DPI is also complete
+on all seven 100D whole-function tasks: six new 40-round transfers plus the
+audited native OU/GMM result. A PyTorch 2.6 checkpoint compatibility failure is
+preserved along with its source-faithful fix and successful rerun. PINN-HTE and
 SDGD-PINN transfers remain next.
 
 Validated resumable launchers now cover the Stage B baselines, Stage C Actor
