@@ -564,6 +564,47 @@ def _ablation_rows(frontier: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "evidence_role": "mature update-by-update diagnostic; test truth not used for selection",
             })
 
+    # New final-suite joint-PDE runs use the same post-freeze protocol for all
+    # a0,...,a4 checkpoints and attach their frozen reference-free consistency.
+    for path, payload in _json_files("iteration_evaluation_*.json"):
+        family = PDE_ALIASES.get(payload["family"], payload["family"])
+        for item in payload["rows"]:
+            rows.append({
+                "component": "martingale_control_variate", "pde": family,
+                "dimension": payload["dimension"], "seed": payload["seed"],
+                "variant": item["estimator"], "iteration": item["actor"],
+                "steps": item["steps"], "paths": item["paths"],
+                "value_rmse": item["value_rmse"],
+                "value_relative_l2": item["relative_l2"],
+                "mc_rmse_contribution": item["mc_rmse_contribution"],
+                "variance_reduction": item["variance_reduction"],
+                "actor_value_rmse": item["actor_value_rmse"],
+                "actor_gradient_vector_rmse": item["actor_gradient_vector_rmse"],
+                "selection_metric": item["reference_free_total_inconsistency"],
+                "training_seconds": None,
+                "source_artifact": str(path.relative_to(SOURCE_ROOT)),
+                "evidence_role": "paired post-freeze all-iteration diagnostic",
+            })
+            if item["estimator"] == "mcv":
+                rows.append({
+                    "component": "learned_tangent_updates", "pde": family,
+                    "dimension": payload["dimension"], "seed": payload["seed"],
+                    "variant": "terminal_aware_tangent_actor",
+                    "iteration": item["actor"], "steps": item["steps"],
+                    "paths": item["paths"], "value_rmse": item["value_rmse"],
+                    "value_relative_l2": item["relative_l2"],
+                    "mc_rmse_contribution": item["mc_rmse_contribution"],
+                    "variance_reduction": item["variance_reduction"],
+                    "actor_value_rmse": item["actor_value_rmse"],
+                    "actor_gradient_vector_rmse": item["actor_gradient_vector_rmse"],
+                    "selection_metric": item["reference_free_total_inconsistency"],
+                    "training_seconds": None,
+                    "source_artifact": str(path.relative_to(SOURCE_ROOT)),
+                    "evidence_role": (
+                        "post-freeze all-iteration diagnostic; truth excluded from selection"
+                    ),
+                })
+
     # Earlier controlled pilots isolate terminal-aware parameterization. They
     # are supporting ablations and never populate the main benchmark table.
     terminal_path = SOURCE_ROOT / "invariant_region_mlp/results/tangent_actor_strong_baselines/convergence_diagnostics.csv"

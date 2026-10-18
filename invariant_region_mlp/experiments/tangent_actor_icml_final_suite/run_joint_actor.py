@@ -540,6 +540,119 @@ def evaluate(
     return result
 
 
+def evaluate_iterations(
+    family: str, d: int, seed: int, device: torch.device, *, smoke: bool = False,
+    paths: int = 512, time_steps: int = 64,
+) -> dict[str, Any]:
+    """Post-freeze update diagnostic on one common bank and MC stream.
+
+    This diagnostic is deliberately separate from checkpoint selection.  It
+    opens the independent numerical reference only after all actors and the
+    reference-free selected checkpoint have been frozen.
+    """
+    tag = "smoke" if smoke else "mature"
+    run_id = _run_id(family, d, seed, tag)
+    training_path = RAW_DIR / f"training_{run_id}.json"
+    training = json.loads(training_path.read_text())
+    if training.get("status") != "complete":
+        raise RuntimeError(f"training is not complete: {training_path}")
+    config = FitConfig(**training["configuration"])
+    driver = make_driver(family, d)
+    test_t, test_x, bank_path = _test_bank(family, d)
+    if smoke:
+        test_t, test_x, paths, time_steps = test_t[:16], test_x[:16], 8, 4
+    numerical_reference, reference_meta = reference(family)
+    coordinates = test_x @ driver.B[:, :2]
+    truth_working = numerical_reference.value(test_t, coordinates)
+    truth_gradient_reduced = numerical_reference.gradient(test_t, coordinates)
+    truth_q_working = driver.sigma * (truth_gradient_reduced @ driver.B[:, :2].T)
+    truth = driver.working_to_original(truth_working)
+    truth_q = driver.working_to_original(truth_q_working)
+    consistency = {
+        row["actor"]: row for row in training["selection"]["rows"]
+    }
+    common_mc_seed = stable_seed(
+        run_id, "all_iterations_postfreeze", paths, time_steps,
+    )
+    rows: list[dict[str, Any]] = []
+    for iteration in range(5):
+        actor_name = f"a{iteration}"
+        checkpoint = None if iteration == 0 else _checkpoint_path(run_id, iteration)
+        actor = (
+            _initial_actor(driver, config, seed=stable_seed(run_id, "a0"), device=device)
+            if iteration == 0
+            else _load_actor(checkpoint, driver, config, device)
+        )
+        actor_r_working, actor_q_working = _predict(
+            driver, actor, test_t, test_x, device,
+        )
+        actor_r = driver.working_to_original(actor_r_working)
+        actor_q = driver.working_to_original(actor_q_working)
+        value_error = actor_r - truth
+        q_error = actor_q - truth_q
+        output, meta = evaluate_policy(
+            driver, actor, test_t, test_x, paths=paths, time_steps=time_steps,
+            seed=common_mc_seed, device=device,
+            parent_batch=4 if smoke else 8,
+            path_chunk=4 if smoke else min(64, paths),
+        )
+        selection_row = consistency[actor_name]
+        for estimator in ("plain", "mcv"):
+            prediction = driver.working_to_original(output[estimator])
+            error = prediction - truth
+            pair_variance = output[f"{estimator}_pair_variance"]
+            rows.append({
+                "actor": actor_name, "iteration": iteration,
+                "selected_by_reference_free_rule": (
+                    actor_name == training["selection"]["selected_actor"]
+                ),
+                "checkpoint": None if checkpoint is None else str(checkpoint),
+                "steps": time_steps, "paths": paths, "estimator": estimator,
+                "value_rmse": float(np.sqrt(np.mean(np.square(error)))),
+                "relative_l2": float(np.linalg.norm(error) / np.linalg.norm(truth)),
+                "bias": float(np.mean(error)),
+                "mc_rmse_contribution": float(
+                    np.sqrt(np.mean(pair_variance / (paths // 2)))
+                ),
+                "variance_reduction": meta["variance_reduction"],
+                "weight_ess_fraction": meta["weight_ess_fraction"],
+                "inference_seconds": meta["wall_seconds"],
+                "peak_gpu_bytes": meta["peak_gpu_bytes"],
+                "nonfinite_count": meta["nonfinite_count"],
+                "actor_value_rmse": float(np.sqrt(np.mean(np.square(value_error)))),
+                "actor_value_relative_l2": float(
+                    np.linalg.norm(value_error) / np.linalg.norm(truth)
+                ),
+                "actor_gradient_component_rmse": float(
+                    np.sqrt(np.mean(np.square(q_error)))
+                ),
+                "actor_gradient_vector_rmse": float(
+                    np.sqrt(np.mean(np.square(q_error).sum(axis=1)))
+                ),
+                "reference_free_total_inconsistency": selection_row[
+                    "normalized_total_inconsistency"
+                ],
+                "reference_free_value_inconsistency": selection_row[
+                    "normalized_value_inconsistency"
+                ],
+                "reference_free_gradient_inconsistency": selection_row[
+                    "normalized_gradient_inconsistency"
+                ],
+            })
+    result = {
+        "run_id": run_id, "method": "terminal_aware_tangent_actor_mcv",
+        "family": family, "dimension": d, "seed": seed,
+        "diagnostic_role": "post_freeze_all_actor_iterations",
+        "selected_actor": training["selection"]["selected_actor"],
+        "common_mc_seed": common_mc_seed, "rows": rows,
+        "test_bank": bank_path, "states": len(test_t), "reference": reference_meta,
+        "ground_truth_loaded_only_after_all_checkpoints_and_selection_frozen": True,
+        "status": "complete",
+    }
+    write_json(RAW_DIR / f"iteration_evaluation_{run_id}.json", result)
+    return result
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--family", choices=("joint_concave", "joint_convex", "nonconvex_coupled"), required=True)
@@ -549,22 +662,34 @@ def main() -> None:
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--train-only", action="store_true")
     parser.add_argument("--evaluate-only", action="store_true")
+    parser.add_argument("--iteration-diagnostic-only", action="store_true")
     parser.add_argument("--evaluation-paths", type=int, default=1024)
     parser.add_argument("--evaluation-steps", default="64,128")
+    parser.add_argument("--iteration-paths", type=int, default=512)
+    parser.add_argument("--iteration-steps", type=int, default=64)
     args = parser.parse_args()
     device = torch.device(args.device)
     if device.type == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA allocation required")
-    if not args.evaluate_only:
+    if not args.evaluate_only and not args.iteration_diagnostic_only:
         record = train(args.family, args.dimension, args.seed, device, smoke=args.smoke)
         print(json.dumps({"training": record["status"], "selected": record["selection"]["selected_actor"]}), flush=True)
-    if not args.train_only:
+    if not args.train_only and not args.iteration_diagnostic_only:
         result = evaluate(
             args.family, args.dimension, args.seed, device, smoke=args.smoke,
             paths=args.evaluation_paths,
             steps=tuple(int(value) for value in args.evaluation_steps.split(",")),
         )
         print(json.dumps({"evaluation": result["status"], "rows": result["rows"]}), flush=True)
+    if args.iteration_diagnostic_only:
+        result = evaluate_iterations(
+            args.family, args.dimension, args.seed, device, smoke=args.smoke,
+            paths=args.iteration_paths, time_steps=args.iteration_steps,
+        )
+        print(json.dumps({
+            "iteration_evaluation": result["status"],
+            "selected": result["selected_actor"], "rows": len(result["rows"]),
+        }), flush=True)
 
 
 if __name__ == "__main__":

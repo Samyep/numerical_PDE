@@ -41,4 +41,7 @@ RUN_ARGS=(
 if [[ "${EVALUATE_ONLY:-0}" == "1" ]]; then
   RUN_ARGS+=(--evaluate-only)
 fi
+if [[ "${ITERATION_DIAGNOSTIC_ONLY:-0}" == "1" ]]; then
+  RUN_ARGS+=(--iteration-diagnostic-only --iteration-paths "${ITERATION_PATHS:-512}" --iteration-steps "${ITERATION_STEPS:-64}")
+fi
 srun --network=no_vni python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.run_joint_actor "${RUN_ARGS[@]}"
