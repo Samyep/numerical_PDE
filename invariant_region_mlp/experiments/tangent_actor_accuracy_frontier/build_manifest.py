@@ -75,6 +75,7 @@ def run() -> dict:
             "sbatch invariant_region_mlp/experiments/tangent_actor_accuracy_frontier/slurm/run_coupled_precision_512.slurm (conditional frozen gate)",
             "sbatch invariant_region_mlp/experiments/tangent_actor_accuracy_frontier/slurm/run_ambient_400_main.slurm",
             "sbatch invariant_region_mlp/experiments/tangent_actor_accuracy_frontier/slurm/run_low_rank_400.slurm (conditional RANK=8,16,32)",
+            "sbatch --export=ALL,RANK=<selected-rank>,TRAINING_SEED=0 invariant_region_mlp/experiments/tangent_actor_accuracy_frontier/slurm/run_low_rank_coupled_transfer.slurm (conditional on the frozen helpfulness rule)",
             "python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.analyze_results",
             "python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.write_reports",
             "python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.build_manifest",

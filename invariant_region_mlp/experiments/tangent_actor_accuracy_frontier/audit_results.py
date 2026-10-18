@@ -120,6 +120,8 @@ def run() -> dict:
         ):
             gap_phases += 1
     persistent_gap = gap_phases >= int(gap_rule["minimum_update_phases"])
+    helpful_low_rank = None
+    coupled_low_rank_transfer = None
     if ambient_improvement >= float(protocol["ambient_400"]["meaningful_value_improvement_fraction"]):
         ambient_replicates = sorted(RESULTS_DIR.glob("post_freeze_primary_d400*_main_mcv_s*.json"))
         if len(ambient_replicates) != 3:
@@ -129,6 +131,47 @@ def run() -> dict:
         ranks = {int(json.loads(path.read_text(encoding="utf-8"))["rank"]) for path in low_rank}
         if ranks != set(protocol["ambient_400"]["learned_low_rank_ranks"]):
             raise RuntimeError(f"conditional low-rank grid incomplete: {sorted(ranks)}")
+        full_selection = json.loads(
+            (RESULTS_DIR / "selection_primary_d400_k2_lam0p2_eta0_main_mcv_s0.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        full_score = min(
+            float(row["normalized_total_inconsistency"])
+            for row in full_selection["ranking_audit_diagnostics"]
+            if row["actor"] == full_selection["selected_actor"]
+        )
+        helpful_candidates = []
+        helpful_rule = protocol["ambient_400"]["low_rank_helpful_definition"]
+        for path in low_rank:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            selection = payload["selection"]
+            selected_score = min(
+                float(row["normalized_total_inconsistency"])
+                for row in selection["ranking_audit_diagnostics"]
+                if row["actor"] == selection["selected_actor"]
+            )
+            reduction = (full_score - selected_score) / max(full_score, 1e-300)
+            if (
+                reduction >= float(helpful_rule["minimum_reduction_vs_full_ambient"])
+                and selection["ranking_stable_when_paths_and_steps_doubled"]
+            ):
+                helpful_candidates.append((selected_score, int(payload["rank"]), reduction))
+        if helpful_candidates:
+            selected_score, selected_rank, reduction = min(helpful_candidates)
+            helpful_low_rank = {
+                "rank": selected_rank,
+                "ranking_score": selected_score,
+                "reduction_vs_full_ambient": reduction,
+            }
+            transfer = RESULTS_DIR / (
+                f"post_freeze_coupled_d100_k2_lam0p2_eta1_main_mcv_s0_lowrank_r{selected_rank}.json"
+            )
+            if not transfer.exists():
+                raise RuntimeError(
+                    f"helpful learned rank {selected_rank} was not transferred to the coupled PDE"
+                )
+            coupled_low_rank_transfer = str(transfer)
     for table in REQUIRED_TABLES:
         rows = _read_csv(RESULTS_DIR / table)
         if not rows:
@@ -161,6 +204,8 @@ def run() -> dict:
         "matched_budget_d400_runs": len(ambient),
         "d400_seed0_value_improvement_fraction": ambient_improvement,
         "d400_persistent_generalization_gap": persistent_gap,
+        "helpful_low_rank": helpful_low_rank,
+        "coupled_low_rank_transfer": coupled_low_rank_transfer,
         "shared_primary_test_bank_sha256": next(iter(hashes)),
         "reference_uncertainty_value_rmse": reference["reference_uncertainty_value_rmse"],
         "coupled_reference_uncertainty_value_rmse": coupled_reference["reference_uncertainty_value_rmse"],
