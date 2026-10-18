@@ -19,6 +19,7 @@ from .common import (
     OLD_PREDICTION_DIR,
     OLD_REFERENCE_DIR,
     OLD_RESULTS_DIR,
+    PACKAGE_DIR,
     PREDICTION_DIR,
     RAW_DIR,
     REFERENCE_DIR,
@@ -212,8 +213,31 @@ def _ambient_rows() -> list[dict[str, Any]]:
         selection = payload["selection"]
         selected = payload["selected_row"]
         a0 = payload["iteration_rows"][0]
+        run_id = selected["run_id"]
+        training_root = OLD_RESULTS_DIR if source == "parent" else RESULTS_DIR
+        training_path = training_root / f"training_{run_id}.json"
+        training = _load(training_path)
+        phases = training["phases"]
+        threshold = _load(PACKAGE_DIR / "protocol.json")["ambient_400"][
+            "persistent_generalization_gap_definition"
+        ]
+        gap_flags = []
+        for phase in phases:
+            fit = phase["training"]
+            train_gradient = float(fit["selected_train_gradient_vector_rmse"])
+            validation_gradient = float(fit["selected_validation_gradient_vector_rmse"])
+            replication = float(phase["labels"]["gradient_label_replication_vector_rmse"])
+            gap_flags.append(
+                validation_gradient >= float(threshold["validation_over_train_gradient_rmse_ratio"]) * max(train_gradient, 1e-300)
+                and validation_gradient - train_gradient >= float(threshold["minimum_excess_as_fraction_of_label_replication_rmse"]) * replication
+            )
+        selected_iteration = int(selection["selected_iteration"])
+        selected_phase = None if selected_iteration == 0 else phases[selected_iteration - 1]
+        selected_fit = None if selected_phase is None else selected_phase["training"]
+        selected_replication = None if selected_phase is None else selected_phase["labels"]["gradient_label_replication_vector_rmse"]
+        fit_config = training.get("fit_config", phases[0]["training"].get("config", {}))
         rows.append({
-            "source": source, "run_id": selected["run_id"], "d": d,
+            "source": source, "run_id": run_id, "d": d,
             "seed": payload["spec"]["seed"],
             "architecture": payload.get("architecture", "full_ambient"),
             "rank": payload.get("rank"), "budget": payload["spec"]["budget"],
@@ -233,6 +257,18 @@ def _ambient_rows() -> list[dict[str, Any]]:
                 for item in selection["ranking_audit_diagnostics"]
                 if item["actor"] == selection["selected_actor"]
             ),
+            "training_points": fit_config.get("training_points"),
+            "optimizer_steps": fit_config.get("optimizer_steps"),
+            "selected_optimizer_step": None if selected_fit is None else selected_fit["selected_step"],
+            "selected_train_gradient_fit_rmse": None if selected_fit is None else selected_fit["selected_train_gradient_vector_rmse"],
+            "selected_validation_gradient_fit_rmse": None if selected_fit is None else selected_fit["selected_validation_gradient_vector_rmse"],
+            "selected_train_value_fit_rmse": None if selected_fit is None else selected_fit["selected_train_value_rmse"],
+            "selected_validation_value_fit_rmse": None if selected_fit is None else selected_fit["selected_validation_value_rmse"],
+            "selected_validation_normalized_loss": None if selected_fit is None else selected_fit["best_validation_normalized_loss"],
+            "selected_gradient_label_replication_rmse": selected_replication,
+            "generalization_gap_phases": sum(gap_flags),
+            "generalization_gap_total_phases": len(gap_flags),
+            "persistent_generalization_gap": sum(gap_flags) >= int(threshold["minimum_update_phases"]),
         })
     return rows
 

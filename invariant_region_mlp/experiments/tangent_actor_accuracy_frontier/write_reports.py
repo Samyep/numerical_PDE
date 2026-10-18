@@ -160,21 +160,28 @@ def _ambient_report(rows: list[dict[str, str]]) -> None:
         "",
         "Known active directions are used only in this post-freeze decomposition. Every trained Actor receives the full ambient state and every learned low-rank matrix is randomly initialized and optimized end to end.",
         "",
-        "| source | d | architecture | rank | budget | selected | a0 RMSE | selected RMSE | improvement | Gradient RMSE | active / inactive | effective rank | FP score |",
-        "|---|---:|---|---:|---|---|---:|---:|---:|---:|---:|---:|---:|",
+        "| source | d | architecture | rank | data | selected | a0 RMSE | selected RMSE | improvement | Gradient RMSE | active / inactive | effective rank | train / held-out fit | label replication | step | gap phases | FP score |",
+        "|---|---:|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for row in rows:
         rank = "—" if not row["rank"] else row["rank"]
         effective = "—" if not row["gradient_effective_rank"] else f"{_f(row['gradient_effective_rank']):.2f}"
+        train_fit = _f(row.get("selected_train_gradient_fit_rmse"))
+        valid_fit = _f(row.get("selected_validation_gradient_fit_rmse"))
+        fit_text = "—" if train_fit is None else f"{train_fit:.4g} / {valid_fit:.4g}"
+        replication = _f(row.get("selected_gradient_label_replication_rmse"))
+        replication_text = "—" if replication is None else f"{replication:.4g}"
+        step = row.get("selected_optimizer_step") or "—"
         lines.append(
-            f"| {row['source']} | {row['d']} | {row['architecture']} | {rank} | {row['budget']} | {row['selected_actor']} | "
+            f"| {row['source']} | {row['d']} | {row['architecture']} | {rank} | {row['training_points']} | {row['selected_actor']} | "
             f"{_f(row['a0_value_rmse']):.6g} | {_f(row['selected_value_rmse']):.6g} | {_f(row['value_improvement_fraction']):.1%} | "
             f"{_f(row['gradient_vector_rmse']):.6g} | {_f(row['active_gradient_rmse']):.5g} / {_f(row['inactive_gradient_rms']):.5g} | "
-            f"{effective} | {_f(row['fixed_point_score']):.5g} |"
+            f"{effective} | {fit_text} | {replication_text} | {step} | {row['generalization_gap_phases']}/{row['generalization_gap_total_phases']} | "
+            f"{_f(row['fixed_point_score']):.5g} |"
         )
     lines.extend([
         "",
-        "The diagnosis distinguishes supervision noise from statistical generalization by combining label-replication error, train/validation fit, active/inactive post-freeze errors, and the learned output spectrum. A low-rank row is an explicitly named ablation and does not replace the full-ambient primary method.",
+        "The diagnosis distinguishes supervision noise from statistical generalization by combining label-replication error, train/held-out fit, checkpoint step, active/inactive post-freeze errors, and the learned output spectrum. The frozen persistent-gap trigger requires at least three update phases with held-out Gradient RMSE at least 1.5× the train RMSE and an excess of at least half the independent label-replication RMSE. A low-rank row is an explicitly named ablation and does not replace the full-ambient primary method.",
     ])
     _write("AMBIENT_400D_GENERALIZATION_AUDIT.md", lines)
 
