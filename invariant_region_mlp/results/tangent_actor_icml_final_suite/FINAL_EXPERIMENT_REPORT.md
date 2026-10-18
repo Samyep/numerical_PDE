@@ -30,8 +30,8 @@ and selection decision are frozen.
 
 ## Current coverage
 
-The current canonical aggregation contains 12 completed PDE–dimension–method
-cells out of 210 requested cells, 18 whole-function rows, 30 native-point rows,
+The current canonical aggregation contains 17 completed PDE–dimension–method
+cells out of 210 requested cells, 18 whole-function rows, 35 native-point rows,
 36 accuracy-frontier rows, and 111 ablation rows. These counts include exact,
 hash-audited historical reuse. Smoke runs are excluded. The execution manifest
 records the actual seed count for every cell rather than manufacturing
@@ -43,7 +43,7 @@ Completed 100D evidence currently includes:
   nonsmooth MLP-failure PDE, and Allen–Cahn.
 - Native SDGD-PINN on HJB-Log.
 - Native DPI and PINN-HTE on OU/GMM.
-- Native Deep BSDE on HJB-Log and Allen–Cahn, reported only in the separate
+- Native Deep BSDE on all seven 100D families, reported only in the separate
   single-point table.
 
 The mature 100D joint-convex Tangent-Actor cell and its common-bank
@@ -146,6 +146,35 @@ decreased from `0.06865` to `0.002562`; all ten estimator rows were finite.
 The evidence supports a decisive first update and progressively better Actor
 fits, while the policy-value metric becomes MC limited after `a1`.
 
+### Deep BSDE native 100D task
+
+The five missing source-faithful transfers completed in Slurm job `3406569`;
+the HJB-Log and Allen–Cahn native anchors were already available as exact
+audited reuse. Every new run used the pinned DeepBSDE commit
+`e76fed80b1995daf4a0dd6d3e2cf64a0931dabda`, 20 BSDE time intervals, two
+width-110 hidden layers, 2,000 optimizer iterations, float64 arithmetic, and
+the full training cost for its single initial state. All runs had zero
+nonfinite values.
+
+| 100D native PDE | Deep BSDE absolute error | Final clipped terminal MSE |
+|---|---:|---:|
+| OU/GMM | `71.0813` | `287.936` |
+| Joint concave | `3.812e-4` | `4.391e-3` |
+| Joint convex | `1.252e-3` | `4.486e-3` |
+| Nonconvex coupled | `2.180e-3` | `1.337e-2` |
+| MLP failure | `6.646e-2` | `1.976e-1` |
+
+The joint-concave Deep BSDE transfer is a meaningful competitor win on the
+native point: its `3.812e-4` error is below the selected Tangent-Actor's
+64-step MCV native error `5.596e-4`, while using about 61 seconds of training
+instead of about 1,895 seconds of fitting plus selection. On joint convex, the
+ordering reverses: Tangent-Actor has 64-step MCV native error `3.278e-4` and
+128-step audit error `4.187e-5`, at much higher training cost. OU/GMM remained
+far from its native reference at the fixed Deep BSDE budget and is labeled
+compute limited or poorly matched to this transfer rather than converged.
+These scalar comparisons remain separate from the amortized whole-function
+table.
+
 ### MLP dimensional-failure mechanism
 
 The reproduced raw Full-History MLP curve uses the audited `n=m=3` recursion
@@ -203,6 +232,11 @@ allocation is therefore charged as `0.0031` GH200 GPU-hours, bringing the
 incremental total to `2.1008` hours even though the algorithm did not use GPU
 arithmetic.
 
+The five-cell Deep BSDE batch used another 5 minutes 59 seconds of allocated
+GH200 time. The current incremental total is `2.2006` GPU-hours. Two pending
+jobs were cancelled before allocation solely to obtain an appropriate
+backfill walltime; both remain in the accounting log with zero usage.
+
 No speed claim is currently supported. The final comparison will separate
 Actor fitting, reference-free model selection, frozen-model inference, and
 total allocated compute. Published baselines that are still improving at
@@ -220,8 +254,8 @@ present, and Allen–Cahn has no artificial MCV row. The suite status remains
 
 ## Remaining work before a final verdict
 
-1. Run the source-faithful 100D Deep BSDE native solves and DPI, PINN-HTE, and
-   SDGD-PINN whole-function transfers.
+1. Run the source-faithful 100D DPI, PINN-HTE, and SDGD-PINN whole-function
+   transfers.
 2. Execute dimension extremes, then the intermediate dimension grid.
 3. Complete missing independent training seeds and the frozen
    64/128/256/512 evaluation frontier.

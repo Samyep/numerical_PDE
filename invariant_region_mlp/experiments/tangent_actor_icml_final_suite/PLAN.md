@@ -34,7 +34,10 @@ error, though the `a3`--`a4` difference is below MC resolution. The frozen
 six-dimensional Full-History MLP reproduction is complete, including the
 previously missing 400D point, with 512 repetitions and bootstrap intervals at
 every dimension. The next scheduled cells are the serial 100D external-baseline
-batches.
+batches. Deep BSDE is complete on all seven 100D native single-point tasks;
+the five new faithful transfers all finished at the pinned source budget and
+remain excluded from the amortized whole-function table. DPI, PINN-HTE, and
+SDGD-PINN transfers remain next.
 
 Validated resumable launchers now cover the Stage B baselines, Stage C Actor
 dimension extremes, Stage D remaining Actor dimensions, baseline dimension

@@ -478,16 +478,44 @@ def table_main() -> Path:
     return path
 
 
+def _select_native_primary_rows(data: pd.DataFrame) -> pd.DataFrame:
+    """Keep one predeclared native estimate for each independent training seed."""
+    if data.empty:
+        return data.copy()
+    selected = []
+    keys = ["pde", "dimension", "method", "method_status", "seed"]
+    for key, rows in data.groupby(keys, dropna=False, sort=True):
+        candidates = rows.copy()
+        method = str(key[2])
+        if method == "tangent_actor" and len(candidates) > 1:
+            steps = pd.to_numeric(candidates["steps"], errors="coerce")
+            if (steps == 64).any():
+                candidates = candidates.loc[steps == 64]
+            estimators = candidates["estimator"].fillna("").astype(str).str.lower()
+            if (estimators == "mcv").any():
+                candidates = candidates.loc[estimators == "mcv"]
+            elif (estimators == "plain").any():
+                candidates = candidates.loc[estimators == "plain"]
+        if len(candidates) != 1:
+            raise RuntimeError(
+                "native table requires exactly one primary estimate per training seed; "
+                f"key={key!r}, candidates={len(candidates)}"
+            )
+        selected.append(candidates.iloc[0])
+    return pd.DataFrame(selected).reset_index(drop=True)
+
+
 def table_native() -> Path:
     data = _read("NATIVE_POINT_RESULTS.csv")
+    data = _select_native_primary_rows(data)
     lines = [
-        r"\begin{tabular}{lllrll}", r"\toprule",
-        r"PDE & Method & Status & Seeds & Abs. error (mean $\pm$ sd) & Cost (s) \\",
+        r"\begin{tabular}{lrllrll}", r"\toprule",
+        r"PDE & $d$ & Method & Status & Seeds & Abs. error (mean $\pm$ sd) & Cost (s) \\",
         r"\midrule",
     ]
     if not data.empty:
-        grouped = data.groupby(["pde", "method", "method_status"], dropna=False)
-        for (pde, method, status), rows in grouped:
+        grouped = data.groupby(["pde", "dimension", "method", "method_status"], dropna=False)
+        for (pde, dimension, method, status), rows in grouped:
             errors = rows["absolute_error"].to_numpy(float)
             costs = rows["total_seconds"].dropna().to_numpy(float)
             error = f"{errors.mean():.3g}"
@@ -495,9 +523,9 @@ def table_native() -> Path:
                 error += rf" $\pm$ {errors.std(ddof=1):.2g}"
             cost = f"{costs.mean():.3g}" if len(costs) else "--"
             lines.append(
-                f"{_latex_escape(PDE_LABELS.get(pde, pde))} & "
+                f"{_latex_escape(PDE_LABELS.get(pde, pde))} & {int(dimension)} & "
                 f"{_latex_escape(METHOD_LABELS.get(method, method))} & "
-                f"{_latex_escape(status)} & {len(rows)} & {error} & {cost} " + r"\\"
+                f"{_latex_escape(status)} & {rows['seed'].nunique()} & {error} & {cost} " + r"\\"
             )
     lines.extend((r"\bottomrule", r"\end{tabular}"))
     TABLE_DIR.mkdir(parents=True, exist_ok=True)
@@ -585,7 +613,7 @@ def build_reproducibility_manifest(artifacts: Iterable[Path]) -> Path:
             "python -m pytest -q invariant_region_mlp/experiments/tangent_actor_icml_final_suite",
         ],
         "slurm_jobs": jobs,
-        "test_status": "11 passed; see commit history and final report",
+        "test_status": "13 passed; see commit history and final report",
         "artifacts": [
             {
                 "path": str(path.relative_to(SOURCE_ROOT)), "bytes": path.stat().st_size,

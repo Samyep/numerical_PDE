@@ -1,17 +1,22 @@
-\begin{tabular}{lllrll}
+\begin{tabular}{lrllrll}
 \toprule
-PDE & Method & Status & Seeds & Abs. error (mean $\pm$ sd) & Cost (s) \\
+PDE & $d$ & Method & Status & Seeds & Abs. error (mean $\pm$ sd) & Cost (s) \\
 \midrule
-Allen–Cahn & Deep BSDE & native\_official & 3 & 0.000169 $\pm$ 0.00018 & 130 \\
-Allen–Cahn & Tangent-Actor & final\_method & 3 & 2.95e-05 $\pm$ 2.4e-05 & 606 \\
-HJB–Log & Deep BSDE & native\_official & 3 & 0.00968 $\pm$ 0.0028 & 67 \\
-HJB–Log & SDGD-PINN & native\_official & 1 & 2.07 & 1.14e+04 \\
-HJB–Log & Tangent-Actor & final\_method & 3 & 0.00315 $\pm$ 0.00021 & 1.06e+03 \\
-Joint concave & Tangent-Actor & final\_method & 4 & 0.000938 $\pm$ 0.0005 & 1.9e+03 \\
-Joint convex & Tangent-Actor & adapted & 4 & 0.000353 $\pm$ 0.00025 & 1.99e+03 \\
-MLP failure & Tangent-Actor & adapted & 4 & 0.0123 $\pm$ 0.013 & 1.5e+03 \\
-OU/GMM HJB & DPI & native\_official & 1 & 144 & 628 \\
-OU/GMM HJB & PINN-HTE & native\_official & 1 & 148 & 767 \\
-OU/GMM HJB & Tangent-Actor & final\_method & 3 & 0.259 $\pm$ 0.0047 & 1.42e+03 \\
+Allen–Cahn & 100 & Deep BSDE & native\_official & 3 & 0.000169 $\pm$ 0.00018 & 130 \\
+Allen–Cahn & 100 & Tangent-Actor & final\_method & 3 & 2.95e-05 $\pm$ 2.4e-05 & 606 \\
+HJB–Log & 100 & Deep BSDE & native\_official & 3 & 0.00968 $\pm$ 0.0028 & 67 \\
+HJB–Log & 100 & SDGD-PINN & native\_official & 1 & 2.07 & 1.14e+04 \\
+HJB–Log & 100 & Tangent-Actor & final\_method & 3 & 0.00315 $\pm$ 0.00021 & 1.06e+03 \\
+Joint concave & 100 & Deep BSDE & faithful\_transfer & 1 & 0.000381 & 60.7 \\
+Joint concave & 100 & Tangent-Actor & final\_method & 1 & 0.00056 & 1.9e+03 \\
+Joint convex & 100 & Deep BSDE & faithful\_transfer & 1 & 0.00125 & 67.2 \\
+Joint convex & 100 & Tangent-Actor & adapted & 1 & 0.000328 & 1.99e+03 \\
+MLP failure & 100 & Deep BSDE & faithful\_transfer & 1 & 0.0665 & 56.9 \\
+MLP failure & 100 & Tangent-Actor & adapted & 1 & 0.0104 & 1.5e+03 \\
+Nonconvex coupled & 100 & Deep BSDE & faithful\_transfer & 1 & 0.00218 & 73.9 \\
+OU/GMM HJB & 100 & Deep BSDE & faithful\_transfer & 1 & 71.1 & 57.4 \\
+OU/GMM HJB & 100 & DPI & native\_official & 1 & 144 & 628 \\
+OU/GMM HJB & 100 & PINN-HTE & native\_official & 1 & 148 & 767 \\
+OU/GMM HJB & 100 & Tangent-Actor & final\_method & 3 & 0.259 $\pm$ 0.0047 & 1.42e+03 \\
 \bottomrule
 \end{tabular}
