@@ -367,6 +367,7 @@ def _plot_ambient(rows: list[dict]) -> None:
 
 def run() -> dict[str, Any]:
     ensure_dirs()
+    frozen_protocol = _load(PACKAGE_DIR / "protocol.json")
     full_history = _full_history_rows()
     precision = _precision_rows()
     nonseparable = _nonseparable_rows()
@@ -416,6 +417,38 @@ def run() -> dict[str, Any]:
     d400 = [row for row in ambient if row["source"] == "frontier" and row["d"] == 400]
     low_rank = [row for row in ambient if row["source"] == "low_rank"]
     primary_advantage = None if strongest is None or not primary512 else strongest["rmse_mean"] - primary_actor_mean
+    primary_by_steps = []
+    for steps in (64, 128, 256, 512):
+        local = [row for row in precision if row["family"] == "primary" and row["steps"] == steps]
+        if local:
+            primary_by_steps.append({
+                "steps": steps,
+                "seeds": len(local),
+                "rmse_mean": _mean_sd([row["value_rmse"] for row in local])[0],
+                "rmse_sd": _mean_sd([row["value_rmse"] for row in local])[1],
+                "mc_rmse_mean": float(np.mean([row["mc_rmse_contribution"] for row in local])),
+                "residual_proxy_mean": float(np.mean([row["residual_error_proxy"] for row in local])),
+                "inference_seconds_mean": float(np.mean([row["inference_seconds"] for row in local])),
+                "total_production_seconds_mean": float(np.mean([row["total_production_seconds"] for row in local])),
+            })
+    threshold = float(frozen_protocol["reporting_accuracy_threshold_rmse"])
+    actor_threshold = [row for row in primary_by_steps if row["rmse_mean"] <= threshold]
+    fh_threshold = []
+    for key, local in {
+        (row["source"], row["n"], row["M"]): [
+            item for item in full_history
+            if item["family"] == "primary" and item["finite"]
+            and (item["source"], item["n"], item["M"]) == (row["source"], row["n"], row["M"])
+        ]
+        for row in full_history if row["family"] == "primary" and row["finite"]
+    }.items():
+        rmse_mean = float(np.mean([item["value_rmse"] for item in local]))
+        if rmse_mean <= threshold:
+            fh_threshold.append({
+                "source": key[0], "n": key[1], "M": key[2],
+                "rmse_mean": rmse_mean,
+                "seconds_mean": float(np.mean([item["wall_seconds"] for item in local])),
+            })
     robust_primary = bool(
         primary_advantage is not None
         and primary_advantage > 0
@@ -451,6 +484,10 @@ def run() -> dict[str, Any]:
         "primary_actor_advantage_positive": None if primary_advantage is None else primary_advantage > 0,
         "primary_actor_advantage_rmse": primary_advantage,
         "robust_primary_advantage": robust_primary,
+        "primary_euler_summary": primary_by_steps,
+        "reporting_accuracy_threshold_rmse": threshold,
+        "actor_minimum_cost_to_threshold": None if not actor_threshold else min(actor_threshold, key=lambda row: row["total_production_seconds_mean"]),
+        "full_history_minimum_cost_to_threshold": None if not fh_threshold else min(fh_threshold, key=lambda row: row["seconds_mean"]),
         "nonseparable_selected_runs": len(coupled_selected),
         "nonseparable_support": nonseparable_support,
         "d400_fixed": d400_fixed,

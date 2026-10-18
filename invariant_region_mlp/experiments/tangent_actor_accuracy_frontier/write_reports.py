@@ -205,6 +205,23 @@ def _main_report(summary: dict, euler, full, nonsep, ambient) -> None:
     if strongest:
         relation = "lower" if actor is not None and actor < strongest["rmse_mean"] else "higher"
         lines.append(f"- The strongest completed Full-History endpoint is `n={strongest['n']}, M={strongest['M']}` at `{strongest['rmse_mean']:.6g}` mean RMSE; the Actor value is {relation}.")
+    actor_threshold = summary.get("actor_minimum_cost_to_threshold")
+    fh_threshold = summary.get("full_history_minimum_cost_to_threshold")
+    threshold = summary["reporting_accuracy_threshold_rmse"]
+    if actor_threshold:
+        lines.append(
+            f"- Tangent-Actor first reaches the frozen `{threshold:.1e}` RMSE threshold at "
+            f"{actor_threshold['steps']} Euler steps, with `{actor_threshold['total_production_seconds_mean']:.1f}` mean production GPU-seconds including training and selection."
+        )
+    else:
+        lines.append(f"- Tangent-Actor does not reach the frozen `{threshold:.1e}` RMSE threshold.")
+    if fh_threshold:
+        lines.append(
+            f"- Full-History first reaches that threshold at `n={fh_threshold['n']}, M={fh_threshold['M']}` "
+            f"with `{fh_threshold['seconds_mean']:.1f}` mean GPU-seconds."
+        )
+    else:
+        lines.append("- No completed Full-History configuration reaches that frozen accuracy threshold.")
     lines.extend([
         f"- A primary accuracy advantage that clears MC and reference uncertainty is `{summary['robust_primary_advantage']}`.",
         f"- The three-seed high-budget nonseparable support criterion is `{summary['nonseparable_support']}`.",
