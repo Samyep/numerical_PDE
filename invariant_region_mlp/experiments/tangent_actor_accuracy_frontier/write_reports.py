@@ -208,7 +208,7 @@ def _main_report(summary: dict, euler, full, nonsep, ambient) -> None:
     lines.extend([
         f"- A primary accuracy advantage that clears MC and reference uncertainty is `{summary['robust_primary_advantage']}`.",
         f"- The three-seed high-budget nonseparable support criterion is `{summary['nonseparable_support']}`.",
-        f"- Matched-budget full-ambient training fixes the 400D degradation under the predeclared 10% criterion: `{summary['d400_fixed']}`.",
+        f"- Matched-budget full-ambient training fixes the 400D degradation across the required replications: `{summary['d400_fixed']}` ({summary['d400_completed_seeds']} completed seed(s)).",
         "",
         "## Answers to the research questions",
         "",
@@ -218,7 +218,7 @@ def _main_report(summary: dict, euler, full, nonsep, ambient) -> None:
         f"4. **Strongest primary comparison.** Robust Tangent-Actor advantage: **{summary['robust_primary_advantage']}**.",
         f"5. **Nonseparable improvement.** Three-seed supporting result: **{summary['nonseparable_support']}**.",
         f"6. **Seed stability.** The primary 512-step seed standard deviation is `{summary.get('primary_actor_512_rmse_sd', math.nan):.3g}`; nonseparable trajectories are reported without selecting the best seed.",
-        f"7. **400D matched budget.** Predeclared success criterion met: **{summary['d400_fixed']}**.",
+        f"7. **400D matched budget.** Seed 0 crossed the predeclared 10% gate: **{summary['d400_seed0_meaningful']}**. Replicated success criterion met: **{summary['d400_fixed']}**.",
         f"8. **Learned low rank.** `{summary['low_rank_runs']}` completed ablation rows are reported individually; no oracle subspace is used.",
         "9. **Remaining error.** The Euler and ambient audits separate time discretization, finite-path MC, reference accuracy, Actor error, and full-ambient generalization.",
         "10. **Defensible claim.** Tangent-Actor is an accurate learned linearization method for the tested smooth bounded-curvature, locally stable semilinear PDEs. Claims of universal nonconvex convergence, a global reference-free certificate, or general speed superiority are not supported.",

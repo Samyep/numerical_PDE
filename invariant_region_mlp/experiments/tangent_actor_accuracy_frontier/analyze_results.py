@@ -426,7 +426,15 @@ def run() -> dict[str, Any]:
         len(coupled_selected) >= 3
         and all(row["value_rmse_64"] < 0.00198 for row in coupled_selected)
     )
-    d400_fixed = bool(d400 and d400[0]["value_improvement_fraction"] >= 0.10)
+    d400_improvements = [row["value_improvement_fraction"] for row in d400]
+    d400_seed0_meaningful = bool(
+        any(row["seed"] == 0 and row["value_improvement_fraction"] >= 0.10 for row in d400)
+    )
+    d400_fixed = bool(
+        len(d400) >= 3
+        and np.mean(d400_improvements) >= 0.10
+        and min(d400_improvements) > 0.0
+    )
     if robust_primary and nonseparable_support and d400_fixed:
         decision = "GO"
     elif robust_primary and nonseparable_support:
@@ -446,6 +454,10 @@ def run() -> dict[str, Any]:
         "nonseparable_selected_runs": len(coupled_selected),
         "nonseparable_support": nonseparable_support,
         "d400_fixed": d400_fixed,
+        "d400_seed0_meaningful": d400_seed0_meaningful,
+        "d400_completed_seeds": len(d400),
+        "d400_value_improvement_mean": None if not d400 else float(np.mean(d400_improvements)),
+        "d400_value_improvement_sd": None if not d400 else _mean_sd(d400_improvements)[1],
         "low_rank_runs": len(low_rank),
         "counts": {
             "precision_rows": len(precision), "full_history_rows": len(full_history),
