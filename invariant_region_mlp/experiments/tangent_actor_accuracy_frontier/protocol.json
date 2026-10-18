@@ -100,7 +100,13 @@
     "initial_seed": 0,
     "meaningful_value_improvement_fraction": 0.1,
     "replicate_full_ambient_if_meaningful": true,
-    "conditional_low_rank_trigger": "less than 10% selected Value-RMSE reduction from a0 together with persistent held-out Gradient generalization gap",
+    "conditional_low_rank_trigger": "less than 10% selected Value-RMSE reduction from a0 together with the predeclared persistent held-out Gradient generalization gap",
+    "persistent_generalization_gap_definition": {
+      "minimum_update_phases": 3,
+      "validation_over_train_gradient_rmse_ratio": 1.5,
+      "minimum_excess_as_fraction_of_label_replication_rmse": 0.5,
+      "uses_ground_truth": false
+    },
     "learned_low_rank_ranks": [8, 16, 32],
     "rank_matrix_initialization": "random orthonormal; no beta vectors, reference solution, or analytic gradients",
     "transfer_to_coupled_if_helpful": true
