@@ -754,6 +754,14 @@ def _update_manifest(main: list[dict[str, Any]], native: list[dict[str, Any]]) -
             # Old reuse labels are retained only if the canonical importer
             # actually found their audited numerical rows.
             cell["execution_status"] = "pending"
+        elif (
+            cell["execution_status"] == "pending_validity_preflight"
+            and cell["pde"] == "mlp_failure"
+        ):
+            # Stage-A smoke coverage exercised each source-compatible
+            # minimum-norm subgradient path.  This changes only the execution
+            # gate; the methods remain explicitly classified as adapted.
+            cell["execution_status"] = "pending"
     counts = defaultdict(int)
     for cell in manifest["method_cells"]:
         counts[cell["execution_status"]] += 1

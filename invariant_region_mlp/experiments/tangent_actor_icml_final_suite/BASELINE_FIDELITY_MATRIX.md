@@ -33,6 +33,12 @@ excluded from final aggregation.
 | `deep_bsde_transfer.py` | scalar trainable `Y0`, free `Z0`, 19 nonshared subnetworks, 20 time intervals, float64, clipped terminal loss; 2,000 HJB-style or 4,000 Allen–Cahn-style updates and the published learning-rate schedule | state dimension, drift/diffusion, driver and terminal tensors; hidden width follows the source `d+10` rule | exact model, Adam, data-generator and RNG state at logging boundaries |
 | `sdgd_transfer.py` | source hard terminal embedding, width 1024, three tanh hidden layers, 100 collocation points, 20 PGD steps of size 0.05, `min(10,d)` sampled trace coordinates, Adam 1e-3 with the source linear schedule, 10,000 epochs | state dimension and PDE coefficients/terminal function only | exact model, optimizer, scheduler, adversarial states and RNG state |
 
+For high-dimensional DPI transfers, the pinned upstream implementation's own
+`GPUMemoryTracker` may split one data-generation call into smaller resident
+chunks. This does not change `DATA_SIZE=4096`, the 4,096 terminal/integral
+paths per target, the 40 Picard rounds, or the 16 optimizer epochs per round.
+It is source-native memory scheduling rather than a reduced-budget adaptation.
+
 The DPI/PINN transfer preserves the official method's own terminal embedding;
 the SDGD transfer preserves its source-native hard terminal embedding. These
 are baseline features, not Tangent-Actor additions. None of the external

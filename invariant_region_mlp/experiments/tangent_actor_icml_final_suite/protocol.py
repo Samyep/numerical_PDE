@@ -125,7 +125,11 @@ def compatibility(pde: str, method: str, dimension: int) -> tuple[str, str, str]
     if pde == "mlp_failure":
         if method == "tangent_actor":
             return "adapted", "pending", "minimum-norm subgradient b=0 at zero; no global smooth tangent theorem"
-        return "adapted", "pending_validity_preflight", "nonsmooth driver/terminal require an explicit source-compatible subgradient audit"
+        return (
+            "adapted",
+            "pending",
+            "source-compatible minimum-norm subgradient preflight passed; no smooth-driver theory claim",
+        )
     if method == "tangent_actor":
         if pde == "joint_convex":
             return "adapted", "pending", "mathematically equivalent sign transformation w=-u, used only by Tangent-Actor"
