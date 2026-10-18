@@ -13,3 +13,20 @@ Execution is staged to prevent a bad transfer from consuming the full allocation
 The cluster permits one submitted or running job for this user, so jobs execute serially. Checkpoints are idempotent, and scheduler retries do not alter numerical updates. If quota or allocation ends first, the final report will quantify every unfinished cell rather than substitute a cheaper run.
 
 Primary selection rules are fixed in advance. External methods use their published stopping budget. Tangent-Actor uses only held-out tangent-label error and paired reference-free policy values. Ground Truth is opened only after the Actor is frozen. Deep BSDE results are never inserted into the amortized whole-function table.
+
+## Current execution status
+
+Stage A is complete: all three external source revisions match their pinned
+commits, the seven equations passed mathematical preflight, the 42 common test
+banks or frozen 100D-bank mappings are fixed, historical reuse was audited at
+the byte and protocol level, and all six final runner families passed smoke
+coverage and unit tests. Four GPU entry points for standard Tangent-Actor,
+DPI/PINN-HTE, Deep BSDE, and SDGD-PINN passed the cluster Slurm validator; the
+joint and MLP-failure Tangent-Actor entry points were validated when added.
+
+Stage B began with the missing mature 100D MLP-failure Tangent-Actor cell.
+Results are accepted only after the training file, frozen selection record,
+post-freeze evaluation, nonfinite counts, scheduler accounting, and artifact
+hashes all pass audit. The next queued scientific cells are the missing mature
+100D joint-concave and joint-convex Tangent-Actor runs. Submission remains
+strictly serial under the one-job cluster limit.

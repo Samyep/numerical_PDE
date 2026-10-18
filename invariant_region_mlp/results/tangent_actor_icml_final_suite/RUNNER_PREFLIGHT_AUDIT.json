@@ -1,0 +1,294 @@
+{
+  "base_commit": "d36ab9e79d0e6ffe49c43d60cdb28a064dc9ac09",
+  "coverage": {
+    "deep_bsde": [
+      "hjb_log",
+      "ou_gmm",
+      "joint_convex",
+      "mlp_failure",
+      "allen_cahn"
+    ],
+    "dpi": [
+      "joint_concave",
+      "allen_cahn",
+      "mlp_failure",
+      "ou_gmm"
+    ],
+    "pinn_hte": [
+      "nonconvex_coupled"
+    ],
+    "sdgd_pinn": [
+      "hjb_log",
+      "joint_concave",
+      "mlp_failure",
+      "allen_cahn"
+    ],
+    "tangent_actor": [
+      "hjb_log/gradient_actor",
+      "ou_gmm/gradient_actor",
+      "allen_cahn/value_only_actor",
+      "joint_concave/joint_actor",
+      "joint_convex/sign_transform",
+      "nonconvex_coupled/joint_actor",
+      "mlp_failure/minimum_norm_subgradient"
+    ]
+  },
+  "created_utc": "2026-10-18T17:18:25.891895+00:00",
+  "passed": true,
+  "purpose": "non-result implementation preflight; smoke metrics are excluded from final scientific tables",
+  "schema_version": 1,
+  "script_hashes": {
+    "deep_bsde_transfer.py": "c80020fff7eba254b1ccbfafa12bd2f9f722d1e5acf4c7803d8242bb7511f692",
+    "official_dpi_transfer.py": "5e2100dd6de70fd5c4cc7b734d147e680277e9d3d083b3afbf3e2e6d32b08371",
+    "run_joint_actor.py": "d68291b1e4080f6e333254349d469100616f89d1b8b5b973b7d76499671d202c",
+    "run_mlp_failure_actor.py": "0b15cc93c0baf5a2bfed73157815198c1f527d1920162d4fe3c4409fddd0cd92",
+    "run_standard_actor.py": "cac9e5251b12a546158862adc8471aeb957a6a15a16e72489876e82f555dc554",
+    "sdgd_transfer.py": "6e0d47e17ffed19695775c0acb83092d904432dfaacb398ccb6e4cef3892395a",
+    "test_final_runners.py": "2fb8ba9657b16fad61d96e2725dbfd3d61aeed2d6f1e9f87114c67ed39b1df16"
+  },
+  "slurm_validation": {
+    "passed": [
+      "mlp_failure_actor.slurm",
+      "joint_actor.slurm",
+      "standard_actor.slurm",
+      "dpi_transfer.slurm",
+      "deep_bsde_transfer.slurm",
+      "sdgd_transfer.slurm"
+    ],
+    "validator": "/u/ywang151/.codex/skills/job-submit/scripts/validate_slurm.py --require-gpu"
+  },
+  "smoke_artifacts": [
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/deep_bsde_allen_cahn_d10_smoke_s95.json",
+      "dimension": 10,
+      "method": "deep_bsde_official_pytorch_compatibility_port",
+      "pde": "allen_cahn",
+      "sha256": "8f6b4be5cf6b0d5c0e10ac7114a7d501edef89c3c4724827a683314178a34223",
+      "status": "smoke_nonresult"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/deep_bsde_hjb_log_d10_smoke_s95.json",
+      "dimension": 10,
+      "method": "deep_bsde_official_pytorch_compatibility_port",
+      "pde": "hjb_log",
+      "sha256": "c13e488e14e6f912f3c0dc784e2af7c7d679aef32ef4e796f00b4105a8a7aa67",
+      "status": "smoke_nonresult"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/deep_bsde_joint_convex_d10_smoke_s95.json",
+      "dimension": 10,
+      "method": "deep_bsde_official_pytorch_compatibility_port",
+      "pde": "joint_convex",
+      "sha256": "71673b84b9273df88bf9e936aa6b76226a9590c59a189bcff7884e7b82340b98",
+      "status": "smoke_nonresult"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/deep_bsde_mlp_failure_d20_smoke_s95.json",
+      "dimension": 20,
+      "method": "deep_bsde_official_pytorch_compatibility_port",
+      "pde": "mlp_failure",
+      "sha256": "07c30110dbe161097e0e21e1a172c0b0fcce542b984dd36d0ef375257fb56458",
+      "status": "smoke_nonresult"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/deep_bsde_ou_gmm_d10_smoke_s95.json",
+      "dimension": 10,
+      "method": "deep_bsde_official_pytorch_compatibility_port",
+      "pde": "ou_gmm",
+      "sha256": "722612c9ac9079fe01f94b2faf127da80d1ecb243d1834bfee257f84e1b38fbb",
+      "status": "smoke_nonresult"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/dpi_allen_cahn_d10_smoke_s98.json",
+      "dimension": 10,
+      "method": "dpi",
+      "pde": "allen_cahn",
+      "sha256": "420281ccde58c1de965ce3c3535a6e4de7b649d0e9399025a3062160cb9ae309",
+      "status": "smoke_nonresult"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/dpi_joint_concave_d10_smoke_s99.json",
+      "dimension": 10,
+      "method": "dpi",
+      "pde": "joint_concave",
+      "sha256": "bcf46a38bd5b557e472e386fcb58918c87e6e16af0e3e5a4f13d333c76a9a353",
+      "status": "smoke_nonresult"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/dpi_mlp_failure_d20_smoke_s97.json",
+      "dimension": 20,
+      "method": "dpi",
+      "pde": "mlp_failure",
+      "sha256": "0b54852f1c6d37e3ac4073b0ebd1d9b666b77565a5648188b90cc41b702c2c3d",
+      "status": "smoke_nonresult"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/dpi_ou_gmm_d10_smoke_s97.json",
+      "dimension": 10,
+      "method": "dpi",
+      "pde": "ou_gmm",
+      "sha256": "42c0bea25d3f640613cc059f08fd3a69163a9525a23ab55e184355ed2785147c",
+      "status": "smoke_nonresult"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/evaluation_allen_cahn_d10_smoke_s96.json",
+      "dimension": 10,
+      "method": "terminal_aware_tangent_actor_mcv",
+      "pde": "allen_cahn",
+      "sha256": "ee2bb0a0879f66017b5b54cbc1913c81b1c1a80c4fc1b3dadc5d2ac8a2b6f35f",
+      "status": "complete"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/evaluation_hjb_log_d10_smoke_s96.json",
+      "dimension": 10,
+      "method": "terminal_aware_tangent_actor_mcv",
+      "pde": "hjb_log",
+      "sha256": "9c777aa39fc883baed7924982ba7914db35e117217937fe430d3632b5a1bafc9",
+      "status": "complete"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/evaluation_joint_concave_d10_k2_smoke_s99.json",
+      "dimension": 10,
+      "method": "terminal_aware_tangent_actor_mcv",
+      "pde": "joint_concave",
+      "sha256": "f1dc87fd68426b2f75e568df9a182f139a3663fc8c19c85c6317c8300f57d5bc",
+      "status": "complete"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/evaluation_joint_convex_d10_k2_smoke_s99.json",
+      "dimension": 10,
+      "method": "terminal_aware_tangent_actor_mcv",
+      "pde": "joint_convex",
+      "sha256": "6d3d69bdd59609d4a06dc06cc8eb22a8e242cb0ce0e589d8991b1de1cfc25378",
+      "status": "complete"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/evaluation_mlp_failure_d20_smoke_s99.json",
+      "dimension": 20,
+      "method": "terminal_aware_tangent_actor_mcv",
+      "pde": "mlp_failure",
+      "sha256": "fc9fdbeab3b769ad64b2a2d16d6ad2e726a1dcd042ee050c72f3a0f1fd7fd727",
+      "status": "complete"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/evaluation_nonconvex_coupled_d10_k2_smoke_s99.json",
+      "dimension": 10,
+      "method": "terminal_aware_tangent_actor_mcv",
+      "pde": "nonconvex_coupled",
+      "sha256": "c3c2c1759662ffbf0251a4e386e92cd53dd24ed5ab21383ffd2cf93f34008e49",
+      "status": "complete"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/evaluation_ou_gmm_d10_smoke_s96.json",
+      "dimension": 10,
+      "method": "terminal_aware_tangent_actor_mcv",
+      "pde": "ou_gmm",
+      "sha256": "5a4381e40198590ff3dd272c938fca5dc9d2fe98d94d638d3167925c551588c2",
+      "status": "complete"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/pinn_hte_nonconvex_coupled_d10_smoke_s97.json",
+      "dimension": 10,
+      "method": "pinn_hte",
+      "pde": "nonconvex_coupled",
+      "sha256": "794c9012867173ad2da89a4b1e17dcb269d023fe6916e749889ac9b8fe33af4f",
+      "status": "smoke_nonresult"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/sdgd_pinn_allen_cahn_d10_smoke_s94.json",
+      "dimension": 10,
+      "method": "sdgd_pinn_official_transfer",
+      "pde": "allen_cahn",
+      "sha256": "1eb76ef3ab17cc9fb2c44476530d0258eb5853dbe1b1cbfd086a68976879f058",
+      "status": "smoke_nonresult"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/sdgd_pinn_hjb_log_d10_smoke_s94.json",
+      "dimension": 10,
+      "method": "sdgd_pinn_official_transfer",
+      "pde": "hjb_log",
+      "sha256": "c089e4cb0772cdd0aa9efa02dac081115a032d1d4004926b31bc994274b65d36",
+      "status": "smoke_nonresult"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/sdgd_pinn_joint_concave_d10_smoke_s94.json",
+      "dimension": 10,
+      "method": "sdgd_pinn_official_transfer",
+      "pde": "joint_concave",
+      "sha256": "6991cbe028314e1515ecc2eb6018bed8aaf373e22cf6836822265c689e6f1d45",
+      "status": "smoke_nonresult"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/sdgd_pinn_mlp_failure_d20_smoke_s94.json",
+      "dimension": 20,
+      "method": "sdgd_pinn_official_transfer",
+      "pde": "mlp_failure",
+      "sha256": "95698aa4cc0bb4abe03c1dadb59cd5b62d5ee7e0232e7ef42949dbec1ab74a27",
+      "status": "smoke_nonresult"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/training_allen_cahn_d10_smoke_s96.json",
+      "dimension": 10,
+      "method": "terminal_aware_tangent_actor_mcv",
+      "pde": "allen_cahn",
+      "sha256": "3b632ca7f5930971b1da2506d49eb515ed448fa238bba03ec361b34a073caa9b",
+      "status": "complete"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/training_hjb_log_d10_smoke_s96.json",
+      "dimension": 10,
+      "method": "terminal_aware_tangent_actor_mcv",
+      "pde": "hjb_log",
+      "sha256": "efe90726002e23372c3fd378e6b30942f28ee401ef8898ca42baf541f3c24e62",
+      "status": "complete"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/training_joint_concave_d10_k2_smoke_s99.json",
+      "dimension": 10,
+      "method": "terminal_aware_tangent_actor_mcv",
+      "pde": "joint_concave",
+      "sha256": "8d3adf265425c11bfba9fa63157e33ad00159dbf537f279a5f8b92e27dcf9f28",
+      "status": "complete"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/training_joint_convex_d10_k2_smoke_s99.json",
+      "dimension": 10,
+      "method": "terminal_aware_tangent_actor_mcv",
+      "pde": "joint_convex",
+      "sha256": "64499e323d55cbf1c99a8d4bcf434b27d8f6c020dc1346116be606fd869d7c42",
+      "status": "complete"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/training_mlp_failure_d20_smoke_s99.json",
+      "dimension": 20,
+      "method": "terminal_aware_tangent_actor_mcv",
+      "pde": "mlp_failure",
+      "sha256": "67a849cd7fc43dc4a498beea2b49e86dcfe8967dbf7655c76169fd296ed2eeb3",
+      "status": "complete"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/training_nonconvex_coupled_d10_k2_smoke_s99.json",
+      "dimension": 10,
+      "method": "terminal_aware_tangent_actor_mcv",
+      "pde": "nonconvex_coupled",
+      "sha256": "96d5624c462ed6a790cb4928f1063819239b7944479162a9570356dc27470988",
+      "status": "complete"
+    },
+    {
+      "artifact": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/training_ou_gmm_d10_smoke_s96.json",
+      "dimension": 10,
+      "method": "terminal_aware_tangent_actor_mcv",
+      "pde": "ou_gmm",
+      "sha256": "a46d7d0ce5d2362bbb7b6dab5cf7f451caf442126832c6b79039f7b5ba1611b3",
+      "status": "complete"
+    }
+  ],
+  "smoke_status_rule": "all baseline smoke artifacts must be smoke_nonresult; Tangent-Actor smoke artifacts are identified by run_id and excluded by mode",
+  "unit_test": {
+    "command": "python -m pytest -q invariant_region_mlp/experiments/tangent_actor_icml_final_suite",
+    "environment": "Python 3.12 / PyTorch 2.10 environment at /sw/user/python/miniforge3-pytorch-2.10.0",
+    "result": "11 passed"
+  },
+  "working_branch": "ir-mlp-tangent-actor-icml-final-suite",
+  "working_head": "c13c0d885b62ebcc7a6432370d95e23a074436d3"
+}
