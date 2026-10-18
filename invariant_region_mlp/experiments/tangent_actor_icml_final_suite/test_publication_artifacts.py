@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 import pytest
 
@@ -35,3 +37,25 @@ def test_native_table_rejects_ambiguous_duplicate_baseline_rows() -> None:
     ])
     with pytest.raises(RuntimeError, match="exactly one primary estimate"):
         _select_native_primary_rows(duplicate)
+
+
+def test_superseded_profile_does_not_keep_manifest_cell_complete(tmp_path, monkeypatch) -> None:
+    from . import aggregate_results as aggregate
+
+    manifest = {
+        "method_cells": [{
+            "pde": "hjb_log", "dimension": 100, "method": "dpi",
+            "target_training_seeds": "0", "completed_seeds": [0, 1],
+            "execution_status": "completed_reused", "artifacts": [],
+        }],
+    }
+    (tmp_path / "EXECUTION_MANIFEST.json").write_text(json.dumps(manifest))
+    monkeypatch.setattr(aggregate, "RESULTS_DIR", tmp_path)
+    monkeypatch.setattr(aggregate, "SOURCE_ROOT", tmp_path)
+
+    updated = aggregate._update_manifest([], [])
+    cell = updated["method_cells"][0]
+    assert cell["execution_status"] == "pending"
+    assert cell["completed_seeds"] == []
+    assert cell["historical_completed_seeds"] == [0, 1]
+    assert cell["all_observed_completed_seeds"] == [0, 1]

@@ -751,9 +751,13 @@ def _update_manifest(main: list[dict[str, Any]], native: list[dict[str, Any]]) -
         key = (cell["pde"], int(cell["dimension"]), cell["method"])
         primary_seeds = set(completed.get(key, set()))
         previously_recorded = {int(value) for value in cell.get("completed_seeds", [])}
-        seeds = sorted(primary_seeds | previously_recorded)
+        # ``completed_seeds`` drives current-protocol coverage. A seed from a
+        # superseded profile remains observed evidence, but cannot keep the
+        # corrected scientific cell marked complete.
+        seeds = sorted(primary_seeds)
         cell["completed_seeds"] = seeds
-        cell["historical_completed_seeds"] = sorted(previously_recorded - {0})
+        cell["historical_completed_seeds"] = sorted(previously_recorded - primary_seeds)
+        cell["all_observed_completed_seeds"] = sorted(primary_seeds | previously_recorded)
         if seeds:
             target = {int(value) for value in str(cell["target_training_seeds"]).split(";")}
             matching = [
