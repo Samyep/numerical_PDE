@@ -490,6 +490,8 @@ def main() -> None:
     parser.add_argument("--evaluation-paths", type=int, default=1024)
     parser.add_argument("--evaluation-steps", default="64,128")
     args = parser.parse_args()
+    if not args.smoke and not args.evaluate_only and args.seed != 0:
+        parser.error("single-seed benchmark protocol permits only seed 0 for new training")
     device = torch.device(args.device)
     if device.type == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA allocation required")
