@@ -16,6 +16,15 @@ set -euo pipefail
 
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
 TRAINING_SEED=${TRAINING_SEED:-0}
+RESULT_PATH="$SOURCE_ROOT/invariant_region_mlp/results/tangent_actor_accuracy_frontier/post_freeze_primary_d400_k2_lam0p2_eta0_main_mcv_s${TRAINING_SEED}.json"
+
+# Short backfill allocations may time out between cached Actor phases.  A
+# dependency chain can safely resubmit this entry point; the final JSON is
+# written atomically, so its presence is an unambiguous completion marker.
+if [[ -s "$RESULT_PATH" ]]; then
+  echo "Completed result already exists: $RESULT_PATH"
+  exit 0
+fi
 
 module load default
 source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
