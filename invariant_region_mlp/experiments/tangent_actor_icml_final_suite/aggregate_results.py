@@ -224,7 +224,11 @@ def _historical_original_rows() -> tuple[list[dict[str, Any]], list[dict[str, An
                 else ("hjb_pis" if method in {"dpi", "pinn_hte"} else "tangent_actor")
             ),
             profile_role=(
-                "diagnostic_invalid_coordinate_budget" if method == "sdgd_pinn" else "primary"
+                "diagnostic_invalid_coordinate_budget" if method == "sdgd_pinn" else (
+                    "diagnostic_legacy_hjb_profile"
+                    if method in {"dpi", "pinn_hte"} and pde != "ou_gmm"
+                    else "primary"
+                )
             ),
         ))
 
@@ -261,7 +265,11 @@ def _historical_original_rows() -> tuple[list[dict[str, Any]], list[dict[str, An
             "notes": "native single-point task; Deep BSDE is not included in MAIN_RESULTS.csv",
             "benchmark_profile": "published_native" if method == "deep_bsde" else None,
             "profile_role": (
-                "diagnostic_invalid_coordinate_budget" if method == "sdgd_pinn" else "primary"
+                "diagnostic_invalid_coordinate_budget" if method == "sdgd_pinn" else (
+                    "diagnostic_legacy_hjb_profile"
+                    if method in {"dpi", "pinn_hte"} and pde != "ou_gmm"
+                    else "primary"
+                )
             ),
         })
     return rows, native_rows
