@@ -61,7 +61,7 @@ run_task() {
   case "$method" in
     dpi|pinn_hte)
       srun --exclusive --exact --nodes=1 --ntasks=1 --cpus-per-task="$SLURM_CPUS_PER_TASK" \
-        --gpus-per-task=1 --gpu-bind=single:1 --network=no_vni \
+        --gpus-per-node=1 --gpus-per-task=1 --gpu-bind=single:1 --network=no_vni \
         --output="$task_out" --error="$task_err" \
         python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.official_dpi_transfer \
         --method "$method" --pde "$family" --dimension "$dimension" \
@@ -69,7 +69,7 @@ run_task() {
       ;;
     sdgd)
       srun --exclusive --exact --nodes=1 --ntasks=1 --cpus-per-task="$SLURM_CPUS_PER_TASK" \
-        --gpus-per-task=1 --gpu-bind=single:1 --network=no_vni \
+        --gpus-per-node=1 --gpus-per-task=1 --gpu-bind=single:1 --network=no_vni \
         --output="$task_out" --error="$task_err" \
         python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.sdgd_transfer \
         --family "$family" --dimension "$dimension" --seed 0 --profile "$profile"
