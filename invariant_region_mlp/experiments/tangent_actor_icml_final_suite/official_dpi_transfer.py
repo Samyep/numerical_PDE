@@ -461,7 +461,8 @@ def _config(
             "DATA.kwargs.n_estimate_terminal", "8",
             "DATA.kwargs.n_estimate_integral", "8",
             "TRAIN.N_EPOCHS", "1", "TRAIN.BATCH_SIZE", "16",
-            "NETWORK.NEURONS", "[16,16]", "EVAL.FREQ", "1",
+            "NETWORK.NEURONS", "[16,16]",
+            "NETWORK.ACTIVATIONS", "['ELU','ELU']", "EVAL.FREQ", "1",
         ]
     elif mode == "one_iteration":
         if method != "dpi":

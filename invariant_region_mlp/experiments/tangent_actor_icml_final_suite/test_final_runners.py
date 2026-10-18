@@ -133,6 +133,13 @@ def test_dpi_and_pinn_profiles_are_selected_before_metrics() -> None:
     assert list(native.NETWORK.NEURONS) == [512, 512, 512, 512]
     assert native.NETWORK.PISGRADNET is True
 
+    smoke, _, _, _, _, _ = _config(
+        "pinn_hte", "joint_concave", 10, 97, "smoke",
+        names["joint_concave"], "auto",
+    )
+    assert list(smoke.NETWORK.NEURONS) == [16, 16]
+    assert len(smoke.NETWORK.NEURONS) == len(smoke.NETWORK.ACTIVATIONS)
+
 
 def test_sdgd_profiles_match_the_two_published_training_protocols() -> None:
     from .sdgd_transfer import _configuration, resolve_profile
