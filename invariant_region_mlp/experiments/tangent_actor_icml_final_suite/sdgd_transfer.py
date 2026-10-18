@@ -342,11 +342,8 @@ class SemilinearSolver:
         for index in second:
             diagonal = torch.autograd.grad(grad[:, index].sum(), x, create_graph=True)[0][:, index]
             gradient_estimator = gradient_estimator + coefficient * d / count * diagonal
-        # The source sums one mean residual objective at each of N time
-        # snapshots. Flattening is numerically equivalent after multiplying
-        # by N and avoids N separate forward graphs.
         point_loss = 2.0 * residual.detach() * gradient_estimator
-        residual_loss = point_loss.mean() * self.config.time_steps
+        residual_loss = point_loss.mean()
         return residual_loss, residual.square().mean()
 
     def _terminal_loss(self, terminal_x: torch.Tensor) -> torch.Tensor:
@@ -371,7 +368,20 @@ class SemilinearSolver:
 
     def step(self) -> float:
         t, x, terminal_x = self._trajectories()
-        residual_loss, reported = self._stochastic_residual(t, x)
+        # The pinned Section-5.2 source calls residual_2 once at every time
+        # snapshot.  Each call draws two fresh coordinate subsets.  Keep that
+        # sampling procedure exactly: using one subset for the flattened
+        # trajectory remains unbiased but changes the estimator covariance.
+        count = self.config.trajectories
+        residual_terms = []
+        reporting_terms = []
+        for index in range(self.config.time_steps):
+            begin, end = index * count, (index + 1) * count
+            residual, reported = self._stochastic_residual(t[begin:end], x[begin:end])
+            residual_terms.append(residual)
+            reporting_terms.append(reported)
+        residual_loss = torch.stack(residual_terms).sum()
+        reported = torch.stack(reporting_terms).mean()
         loss = residual_loss + self._terminal_loss(terminal_x)
         self.optimizer.zero_grad(set_to_none=True)
         loss.backward()

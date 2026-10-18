@@ -158,3 +158,27 @@ def test_sdgd_profiles_match_the_two_published_training_protocols() -> None:
     assert semilinear.terminal_value_weight == 20.0
     assert semilinear.terminal_gradient_weight == 1.0
     assert semilinear.exponential_lr_gamma == 0.9995
+
+
+def test_sdgd_semilinear_resamples_coordinates_at_each_time_slice(monkeypatch) -> None:
+    from .sdgd_transfer import (
+        SemilinearSolver, _configuration, make_benchmark,
+    )
+
+    config = _configuration("semilinear_sde", smoke=True)
+    benchmark = make_benchmark("joint_concave", 10)
+    calls = 0
+    original_choice = np.random.choice
+
+    def counted_choice(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original_choice(*args, **kwargs)
+
+    monkeypatch.setattr(np.random, "choice", counted_choice)
+    solver = SemilinearSolver(
+        "joint_concave", benchmark, config, torch.device("cpu"), seed=0, smoke=True,
+    )
+    loss = solver.step()
+    assert np.isfinite(loss)
+    assert calls == 2 * config.time_steps
