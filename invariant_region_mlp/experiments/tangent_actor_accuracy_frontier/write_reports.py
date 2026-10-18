@@ -41,8 +41,8 @@ def _high_precision(euler: list[dict[str, str]], reference: dict) -> None:
         "",
         f"The numerical reference was refined to `n={reference['refined_n']}`, `dt={reference['refined_dt']:.7g}`. The complete previous-to-current discrepancy, `{reference['reference_uncertainty_value_rmse']:.3e}`, is propagated as reference uncertainty.",
         "",
-        "| Euler steps | seeds | Value RMSE mean ± sd | residual non-MC proxy | MC contribution | mean bias | MCV VR | ESS | observed weak order |",
-        "|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Euler steps | seeds | Value RMSE mean ± sd | per-seed 95% CI envelope | Relative L2 | residual non-MC proxy | MC contribution | mean bias | MCV VR | ESS | inference s | peak GB | weak order |",
+        "|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for steps in (64, 128, 256, 512):
         local = [row for row in primary if int(row["steps"]) == steps]
@@ -54,10 +54,22 @@ def _high_precision(euler: list[dict[str, str]], reference: dict) -> None:
         bias = np.mean([_f(row["bias"]) for row in local])
         vr = np.mean([_f(row["mcv_variance_reduction"]) for row in local])
         ess = np.mean([_f(row["ess"]) for row in local])
+        relative = np.mean([_f(row["relative_l2"]) for row in local])
+        ci_low = min(_f(row["rmse_ci95_low"]) for row in local)
+        ci_high = max(_f(row["rmse_ci95_high"]) for row in local)
+        inference = np.mean([_f(row["inference_seconds"]) for row in local])
+        peaks = [_f(row.get("peak_gpu_bytes")) for row in local]
+        peaks = [value for value in peaks if value is not None]
+        peak_gb = max(peaks) / 2**30 if peaks else math.nan
         orders = [_f(row.get("observed_weak_order")) for row in local]
         orders = [value for value in orders if value is not None]
         order_text = "—" if not orders else f"{np.mean(orders):.2f}"
-        lines.append(f"| {steps} | {len(local)} | {rm:.6g} ± {rs:.2g} | {residual:.6g} | {mc:.6g} | {bias:+.3e} | {vr:.1f}× | {ess:.4f} | {order_text} |")
+        lines.append(
+            f"| {steps} | {len(local)} | {rm:.6g} ± {rs:.2g} | "
+            f"[{ci_low:.3g}, {ci_high:.3g}] | {relative:.3e} | {residual:.6g} | "
+            f"{mc:.6g} | {bias:+.3e} | {vr:.1f}× | {ess:.4f} | "
+            f"{inference:.1f} | {peak_gb:.2f} | {order_text} |"
+        )
     lines.extend([
         "",
         "The reported raw RMSE includes finite-path Monte Carlo error. The residual proxy removes the estimated antithetic-pair sampling contribution and the reference discrepancy in quadrature; it is a diagnostic rather than an alternative headline metric. Confidence intervals use a state bootstrap with Gaussian perturbations calibrated to per-state MC variance and the reference proxy.",
