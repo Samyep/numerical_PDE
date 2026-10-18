@@ -297,6 +297,13 @@ def execute(family: str, d: int, seed: int, device: torch.device, *, smoke: bool
     if device.type == "cuda":
         torch.cuda.synchronize()
     inference_seconds = time.perf_counter() - inference_started
+    native_tx = torch.zeros((1, d + 1), dtype=torch.float32, device=device)
+    with torch.no_grad():
+        native_prediction = float(solver.model(native_tx)[0, 0])
+    native_truth = float(_truth(
+        family, benchmark, np.zeros(1, dtype=np.float64),
+        np.zeros((1, d), dtype=np.float64), smoke=smoke,
+    )[0])
     prediction = np.concatenate(predictions); gradient = np.concatenate(gradients)
     error = prediction - truth
     prediction_path = PREDICTION_DIR / f"{run_id}.npz"
@@ -321,6 +328,12 @@ def execute(family: str, d: int, seed: int, device: torch.device, *, smoke: bool
         "value_rmse": float(np.sqrt(np.mean(error**2))),
         "value_relative_l2": float(np.linalg.norm(error) / np.linalg.norm(truth)),
         "value_bias": float(np.mean(error)), "prediction_file": str(prediction_path),
+        "native": {
+            "point": "t=0,x=0", "prediction": native_prediction,
+            "reference": native_truth,
+            "absolute_error": abs(native_prediction - native_truth),
+            "full_training_cost_charged": True,
+        },
         "test_truth_used_only_for_source_native_reporting_and_post_freeze_evaluation": True,
         "test_truth_used_in_training_loss": False,
     }

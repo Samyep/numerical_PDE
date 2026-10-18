@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import asdict
 import json
+import math
 from pathlib import Path
 import time
 from typing import Any
@@ -338,11 +339,14 @@ def evaluate(
     exact_z = benchmark.exact_z_numpy(test_t, test_x)
     predicted_q = _predict_q(actor, test_t, test_x, device)
     gradient_error = predicted_q - exact_z
-    rows = []
+    rows, native_rows = [], []
     predictions: dict[str, np.ndarray] = {
         "t": test_t, "x": test_x, "truth": truth, "exact_z": exact_z,
         "actor_q": predicted_q,
     }
+    native_t = np.zeros(1, dtype=np.float64)
+    native_x = np.zeros((1, d), dtype=np.float64)
+    native_truth = float(benchmark.exact_value_numpy(native_t, native_x)[0])
     for time_steps in steps:
         output, meta = evaluate_policy(
             benchmark, actor, test_t, test_x,
@@ -371,12 +375,34 @@ def evaluate(
             })
             predictions[f"{estimator}_n{time_steps}"] = prediction
             predictions[f"{estimator}_pair_variance_n{time_steps}"] = pair_variance
+        native_output, native_meta = evaluate_policy(
+            benchmark, actor, native_t, native_x, paths=paths,
+            time_steps=time_steps,
+            seed=stable_seed("mlp_failure_native_postfreeze", d, seed, paths, time_steps),
+            device=device, parent_batch=1,
+            path_chunk=min(64 if not smoke else 4, paths),
+        )
+        for estimator in ("plain", "mcv"):
+            native_prediction = float(native_output[estimator][0])
+            native_pair_variance = float(
+                native_output[f"{estimator}_pair_variance"][0]
+            )
+            native_rows.append({
+                "steps": time_steps, "paths": paths, "estimator": estimator,
+                "prediction": native_prediction, "reference": native_truth,
+                "absolute_error": abs(native_prediction - native_truth),
+                "mc_standard_error": math.sqrt(native_pair_variance / (paths // 2)),
+                "variance_reduction": native_meta["variance_reduction"],
+                "weight_ess_fraction": native_meta["weight_ess_fraction"],
+                "inference_seconds": native_meta["wall_seconds"],
+                "nonfinite_count": native_meta["nonfinite_count"],
+            })
     prediction_path = PREDICTION_DIR / f"mlp_failure_d{d}_{tag}_s{seed}.npz"
     np.savez_compressed(prediction_path, **predictions)
     result = {
         "method": "terminal_aware_tangent_actor_mcv", "pde": "mlp_failure",
         "dimension": d, "seed": seed, "tag": tag,
-        "selected_actor": selected_actor, "rows": rows,
+        "selected_actor": selected_actor, "rows": rows, "native_rows": native_rows,
         "gradient_actor_component_rmse": float(np.sqrt(np.mean(np.square(gradient_error)))),
         "gradient_actor_vector_rmse": float(
             np.sqrt(np.mean(np.square(gradient_error).sum(axis=1)))

@@ -36,8 +36,13 @@ echo "host=$(hostname) dimension=$DIMENSION seed=$TRAINING_SEED"
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
 python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available(), 'visible_devices', torch.cuda.device_count())"
 
-srun --network=no_vni python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.run_mlp_failure_actor \
-  --dimension "$DIMENSION" \
-  --seed "$TRAINING_SEED" \
-  --evaluation-paths "$EVALUATION_PATHS" \
+RUN_ARGS=(
+  --dimension "$DIMENSION"
+  --seed "$TRAINING_SEED"
+  --evaluation-paths "$EVALUATION_PATHS"
   --evaluation-steps "$EVALUATION_STEPS"
+)
+if [[ "${EVALUATE_ONLY:-0}" == "1" ]]; then
+  RUN_ARGS+=(--evaluate-only)
+fi
+srun --network=no_vni python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.run_mlp_failure_actor "${RUN_ARGS[@]}"

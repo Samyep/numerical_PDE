@@ -1,0 +1,568 @@
+"""Build canonical ICML-suite tables from audited reuse and new final runs.
+
+This script is intentionally idempotent.  It ignores every ``smoke`` artifact,
+keeps native Deep-BSDE rows separate from the amortized whole-function table,
+and never converts a missing run into a numerical value.
+"""
+
+from __future__ import annotations
+
+import argparse
+from collections import defaultdict
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+from typing import Any
+
+import numpy as np
+import pandas as pd
+
+from .protocol import RESULTS_DIR, SOURCE_COMMITS
+
+
+PACKAGE_DIR = Path(__file__).resolve().parent
+SOURCE_ROOT = PACKAGE_DIR.parents[2]
+ORIGINAL_EXP = SOURCE_ROOT / "invariant_region_mlp/experiments/original_pde_benchmark_comparison"
+FRONTIER = SOURCE_ROOT / "invariant_region_mlp/results/tangent_actor_accuracy_frontier"
+RAW_DIR = RESULTS_DIR / "raw"
+
+PDE_ALIASES = {
+    "dpi_ou_gmm": "ou_gmm",
+    "coupled": "nonconvex_coupled",
+}
+METHOD_ALIASES = {
+    "terminal_aware_tangent_actor_mcv": "tangent_actor",
+    "dpi": "dpi",
+    "pinn_hte": "pinn_hte",
+    "sdgd_pinn_official": "sdgd_pinn",
+    "sdgd_pinn_official_transfer": "sdgd_pinn",
+    "deep_bsde_official_pytorch_compatibility_port": "deep_bsde",
+}
+METHOD_LABELS = {
+    "tangent_actor": "Tangent-Actor + MCV",
+    "dpi": "DPI",
+    "pinn_hte": "PINN-HTE",
+    "sdgd_pinn": "SDGD-PINN",
+    "deep_bsde": "Deep BSDE",
+}
+HISTORICAL_BANK_HASHES = {
+    "hjb_log": "7f3f3b201d4f137712ffca28a546383527143b537ea16418966a909c2aac5ffb",
+    "ou_gmm": "14426c76454e0ac11133090a188b782343a297702e0ca4e8f106748bbff028d4",
+    "allen_cahn": "731dafc5aac912af3fa584857548e2e649b0eb82a0ea42c10fefb837f4daaad8",
+}
+REFERENCE_NAMES = {
+    "hjb_log": "independent Hopf-Cole quadrature",
+    "ou_gmm": "exact evolving Gaussian-mixture density",
+    "joint_concave": "independently refined periodic 2D PDE",
+    "joint_convex": "independently refined periodic 2D PDE",
+    "nonconvex_coupled": "independently refined Fourier 2D PDE",
+    "mlp_failure": "exact one-dimensional Gaussian expectation",
+    "allen_cahn": "dimension-specific radial PDE Richardson reference",
+}
+
+
+def _finite(value: Any) -> Any:
+    if value is None:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    if isinstance(value, np.generic):
+        return value.item()
+    return value
+
+
+def _compact(value: Any) -> str | None:
+    if value is None:
+        return None
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _pde_from_benchmark(value: str) -> str:
+    base = value.rsplit("_d", 1)[0]
+    return PDE_ALIASES.get(base, base)
+
+
+def _base_row(**overrides: Any) -> dict[str, Any]:
+    row = {
+        "pde": None, "dimension": None, "method": None, "method_label": None,
+        "seed": None, "method_status": None, "execution_status": "complete",
+        "source_kind": None, "source_commit": None, "source_artifact": None,
+        "run_id": None, "checkpoint": None, "selection_rule": None,
+        "steps": None, "paths": None, "estimator": None, "states": None,
+        "test_bank": None, "test_bank_sha256": None, "reference": None,
+        "reference_uncertainty": None, "value_rmse": None,
+        "value_relative_l2": None, "value_bias": None, "value_mae": None,
+        "gradient_component_rmse": None, "gradient_vector_rmse": None,
+        "gradient_relative_l2": None, "actor_value_rmse": None,
+        "actor_gradient_vector_rmse": None, "mc_rmse_contribution": None,
+        "variance_reduction": None, "weight_ess_fraction": None,
+        "training_seconds": None, "model_selection_seconds": None,
+        "inference_seconds": None, "total_seconds": None,
+        "allocated_gpu_seconds": None, "peak_gpu_bytes": None,
+        "parameter_count": None, "nonfinite_count": None,
+        "hyperparameters": None, "notes": None,
+    }
+    row.update(overrides)
+    return {key: _finite(value) for key, value in row.items()}
+
+
+def _historical_original_rows() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    path = ORIGINAL_EXP / "function_approximation_comparison.csv"
+    frame = pd.read_csv(path)
+    keep_actor = (
+        (frame["method"] == "terminal_aware_tangent_actor_mcv")
+        & (frame["evaluation_role"] == "frozen_headline")
+    )
+    keep_baseline = frame["method"].isin(("dpi", "pinn_hte", "sdgd_pinn_official"))
+    selected = frame[keep_actor | keep_baseline]
+    rows: list[dict[str, Any]] = []
+    for _, item in selected.iterrows():
+        pde = _pde_from_benchmark(str(item["benchmark"]))
+        method = METHOD_ALIASES[str(item["method"])]
+        source_commit = (
+            "d36ab9e79d0e6ffe49c43d60cdb28a064dc9ac09"
+            if method == "tangent_actor" else SOURCE_COMMITS[method]
+        )
+        rows.append(_base_row(
+            pde=pde, dimension=100, method=method,
+            method_label=METHOD_LABELS[method], seed=int(item["seed"]),
+            method_status=("native_official" if method != "tangent_actor" else "final_method"),
+            execution_status="complete_reused", source_kind="historical_exact_reuse",
+            source_commit=source_commit, source_artifact=str(path.relative_to(SOURCE_ROOT)),
+            run_id=f"historical_{item['benchmark']}_{method}_s{int(item['seed'])}",
+            selection_rule=(
+                "reference-free frozen Actor selection" if method == "tangent_actor"
+                else "published fixed budget"
+            ),
+            steps=item["time_steps"], paths=(
+                int(item["paths_per_replicate"] * item["replicates"])
+                if pd.notna(item["paths_per_replicate"]) and pd.notna(item["replicates"])
+                else None
+            ),
+            estimator="mcv" if method == "tangent_actor" and pde != "allen_cahn" else "direct",
+            states=int(item["states"]), test_bank_sha256=HISTORICAL_BANK_HASHES[pde],
+            reference=REFERENCE_NAMES[pde], value_rmse=item["value_rmse"],
+            value_relative_l2=item["value_relative_l2"], value_bias=item["value_bias"],
+            value_mae=item["value_mae"],
+            gradient_component_rmse=item["gradient_component_rmse"],
+            gradient_vector_rmse=item["gradient_vector_rmse"],
+            actor_value_rmse=item["direct_value_actor_rmse"],
+            mc_rmse_contribution=(
+                np.sqrt(item["sampling_variance_component_mse"])
+                if pd.notna(item["sampling_variance_component_mse"]) else None
+            ),
+            variance_reduction=item["variance_reduction"],
+            weight_ess_fraction=item["weight_ess_fraction"],
+            training_seconds=item["training_seconds"], inference_seconds=item["inference_seconds"],
+            total_seconds=item["total_seconds"], peak_gpu_bytes=item["peak_gpu_bytes"],
+            parameter_count=item["parameter_count"], nonfinite_count=item["nonfinite_count"],
+            notes="byte- and protocol-audited historical 100D result",
+        ))
+
+    native_path = ORIGINAL_EXP / "native_task_comparison.csv"
+    native = pd.read_csv(native_path)
+    allowed = native["method"].isin(METHOD_ALIASES)
+    actor_headline = (
+        (native["method"] != "terminal_aware_tangent_actor_mcv")
+        | (native["variant"] == "focused/a4/n64")
+    )
+    native_rows: list[dict[str, Any]] = []
+    for _, item in native[allowed & actor_headline].iterrows():
+        method = METHOD_ALIASES[str(item["method"])]
+        pde = _pde_from_benchmark(str(item["benchmark"]))
+        native_rows.append({
+            "pde": pde, "dimension": 100, "method": method,
+            "method_label": METHOD_LABELS[method], "seed": int(item["seed"]),
+            "method_status": "native_official" if method == "deep_bsde" else (
+                "native_official" if method in {"dpi", "pinn_hte", "sdgd_pinn"} else "final_method"
+            ),
+            "execution_status": "complete_reused", "source_kind": "historical_exact_reuse",
+            "source_commit": SOURCE_COMMITS.get(method, "d36ab9e79d0e6ffe49c43d60cdb28a064dc9ac09"),
+            "source_artifact": str(native_path.relative_to(SOURCE_ROOT)),
+            "run_id": f"historical_native_{item['benchmark']}_{method}_s{int(item['seed'])}",
+            "point": "t=0,x=0", "prediction": item["prediction"],
+            "reference": item["reference"], "absolute_error": item["absolute_error"],
+            "relative_error": item["relative_error"], "mc_standard_error": item["mc_standard_error"],
+            "steps": None, "paths": None, "estimator": None,
+            "training_seconds": item["training_seconds"],
+            "inference_seconds": item["inference_seconds"], "total_seconds": item["total_seconds"],
+            "peak_gpu_bytes": item["peak_gpu_bytes"], "nonfinite_count": item["nonfinite_count"],
+            "full_training_cost_charged": method == "deep_bsde",
+            "notes": "native single-point task; Deep BSDE is not included in MAIN_RESULTS.csv",
+        })
+    return rows, native_rows
+
+
+def _historical_nonconvex_rows() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    euler_path = FRONTIER / "euler_convergence.csv"
+    euler = pd.read_csv(euler_path)
+    euler = euler[euler["family"] == "coupled"]
+    compute = pd.read_csv(FRONTIER / "compute_accounting.csv")
+    totals = compute[
+        (compute["family"] == "coupled")
+        & (compute["cost_category"] == "production_training_and_reference_free_selection")
+    ]
+    training = {}
+    for _, row in totals.iterrows():
+        seed = int(str(row["run_id"]).rsplit("_s", 1)[1])
+        training[seed] = float(row["seconds"])
+    main, frontier = [], []
+    for _, item in euler.iterrows():
+        seed, steps = int(item["training_seed"]), int(item["steps"])
+        row = _base_row(
+            pde="nonconvex_coupled", dimension=100, method="tangent_actor",
+            method_label=METHOD_LABELS["tangent_actor"], seed=seed,
+            method_status="final_method", execution_status="complete_reused",
+            source_kind="historical_exact_reuse",
+            source_commit="eb5c23d64fe7733a8e48bb3b9b68c682035c66a4",
+            source_artifact=str(euler_path.relative_to(SOURCE_ROOT)),
+            run_id=f"coupled_d100_mature_s{seed}", selection_rule="reference-free fixed-point consistency",
+            steps=steps, paths=int(item["paths"]), estimator="mcv", states=960,
+            test_bank_sha256="85a9430c6f60762f5964a9de46122e8010cd1d96b67b286a6997a824d20c2180",
+            reference=REFERENCE_NAMES["nonconvex_coupled"],
+            reference_uncertainty=item["reference_uncertainty_rmse"],
+            value_rmse=item["value_rmse"], value_relative_l2=item["relative_l2"],
+            value_bias=item["bias"], mc_rmse_contribution=item["mc_rmse_contribution"],
+            variance_reduction=item["mcv_variance_reduction"], weight_ess_fraction=item["ess"],
+            training_seconds=training.get(seed), inference_seconds=item["inference_seconds"],
+            total_seconds=(training.get(seed, 0.0) + float(item["inference_seconds"])),
+            peak_gpu_bytes=item["peak_gpu_bytes"], nonfinite_count=item["nonfinite_count"],
+            notes="post-freeze predefined Euler refinement; mature 100D historical anchor",
+        )
+        frontier.append(row)
+        if steps == 64:
+            main.append(row.copy())
+    return main, frontier
+
+
+def _json_files(pattern: str) -> list[tuple[Path, dict[str, Any]]]:
+    found = []
+    for path in sorted(RAW_DIR.glob(pattern)):
+        if "smoke" in path.name:
+            continue
+        try:
+            payload = json.loads(path.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        if payload.get("status") != "complete":
+            continue
+        found.append((path, payload))
+    return found
+
+
+def _new_tangent_rows() -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    main, frontier, native = [], [], []
+    for path, result in _json_files("evaluation_*_mature_s*.json"):
+        pde = result.get("pde", result.get("family"))
+        d, seed = int(result["dimension"]), int(result["seed"])
+        run_id = result.get("run_id", path.stem.removeprefix("evaluation_"))
+        training_path = RAW_DIR / f"training_{run_id}.json"
+        training = json.loads(training_path.read_text())
+        config = training.get("configuration", {})
+        training_seconds = training.get("invocation_seconds")
+        selected = result.get("selected_actor")
+        checkpoint = training.get("selection", {}).get("selected_checkpoint")
+        bank_hash = result.get("test_bank_sha256")
+        if bank_hash is None and result.get("test_bank"):
+            bank_path = Path(result["test_bank"])
+            if bank_path.exists():
+                bank_hash = _sha256(bank_path)
+        for metric in result["rows"]:
+            row = _base_row(
+                pde=pde, dimension=d, method="tangent_actor",
+                method_label=METHOD_LABELS["tangent_actor"], seed=seed,
+                method_status="adapted" if pde in {"joint_convex", "mlp_failure"} else "final_method",
+                source_kind="new_final_suite", source_commit=SOURCE_COMMITS["tangent_actor"],
+                source_artifact=str(path.relative_to(SOURCE_ROOT)), run_id=run_id,
+                checkpoint=checkpoint, selection_rule=training.get("selection", {}).get("criterion"),
+                steps=metric["steps"], paths=metric["paths"], estimator=metric["estimator"],
+                states=result.get("states"), test_bank=result.get("test_bank"),
+                test_bank_sha256=bank_hash, reference=_compact(result.get("reference")),
+                value_rmse=metric["value_rmse"], value_relative_l2=metric["relative_l2"],
+                value_bias=metric["bias"], value_mae=metric["mae"],
+                actor_value_rmse=result.get("value_actor_rmse"),
+                actor_gradient_vector_rmse=result.get("gradient_actor_vector_rmse"),
+                mc_rmse_contribution=metric.get("mc_rmse_contribution"),
+                variance_reduction=metric.get("variance_reduction"),
+                weight_ess_fraction=metric.get("weight_ess_fraction"),
+                training_seconds=training_seconds, inference_seconds=metric.get("inference_seconds"),
+                total_seconds=(float(training_seconds or 0.0) + float(metric.get("inference_seconds") or 0.0)),
+                peak_gpu_bytes=metric.get("peak_gpu_bytes"),
+                nonfinite_count=metric.get("nonfinite_count"),
+                hyperparameters=_compact(config),
+                notes=(
+                    "minimum-norm nonsmooth subgradient extension" if pde == "mlp_failure"
+                    else "post-freeze Tangent-Actor evaluation"
+                ),
+            )
+            frontier.append(row)
+            preferred_estimator = "plain" if pde == "allen_cahn" else "mcv"
+            if int(metric["steps"]) == 64 and metric["estimator"] == preferred_estimator:
+                main.append(row.copy())
+        for metric in result.get("native_rows", []):
+            native.append({
+                "pde": pde, "dimension": d, "method": "tangent_actor",
+                "method_label": METHOD_LABELS["tangent_actor"], "seed": seed,
+                "method_status": "adapted" if pde in {"joint_convex", "mlp_failure"} else "final_method",
+                "execution_status": "complete", "source_kind": "new_final_suite",
+                "source_commit": SOURCE_COMMITS["tangent_actor"],
+                "source_artifact": str(path.relative_to(SOURCE_ROOT)),
+                "run_id": run_id, "point": "t=0,x=0",
+                "prediction": metric["prediction"], "reference": metric["reference"],
+                "absolute_error": metric["absolute_error"],
+                "relative_error": metric["absolute_error"] / max(abs(metric["reference"]), 1e-300),
+                "mc_standard_error": metric.get("mc_standard_error"),
+                "steps": metric["steps"], "paths": metric["paths"],
+                "estimator": metric["estimator"], "training_seconds": training_seconds,
+                "inference_seconds": metric.get("inference_seconds"),
+                "total_seconds": float(training_seconds or 0.0) + float(metric.get("inference_seconds") or 0.0),
+                "peak_gpu_bytes": None, "nonfinite_count": metric.get("nonfinite_count"),
+                "full_training_cost_charged": False,
+                "notes": "post-freeze native point; independent MC stream",
+            })
+    return main, frontier, native
+
+
+def _new_function_baselines() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    main, native = [], []
+    patterns = ("dpi_*_official_s*.json", "pinn_hte_*_official_s*.json", "sdgd_pinn_*_official_s*.json")
+    for pattern in patterns:
+        for path, result in _json_files(pattern):
+            method = METHOD_ALIASES[result["method"]]
+            pde = result.get("pde", result.get("family"))
+            training = result.get("training_seconds", result.get("cumulative_training_seconds"))
+            row = _base_row(
+                pde=pde, dimension=int(result["dimension"]), method=method,
+                method_label=METHOD_LABELS[method], seed=int(result["seed"]),
+                method_status=result["classification"], source_kind="new_final_suite",
+                source_commit=result["official_source_commit"],
+                source_artifact=str(path.relative_to(SOURCE_ROOT)), run_id=result["run_id"],
+                checkpoint=result.get("checkpoint"), selection_rule="published fixed budget",
+                states=result.get("test_states", result.get("states")),
+                test_bank=result.get("test_bank"), test_bank_sha256=result.get("test_bank_sha256"),
+                reference=_compact(result.get("reference_metadata", REFERENCE_NAMES.get(pde))),
+                value_rmse=result["value_rmse"], value_relative_l2=result["value_relative_l2"],
+                value_bias=result.get("value_bias"), value_mae=result.get("value_mae"),
+                gradient_component_rmse=result.get("gradient_component_rmse"),
+                gradient_vector_rmse=result.get("gradient_vector_rmse"),
+                gradient_relative_l2=result.get("gradient_relative_l2"),
+                training_seconds=training, inference_seconds=result.get("inference_seconds"),
+                total_seconds=result.get("total_seconds", float(training or 0.0) + float(result.get("inference_seconds") or 0.0)),
+                peak_gpu_bytes=result.get("peak_gpu_bytes"), parameter_count=result.get("parameter_count"),
+                nonfinite_count=result.get("nonfinite_count", 0),
+                hyperparameters=_compact(result.get("configuration", result.get("overrides"))),
+                notes="official-method transfer" if result["classification"] != "native_official" else "native official reproduction",
+            )
+            main.append(row)
+            if result.get("native"):
+                item = result["native"]
+                native.append({
+                    "pde": pde, "dimension": int(result["dimension"]), "method": method,
+                    "method_label": METHOD_LABELS[method], "seed": int(result["seed"]),
+                    "method_status": result["classification"], "execution_status": "complete",
+                    "source_kind": "new_final_suite", "source_commit": result["official_source_commit"],
+                    "source_artifact": str(path.relative_to(SOURCE_ROOT)), "run_id": result["run_id"],
+                    "point": item.get("point", "t=0,x=0"), "prediction": item["prediction"],
+                    "reference": item["reference"], "absolute_error": item["absolute_error"],
+                    "relative_error": item["absolute_error"] / max(abs(item["reference"]), 1e-300),
+                    "mc_standard_error": None, "steps": None, "paths": None, "estimator": "network",
+                    "training_seconds": training, "inference_seconds": result.get("inference_seconds"),
+                    "total_seconds": result.get("total_seconds"), "peak_gpu_bytes": result.get("peak_gpu_bytes"),
+                    "nonfinite_count": result.get("nonfinite_count", 0),
+                    "full_training_cost_charged": True,
+                    "notes": "same frozen network at native point",
+                })
+    return main, native
+
+
+def _new_deep_bsde_rows() -> list[dict[str, Any]]:
+    rows = []
+    for path, result in _json_files("deep_bsde_*_official_s*.json"):
+        pde = result["family"]
+        rows.append({
+            "pde": pde, "dimension": int(result["dimension"]), "method": "deep_bsde",
+            "method_label": METHOD_LABELS["deep_bsde"], "seed": int(result["seed"]),
+            "method_status": result["classification"], "execution_status": "complete",
+            "source_kind": "new_final_suite", "source_commit": result["official_source_commit"],
+            "source_artifact": str(path.relative_to(SOURCE_ROOT)), "run_id": result["run_id"],
+            "point": "t=0,x=0", "prediction": result["reported_y0"],
+            "reference": result["native_reference"], "absolute_error": result["native_absolute_error"],
+            "relative_error": result["native_relative_error"], "mc_standard_error": None,
+            "steps": result["configuration"]["intervals"], "paths": None,
+            "estimator": "native scalar Y0", "training_seconds": result["training_seconds_this_invocation"],
+            "inference_seconds": 0.0, "total_seconds": result["training_seconds_this_invocation"],
+            "peak_gpu_bytes": result.get("peak_gpu_bytes"), "nonfinite_count": result.get("nonfinite_count"),
+            "full_training_cost_charged": True,
+            "notes": "native single-initial-state solve; excluded from whole-function table",
+        })
+    return rows
+
+
+def _git_head() -> str:
+    return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=SOURCE_ROOT, text=True).strip()
+
+
+def _deduplicate(rows: list[dict[str, Any]], keys: tuple[str, ...]) -> list[dict[str, Any]]:
+    # New suite executions supersede a reused row only when the scientific key
+    # is identical.  Sorting puts new rows last.
+    priority = {"historical_exact_reuse": 0, "new_final_suite": 1}
+    result: dict[tuple[Any, ...], dict[str, Any]] = {}
+    for row in sorted(rows, key=lambda item: priority.get(item.get("source_kind"), 0)):
+        result[tuple(row.get(key) for key in keys)] = row
+    return list(result.values())
+
+
+def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not rows:
+        path.write_text("\n")
+        return
+    frame = pd.DataFrame(rows)
+    preferred = list(rows[0])
+    extras = sorted(set(frame.columns) - set(preferred))
+    frame = frame[preferred + extras]
+    sort = [column for column in ("pde", "dimension", "method", "seed", "steps", "paths") if column in frame]
+    frame.sort_values(sort, na_position="last").to_csv(path, index=False)
+
+
+def _dimension_scaling(main: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
+    for row in main:
+        grouped[(row["pde"], row["dimension"], row["method"], row["method_status"])].append(row)
+    output = []
+    for (pde, d, method, status), rows in grouped.items():
+        errors = np.asarray([row["value_rmse"] for row in rows], dtype=float)
+        relative = np.asarray([row["value_relative_l2"] for row in rows], dtype=float)
+        costs = np.asarray([row["total_seconds"] for row in rows if row.get("total_seconds") is not None], dtype=float)
+        output.append({
+            "pde": pde, "dimension": d, "method": method,
+            "method_label": METHOD_LABELS[method], "method_status": status,
+            "seeds": len(rows), "completed_seed_ids": ";".join(str(row["seed"]) for row in rows),
+            "value_rmse_mean": float(errors.mean()),
+            "value_rmse_sample_std": float(errors.std(ddof=1)) if len(errors) > 1 else None,
+            "value_relative_l2_mean": float(relative.mean()),
+            "value_relative_l2_sample_std": float(relative.std(ddof=1)) if len(relative) > 1 else None,
+            "total_seconds_mean": float(costs.mean()) if len(costs) else None,
+        })
+    return output
+
+
+def _update_manifest(main: list[dict[str, Any]], native: list[dict[str, Any]]) -> dict[str, Any]:
+    path = RESULTS_DIR / "EXECUTION_MANIFEST.json"
+    manifest = json.loads(path.read_text())
+    completed: dict[tuple[str, int, str], set[int]] = defaultdict(set)
+    for row in main + native:
+        completed[(row["pde"], int(row["dimension"]), row["method"])].add(int(row["seed"]))
+    for cell in manifest["method_cells"]:
+        key = (cell["pde"], int(cell["dimension"]), cell["method"])
+        seeds = sorted(completed.get(key, set()))
+        cell["completed_seeds"] = seeds
+        if seeds:
+            target = {int(value) for value in str(cell["target_training_seeds"]).split(";")}
+            matching = [
+                row for row in main + native
+                if (row["pde"], int(row["dimension"]), row["method"]) == key
+            ]
+            reused_only = all(row.get("source_kind") == "historical_exact_reuse" for row in matching)
+            prefix = "completed_reused" if reused_only else "completed"
+            cell["execution_status"] = (
+                prefix if target.issubset(seeds) else f"{prefix}_partial_seed_target"
+            )
+            artifacts: dict[str, dict[str, Any]] = {}
+            for artifact in cell.get("artifacts", []):
+                if isinstance(artifact, dict) and artifact.get("path"):
+                    artifacts[artifact["path"]] = artifact
+                elif isinstance(artifact, str):
+                    candidate = SOURCE_ROOT / artifact
+                    artifacts[artifact] = {
+                        "path": artifact,
+                        "bytes": candidate.stat().st_size if candidate.exists() else None,
+                        "sha256": _sha256(candidate) if candidate.exists() else None,
+                    }
+            for row in matching:
+                artifact = row["source_artifact"]
+                candidate = SOURCE_ROOT / artifact
+                artifacts[artifact] = {
+                    "path": artifact,
+                    "bytes": candidate.stat().st_size if candidate.exists() else None,
+                    "sha256": _sha256(candidate) if candidate.exists() else None,
+                }
+            cell["artifacts"] = [artifacts[name] for name in sorted(artifacts)]
+        elif cell["execution_status"].startswith("completed"):
+            # Old reuse labels are retained only if the canonical importer
+            # actually found their audited numerical rows.
+            cell["execution_status"] = "pending"
+    counts = defaultdict(int)
+    for cell in manifest["method_cells"]:
+        counts[cell["execution_status"]] += 1
+    manifest["status"] = "staged_execution_in_progress"
+    manifest["updated_utc"] = datetime.now(timezone.utc).isoformat()
+    manifest["execution_counts"] = dict(sorted(counts.items()))
+    path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    return manifest
+
+
+def aggregate() -> dict[str, Any]:
+    historical_main, historical_native = _historical_original_rows()
+    nonconvex_main, nonconvex_frontier = _historical_nonconvex_rows()
+    new_tangent_main, new_tangent_frontier, new_tangent_native = _new_tangent_rows()
+    new_baseline_main, new_baseline_native = _new_function_baselines()
+    new_deep_bsde_native = _new_deep_bsde_rows()
+
+    main = _deduplicate(
+        historical_main + nonconvex_main + new_tangent_main + new_baseline_main,
+        ("pde", "dimension", "method", "seed"),
+    )
+    native = _deduplicate(
+        historical_native + new_tangent_native + new_baseline_native + new_deep_bsde_native,
+        ("pde", "dimension", "method", "seed", "steps", "estimator"),
+    )
+    frontier = _deduplicate(
+        historical_main + nonconvex_frontier + new_tangent_frontier + new_baseline_main,
+        ("pde", "dimension", "method", "seed", "steps", "paths", "estimator"),
+    )
+    scaling = _dimension_scaling(main)
+    _write_csv(RESULTS_DIR / "MAIN_RESULTS.csv", main)
+    _write_csv(RESULTS_DIR / "NATIVE_POINT_RESULTS.csv", native)
+    _write_csv(RESULTS_DIR / "ACCURACY_COMPUTE_FRONTIER.csv", frontier)
+    _write_csv(RESULTS_DIR / "DIMENSION_SCALING.csv", scaling)
+    manifest = _update_manifest(main, native)
+    summary = {
+        "generated_utc": datetime.now(timezone.utc).isoformat(),
+        "git_head": _git_head(), "main_rows": len(main), "native_rows": len(native),
+        "frontier_rows": len(frontier), "dimension_scaling_rows": len(scaling),
+        "completed_method_cells": sum(
+            item["execution_status"].startswith("completed")
+            for item in manifest["method_cells"]
+        ),
+        "total_method_cells": len(manifest["method_cells"]),
+        "smoke_artifacts_included": False,
+        "deep_bsde_in_main_results": False,
+    }
+    (RESULTS_DIR / "AGGREGATION_STATUS.json").write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n"
+    )
+    return summary
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.parse_args()
+    print(json.dumps(aggregate(), indent=2, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()

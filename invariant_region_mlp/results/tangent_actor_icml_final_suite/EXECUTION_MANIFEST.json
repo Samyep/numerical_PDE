@@ -176,6 +176,14 @@
     "pde_dimension_configurations": 42
   },
   "created_utc": "2026-10-18T16:47:41.934219+00:00",
+  "execution_counts": {
+    "completed_partial_seed_target": 1,
+    "completed_reused": 6,
+    "completed_reused_partial_seed_target": 3,
+    "pending": 156,
+    "pending_or_reuse_audit": 26,
+    "pending_validity_preflight": 18
+  },
   "historical_candidates": [
     {
       "exists": false,
@@ -2529,14 +2537,9 @@
     {
       "artifacts": [
         {
-          "bytes": 4608,
-          "path": "invariant_region_mlp/results/tangent_actor_accuracy_frontier/nonseparable_three_seed_results.csv",
-          "sha256": "a3ed83cfb998466afed002f68d858ff1effd8da098219fd6dee7027f8c085632"
-        },
-        {
-          "bytes": 9097,
-          "path": "invariant_region_mlp/results/tangent_actor_accuracy_frontier/euler_convergence.csv",
-          "sha256": "cc02c286211ca269071ab159674b94360b8abca1b2065559526c86127a77dcde"
+          "bytes": 4341,
+          "path": "invariant_region_mlp/results/tangent_actor_accuracy_frontier/FINAL_SUMMARY.json",
+          "sha256": "343725032771ad913a140d2a27911731482601fad6ec64b3da10964b742f6340"
         },
         {
           "bytes": 19593,
@@ -2544,9 +2547,14 @@
           "sha256": "fde282ab9dbc218c7c3939862e6191c20008d971fcfa33e8ae812ff66e71cbce"
         },
         {
-          "bytes": 4341,
-          "path": "invariant_region_mlp/results/tangent_actor_accuracy_frontier/FINAL_SUMMARY.json",
-          "sha256": "343725032771ad913a140d2a27911731482601fad6ec64b3da10964b742f6340"
+          "bytes": 9097,
+          "path": "invariant_region_mlp/results/tangent_actor_accuracy_frontier/euler_convergence.csv",
+          "sha256": "cc02c286211ca269071ab159674b94360b8abca1b2065559526c86127a77dcde"
+        },
+        {
+          "bytes": 4608,
+          "path": "invariant_region_mlp/results/tangent_actor_accuracy_frontier/nonseparable_three_seed_results.csv",
+          "sha256": "a3ed83cfb998466afed002f68d858ff1effd8da098219fd6dee7027f8c085632"
         }
       ],
       "attempts": [
@@ -2957,11 +2965,19 @@
       "test_bank_seed": 730140210
     },
     {
-      "artifacts": [],
+      "artifacts": [
+        {
+          "bytes": 1759,
+          "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/raw/evaluation_mlp_failure_d100_mature_s0.json",
+          "sha256": "b3ec42d16f1e985948658a6580d62296475af506c4781a429bf522b5b8b50c56"
+        }
+      ],
       "attempts": [],
-      "completed_seeds": [],
+      "completed_seeds": [
+        0
+      ],
       "dimension": 100,
-      "execution_status": "pending",
+      "execution_status": "completed_partial_seed_target",
       "method": "tangent_actor",
       "method_status": "adapted",
       "native_task": "whole_function",
@@ -3829,5 +3845,6 @@
       "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/external/SDGD_PINN"
     }
   },
-  "status": "stage_a_reuse_audited"
+  "status": "staged_execution_in_progress",
+  "updated_utc": "2026-10-18T17:26:42.251654+00:00"
 }

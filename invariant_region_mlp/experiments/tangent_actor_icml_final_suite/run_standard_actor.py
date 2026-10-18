@@ -396,7 +396,13 @@ def evaluate(family: str, d: int, seed: int, device: torch.device, *, smoke: boo
         t, x, paths, steps = t[:16], x[:16], 8, (4,)
     truth, truth_q, reference = _truth(family, benchmark, t, x, smoke=smoke)
     actor_prediction = _predict(actor, benchmark, t, x, device)
-    rows, predictions = [], {"t": t, "x": x, "truth": truth, "actor": actor_prediction}
+    rows, native_rows = [], []
+    predictions = {"t": t, "x": x, "truth": truth, "actor": actor_prediction}
+    native_t = np.zeros(1, dtype=np.float64)
+    native_x = np.zeros((1, d), dtype=np.float64)
+    native_truth = float(_truth(
+        family, benchmark, native_t, native_x, smoke=smoke,
+    )[0][0])
     for time_steps in steps:
         output, meta = evaluate_policy(
             benchmark, actor, t, x, paths=paths, time_steps=time_steps,
@@ -422,12 +428,35 @@ def evaluate(family: str, d: int, seed: int, device: torch.device, *, smoke: boo
             })
             predictions[f"{estimator}_n{time_steps}"] = prediction
             predictions[f"{estimator}_pair_variance_n{time_steps}"] = variance
+        native_output, native_meta = evaluate_policy(
+            benchmark, actor, native_t, native_x, paths=paths,
+            time_steps=time_steps,
+            seed=stable_seed(run_id, "native_postfreeze", paths, time_steps),
+            device=device, parent_batch=1,
+            path_chunk=4 if smoke else min(64, paths),
+        )
+        native_estimators = (
+            ("plain", "mcv") if benchmark.actor_kind == "gradient" else ("plain",)
+        )
+        for estimator in native_estimators:
+            native_prediction = float(native_output[estimator][0])
+            native_pair_variance = float(native_output[f"{estimator}_pair_variance"][0])
+            native_rows.append({
+                "steps": time_steps, "paths": paths, "estimator": estimator,
+                "prediction": native_prediction, "reference": native_truth,
+                "absolute_error": abs(native_prediction - native_truth),
+                "mc_standard_error": math.sqrt(native_pair_variance / (paths // 2)),
+                "variance_reduction": native_meta["variance_reduction"],
+                "weight_ess_fraction": native_meta["weight_ess_fraction"],
+                "inference_seconds": native_meta["wall_seconds"],
+                "nonfinite_count": native_meta["nonfinite_count"],
+            })
     prediction_path = PREDICTION_DIR / f"{run_id}.npz"
     np.savez_compressed(prediction_path, **predictions)
     result: dict[str, Any] = {
         "run_id": run_id, "method": "terminal_aware_tangent_actor_mcv",
         "family": family, "dimension": d, "seed": seed,
-        "selected_actor": selected, "rows": rows,
+        "selected_actor": selected, "rows": rows, "native_rows": native_rows,
         "test_bank": str(bank_path), "test_bank_sha256": bank_hash,
         "states": len(t), "reference": reference,
         "prediction_path": str(prediction_path),

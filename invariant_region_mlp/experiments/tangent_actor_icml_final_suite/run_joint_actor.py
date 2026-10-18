@@ -457,11 +457,19 @@ def evaluate(
     actor_r_working, actor_q_working = _predict(driver, actor, test_t, test_x, device)
     actor_r = driver.working_to_original(actor_r_working)
     actor_q = driver.working_to_original(actor_q_working)
-    rows = []
+    rows, native_rows = [], []
     predictions: dict[str, np.ndarray] = {
         "t": test_t, "x": test_x, "truth": truth, "truth_q": truth_q,
         "actor_value": actor_r, "actor_q": actor_q,
     }
+    native_t = np.zeros(1, dtype=np.float64)
+    native_x = np.zeros((1, d), dtype=np.float64)
+    native_working = float(numerical_reference.value(
+        native_t, np.zeros((1, 2), dtype=np.float64),
+    )[0])
+    native_truth = float(driver.working_to_original(
+        np.asarray([native_working], dtype=np.float64),
+    )[0])
     for time_steps in steps:
         output, meta = evaluate_policy(
             driver, actor, test_t, test_x, paths=paths, time_steps=time_steps,
@@ -487,6 +495,30 @@ def evaluate(
             })
             predictions[f"{estimator}_n{time_steps}"] = prediction
             predictions[f"{estimator}_pair_variance_n{time_steps}"] = pair_variance
+        native_output, native_meta = evaluate_policy(
+            driver, actor, native_t, native_x, paths=paths,
+            time_steps=time_steps,
+            seed=stable_seed(run_id, "native_postfreeze", paths, time_steps),
+            device=device, parent_batch=1,
+            path_chunk=4 if smoke else min(64, paths),
+        )
+        for estimator in ("plain", "mcv"):
+            native_prediction = float(driver.working_to_original(
+                native_output[estimator],
+            )[0])
+            native_pair_variance = float(
+                native_output[f"{estimator}_pair_variance"][0]
+            )
+            native_rows.append({
+                "steps": time_steps, "paths": paths, "estimator": estimator,
+                "prediction": native_prediction, "reference": native_truth,
+                "absolute_error": abs(native_prediction - native_truth),
+                "mc_standard_error": math.sqrt(native_pair_variance / (paths // 2)),
+                "variance_reduction": native_meta["variance_reduction"],
+                "weight_ess_fraction": native_meta["weight_ess_fraction"],
+                "inference_seconds": native_meta["wall_seconds"],
+                "nonfinite_count": native_meta["nonfinite_count"],
+            })
     prediction_path = PREDICTION_DIR / f"{run_id}.npz"
     np.savez_compressed(prediction_path, **predictions)
     value_error = actor_r - truth
@@ -494,7 +526,7 @@ def evaluate(
     result = {
         "run_id": run_id, "method": "terminal_aware_tangent_actor_mcv",
         "family": family, "dimension": d, "seed": seed,
-        "selected_actor": selected, "rows": rows,
+        "selected_actor": selected, "rows": rows, "native_rows": native_rows,
         "value_actor_rmse": float(np.sqrt(np.mean(np.square(value_error)))),
         "value_actor_relative_l2": float(np.linalg.norm(value_error) / np.linalg.norm(truth)),
         "gradient_actor_component_rmse": float(np.sqrt(np.mean(np.square(q_error)))),
