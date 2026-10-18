@@ -42,6 +42,16 @@ def _mean_sd(values: list[float]) -> tuple[float, float]:
     return float(array.mean()), float(array.std(ddof=1)) if len(array) > 1 else 0.0
 
 
+def _mean_ci95(values: list[float]) -> tuple[float, float]:
+    """Small-sample two-sided t interval for independently seeded runs."""
+    mean, sd = _mean_sd(values)
+    if len(values) <= 1:
+        return mean, mean
+    critical = {2: 12.706, 3: 4.303}.get(len(values), 1.96)
+    half = critical * sd / math.sqrt(len(values))
+    return max(0.0, mean - half), mean + half
+
+
 def _primary_bank_truth() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     driver = SineQuadraticDriver(d=100, lam=0.2, eta=0.0)
     bank_path = OLD_PREDICTION_DIR / (
@@ -409,7 +419,7 @@ def run() -> dict[str, Any]:
         if row["family"] == "primary" and row["source"] == "accuracy_frontier" and row["role"] == "endpoint" and row["finite"]:
             endpoint_groups.setdefault((row["n"], row["M"]), []).append(row["value_rmse"])
     endpoint_summary = [
-        {"n": key[0], "M": key[1], "seeds": len(values), "rmse_mean": _mean_sd(values)[0], "rmse_sd": _mean_sd(values)[1]}
+        {"n": key[0], "M": key[1], "seeds": len(values), "rmse_mean": _mean_sd(values)[0], "rmse_sd": _mean_sd(values)[1], "rmse_ci95_low": _mean_ci95(values)[0], "rmse_ci95_high": _mean_ci95(values)[1]}
         for key, values in sorted(endpoint_groups.items())
     ]
     strongest = min(endpoint_summary, key=lambda row: row["rmse_mean"]) if endpoint_summary else None
@@ -418,7 +428,7 @@ def run() -> dict[str, Any]:
         if row["family"] == "coupled" and row["source"] == "accuracy_frontier" and row["role"] == "endpoint" and row["finite"]:
             coupled_endpoint_groups.setdefault((row["n"], row["M"]), []).append(row["value_rmse"])
     coupled_endpoint_summary = [
-        {"n": key[0], "M": key[1], "seeds": len(values), "rmse_mean": _mean_sd(values)[0], "rmse_sd": _mean_sd(values)[1]}
+        {"n": key[0], "M": key[1], "seeds": len(values), "rmse_mean": _mean_sd(values)[0], "rmse_sd": _mean_sd(values)[1], "rmse_ci95_low": _mean_ci95(values)[0], "rmse_ci95_high": _mean_ci95(values)[1]}
         for key, values in sorted(coupled_endpoint_groups.items())
     ]
     strongest_coupled = min(coupled_endpoint_summary, key=lambda row: row["rmse_mean"]) if coupled_endpoint_summary else None
@@ -467,7 +477,8 @@ def run() -> dict[str, Any]:
         primary_advantage is not None
         and primary_advantage > 0
         and primary_advantage > 2.0 * max(row["reference_uncertainty_rmse"] for row in primary512)
-        and max(row["rmse_ci95_high"] for row in primary512) < strongest["rmse_mean"]
+        and max(row["rmse_ci95_high"] for row in primary512)
+        < strongest["rmse_ci95_low"] - max(row["reference_uncertainty_rmse"] for row in primary512)
     )
     nonseparable_support = bool(
         len(coupled_selected) >= 3

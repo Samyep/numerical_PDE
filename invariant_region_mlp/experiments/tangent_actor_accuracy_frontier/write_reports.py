@@ -108,7 +108,7 @@ def _full_history_report(full: list[dict[str, str]], summary: dict) -> None:
     strongest = summary.get("strongest_full_history_endpoint")
     lines.extend(["", "## Fair conclusion", ""])
     if strongest:
-        lines.append(f"The strongest completed primary endpoint was `n={strongest['n']}, M={strongest['M']}` with mean RMSE `{strongest['rmse_mean']:.6g}` across {strongest['seeds']} seeds. Configuration grids were frozen from resource feasibility and algorithmic budget, and failed or worsening rows remain in the table.")
+        lines.append(f"The strongest completed primary endpoint was `n={strongest['n']}, M={strongest['M']}` with mean RMSE `{strongest['rmse_mean']:.6g}` across {strongest['seeds']} seeds (small-sample 95% t interval `[{strongest['rmse_ci95_low']:.6g}, {strongest['rmse_ci95_high']:.6g}]`). Configuration grids were frozen from resource feasibility and algorithmic budget, and failed or worsening rows remain in the table.")
     lines.append("Runtime is kept visible, while the primary comparison concerns maximum attainable numerical accuracy. Historical rows were recomputed against the refined reference whenever stored predictions were available.")
     _write("STRONG_FULL_HISTORY_COMPARISON.md", lines)
 
@@ -162,7 +162,7 @@ def _nonseparable_report(
             "",
             "## Strong baseline conclusion",
             "",
-            f"At the finest completed Actor evaluation ({summary['coupled_actor_finest_steps']} Euler steps), the three-seed mean RMSE is `{summary['coupled_actor_finest_rmse_mean']:.6g}`. The strongest replicated raw Full-History endpoint is `n={strongest['n']}, M={strongest['M']}` at `{strongest['rmse_mean']:.6g}`. Tangent-Actor has the lower mean error: **{summary['coupled_actor_beats_full_history']}**.",
+            f"At the finest completed Actor evaluation ({summary['coupled_actor_finest_steps']} Euler steps), the three-seed mean RMSE is `{summary['coupled_actor_finest_rmse_mean']:.6g}`. The strongest replicated raw Full-History endpoint is `n={strongest['n']}, M={strongest['M']}` at `{strongest['rmse_mean']:.6g}` (95% t interval `[{strongest['rmse_ci95_low']:.6g}, {strongest['rmse_ci95_high']:.6g}]`). Tangent-Actor has the lower mean error: **{summary['coupled_actor_beats_full_history']}**.",
         ])
     _write("NONSEPARABLE_HIGH_BUDGET_REPORT.md", lines)
 
@@ -217,7 +217,7 @@ def _main_report(summary: dict, euler, full, nonsep, ambient) -> None:
         lines.append(f"- The independent 512-step primary Tangent-Actor mean RMSE is `{actor:.6g}` across three frozen training seeds.")
     if strongest:
         relation = "lower" if actor is not None and actor < strongest["rmse_mean"] else "higher"
-        lines.append(f"- The strongest completed Full-History endpoint is `n={strongest['n']}, M={strongest['M']}` at `{strongest['rmse_mean']:.6g}` mean RMSE; the Actor value is {relation}.")
+        lines.append(f"- The strongest completed Full-History endpoint is `n={strongest['n']}, M={strongest['M']}` at `{strongest['rmse_mean']:.6g}` mean RMSE (95% t interval `[{strongest['rmse_ci95_low']:.6g}, {strongest['rmse_ci95_high']:.6g}]`); the Actor value is {relation}.")
     actor_threshold = summary.get("actor_minimum_cost_to_threshold")
     fh_threshold = summary.get("full_history_minimum_cost_to_threshold")
     threshold = summary["reporting_accuracy_threshold_rmse"]
