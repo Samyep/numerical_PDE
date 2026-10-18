@@ -17,7 +17,7 @@ set -euo pipefail
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
 DPI_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/external/DeepPicardIteration
 DPI_DEPS=/work/nvme/bgvf/ywang151/original_pde_source_audit/dpi_deps
-: "${PACK_TASKS:?set PACK_TASKS to four comma-separated method:family:dimension:profile entries}"
+: "${PACK_TASKS:?set PACK_TASKS to four comma-separated GPU slots; join sequential tasks in a slot with +}"
 
 module load default
 source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
@@ -34,9 +34,9 @@ git -C "$DPI_ROOT" rev-parse HEAD
 nvidia-smi --query-gpu=index,name,memory.total,driver_version --format=csv,noheader
 python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available(), 'devices', torch.cuda.device_count())"
 
-IFS=',' read -r -a tasks <<< "$PACK_TASKS"
-if [[ ${#tasks[@]} -ne 4 ]]; then
-  echo "PACK_TASKS must contain exactly four tasks; received ${#tasks[@]}" >&2
+IFS=',' read -r -a slots <<< "$PACK_TASKS"
+if [[ ${#slots[@]} -ne 4 ]]; then
+  echo "PACK_TASKS must contain exactly four GPU slots; received ${#slots[@]}" >&2
   exit 2
 fi
 
@@ -82,16 +82,25 @@ run_task() {
   echo "END task=$spec utc=$(date -u +%FT%TZ)"
 }
 
+run_slot() {
+  local chain=$1
+  local -a slot_tasks
+  IFS='+' read -r -a slot_tasks <<< "$chain"
+  for task in "${slot_tasks[@]}"; do
+    run_task "$task"
+  done
+}
+
 pids=()
-for task in "${tasks[@]}"; do
-  run_task "$task" &
+for slot in "${slots[@]}"; do
+  run_slot "$slot" &
   pids+=("$!")
 done
 
 status=0
 for index in "${!pids[@]}"; do
   if ! wait "${pids[$index]}"; then
-    echo "FAILED task=${tasks[$index]}" >&2
+    echo "FAILED slot=${slots[$index]}" >&2
     status=1
   fi
 done
