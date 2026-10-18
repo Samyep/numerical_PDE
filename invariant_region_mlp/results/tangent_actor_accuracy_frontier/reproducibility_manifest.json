@@ -1,0 +1,390 @@
+{
+  "actor_input": "full ambient (t,x)",
+  "branch": "ir-mlp-tangent-actor-accuracy-frontier",
+  "core_commands": [
+    "python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.reference_refinement --family primary --n 192 --dt 0.0000625 --query-points 32768",
+    "python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.reference_refinement --family primary --n 256 --dt 0.00003125 --query-points 32768",
+    "python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.reference_refinement --family coupled --n 192 --dt 0.0000625 --query-points 32768",
+    "python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.reference_refinement --family coupled --n 256 --dt 0.00003125 --query-points 32768",
+    "sbatch invariant_region_mlp/experiments/tangent_actor_accuracy_frontier/slurm/run_stage_a_n4_and_upgrade.slurm",
+    "sbatch invariant_region_mlp/experiments/tangent_actor_accuracy_frontier/slurm/run_stage_a_replicates.slurm",
+    "sbatch invariant_region_mlp/experiments/tangent_actor_accuracy_frontier/slurm/run_nonseparable_seeds01.slurm",
+    "sbatch --export=ALL,TRAINING_SEED=2 invariant_region_mlp/experiments/tangent_actor_accuracy_frontier/slurm/run_nonseparable_main.slurm",
+    "sbatch invariant_region_mlp/experiments/tangent_actor_accuracy_frontier/slurm/run_coupled_full_history.slurm",
+    "sbatch invariant_region_mlp/experiments/tangent_actor_accuracy_frontier/slurm/run_coupled_precision_512.slurm (conditional frozen gate)",
+    "sbatch invariant_region_mlp/experiments/tangent_actor_accuracy_frontier/slurm/run_ambient_400_main.slurm",
+    "sbatch invariant_region_mlp/experiments/tangent_actor_accuracy_frontier/slurm/run_low_rank_400.slurm (conditional RANK=8,16,32)",
+    "sbatch --export=ALL,RANK=<selected-rank>,TRAINING_SEED=0 invariant_region_mlp/experiments/tangent_actor_accuracy_frontier/slurm/run_low_rank_coupled_transfer.slurm (conditional on the frozen helpfulness rule)",
+    "python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.analyze_results",
+    "python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.write_reports",
+    "python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.build_manifest",
+    "python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.audit_results"
+  ],
+  "cuda_runtime": "12.9",
+  "git_commit": "eb5c23d64fe7733a8e48bb3b9b68c682035c66a4",
+  "historical_results_overwritten": false,
+  "large_artifacts_committed": false,
+  "large_local_artifacts": [
+    {
+      "bytes": 2120037,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/nonconvex_tangent_actor/checkpoints/primary_d100_k2_lam0p2_eta0_main_mcv_s0_mcv_a4.pt",
+      "sha256": "783367336d8eff5a0b4a00c6417abe46efdce35bc0ccca179f97af3c5cef49ec"
+    },
+    {
+      "bytes": 2120037,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/nonconvex_tangent_actor/checkpoints/primary_d100_k2_lam0p2_eta0_main_mcv_s1_mcv_a4.pt",
+      "sha256": "28ea4ec733b975bc39d8d2d6bc86369c38cf492e96d40af2bb5afb25db47a969"
+    },
+    {
+      "bytes": 2120037,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/nonconvex_tangent_actor/checkpoints/primary_d100_k2_lam0p2_eta0_main_mcv_s2_mcv_a4.pt",
+      "sha256": "a5d18e7f90bf5c2df037ca99141d13c710bab7a7c932a0a1ef6f1db5bd1f2ee6"
+    },
+    {
+      "bytes": 2120101,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/coupled_d100_k2_lam0p2_eta1_main_mcv_s0_mcv_a1.pt",
+      "sha256": "5786f0587171a57cef1c264cc2a982076e3834d40f8139d0817c6e33a56c0053"
+    },
+    {
+      "bytes": 2120101,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/coupled_d100_k2_lam0p2_eta1_main_mcv_s0_mcv_a2.pt",
+      "sha256": "20a0c1b6f00941182b600717395fb6a2ceffb024862487d23a5371c886b65641"
+    },
+    {
+      "bytes": 2120101,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/coupled_d100_k2_lam0p2_eta1_main_mcv_s0_mcv_a3.pt",
+      "sha256": "9a2e847f14cbbacf57ce4651f3251a3ee2695b5254141f0e3cc0ac4661a299c8"
+    },
+    {
+      "bytes": 2120101,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/coupled_d100_k2_lam0p2_eta1_main_mcv_s0_mcv_a4.pt",
+      "sha256": "382fc2f2c963f82a80d20098fbc998c6fd67d6bfdfa0da3cc9042be7b77038ab"
+    },
+    {
+      "bytes": 2120101,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/coupled_d100_k2_lam0p2_eta1_main_mcv_s1_mcv_a1.pt",
+      "sha256": "c150234ba0b79623885fdf228030ad9649fdafe2d41b8e39327b30c6eff73129"
+    },
+    {
+      "bytes": 2120101,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/coupled_d100_k2_lam0p2_eta1_main_mcv_s1_mcv_a2.pt",
+      "sha256": "9108229a4af9589067326c8e024e3aa8dc7f37f79cf3b8333c1312ee1d339538"
+    },
+    {
+      "bytes": 2120101,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/coupled_d100_k2_lam0p2_eta1_main_mcv_s1_mcv_a3.pt",
+      "sha256": "142a9410b0c64f018a5335714d1c1eac75d34c6d5309f644235c425a92817ee7"
+    },
+    {
+      "bytes": 2120101,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/coupled_d100_k2_lam0p2_eta1_main_mcv_s1_mcv_a4.pt",
+      "sha256": "fd37e8e0a3191b9bda5b9fcb495b3f44d84b90f3694438d266f285258345ea43"
+    },
+    {
+      "bytes": 2120101,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/coupled_d100_k2_lam0p2_eta1_main_mcv_s2_mcv_a1.pt",
+      "sha256": "159dccecfcf4df93a0c425f5ced84fd04d8497d75b4e333f0a699f77bbad002b"
+    },
+    {
+      "bytes": 2120101,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/coupled_d100_k2_lam0p2_eta1_main_mcv_s2_mcv_a2.pt",
+      "sha256": "e4a7b4a7eba5abdf4edbf5511909e76857597b498b984ba0f63676cf0926b178"
+    },
+    {
+      "bytes": 2120101,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/coupled_d100_k2_lam0p2_eta1_main_mcv_s2_mcv_a3.pt",
+      "sha256": "3fe1442ceaabce793cab38ce58302610222219426957de2ca52f6628bd16ee36"
+    },
+    {
+      "bytes": 2120101,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/coupled_d100_k2_lam0p2_eta1_main_mcv_s2_mcv_a4.pt",
+      "sha256": "54cc3b25780c174924f9fea5c0302ec2a4a96931e278241ab86604be8adc4df6"
+    },
+    {
+      "bytes": 3042853,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/primary_d400_k2_lam0p2_eta0_main_mcv_s0_mcv_a1.pt",
+      "sha256": "5f697902009f1345c0c6652cb78bc412edd70bc00f885c1216e0eb98ced74543"
+    },
+    {
+      "bytes": 3042853,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/primary_d400_k2_lam0p2_eta0_main_mcv_s0_mcv_a2.pt",
+      "sha256": "3724af3feb97f3b8381fcf79e1e0f0b6609eebebe926d302d36c67f1eeeccaad"
+    },
+    {
+      "bytes": 3042853,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/primary_d400_k2_lam0p2_eta0_main_mcv_s0_mcv_a3.pt",
+      "sha256": "406c32770e876899d3527e4b3f5f635e51bd0a7cb81b303a7ae454ca865440d8"
+    },
+    {
+      "bytes": 3042853,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/primary_d400_k2_lam0p2_eta0_main_mcv_s0_mcv_a4.pt",
+      "sha256": "f66bf976fd8e2a45796f0011ab61b4a7f4031df17cbec15942c90edbbfe91f9c"
+    },
+    {
+      "bytes": 3042789,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/primary_d400_k2_lam0p2_eta0_main_mcv_s1_mcv_a1.pt",
+      "sha256": "74e6cb2aaaec1e79a93abe200ffedd82f2160db894eacccda56396c115c79cbb"
+    },
+    {
+      "bytes": 3042853,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/primary_d400_k2_lam0p2_eta0_main_mcv_s1_mcv_a2.pt",
+      "sha256": "c27ae0e1ff8aaff99dfe36388547ab7a8acfa266ee67e2e939f645cb7f2af301"
+    },
+    {
+      "bytes": 3042789,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/primary_d400_k2_lam0p2_eta0_main_mcv_s1_mcv_a3.pt",
+      "sha256": "659c443092a01a0787134a5bf971ad91e710d49b6f7b1829d2a53d337e586fdb"
+    },
+    {
+      "bytes": 3042853,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/primary_d400_k2_lam0p2_eta0_main_mcv_s1_mcv_a4.pt",
+      "sha256": "aeb7618691c7e9134da4e34d906b5761205c9b179a06d59e2763e606ff9ce15d"
+    },
+    {
+      "bytes": 3042789,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/primary_d400_k2_lam0p2_eta0_main_mcv_s2_mcv_a1.pt",
+      "sha256": "8f2395e81e749033ce22b48956f240a05137f941304e2aef64cf8c90bdb260bf"
+    },
+    {
+      "bytes": 3042789,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/primary_d400_k2_lam0p2_eta0_main_mcv_s2_mcv_a2.pt",
+      "sha256": "4e7d7f095ecfc4ee1d16b62a9cf7af61b4e3277f0b2e598294c30cfe57cfca87"
+    },
+    {
+      "bytes": 3042853,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/primary_d400_k2_lam0p2_eta0_main_mcv_s2_mcv_a3.pt",
+      "sha256": "e63a1b4e32ea74c65281060b893d92cbfc011aff45237e341a6f3975ffb706a6"
+    },
+    {
+      "bytes": 3042853,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/checkpoints/primary_d400_k2_lam0p2_eta0_main_mcv_s2_mcv_a4.pt",
+      "sha256": "c3beecb091605d5f92577f71db567319982fecfbc4710ed2435ec6e9dbb82907"
+    },
+    {
+      "bytes": 294453448,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/references/sine_quadratic_coupled_d100_k2_lam0p2_eta1p0_refined.npz",
+      "sha256": "53b8c2e3c241c628fe2bfb69e4a12ab870eb02b2284938c11b78eddacef355f0"
+    },
+    {
+      "bytes": 281421855,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/references/sine_quadratic_d100_k2_lam0p2_eta0p0_refined.npz",
+      "sha256": "dd048cd47db44689077d7758816077900e4512a8b94cb35bff65fd4665dda3c6"
+    },
+    {
+      "bytes": 71194643,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/nonconvex_tangent_actor/references/sine_quadratic_coupled_d100_k2_lam0p2_eta1p0.npz",
+      "sha256": "f89aee25acfed49f94f5ddeb976d1533394ea5323b53b5941057c4102593ac4e"
+    },
+    {
+      "bytes": 60199164,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/nonconvex_tangent_actor/references/sine_quadratic_d100_k2_lam0p2_eta0p0.npz",
+      "sha256": "d7a55c789874b266b27ff84a1baca254358bc11b6ee22a703171ce2a8466ebd2"
+    },
+    {
+      "bytes": 2346,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_coupled_d100_n3_M256_s0.npz",
+      "sha256": "a108570c34a2d56df8bfb45907a4e8aaa15048107a2f94bb5d32ff5fcc9c4755"
+    },
+    {
+      "bytes": 2334,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_coupled_d100_n3_M384_s0.npz",
+      "sha256": "c97d72bd4e2c2da090d0762f8072cf404fbf07eeae8b2720f21bb31aa41a04ba"
+    },
+    {
+      "bytes": 2344,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_coupled_d100_n3_M512_s0.npz",
+      "sha256": "6881c0391e1787b7efb3b1d07709fb2399e567440c985044f2d98cae9f133cbd"
+    },
+    {
+      "bytes": 2346,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_coupled_d100_n3_M512_s1.npz",
+      "sha256": "03c48cc10ff52a5a76435794e321256c76d55f72938c2b2b725e7247cd07e5c1"
+    },
+    {
+      "bytes": 2339,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_coupled_d100_n3_M512_s2.npz",
+      "sha256": "0aa0f58494e91ca5b92cea16cf6e9aa18e6a8cd97acac48ddd0df33b93a8c004"
+    },
+    {
+      "bytes": 2345,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_coupled_d100_n4_M16_s0.npz",
+      "sha256": "e6810347a6ad7fa95c8ac5b040492012f1c7c66f8159ecb9e346037251bce2dd"
+    },
+    {
+      "bytes": 2340,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_coupled_d100_n4_M32_s0.npz",
+      "sha256": "85e13ec0218f18d512a45bb7dc4b716e211fdffd2a97a843810bbdb5f7db63d1"
+    },
+    {
+      "bytes": 2357,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_coupled_d100_n4_M64_s0.npz",
+      "sha256": "08ebe5971444599e265c6a01466a920590185fd64bedfd9e8bcb6f8498e8230c"
+    },
+    {
+      "bytes": 2360,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_coupled_d100_n4_M96_s0.npz",
+      "sha256": "0113b1762859f35af33e8e5a799812f842fd44c10005feeee6fb461d213003ae"
+    },
+    {
+      "bytes": 2345,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_coupled_d100_n4_M96_s1.npz",
+      "sha256": "cfdf9d89cd0b09c851f96d20292f55742913f2f4e653b4b9cb981bfe1f180ed5"
+    },
+    {
+      "bytes": 2351,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_coupled_d100_n4_M96_s2.npz",
+      "sha256": "aa0974db6b6ef30ada0d5983a9a40297536df54dea1e5450450d6c838e18683f"
+    },
+    {
+      "bytes": 2339,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_primary_d100_n3_M384_s0.npz",
+      "sha256": "1acdd86849512550f20c215c874e09c4b8fd36745dbcae1a40ffca8c07037746"
+    },
+    {
+      "bytes": 2345,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_primary_d100_n3_M384_s1.npz",
+      "sha256": "d3f6fa54be6d2a3d2271d902ac3f0d51cb12987e99bd114a48aa4235939a836f"
+    },
+    {
+      "bytes": 2348,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_primary_d100_n3_M384_s2.npz",
+      "sha256": "e066bf2deb540f2b708d9bd673f58bdcec5beb6072da9364c8ab39d2bb52f65a"
+    },
+    {
+      "bytes": 2349,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_primary_d100_n3_M512_s0.npz",
+      "sha256": "e07c699504158a2fe952882cd45ca914172d5c0c1ae009595cab12bb77aea0d7"
+    },
+    {
+      "bytes": 2353,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_primary_d100_n3_M512_s1.npz",
+      "sha256": "b9674fbfa749e618f59fd648e8e5e39207f4f62345d97b080d23d0e18556b6c9"
+    },
+    {
+      "bytes": 2352,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_primary_d100_n3_M512_s2.npz",
+      "sha256": "9b36bd014ec68c99e4caab502cbea4b3ce583b44d2584d8c6b9be97ade22a0e2"
+    },
+    {
+      "bytes": 2350,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_primary_d100_n4_M16_s0.npz",
+      "sha256": "5b7369c3fa4077c4dad70c1e7808ab1f5e51029a49cc564d05f3400ab75e5671"
+    },
+    {
+      "bytes": 2569,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_primary_d100_n4_M2_s0.npz",
+      "sha256": "4ab1c914152829e9184cf292eea56aeefaaeb11133bd9085722ff59b830e7616"
+    },
+    {
+      "bytes": 2343,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_primary_d100_n4_M32_s0.npz",
+      "sha256": "d870fcc796d845617c8818e8efa4971caf0ca25dd79352f573deb26bff0d5c96"
+    },
+    {
+      "bytes": 2341,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_primary_d100_n4_M64_s0.npz",
+      "sha256": "30e9e2ae2e3cc4f107af40086068c8ed2c3e872957f458bd115613072d42f31b"
+    },
+    {
+      "bytes": 2345,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_primary_d100_n4_M96_s0.npz",
+      "sha256": "649974cac18a8e73ff7af519f3d470656fe61879680cff24597534ac0cdc3048"
+    },
+    {
+      "bytes": 2341,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_primary_d100_n4_M96_s1.npz",
+      "sha256": "bd40073dd52c2042e37a92e6fa144c31334228b37b93126265e1d18ee232776c"
+    },
+    {
+      "bytes": 2346,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/full_history_primary_d100_n4_M96_s2.npz",
+      "sha256": "57cb8b2c194e3f49cf2973a090641235a7c5431d0e30fdc3d125494254a17b82"
+    },
+    {
+      "bytes": 472289,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/post_freeze_coupled_d100_k2_lam0p2_eta1_main_mcv_s0.npz",
+      "sha256": "3aef1dc9855657a66f1744f0cdfe3d12e80b009f52b158154a1da799e42044de"
+    },
+    {
+      "bytes": 472300,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/post_freeze_coupled_d100_k2_lam0p2_eta1_main_mcv_s1.npz",
+      "sha256": "199cf5e22ab80a6d7f81713a9e31cec1abd506ac1bf4dfcd2bea30ca6671af10"
+    },
+    {
+      "bytes": 472336,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/post_freeze_coupled_d100_k2_lam0p2_eta1_main_mcv_s2.npz",
+      "sha256": "3e10fbc60786debb136e5e5d296379f01b35142d2a9b88823e41a5b97b2cec4f"
+    },
+    {
+      "bytes": 1652996,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/post_freeze_primary_d400_k2_lam0p2_eta0_main_mcv_s0.npz",
+      "sha256": "7f858be47804be0157a4b8ee2c2f3340e05aae45b4e6e753116d0a69e81b532c"
+    },
+    {
+      "bytes": 1652992,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/post_freeze_primary_d400_k2_lam0p2_eta0_main_mcv_s1.npz",
+      "sha256": "dacebc5d2a5f011b2369595f95a4a6d8479d83df8d7a02ff7932c8b666e1e16a"
+    },
+    {
+      "bytes": 1652952,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/post_freeze_primary_d400_k2_lam0p2_eta0_main_mcv_s2.npz",
+      "sha256": "f11fe82b61744751ed30bdb2d3b089d546b7be35f6c80cd5e03f73c85b3b86f5"
+    },
+    {
+      "bytes": 442857,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/primary_a4_seed0_crn_paths2048_fine512.npz",
+      "sha256": "320742faa243c32c6d2857d64dbe6f52823f776ce2417178058de5e7630d5fcf"
+    },
+    {
+      "bytes": 443323,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/primary_a4_seed0_crn_paths8192_fine512.npz",
+      "sha256": "d671b05cc87cccfc5ef1a87171755455dac7fab570ce0807f189835c2beb30d9"
+    },
+    {
+      "bytes": 443327,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/primary_a4_seed1_crn_paths8192_fine512.npz",
+      "sha256": "62642cfd0130aaae8fb7f540a90f4969e5ae95ce00894719c0980e032e509c6e"
+    },
+    {
+      "bytes": 443307,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/primary_a4_seed2_crn_paths8192_fine512.npz",
+      "sha256": "ac61249f8a250160eb52ff1cff458cdbe8eb021b6a20d1eb73cb11e0e28d6cc9"
+    },
+    {
+      "bytes": 432211,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/selected_precision_coupled_d100_k2_lam0p2_eta1_main_mcv_s0_paths1024_fine256.npz",
+      "sha256": "823e300954652954ad7d37181922bcb00be7c4544dcee82951dc2b2515383013"
+    },
+    {
+      "bytes": 442827,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/selected_precision_coupled_d100_k2_lam0p2_eta1_main_mcv_s0_paths2048_fine512.npz",
+      "sha256": "40caeedd474fde002f240c7c8e45e1ac46bb73c5d653b6bf9109a02213dee39f"
+    },
+    {
+      "bytes": 432228,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/selected_precision_coupled_d100_k2_lam0p2_eta1_main_mcv_s1_paths1024_fine256.npz",
+      "sha256": "1adecd1647bc3fc175b7580adcf3c4da4c24f19696d8f0798884d021dccc5ae1"
+    },
+    {
+      "bytes": 442838,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/selected_precision_coupled_d100_k2_lam0p2_eta1_main_mcv_s1_paths2048_fine512.npz",
+      "sha256": "cf4a5ccc9646816476c28a9522fe5b3b63e4aec1c23d910d7f78590f3599932e"
+    },
+    {
+      "bytes": 432210,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/selected_precision_coupled_d100_k2_lam0p2_eta1_main_mcv_s2_paths1024_fine256.npz",
+      "sha256": "f1858c21a5389d53f597c86fbdd617c0757b0a9b59cc08d44493065876188494"
+    },
+    {
+      "bytes": 442823,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/selected_precision_coupled_d100_k2_lam0p2_eta1_main_mcv_s2_paths2048_fine512.npz",
+      "sha256": "06f997731b6cfc0412471d5fbd0f64718608b570309290acf17625563da8b861"
+    }
+  ],
+  "numpy": "2.4.6",
+  "oracle_subspace_used": false,
+  "parent_commit": "ef2ec67af8da6791e2bbc6086b9b1a1c55227420",
+  "python": "3.12.9",
+  "selection_rule": "independently replicated noise-corrected normalized fixed-point consistency; no Ground Truth",
+  "torch": "2.10.0+cu129"
+}

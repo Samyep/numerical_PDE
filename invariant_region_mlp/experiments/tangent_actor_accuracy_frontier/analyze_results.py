@@ -12,6 +12,7 @@ from typing import Any
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.ticker import NullFormatter, NullLocator
 import numpy as np
 
 from .common import (
@@ -298,14 +299,59 @@ def _compute_rows(full_history, precision, nonseparable, ambient) -> list[dict[s
     rows = []
     for path in sorted(OLD_RESULTS_DIR.glob("training_primary_d100_k2_lam0p2_eta0_main_mcv_s*.json")):
         payload = _load(path)
-        rows.append({"run_id": payload["spec"]["seed"], "family": "primary", "d": 100, "stage": "historical_training_and_selection", "cost_category": "production_training_and_reference_free_selection", "cost_scope": "top_level", "seconds": payload["wall_seconds_this_invocation"], "peak_gpu_bytes": None})
+        run_id = payload["phases"][0]["run_id"]
+        rows.append({"run_id": run_id, "family": "primary", "d": 100, "stage": "historical_training_and_selection", "cost_category": "production_training_and_reference_free_selection", "cost_scope": "top_level", "seconds": payload["wall_seconds_this_invocation"], "peak_gpu_bytes": None})
     for path in sorted(RESULTS_DIR.glob("training_*.json")):
         payload = _load(path)
-        run_id = payload.get("run_id", payload["spec"].get("seed"))
-        rows.append({"run_id": run_id, "family": payload["spec"]["family"], "d": payload["spec"]["d"], "stage": "training_and_selection", "cost_category": "production_training_and_reference_free_selection", "cost_scope": "top_level", "seconds": payload["wall_seconds_this_invocation"], "peak_gpu_bytes": None})
+        run_id = payload["phases"][0]["run_id"]
+        phase_seconds = 0.0
+        component_peaks: list[float] = []
         for phase in payload["phases"]:
-            rows.append({"run_id": run_id, "family": payload["spec"]["family"], "d": payload["spec"]["d"], "stage": f"a{phase['iteration']}_actor_fit", "cost_category": "training_component", "cost_scope": "component_nonadditive", "seconds": phase["training"]["wall_seconds"], "peak_gpu_bytes": phase["training"].get("peak_gpu_bytes")})
-            rows.append({"run_id": run_id, "family": payload["spec"]["family"], "d": payload["spec"]["d"], "stage": f"a{phase['iteration']}_label_generation", "cost_category": "supervision_component", "cost_scope": "component_nonadditive", "seconds": sum(float(phase["labels"][name]["wall_seconds"]) for name in ("train", "validation", "replication")), "peak_gpu_bytes": max(phase["labels"][name].get("peak_gpu_bytes") or 0 for name in ("train", "validation", "replication"))})
+            fit_seconds = float(phase["training"]["wall_seconds"])
+            label_seconds = sum(
+                float(phase["labels"][name]["wall_seconds"])
+                for name in ("train", "validation", "replication")
+            )
+            fit_peak = phase["training"].get("peak_gpu_bytes") or 0
+            label_peak = max(
+                phase["labels"][name].get("peak_gpu_bytes") or 0
+                for name in ("train", "validation", "replication")
+            )
+            phase_seconds += fit_seconds + label_seconds
+            component_peaks.extend((float(fit_peak), float(label_peak)))
+            rows.append({"run_id": run_id, "family": payload["spec"]["family"], "d": payload["spec"]["d"], "stage": f"a{phase['iteration']}_actor_fit", "cost_category": "training_component", "cost_scope": "component_of_reconstructed_total", "seconds": fit_seconds, "peak_gpu_bytes": fit_peak})
+            rows.append({"run_id": run_id, "family": payload["spec"]["family"], "d": payload["spec"]["d"], "stage": f"a{phase['iteration']}_label_generation", "cost_category": "supervision_component", "cost_scope": "component_of_reconstructed_total", "seconds": label_seconds, "peak_gpu_bytes": label_peak})
+        diagnostic_paths = [
+            *RAW_DIR.glob(f"fixed_point_{run_id}_a*_primary.json"),
+            *RAW_DIR.glob(f"fixed_point_{run_id}_a*_ranking_audit.json"),
+        ]
+        diagnostic_seconds = sum(float(_load(item)["wall_seconds"]) for item in diagnostic_paths)
+        measured_components = phase_seconds + diagnostic_seconds
+        # A single uninterrupted run records setup and selection overhead in the
+        # top-level timer.  Resumed jobs overwrite that timer on their final
+        # cache-only invocation, so never let it replace completed component
+        # timings accumulated across invocations.
+        overhead = max(float(payload["wall_seconds_this_invocation"]) - measured_components, 0.0)
+        rows.insert(len(rows) - 2 * len(payload["phases"]), {
+            "run_id": run_id,
+            "family": payload["spec"]["family"],
+            "d": payload["spec"]["d"],
+            "stage": "training_and_selection",
+            "cost_category": "production_training_and_reference_free_selection",
+            "cost_scope": "sum_of_disjoint_measured_components",
+            "seconds": measured_components + overhead,
+            "peak_gpu_bytes": max(component_peaks) if component_peaks else None,
+        })
+        rows.append({
+            "run_id": run_id,
+            "family": payload["spec"]["family"],
+            "d": payload["spec"]["d"],
+            "stage": "reference_free_selection_diagnostics",
+            "cost_category": "selection_component",
+            "cost_scope": "component_of_reconstructed_total",
+            "seconds": diagnostic_seconds,
+            "peak_gpu_bytes": None,
+        })
     for row in precision:
         rows.append({"run_id": row["training_seed"], "family": row["family"], "d": row["d"], "stage": f"precision_inference_{row['steps']}", "cost_category": "post_freeze_precision_diagnostic", "cost_scope": "component", "seconds": row["inference_seconds"], "peak_gpu_bytes": row.get("peak_gpu_bytes")})
     for row in full_history:
@@ -336,12 +382,21 @@ def _plot_primary(precision: list[dict], full_history: list[dict]) -> None:
     for seed in sorted({row["training_seed"] for row in primary}):
         local = sorted((row for row in primary if row["training_seed"] == seed), key=lambda row: row["steps"])
         axes[0].plot([r["steps"] for r in local], [r["value_rmse"] for r in local], "o-", label=f"Actor seed {seed}")
-    endpoint = [row for row in full_history if row["family"] == "primary" and row["source"] == "accuracy_frontier" and row["finite"]]
+    endpoint = [
+        row for row in full_history
+        if row["family"] == "primary"
+        and row["source"] == "accuracy_frontier"
+        and row["role"] == "endpoint"
+        and row["finite"]
+    ]
     for (n, M) in sorted({(row["n"], row["M"]) for row in endpoint}):
         values = [row["value_rmse"] for row in endpoint if row["n"] == n and row["M"] == M]
         axes[0].axhline(np.mean(values), linestyle="--", alpha=.55, label=f"FH n={n}, M={M}")
     axes[0].set(xscale="log", yscale="log", xlabel="Euler steps", ylabel="Value RMSE", title="Frozen Actor: time-step convergence")
+    axes[0].set_xscale("log", base=2)
     axes[0].set_xticks([64, 128, 256, 512], ["64", "128", "256", "512"])
+    axes[0].xaxis.set_minor_locator(NullLocator())
+    axes[0].xaxis.set_minor_formatter(NullFormatter())
     axes[0].grid(True, which="both", alpha=.25)
     axes[0].legend(fontsize=7)
 
@@ -380,16 +435,50 @@ def _plot_ambient(rows: list[dict]) -> None:
     if not rows:
         return
     fig, ax = plt.subplots(figsize=(8.5, 4.5))
-    labels, values, colors = [], [], []
-    for row in rows:
-        if row["source"] == "parent" and not (row["d"] == 400 and row["budget"] == "pilot"):
-            continue
-        labels.append(f"d={row['d']}\n{row['architecture']}" + ("\n" + str(row["rank"]) if row["rank"] else ""))
-        values.append(row["selected_value_rmse"])
-        colors.append("#4472C4" if row["architecture"] == "full_ambient" else "#ED7D31")
-    ax.bar(range(len(values)), values, color=colors)
+    groups: list[tuple[str, list[dict], str]] = []
+    d100_main = [
+        row for row in rows
+        if row["source"] == "parent" and row["d"] == 100
+        and row["budget"] == "main" and row["architecture"] == "full_ambient"
+    ]
+    d400_pilot = [
+        row for row in rows
+        if row["source"] == "parent" and row["d"] == 400
+        and row["budget"] == "pilot" and row["architecture"] == "full_ambient"
+    ]
+    d400_main = [
+        row for row in rows
+        if row["source"] == "frontier" and row["d"] == 400
+        and row["budget"] == "main" and row["architecture"] == "full_ambient"
+    ]
+    if d100_main:
+        groups.append(("100D main\nfull ambient", d100_main, "#70AD47"))
+    if d400_pilot:
+        groups.append(("400D pilot\nfull ambient", d400_pilot, "#A5A5A5"))
+    if d400_main:
+        groups.append(("400D main\nfull ambient", d400_main, "#4472C4"))
+    for rank in sorted({int(row["rank"]) for row in rows if row["rank"] not in (None, "")}):
+        local = [row for row in rows if row["rank"] not in (None, "") and int(row["rank"]) == rank]
+        groups.append((f"400D main\nlearned rank {rank}", local, "#ED7D31"))
+    labels = [label for label, _, _ in groups]
+    means = [float(np.mean([row["selected_value_rmse"] for row in local])) for _, local, _ in groups]
+    errors = [
+        float(np.std([row["selected_value_rmse"] for row in local], ddof=1))
+        if len(local) > 1 else 0.0
+        for _, local, _ in groups
+    ]
+    colors = [color for _, _, color in groups]
+    x = np.arange(len(groups))
+    ax.bar(x, means, yerr=errors, capsize=5, color=colors, alpha=.82)
+    for index, (_, local, _) in enumerate(groups):
+        offsets = np.linspace(-.10, .10, len(local)) if len(local) > 1 else np.array([0.0])
+        ax.scatter(
+            np.full(len(local), index) + offsets,
+            [row["selected_value_rmse"] for row in local],
+            color="black", s=24, zorder=3,
+        )
     ax.set_yscale("log")
-    ax.set_xticks(range(len(values)), labels)
+    ax.set_xticks(x, labels)
     ax.set_ylabel("Selected Value RMSE")
     ax.set_title("Ambient-dimension generalization audit")
     ax.grid(True, axis="y", which="both", alpha=.25)

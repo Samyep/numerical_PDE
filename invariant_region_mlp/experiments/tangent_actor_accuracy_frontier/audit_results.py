@@ -100,6 +100,9 @@ def run() -> dict:
     if len(ambient) != 1:
         raise RuntimeError(f"expected one matched-budget d400 seed-0 run, found {len(ambient)}")
     ambient_payload = json.loads(ambient[0].read_text(encoding="utf-8"))
+    ambient_replicates = sorted(
+        RESULTS_DIR.glob("post_freeze_primary_d400*_main_mcv_s*.json")
+    )
     a0_rmse = float(ambient_payload["iteration_rows"][0]["mcv_value_rmse"])
     selected_rmse = float(ambient_payload["selected_row"]["mcv_value_rmse"])
     ambient_improvement = (a0_rmse - selected_rmse) / a0_rmse
@@ -123,7 +126,6 @@ def run() -> dict:
     helpful_low_rank = None
     coupled_low_rank_transfer = None
     if ambient_improvement >= float(protocol["ambient_400"]["meaningful_value_improvement_fraction"]):
-        ambient_replicates = sorted(RESULTS_DIR.glob("post_freeze_primary_d400*_main_mcv_s*.json"))
         if len(ambient_replicates) != 3:
             raise RuntimeError("meaningful d400 seed-0 result was not replicated with seeds 1 and 2")
     elif persistent_gap:
@@ -201,7 +203,8 @@ def run() -> dict:
         "primary_precision_runs": len(precision),
         "primary_precision_rows": primary_rows,
         "coupled_training_runs": len(coupled),
-        "matched_budget_d400_runs": len(ambient),
+        "matched_budget_d400_seed0_runs": len(ambient),
+        "d400_completed_seed_runs": len(ambient_replicates),
         "d400_seed0_value_improvement_fraction": ambient_improvement,
         "d400_persistent_generalization_gap": persistent_gap,
         "helpful_low_rank": helpful_low_rank,
