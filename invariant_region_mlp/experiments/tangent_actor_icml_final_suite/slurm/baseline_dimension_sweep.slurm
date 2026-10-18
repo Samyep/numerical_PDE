@@ -52,6 +52,11 @@ if [[ "$BASELINE" == "dpi" || "$BASELINE" == "pinn_hte" ]]; then
 fi
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
 python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
+python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.review_gate
+if [[ "$TRAINING_SEED" != "0" ]]; then
+  echo "Single-seed protocol permits only TRAINING_SEED=0" >&2
+  exit 2
+fi
 
 run_cell() {
   local family=$1

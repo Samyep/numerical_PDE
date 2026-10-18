@@ -11,7 +11,8 @@ import subprocess
 
 from .protocol import (
     BASE_COMMIT, BRANCH, METHODS, PDES, RESULTS_DIR, SOURCE_COMMITS,
-    TRAINING_SEEDS, compatibility, dimensions_for, frozen_protocol, stable_seed,
+    PROTOCOL_AMENDMENT, TRAINING_SEEDS, compatibility, dimensions_for,
+    frozen_protocol, stable_seed,
 )
 
 
@@ -111,7 +112,7 @@ def main() -> None:
         item["matches"] = item["actual"] == item["expected"]
 
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "base_commit": BASE_COMMIT,
         "branch": BRANCH,
@@ -127,15 +128,65 @@ def main() -> None:
             "pde_dimension_configurations": sum(len(dimensions_for(p.key)) for p in PDES),
             "method_cells": len(cells),
         },
-        "status": "stage_a_frozen",
+        "seed_policy": {
+            "primary_training_seeds": list(TRAINING_SEEDS),
+            "historical_extra_seeds": "preserved outside primary aggregation",
+            "best_seed_selection": False,
+        },
+        "review_gate": {
+            "status": "pending_independent_review",
+            "required_before": "any post-100D dimension sweep",
+            "required_artifacts": [
+                "BASELINE_PAPER_FIDELITY_REVIEW.md",
+                "REMAINING_GPU_HOUR_ESTIMATE.json",
+                "100D_RESULTS.csv",
+            ],
+        },
+        "protocol_amendments": [PROTOCOL_AMENDMENT],
+        "status": "stage_b_fidelity_gate_pending",
     }
     manifest_path = results / "EXECUTION_MANIFEST.json"
     if manifest_path.exists():
         existing = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if existing.get("protocol_sha256") != protocol["protocol_sha256"]:
-            raise RuntimeError("existing execution manifest belongs to a different frozen protocol")
+        old_hash = existing.get("protocol_sha256")
+        if old_hash != protocol["protocol_sha256"]:
+            # This is the one explicitly authorized post-freeze amendment:
+            # reduce future training to seed 0 and add the review gate. Merge
+            # by scientific cell so no attempts, hashes, or completed runs are
+            # lost or relabeled.
+            old_cells = {
+                (cell["pde"], int(cell["dimension"]), cell["method"]): cell
+                for cell in existing.get("method_cells", [])
+            }
+            for cell in manifest["method_cells"]:
+                old = old_cells.get((cell["pde"], int(cell["dimension"]), cell["method"]))
+                if old is None:
+                    continue
+                for key in ("attempts", "completed_seeds", "artifacts"):
+                    cell[key] = old.get(key, cell[key])
+                if old.get("execution_status", "").startswith("completed"):
+                    cell["execution_status"] = old["execution_status"]
+            manifest["created_utc"] = existing.get("created_utc", manifest["created_utc"])
+            manifest["protocol_history"] = list(existing.get("protocol_history", [])) + [{
+                "protocol_sha256": old_hash,
+                "superseded_by": protocol["protocol_sha256"],
+                "reason": PROTOCOL_AMENDMENT["name"],
+                "preserved_completed_runs": True,
+            }]
+            write_json(manifest_path, manifest)
+        else:
+            # Refresh declarations while retaining mutable execution evidence.
+            manifest = existing
     else:
         write_json(manifest_path, manifest)
+    gate_path = results / "REVIEW_GATE_STATUS.json"
+    if not gate_path.exists():
+        write_json(gate_path, {
+            "status": "pending_independent_review",
+            "created_utc": datetime.now(timezone.utc).isoformat(),
+            "scope": "post-100D dimension sweep",
+            "approval_must_be_explicit": True,
+        })
     write_json(results / "SOURCE_REVISION_AUDIT.json", source_audit)
     print(json.dumps(manifest["counts"], sort_keys=True))
 

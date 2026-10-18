@@ -48,8 +48,10 @@ from .protocol import RESULTS_DIR, SOURCE_COMMITS, stable_seed
 PACKAGE_DIR = Path(__file__).resolve().parent
 SOURCE_ROOT = PACKAGE_DIR.parents[2]
 EXTERNAL_ROOT = SOURCE_ROOT.parent / "external" / "DeepPicardIteration"
-UPSTREAM_CONFIG = EXTERNAL_ROOT / "scripts/hjb/base_100d_T1.0_w0.1_0.yaml"
-UPSTREAM_PINN_CONFIG = EXTERNAL_ROOT / "scripts/hjb/pinn_100d_T1.0_v16.yaml"
+HJB_DPI_CONFIG = EXTERNAL_ROOT / "scripts/hjb/base_100d_T1.0_w0.1_0.yaml"
+HJB_PINN_CONFIG = EXTERNAL_ROOT / "scripts/hjb/pinn_100d_T1.0_v16.yaml"
+SEMILINEAR_DPI_CONFIG = EXTERNAL_ROOT / "scripts/burgers/base_100d_T1.0_w1.0_0.yaml"
+SEMILINEAR_PINN_CONFIG = EXTERNAL_ROOT / "scripts/burgers/pinn_100d_T1.0_v16_beta10.0.yaml"
 RAW_DIR = RESULTS_DIR / "raw"
 PREDICTION_DIR = RESULTS_DIR / "predictions"
 CHECKPOINT_DIR = RESULTS_DIR / "official_baseline_checkpoints"
@@ -62,6 +64,17 @@ PDES = (
     "nonconvex_coupled", "mlp_failure", "allen_cahn",
 )
 METHODS = ("dpi", "pinn_hte")
+PROFILES = ("auto", "hjb_pis", "semilinear_paper")
+
+
+def _resolve_profile(pde: str, profile: str) -> str:
+    if profile == "auto":
+        # The PISGradNet is a source-native specialization for the OU/GMM
+        # score-model PDE. It is not transferred to our other benchmarks.
+        return "hjb_pis" if pde == "ou_gmm" else "semilinear_paper"
+    if profile not in PROFILES:
+        raise KeyError(profile)
+    return profile
 
 
 def _dirs() -> None:
@@ -415,11 +428,18 @@ def _patch_upstream(capture: Path) -> None:
     pl.seed_everything(torch.initial_seed() % (2**32), workers=True)
 
 
-def _config(method: str, pde: str, d: int, seed: int, mode: str, class_name: str):
+def _config(
+    method: str, pde: str, d: int, seed: int, mode: str,
+    class_name: str, profile: str,
+):
     from picard import load_cfg
 
-    config_path = UPSTREAM_CONFIG if method == "dpi" else UPSTREAM_PINN_CONFIG
-    run_id = f"{method}_{pde}_d{d}_{mode}_s{seed}"
+    resolved = _resolve_profile(pde, profile)
+    if resolved == "hjb_pis":
+        config_path = HJB_DPI_CONFIG if method == "dpi" else HJB_PINN_CONFIG
+    else:
+        config_path = SEMILINEAR_DPI_CONFIG if method == "dpi" else SEMILINEAR_PINN_CONFIG
+    run_id = f"{method}_{pde}_d{d}_{resolved}_{mode}_s{seed}"
     exp_dir = WORK_DIR / run_id
     T, alpha = _horizon_alpha(pde)
     overrides = [
@@ -429,6 +449,11 @@ def _config(method: str, pde: str, d: int, seed: int, mode: str, class_name: str
         "EQUATION.kwargs.T", str(T),
         "EQUATION.kwargs.alpha", str(alpha),
     ]
+    if resolved == "semilinear_paper" and method == "dpi":
+        # Table 1 of arXiv:2409.08526v2 fixes K=80 for the semilinear
+        # experiment. The README's gradient-supervised YAML says K=100; the
+        # paper budget is authoritative for this benchmark protocol.
+        overrides += ["PICARD.N", "80"]
     if mode == "smoke":
         overrides += [
             "PICARD.N", "1", "DATA.DATA_SIZE", "32",
@@ -451,7 +476,7 @@ def _config(method: str, pde: str, d: int, seed: int, mode: str, class_name: str
     finally:
         os.chdir(old)
     cfg.freeze()
-    return cfg, config_path, overrides, run_id, exp_dir
+    return cfg, config_path, overrides, run_id, exp_dir, resolved
 
 
 def _reconstruct_model(cfg, equation, checkpoint: Path, device: torch.device):
@@ -471,7 +496,10 @@ def _reconstruct_model(cfg, equation, checkpoint: Path, device: torch.device):
     return model.eval()
 
 
-def execute(method: str, pde: str, d: int, seed: int, mode: str) -> dict[str, Any]:
+def execute(
+    method: str, pde: str, d: int, seed: int, mode: str,
+    profile: str = "auto",
+) -> dict[str, Any]:
     _dirs()
     if EXTERNAL_ROOT.joinpath(".git").exists():
         import subprocess
@@ -484,8 +512,8 @@ def execute(method: str, pde: str, d: int, seed: int, mode: str) -> dict[str, An
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
     names = register_equations()
-    cfg, config_path, overrides, run_id, exp_dir = _config(
-        method, pde, d, seed, mode, names[pde]
+    cfg, config_path, overrides, run_id, exp_dir, resolved_profile = _config(
+        method, pde, d, seed, mode, names[pde], profile
     )
     output = RAW_DIR / f"{run_id}.json"
     if output.exists():
@@ -573,8 +601,18 @@ def execute(method: str, pde: str, d: int, seed: int, mode: str) -> dict[str, An
         "seed": seed, "mode": mode,
         "status": "complete" if mode == "official" else f"{mode}_nonresult",
         "classification": "native_official" if (
-            pde == "ou_gmm" and d == 100
+            pde == "ou_gmm" and d == 100 and resolved_profile == "hjb_pis"
         ) else "faithful_transfer",
+        "benchmark_profile": resolved_profile,
+        "profile_role": (
+            "primary" if resolved_profile == _resolve_profile(pde, "auto")
+            else "diagnostic_nonprimary"
+        ),
+        "profile_selection_rule": (
+            "source-native specialized HJB profile only for OU/GMM"
+            if resolved_profile == "hjb_pis" else
+            "paper Section 5.2 generic semilinear profile; no hard terminal embedding"
+        ),
         "official_source_commit": SOURCE_COMMITS[method],
         "official_config": str(config_path), "expanded_config": str(exp_dir / "config.yaml"),
         "overrides": overrides, "checkpoint": str(checkpoint),
@@ -625,8 +663,11 @@ def main() -> None:
     parser.add_argument("--dimension", type=int, required=True)
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--mode", choices=("smoke", "one_iteration", "official"), default="official")
+    parser.add_argument("--profile", choices=PROFILES, default="auto")
     args = parser.parse_args()
-    result = execute(args.method, args.pde, args.dimension, args.seed, args.mode)
+    result = execute(
+        args.method, args.pde, args.dimension, args.seed, args.mode, args.profile,
+    )
     print(json.dumps({
         key: result[key] for key in (
             "run_id", "status", "value_rmse", "value_relative_l2",

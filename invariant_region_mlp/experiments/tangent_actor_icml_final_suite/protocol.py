@@ -18,8 +18,20 @@ BRANCH: Final = "ir-mlp-tangent-actor-icml-final-suite"
 DIMENSIONS: Final = (10, 20, 50, 100, 200, 400)
 MLP_FAILURE_DIMENSIONS: Final = (20, 50, 100, 200, 400, 1000)
 METHODS: Final = ("tangent_actor", "pinn_hte", "sdgd_pinn", "dpi", "deep_bsde")
-TRAINING_SEEDS: Final = (0, 1, 2)
+TRAINING_SEEDS: Final = (0,)
 TEST_STATES: Final = 960
+
+# Protocol amendment requested after Stage-B execution had started. Completed
+# multi-seed artifacts remain immutable historical evidence, but every new
+# PDE/dimension/method cell uses seed 0 only. The large dimension sweep is
+# blocked until the independent baseline-fidelity review is approved.
+PROTOCOL_AMENDMENT: Final = {
+    "effective_date": "2026-10-18",
+    "name": "single_seed_and_mandatory_fidelity_gate",
+    "training_seeds": [0],
+    "historical_multiseed_policy": "preserve, report separately, never select best seed",
+    "dimension_sweep_gate": "independent_review_required_after_100d_stage_b",
+}
 
 SOURCE_COMMITS: Final = {
     "deep_bsde": "e76fed80b1995daf4a0dd6d3e2cf64a0931dabda",
@@ -97,7 +109,6 @@ PDES: Final = (
 
 
 NATIVE = {
-    ("hjb_log", "sdgd_pinn", 100),
     ("hjb_log", "deep_bsde", 100),
     ("ou_gmm", "dpi", 100),
     ("ou_gmm", "pinn_hte", 100),
@@ -118,6 +129,11 @@ def compatibility(pde: str, method: str, dimension: int) -> tuple[str, str, str]
     """
     if (pde, method, dimension) in NATIVE:
         return "native_official", "pending_or_reuse_audit", "published PDE/dimension/configuration"
+    if pde == "hjb_log" and method == "sdgd_pinn":
+        return (
+            "faithful_transfer", "pending",
+            "paper HJB equation but 100D is below the published 250D minimum; native 250D fidelity anchor is separate",
+        )
     if method == "deep_bsde":
         if pde == "mlp_failure":
             return "adapted", "pending", "native single-point BSDE with explicit minimum-norm subgradient convention"
@@ -150,6 +166,7 @@ def frozen_protocol() -> dict[str, object]:
         "mlp_failure_dimensions": list(MLP_FAILURE_DIMENSIONS),
         "methods": list(METHODS),
         "training_seeds": list(TRAINING_SEEDS),
+        "protocol_amendment": PROTOCOL_AMENDMENT,
         "test_states_default": TEST_STATES,
         "pdes": [asdict(item) for item in PDES],
         "source_commits": SOURCE_COMMITS,

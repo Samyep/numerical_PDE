@@ -75,7 +75,9 @@ def test_external_baseline_budgets_and_terminal_embedding() -> None:
     config = Config()
     assert config.epochs == 10_000
     assert config.width == 1024 and config.hidden_layers == 3
-    assert config.pgd_steps == 20 and config.dimension_samples == 10
+    assert config.pgd_steps == 20
+    assert config.training_dimension_samples == 100
+    assert config.adversarial_dimension_samples == 10
     benchmark = make_benchmark("joint_concave", 10)
     model = HardTerminalNet(benchmark, Config(width=16, hidden_layers=2))
     x = torch.randn(5, 10)

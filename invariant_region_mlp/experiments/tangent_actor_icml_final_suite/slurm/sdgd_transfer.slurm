@@ -19,6 +19,11 @@ SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
 : "${FAMILY:?set FAMILY to a frozen suite PDE key}"
 DIMENSION=${DIMENSION:-100}
 TRAINING_SEED=${TRAINING_SEED:-0}
+PROFILE=${PROFILE:-auto}
+if [[ "$TRAINING_SEED" != "0" ]]; then
+  echo "Single-seed protocol permits only TRAINING_SEED=0" >&2
+  exit 2
+fi
 
 module load default
 source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
@@ -33,4 +38,4 @@ git rev-parse HEAD
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
 python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
 srun --network=no_vni python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.sdgd_transfer \
-  --family "$FAMILY" --dimension "$DIMENSION" --seed "$TRAINING_SEED"
+  --family "$FAMILY" --dimension "$DIMENSION" --seed "$TRAINING_SEED" --profile "$PROFILE"

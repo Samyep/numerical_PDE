@@ -479,7 +479,7 @@ def table_main() -> Path:
 
 
 def _select_native_primary_rows(data: pd.DataFrame) -> pd.DataFrame:
-    """Keep one predeclared native estimate for each independent training seed."""
+    """Keep the predeclared estimate for the sole primary training seed."""
     if data.empty:
         return data.copy()
     selected = []

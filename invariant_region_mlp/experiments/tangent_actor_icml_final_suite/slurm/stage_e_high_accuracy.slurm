@@ -37,6 +37,10 @@ nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
 python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
 
 for seed in $TRAINING_SEEDS; do
+  if [[ "$seed" != "0" ]]; then
+    echo "Single-seed protocol permits only training seed 0; got $seed" >&2
+    exit 2
+  fi
   for family in $FAMILIES; do
     echo "BEGIN family=$family dimension=$DIMENSION seed=$seed utc=$(date -u +%FT%TZ)"
     case "$family" in

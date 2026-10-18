@@ -36,6 +36,11 @@ echo "git_head=$(git rev-parse HEAD)"
 echo "seed=$TRAINING_SEED smooth_dims=$SMOOTH_DIMS mlp_dims=$MLP_DIMS families=$FAMILIES"
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
 python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
+python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.review_gate
+if [[ "$TRAINING_SEED" != "0" ]]; then
+  echo "Single-seed protocol permits only TRAINING_SEED=0" >&2
+  exit 2
+fi
 
 for dimension in $SMOOTH_DIMS; do
   for family in $FAMILIES; do

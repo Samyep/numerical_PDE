@@ -175,11 +175,11 @@ def _update_manifest(audit: dict[str, Any]) -> None:
     manifest = _read_json(path)
     accepted = {
         ("hjb_log", 100, "tangent_actor"): ([0, 1, 2], "completed_reused"),
-        ("hjb_log", 100, "sdgd_pinn"): ([0], "completed_reused_partial_seed_target"),
+        ("hjb_log", 100, "sdgd_pinn"): ([0], "completed_reused"),
         ("hjb_log", 100, "deep_bsde"): ([0, 1, 2], "completed_reused"),
         ("ou_gmm", 100, "tangent_actor"): ([0, 1, 2], "completed_reused"),
-        ("ou_gmm", 100, "dpi"): ([0], "completed_reused_partial_seed_target"),
-        ("ou_gmm", 100, "pinn_hte"): ([0], "completed_reused_partial_seed_target"),
+        ("ou_gmm", 100, "dpi"): ([0], "completed_reused"),
+        ("ou_gmm", 100, "pinn_hte"): ([0], "completed_reused"),
         ("allen_cahn", 100, "tangent_actor"): ([0, 1, 2], "completed_reused"),
         ("allen_cahn", 100, "deep_bsde"): ([0, 1, 2], "completed_reused"),
         ("nonconvex_coupled", 100, "tangent_actor"): ([0, 1, 2], "completed_reused"),

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .protocol import METHODS, PDES, compatibility, dimensions_for, frozen_protocol
+from .protocol import METHODS, PDES, TRAINING_SEEDS, compatibility, dimensions_for, frozen_protocol
 
 
 def test_grid_has_42_pde_dimension_configurations() -> None:
@@ -16,7 +16,7 @@ def test_grid_has_210_method_cells() -> None:
 
 
 def test_native_anchors_are_frozen() -> None:
-    assert compatibility("hjb_log", "sdgd_pinn", 100)[0] == "native_official"
+    assert compatibility("hjb_log", "sdgd_pinn", 100)[0] == "faithful_transfer"
     assert compatibility("ou_gmm", "dpi", 100)[0] == "native_official"
     assert compatibility("ou_gmm", "pinn_hte", 100)[0] == "native_official"
     assert compatibility("allen_cahn", "deep_bsde", 100)[0] == "native_official"
@@ -30,3 +30,8 @@ def test_nonsmooth_problem_is_never_silently_called_faithful() -> None:
 
 def test_protocol_hash_is_stable_length() -> None:
     assert len(frozen_protocol()["protocol_sha256"]) == 64
+
+
+def test_amended_protocol_has_exactly_one_training_seed() -> None:
+    assert TRAINING_SEEDS == (0,)
+    assert frozen_protocol()["protocol_amendment"]["dimension_sweep_gate"]

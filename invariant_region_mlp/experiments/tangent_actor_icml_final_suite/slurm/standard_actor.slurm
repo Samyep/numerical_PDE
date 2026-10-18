@@ -19,6 +19,10 @@ SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
 : "${FAMILY:?set FAMILY to hjb_log, ou_gmm, or allen_cahn}"
 DIMENSION=${DIMENSION:-100}
 TRAINING_SEED=${TRAINING_SEED:-0}
+if [[ "$TRAINING_SEED" != "0" ]]; then
+  echo "Single-seed protocol permits only TRAINING_SEED=0" >&2
+  exit 2
+fi
 EVALUATION_PATHS=${EVALUATION_PATHS:-1024}
 EVALUATION_STEPS=${EVALUATION_STEPS:-64,128}
 

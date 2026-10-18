@@ -6,13 +6,14 @@ Execution is staged to prevent a bad transfer from consuming the full allocation
 
 1. **Stage A — audit and preflight.** Verify pinned sources, equations, diffusion and `z` conventions, references, invariant intervals, deterministic bases, test-bank hashes, and all historical reuse candidates. Freeze method-transfer rules before opening new test errors.
 2. **Stage B — 100D anchors.** Reuse only byte-audited exact matches. Run every missing supported 100D cell with the published external budget and the mature four-update Tangent-Actor budget. Keep Deep BSDE in the separate native single-point table.
-3. **Stage C — dimension extremes.** Run 10D and 400D for smooth PDEs and 20D/1000D for the MLP counterexample. Diagnose nonfinite values, memory, gradient scaling, and generalization before filling intermediate dimensions.
-4. **Stage D — remaining dimensions.** Use resumable one-GPU jobs. A failed official job remains in the manifest. Published baseline budgets are never shortened to fit a queue window.
-5. **Stage E — replications and precision.** Complete missing seeds and the frozen 64/128/256/512 Euler audit. Refinement is a post-freeze numerical audit and cannot select an Actor.
+3. **Mandatory fidelity gate.** Freeze the complete 100D comparison, reproduce each available paper-native anchor with its original metric, issue `BASELINE_PAPER_FIDELITY_REVIEW.md`, and update the single-seed GPU estimate. No dimension job may start until an independent reviewer explicitly marks the gate approved.
+4. **Stage C — dimension extremes.** Run 10D and 400D for smooth PDEs and 20D/1000D for the MLP counterexample. Diagnose nonfinite values, memory, gradient scaling, and generalization before filling intermediate dimensions.
+5. **Stage D — remaining dimensions.** Use resumable one-GPU jobs. A failed official job remains in the manifest. Published baseline budgets are never shortened to fit a queue window.
+6. **Stage E — precision.** Use seed 0 only and complete the frozen 64/128/256/512 Euler audit. Refinement is a post-freeze numerical audit and cannot select an Actor.
 
 The cluster permits one submitted or running job for this user, so jobs execute serially. Checkpoints are idempotent, and scheduler retries do not alter numerical updates. If quota or allocation ends first, the final report will quantify every unfinished cell rather than substitute a cheaper run.
 
-Primary selection rules are fixed in advance. External methods use their published stopping budget. Tangent-Actor uses only held-out tangent-label error and paired reference-free policy values. Ground Truth is opened only after the Actor is frozen. Deep BSDE results are never inserted into the amortized whole-function table.
+All new training uses the single fixed seed 0. Historical seed-1/2 artifacts are preserved in a separate table and never used for model selection. Primary selection rules are fixed in advance. External methods use their published stopping budget. Tangent-Actor uses only held-out tangent-label error and paired reference-free policy values. Ground Truth is opened only after the Actor is frozen. Deep BSDE results are never inserted into the amortized whole-function table.
 
 ## Current execution status
 
@@ -39,11 +40,13 @@ the five new faithful transfers all finished at the pinned source budget and
 remain excluded from the amortized whole-function table. DPI is also complete
 on all seven 100D whole-function tasks: six new 40-round transfers plus the
 audited native OU/GMM result. A PyTorch 2.6 checkpoint compatibility failure is
-preserved along with its source-faithful fix and successful rerun. PINN-HTE and
-SDGD-PINN transfers remain next.
+preserved along with its source-faithful fix and successful rerun. The first PINN-HTE transfers are frozen, but the paper audit found that they used the OU/GMM-specific HJB profile outside its native task. Corrected profile-tagged DPI/PINN transfers and corrected SDGD profiles are required before the 100D gate can close. Earlier results remain nonprimary diagnostics. The SDGD audit also found a material coordinate-budget error (10 training coordinates instead of the published 100); corrected runs use 100 for HJB training and 10 for adversarial PGD.
 
 Validated resumable launchers now cover the Stage B baselines, Stage C Actor
 dimension extremes, Stage D remaining Actor dimensions, baseline dimension
-sweeps, missing 100D Actor replications, and the predeclared 64/128/256/512
+sweeps, the seed-0 100D Actor path, and the predeclared 64/128/256/512
 post-freeze accuracy audit. Submission remains strictly serial under the
 one-job cluster limit.
+
+
+The 2026-10-18 protocol amendment reduced `TRAINING_SEEDS` to `(0,)`. Every dimension launcher fails closed against `REVIEW_GATE_STATUS.json`; a pending or missing gate blocks submission.

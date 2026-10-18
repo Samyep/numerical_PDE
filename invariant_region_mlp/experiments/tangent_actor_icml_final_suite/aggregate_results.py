@@ -145,6 +145,7 @@ def _base_row(**overrides: Any) -> dict[str, Any]:
     row = {
         "pde": None, "dimension": None, "method": None, "method_label": None,
         "seed": None, "method_status": None, "execution_status": "complete",
+        "benchmark_profile": None, "profile_role": "primary",
         "source_kind": None, "source_commit": None, "source_artifact": None,
         "run_id": None, "checkpoint": None, "selection_rule": None,
         "steps": None, "paths": None, "estimator": None, "states": None,
@@ -218,6 +219,13 @@ def _historical_original_rows() -> tuple[list[dict[str, Any]], list[dict[str, An
             total_seconds=item["total_seconds"], peak_gpu_bytes=item["peak_gpu_bytes"],
             parameter_count=item["parameter_count"], nonfinite_count=item["nonfinite_count"],
             notes="byte- and protocol-audited historical 100D result",
+            benchmark_profile=(
+                "legacy_hjb_coordinate10" if method == "sdgd_pinn"
+                else ("hjb_pis" if method in {"dpi", "pinn_hte"} else "tangent_actor")
+            ),
+            profile_role=(
+                "diagnostic_invalid_coordinate_budget" if method == "sdgd_pinn" else "primary"
+            ),
         ))
 
     native_path = ORIGINAL_EXP / "native_task_comparison.csv"
@@ -251,6 +259,10 @@ def _historical_original_rows() -> tuple[list[dict[str, Any]], list[dict[str, An
             "peak_gpu_bytes": item["peak_gpu_bytes"], "nonfinite_count": item["nonfinite_count"],
             "full_training_cost_charged": method == "deep_bsde",
             "notes": "native single-point task; Deep BSDE is not included in MAIN_RESULTS.csv",
+            "benchmark_profile": "published_native" if method == "deep_bsde" else None,
+            "profile_role": (
+                "diagnostic_invalid_coordinate_budget" if method == "sdgd_pinn" else "primary"
+            ),
         })
     return rows, native_rows
 
@@ -433,6 +445,14 @@ def _new_function_baselines() -> tuple[list[dict[str, Any]], list[dict[str, Any]
                 nonfinite_count=result.get("nonfinite_count", 0),
                 hyperparameters=_compact(result.get("configuration", result.get("overrides"))),
                 notes="official-method transfer" if result["classification"] != "native_official" else "native official reproduction",
+                benchmark_profile=result.get("benchmark_profile", "legacy_unprofiled"),
+                profile_role=result.get("profile_role", (
+                    "primary" if pde == "ou_gmm" and method in {"dpi", "pinn_hte"}
+                    else (
+                        "diagnostic_invalid_coordinate_budget" if method == "sdgd_pinn"
+                        else "diagnostic_legacy_hjb_profile"
+                    )
+                )),
             )
             main.append(row)
             if result.get("native"):
@@ -453,6 +473,8 @@ def _new_function_baselines() -> tuple[list[dict[str, Any]], list[dict[str, Any]
                     "nonfinite_count": result.get("nonfinite_count", 0),
                     "full_training_cost_charged": True,
                     "notes": "same frozen network at native point",
+                    "benchmark_profile": row["benchmark_profile"],
+                    "profile_role": row["profile_role"],
                 })
     return main, native
 
@@ -477,6 +499,8 @@ def _new_deep_bsde_rows() -> list[dict[str, Any]]:
             "peak_gpu_bytes": result.get("peak_gpu_bytes"), "nonfinite_count": result.get("nonfinite_count"),
             "full_training_cost_charged": True,
             "notes": "native single-initial-state solve; excluded from whole-function table",
+            "benchmark_profile": "published_native",
+            "profile_role": "primary",
         })
     return rows
 
@@ -717,8 +741,11 @@ def _update_manifest(main: list[dict[str, Any]], native: list[dict[str, Any]]) -
         completed[(row["pde"], int(row["dimension"]), row["method"])].add(int(row["seed"]))
     for cell in manifest["method_cells"]:
         key = (cell["pde"], int(cell["dimension"]), cell["method"])
-        seeds = sorted(completed.get(key, set()))
+        primary_seeds = set(completed.get(key, set()))
+        previously_recorded = {int(value) for value in cell.get("completed_seeds", [])}
+        seeds = sorted(primary_seeds | previously_recorded)
         cell["completed_seeds"] = seeds
+        cell["historical_completed_seeds"] = sorted(previously_recorded - {0})
         if seeds:
             target = {int(value) for value in str(cell["target_training_seeds"]).split(";")}
             matching = [
@@ -765,7 +792,7 @@ def _update_manifest(main: list[dict[str, Any]], native: list[dict[str, Any]]) -
     counts = defaultdict(int)
     for cell in manifest["method_cells"]:
         counts[cell["execution_status"]] += 1
-    manifest["status"] = "staged_execution_in_progress"
+    manifest["status"] = "stage_b_fidelity_gate_pending"
     manifest["updated_utc"] = datetime.now(timezone.utc).isoformat()
     manifest["execution_counts"] = dict(sorted(counts.items()))
     path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
@@ -779,16 +806,51 @@ def aggregate() -> dict[str, Any]:
     new_baseline_main, new_baseline_native = _new_function_baselines()
     new_deep_bsde_native = _new_deep_bsde_rows()
 
+    all_main = historical_main + nonconvex_main + new_tangent_main + new_baseline_main
+    all_native = historical_native + new_tangent_native + new_baseline_native + new_deep_bsde_native
+
+    # The amended protocol has one fixed primary seed. Historical seed 1/2
+    # and superseded baseline profiles remain immutable evidence but cannot
+    # enter primary rankings, means, figures, or manifest completion logic.
+    primary_main_candidates = [
+        row for row in all_main
+        if int(row["seed"]) == 0 and row.get("profile_role", "primary") == "primary"
+    ]
+    primary_native_candidates = [
+        row for row in all_native
+        if int(row["seed"]) == 0 and row.get("profile_role", "primary") == "primary"
+    ]
     main = _deduplicate(
-        historical_main + nonconvex_main + new_tangent_main + new_baseline_main,
+        primary_main_candidates,
         ("pde", "dimension", "method", "seed"),
     )
     native = _deduplicate(
-        historical_native + new_tangent_native + new_baseline_native + new_deep_bsde_native,
+        primary_native_candidates,
         ("pde", "dimension", "method", "seed", "steps", "estimator"),
     )
+    excluded = []
+    primary_main_ids = {id(row) for row in primary_main_candidates}
+    primary_native_ids = {id(row) for row in primary_native_candidates}
+    for table_kind, rows, kept in (
+        ("whole_function", all_main, primary_main_ids),
+        ("native_point", all_native, primary_native_ids),
+    ):
+        for row in rows:
+            if id(row) in kept:
+                continue
+            excluded.append({
+                **row, "table_kind": table_kind,
+                "primary_exclusion_reason": (
+                    "historical_nonzero_seed" if int(row["seed"]) != 0
+                    else row.get("profile_role", "nonprimary_profile")
+                ),
+            })
+    frontier_candidates = [
+        row for row in historical_main + nonconvex_frontier + new_tangent_frontier + new_baseline_main
+        if int(row["seed"]) == 0 and row.get("profile_role", "primary") == "primary"
+    ]
     frontier = _deduplicate(
-        historical_main + nonconvex_frontier + new_tangent_frontier + new_baseline_main,
+        frontier_candidates,
         ("pde", "dimension", "method", "seed", "steps", "paths", "estimator"),
     )
     scaling = _dimension_scaling(main)
@@ -798,12 +860,14 @@ def aggregate() -> dict[str, Any]:
     _write_csv(RESULTS_DIR / "ACCURACY_COMPUTE_FRONTIER.csv", frontier)
     _write_csv(RESULTS_DIR / "DIMENSION_SCALING.csv", scaling)
     _write_csv(RESULTS_DIR / "ABLATION_RESULTS.csv", ablations)
+    _write_csv(RESULTS_DIR / "HISTORICAL_AND_NONPRIMARY_RESULTS.csv", excluded)
     manifest = _update_manifest(main, native)
     summary = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "git_head": _git_head(), "main_rows": len(main), "native_rows": len(native),
         "frontier_rows": len(frontier), "dimension_scaling_rows": len(scaling),
         "ablation_rows": len(ablations),
+        "historical_and_nonprimary_rows": len(excluded),
         "completed_method_cells": sum(
             item["execution_status"].startswith("completed")
             for item in manifest["method_cells"]
@@ -811,6 +875,8 @@ def aggregate() -> dict[str, Any]:
         "total_method_cells": len(manifest["method_cells"]),
         "smoke_artifacts_included": False,
         "deep_bsde_in_main_results": False,
+        "primary_training_seed": 0,
+        "best_seed_selection": False,
     }
     (RESULTS_DIR / "AGGREGATION_STATUS.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n"

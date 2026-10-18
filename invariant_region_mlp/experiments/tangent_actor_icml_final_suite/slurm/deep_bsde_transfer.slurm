@@ -19,6 +19,10 @@ SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
 : "${FAMILY:?set FAMILY to a frozen suite PDE key}"
 DIMENSION=${DIMENSION:-100}
 TRAINING_SEED=${TRAINING_SEED:-0}
+if [[ "$TRAINING_SEED" != "0" ]]; then
+  echo "Single-seed protocol permits only TRAINING_SEED=0" >&2
+  exit 2
+fi
 
 module load default
 source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh

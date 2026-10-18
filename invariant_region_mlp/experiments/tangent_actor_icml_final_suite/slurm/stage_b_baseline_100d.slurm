@@ -21,6 +21,11 @@ DPI_DEPS=/work/nvme/bgvf/ywang151/original_pde_source_audit/dpi_deps
 BASELINE=${BASELINE:?submit with BASELINE=deep_bsde|dpi|pinn_hte|sdgd_pinn}
 DIMENSION=${DIMENSION:-100}
 TRAINING_SEED=${TRAINING_SEED:-0}
+PROFILE=${PROFILE:-auto}
+if [[ "$TRAINING_SEED" != "0" ]]; then
+  echo "Single-seed protocol permits only TRAINING_SEED=0" >&2
+  exit 2
+fi
 
 case "$BASELINE" in
   deep_bsde)
@@ -70,11 +75,11 @@ for family in $FAMILIES; do
     dpi|pinn_hte)
       srun --network=no_vni python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.official_dpi_transfer \
         --method "$BASELINE" --pde "$family" --dimension "$DIMENSION" \
-        --seed "$TRAINING_SEED" --mode official
+        --seed "$TRAINING_SEED" --mode official --profile "$PROFILE"
       ;;
     sdgd_pinn)
       srun --network=no_vni python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.sdgd_transfer \
-        --family "$family" --dimension "$DIMENSION" --seed "$TRAINING_SEED"
+        --family "$family" --dimension "$DIMENSION" --seed "$TRAINING_SEED" --profile "$PROFILE"
       ;;
   esac
   echo "END baseline=$BASELINE family=$family dimension=$DIMENSION seed=$TRAINING_SEED utc=$(date -u +%FT%TZ)"
