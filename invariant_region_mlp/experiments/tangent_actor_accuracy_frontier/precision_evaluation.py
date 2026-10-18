@@ -203,7 +203,7 @@ def _evaluate_level(
 
 def _bootstrap_ci(
     error: np.ndarray,
-    mc_se: np.ndarray,
+    mc_variance: np.ndarray,
     reference_uncertainty: float,
     *,
     seed: int,
@@ -212,19 +212,38 @@ def _bootstrap_ci(
     rng = np.random.default_rng(seed)
     n = len(error)
     rmse = np.empty(replicates, dtype=np.float64)
+    residual = np.empty(replicates, dtype=np.float64)
     bias = np.empty(replicates, dtype=np.float64)
+    corrected_square = np.square(error) - mc_variance - reference_uncertainty**2
     for start in range(0, replicates, 250):
         count = min(250, replicates - start)
         index = rng.integers(0, n, (count, n))
         sampled = error[index]
-        sampled += rng.standard_normal((count, n)) * mc_se[index]
-        if reference_uncertainty:
-            sampled += rng.standard_normal((count, n)) * reference_uncertainty
         rmse[start:start + count] = np.sqrt(np.mean(np.square(sampled), axis=1))
+        residual[start:start + count] = np.sqrt(
+            np.maximum(np.mean(corrected_square[index], axis=1), 0.0)
+        )
         bias[start:start + count] = np.mean(sampled, axis=1)
+    point_rmse = float(np.sqrt(np.mean(np.square(error))))
+    mse_mc_se = float(
+        np.sqrt(np.sum(4.0 * np.square(error) * mc_variance + 2.0 * np.square(mc_variance)))
+        / n
+    )
+    rmse_mc_delta_se = mse_mc_se / max(2.0 * point_rmse, np.finfo(float).tiny)
+    raw_interval = np.quantile(rmse, [0.025, 0.975])
+    raw_interval[0] = max(
+        0.0, raw_interval[0] - 1.96 * rmse_mc_delta_se - reference_uncertainty
+    )
+    raw_interval[1] += 1.96 * rmse_mc_delta_se + reference_uncertainty
+    bias_mc_se = float(np.sqrt(np.sum(mc_variance)) / n)
+    bias_interval = np.quantile(bias, [0.025, 0.975])
+    bias_interval[0] -= 1.96 * bias_mc_se + reference_uncertainty
+    bias_interval[1] += 1.96 * bias_mc_se + reference_uncertainty
     return {
-        "rmse_95": np.quantile(rmse, [0.025, 0.975]).tolist(),
-        "bias_95": np.quantile(bias, [0.025, 0.975]).tolist(),
+        "rmse_95": raw_interval.tolist(),
+        "residual_rmse_95": np.quantile(residual, [0.025, 0.975]).tolist(),
+        "bias_95": bias_interval.tolist(),
+        "rmse_mc_delta_se": rmse_mc_delta_se,
     }
 
 
@@ -247,7 +266,7 @@ def _row(
     plain_error = prediction["plain"] - truth
     ci = _bootstrap_ci(
         error,
-        np.sqrt(mc_variance),
+        mc_variance,
         reference_uncertainty,
         seed=seed,
         replicates=bootstrap_replicates,
@@ -269,7 +288,10 @@ def _row(
         "rmse_ci95_high": ci["rmse_95"][1],
         "bias_ci95_low": ci["bias_95"][0],
         "bias_ci95_high": ci["bias_95"][1],
-        "confidence_method": "state bootstrap + Gaussian MC/reference perturbation",
+        "residual_rmse_ci95_low": ci["residual_rmse_95"][0],
+        "residual_rmse_ci95_high": ci["residual_rmse_95"][1],
+        "rmse_mc_delta_se": ci["rmse_mc_delta_se"],
+        "confidence_method": "state bootstrap widened by delta-method MC SE and conservative reference RMSE",
     }
     return result
 
