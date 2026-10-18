@@ -138,6 +138,10 @@ def _precision_rows() -> list[dict[str, Any]]:
             })
     for path in sorted(RAW_DIR.glob("selected_precision_*.json")):
         payload = _load(path)
+        refinement = {
+            item["coarse_steps"]: item
+            for item in payload.get("refinement_rows", [])
+        }
         for row in payload["rows"]:
             rows.append({
                 "family": payload["spec"]["family"], "d": payload["spec"]["d"],
@@ -156,8 +160,8 @@ def _precision_rows() -> list[dict[str, Any]]:
                 "training_seconds": None, "inference_seconds": row["wall_seconds"],
                 "total_production_seconds": None, "post_freeze_followup": True,
                 "evaluation_paths_selected_as_largest_completed_budget": True,
-                "coupled_prediction_difference_rms": None,
-                "noise_corrected_weak_difference_rms": None,
+                "coupled_prediction_difference_rms": refinement.get(row["steps"], {}).get("coupled_prediction_difference_rms"),
+                "noise_corrected_weak_difference_rms": refinement.get(row["steps"], {}).get("noise_corrected_weak_difference_rms"),
                 "observed_weak_order": None,
             })
     return rows

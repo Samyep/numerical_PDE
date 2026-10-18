@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import time
 
 import numpy as np
@@ -106,6 +107,23 @@ def run(
         arrays[f"mcv_{steps}"] = output["mcv"]
         arrays[f"plain_{steps}"] = output["plain"]
         arrays[f"mcv_pair_variance_{steps}"] = output["mcv_pair_variance"]
+    refinement_rows = []
+    for coarse, fine in zip(levels[:-1], levels[1:], strict=True):
+        difference = outputs[coarse]["mcv"] - outputs[fine]["mcv"]
+        pair_difference = outputs[coarse]["mcv_pairs"] - outputs[fine]["mcv_pairs"]
+        mc_mse = float(
+            np.mean(pair_difference.var(axis=1, ddof=1) / (paths // 2))
+        )
+        observed_rms = float(np.sqrt(np.mean(np.square(difference))))
+        refinement_rows.append({
+            "coarse_steps": coarse,
+            "fine_steps": fine,
+            "coupled_prediction_difference_rms": observed_rms,
+            "coupled_difference_mc_rmse": math.sqrt(mc_mse),
+            "noise_corrected_weak_difference_rms": math.sqrt(
+                max(observed_rms**2 - mc_mse, 0.0)
+            ),
+        })
     atomic_npz(prediction_path, **arrays)
     result = {
         "spec": spec.__dict__,
@@ -117,6 +135,7 @@ def run(
         "test_bank_sha256": array_sha256(t, x),
         "common_random_numbers_across_levels": True,
         "rows": rows,
+        "refinement_rows": refinement_rows,
         "prediction_path": str(prediction_path),
         "total_wall_seconds": time.perf_counter() - started,
         "ground_truth_used_for_training_or_selection": False,

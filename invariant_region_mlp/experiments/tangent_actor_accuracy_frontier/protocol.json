@@ -93,7 +93,7 @@
     "budget": "main",
     "training_seeds": [0, 1, 2],
     "selected_euler_steps": [64, 128, 256],
-    "add_512_if": "256-step CRN difference is not separated from MC and reference uncertainty"
+    "add_512_if": "sqrt(observed_128_to_256_difference_rms^2 + 4*coupled_difference_mc_rmse^2) + reference_uncertainty_rmse exceeds 0.1 times the 256-step RMSE"
   },
   "ambient_400": {
     "matched_full_ambient_first": true,
@@ -109,6 +109,12 @@
     },
     "learned_low_rank_ranks": [8, 16, 32],
     "rank_matrix_initialization": "random orthonormal; no beta vectors, reference solution, or analytic gradients",
+    "low_rank_helpful_definition": {
+      "selection_metric": "independent ranking-audit normalized fixed-point inconsistency",
+      "minimum_reduction_vs_full_ambient": 0.1,
+      "requires_stable_primary_vs_ranking_selection": true,
+      "ground_truth_used": false
+    },
     "transfer_to_coupled_if_helpful": true
   }
 }
