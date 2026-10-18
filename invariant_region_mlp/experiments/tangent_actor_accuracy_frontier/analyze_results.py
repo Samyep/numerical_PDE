@@ -435,6 +435,26 @@ def run() -> dict[str, Any]:
 
     primary512 = [row for row in precision if row["family"] == "primary" and row["steps"] == 512]
     primary_actor_mean, primary_actor_sd = _mean_sd([row["value_rmse"] for row in primary512]) if primary512 else (math.nan, math.nan)
+    primary256 = [row for row in precision if row["family"] == "primary" and row["steps"] == 256]
+    if primary512 and primary256:
+        residual_512 = float(np.mean([row["residual_error_proxy"] for row in primary512]))
+        mc_512 = float(np.mean([row["mc_rmse_contribution"] for row in primary512]))
+        reference_512 = float(max(row["reference_uncertainty_rmse"] for row in primary512))
+        time_512 = float(np.mean([
+            row["noise_corrected_weak_difference_rms"]
+            for row in primary256
+            if row["noise_corrected_weak_difference_rms"] is not None
+        ]))
+        actor_approximation_proxy = math.sqrt(max(residual_512**2 - time_512**2, 0.0))
+        remaining_components = {
+            "actor_approximation_proxy": actor_approximation_proxy,
+            "finite_path_mc": mc_512,
+            "time_discretization_proxy": time_512,
+            "reference_uncertainty": reference_512,
+        }
+        dominant_remaining_error = max(remaining_components, key=remaining_components.get)
+    else:
+        remaining_components, dominant_remaining_error = {}, None
     endpoint_groups = {}
     for row in full_history:
         if row["family"] == "primary" and row["source"] == "accuracy_frontier" and row["role"] == "endpoint" and row["finite"]:
@@ -475,6 +495,8 @@ def run() -> dict[str, Any]:
                 "residual_proxy_mean": float(np.mean([row["residual_error_proxy"] for row in local])),
                 "inference_seconds_mean": float(np.mean([row["inference_seconds"] for row in local])),
                 "total_production_seconds_mean": float(np.mean([row["total_production_seconds"] for row in local])),
+                "beats_strongest_full_history_mean": None if strongest is None else _mean_sd([row["value_rmse"] for row in local])[0] < strongest["rmse_mean"],
+                "clears_full_history_and_numerical_uncertainty": None if strongest is None else max(row["rmse_ci95_high"] for row in local) < strongest["rmse_ci95_low"] - max(row["reference_uncertainty_rmse"] for row in local),
             })
     threshold = float(frozen_protocol["reporting_accuracy_threshold_rmse"])
     actor_threshold = [row for row in primary_by_steps if row["rmse_mean"] <= threshold]
@@ -526,6 +548,8 @@ def run() -> dict[str, Any]:
         "decision": decision,
         "primary_actor_512_rmse_mean": primary_actor_mean,
         "primary_actor_512_rmse_sd": primary_actor_sd,
+        "primary_512_error_components": remaining_components,
+        "dominant_remaining_error": dominant_remaining_error,
         "strongest_full_history_endpoint": strongest,
         "primary_actor_advantage_positive": None if primary_advantage is None else primary_advantage > 0,
         "primary_actor_advantage_rmse": primary_advantage,

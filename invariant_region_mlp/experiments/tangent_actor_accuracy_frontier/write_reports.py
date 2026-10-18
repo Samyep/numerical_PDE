@@ -203,6 +203,9 @@ def _main_report(summary: dict, euler, full, nonsep, ambient) -> None:
     decision = summary["decision"]
     strongest = summary.get("strongest_full_history_endpoint")
     actor = summary.get("primary_actor_512_rmse_mean")
+    euler_summary = {
+        int(row["steps"]): row for row in summary.get("primary_euler_summary", [])
+    }
     lines = [
         "# Tangent-Actor High-Accuracy Frontier",
         "",
@@ -242,15 +245,24 @@ def _main_report(summary: dict, euler, full, nonsep, ambient) -> None:
         "",
         "## Answers to the research questions",
         "",
-        "1. **128-step replication.** See `HIGH_PRECISION_EULER_AUDIT.md`; all three frozen Actors use a new MC stream and CRN refinement.",
-        "2. **256 and 512 steps.** The Euler table reports raw, MC, reference, and residual components and measured weak differences.",
+        (
+            f"1. **128-step replication.** The independent three-seed mean is `{euler_summary[128]['rmse_mean']:.6g}`; "
+            f"it beats the strongest completed Full-History mean: **{euler_summary[128]['beats_strongest_full_history_mean']}**, "
+            f"and clears the conservative uncertainty test: **{euler_summary[128]['clears_full_history_and_numerical_uncertainty']}**."
+            if 128 in euler_summary else "1. **128-step replication.** Not completed."
+        ),
+        (
+            f"2. **256 and 512 steps.** Mean RMSEs are `{euler_summary[256]['rmse_mean']:.6g}` and `{euler_summary[512]['rmse_mean']:.6g}`; "
+            f"their robust strongest-baseline comparisons are **{euler_summary[256]['clears_full_history_and_numerical_uncertainty']}** and **{euler_summary[512]['clears_full_history_and_numerical_uncertainty']}**."
+            if 256 in euler_summary and 512 in euler_summary else "2. **256 and 512 steps.** Not both completed."
+        ),
         "3. **Full-History ceiling.** `STRONG_FULL_HISTORY_COMPARISON.md` retains every completed or failed depth/budget row.",
         f"4. **Strongest primary comparison.** Robust Tangent-Actor advantage: **{summary['robust_primary_advantage']}**.",
         f"5. **Nonseparable improvement.** Three-seed supporting result: **{summary['nonseparable_support']}**; lower mean error than the strongest coupled Full-History endpoint: **{summary['coupled_actor_beats_full_history']}**.",
         f"6. **Seed stability.** The primary 512-step seed standard deviation is `{summary.get('primary_actor_512_rmse_sd', math.nan):.3g}`; nonseparable trajectories are reported without selecting the best seed.",
         f"7. **400D matched budget.** Seed 0 crossed the predeclared 10% gate: **{summary['d400_seed0_meaningful']}**. Replicated success criterion met: **{summary['d400_fixed']}**.",
         f"8. **Learned low rank.** `{summary['low_rank_runs']}` completed ablation rows are reported individually; no oracle subspace is used.",
-        "9. **Remaining error.** The Euler and ambient audits separate time discretization, finite-path MC, reference accuracy, Actor error, and full-ambient generalization.",
+        f"9. **Remaining error.** The largest 512-step diagnostic component is **{summary.get('dominant_remaining_error')}**. The reported component magnitudes are `{summary.get('primary_512_error_components')}`; the Actor term is a residual proxy after removing measured MC, reference, and CRN time-step contributions, rather than an exact decomposition.",
         "10. **Defensible claim.** Tangent-Actor is an accurate learned linearization method for the tested smooth bounded-curvature, locally stable semilinear PDEs. Claims of universal nonconvex convergence, a global reference-free certificate, or general speed superiority are not supported.",
         "",
         "## Artifacts",
