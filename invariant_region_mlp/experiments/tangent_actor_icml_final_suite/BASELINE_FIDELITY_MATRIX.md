@@ -39,6 +39,14 @@ chunks. This does not change `DATA_SIZE=4096`, the 4,096 terminal/integral
 paths per target, the 40 Picard rounds, or the 16 optimizer epochs per round.
 It is source-native memory scheduling rather than a reduced-budget adaptation.
 
+The pinned DPI source calls `torch.load` without a `weights_only` argument.
+PyTorch 2.6 changed that default and rejects the source's own Lightning
+checkpoint objects. The final runner sets
+`TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`, restoring the pre-2.6 trusted-checkpoint
+behavior without editing the pinned checkout, network state, optimizer, data,
+or any numerical update. This is an environment compatibility fix, not an
+algorithmic adaptation.
+
 The DPI/PINN transfer preserves the official method's own terminal embedding;
 the SDGD transfer preserves its source-native hard terminal embedding. These
 are baseline features, not Tangent-Actor additions. None of the external

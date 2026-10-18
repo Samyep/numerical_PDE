@@ -396,6 +396,11 @@ def _patch_upstream(capture: Path) -> None:
         return result
 
     solutions.PINNSolution.train = pinn_train_and_capture
+    # PyTorch 2.6 changed torch.load's default to weights_only=True.  The
+    # pinned upstream code predates that change and reloads its own trusted
+    # Lightning checkpoints without passing weights_only.  Restore the old
+    # loading behavior without editing the pinned source checkout.
+    os.environ.setdefault("TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD", "1")
     original_callbacks = PicardRunner.get_reporting_callbacks
 
     def callbacks_without_rich(self):
@@ -590,6 +595,10 @@ def execute(method: str, pde: str, d: int, seed: int, mode: str) -> dict[str, An
             "full_training_cost_charged": True,
         },
         "ground_truth_used_for_training_or_selection": False,
+        "checkpoint_load_compatibility": (
+            "TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1 restores the pinned source's "
+            "pre-PyTorch-2.6 trusted Lightning checkpoint semantics"
+        ),
         "terminal_aware_feature_added_by_us": False,
         "mcv_added_by_us": False,
         "oracle_projection": False,
