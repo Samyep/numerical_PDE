@@ -532,6 +532,14 @@ def _ablation_rows(frontier: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if not path.exists():
             continue
         payload = json.loads(path.read_text())
+        selection_path = FRONTIER / f"selection_coupled_d100_k2_lam0p2_eta1_main_mcv_s{seed}.json"
+        selection = {}
+        if selection_path.exists():
+            selection_payload = json.loads(selection_path.read_text())
+            selection = {
+                row["actor"]: row["normalized_total_inconsistency"]
+                for row in selection_payload.get("primary_diagnostics", [])
+            }
         for item in payload["iteration_rows"]:
             for variant in ("plain", "mcv"):
                 rows.append({
@@ -545,7 +553,7 @@ def _ablation_rows(frontier: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "variance_reduction": item["mcv_variance_reduction"],
                     "actor_value_rmse": item["actor_value_rmse"],
                     "actor_gradient_vector_rmse": item["actor_gradient_vector_rmse"],
-                    "selection_metric": None, "training_seconds": None,
+                    "selection_metric": selection.get(item["iteration"]), "training_seconds": None,
                     "source_artifact": str(path.relative_to(SOURCE_ROOT)),
                     "evidence_role": "paired post-freeze inference ablation; mature historical reuse",
                 })
@@ -559,7 +567,7 @@ def _ablation_rows(frontier: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "variance_reduction": item["mcv_variance_reduction"],
                 "actor_value_rmse": item["actor_value_rmse"],
                 "actor_gradient_vector_rmse": item["actor_gradient_vector_rmse"],
-                "selection_metric": None, "training_seconds": None,
+                "selection_metric": selection.get(item["iteration"]), "training_seconds": None,
                 "source_artifact": str(path.relative_to(SOURCE_ROOT)),
                 "evidence_role": "mature update-by-update diagnostic; test truth not used for selection",
             })
