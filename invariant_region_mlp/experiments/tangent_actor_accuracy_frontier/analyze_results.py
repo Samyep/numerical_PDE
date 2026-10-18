@@ -291,16 +291,33 @@ def _compute_rows(full_history, precision, nonseparable, ambient) -> list[dict[s
     rows = []
     for path in sorted(OLD_RESULTS_DIR.glob("training_primary_d100_k2_lam0p2_eta0_main_mcv_s*.json")):
         payload = _load(path)
-        rows.append({"run_id": payload["spec"]["seed"], "family": "primary", "d": 100, "stage": "historical_training_and_selection", "seconds": payload["wall_seconds_this_invocation"], "peak_gpu_bytes": None})
+        rows.append({"run_id": payload["spec"]["seed"], "family": "primary", "d": 100, "stage": "historical_training_and_selection", "cost_category": "production_training_and_reference_free_selection", "cost_scope": "top_level", "seconds": payload["wall_seconds_this_invocation"], "peak_gpu_bytes": None})
     for path in sorted(RESULTS_DIR.glob("training_*.json")):
         payload = _load(path)
-        rows.append({"run_id": payload.get("run_id", payload["spec"].get("seed")), "family": payload["spec"]["family"], "d": payload["spec"]["d"], "stage": "training_and_selection", "seconds": payload["wall_seconds_this_invocation"], "peak_gpu_bytes": None})
+        run_id = payload.get("run_id", payload["spec"].get("seed"))
+        rows.append({"run_id": run_id, "family": payload["spec"]["family"], "d": payload["spec"]["d"], "stage": "training_and_selection", "cost_category": "production_training_and_reference_free_selection", "cost_scope": "top_level", "seconds": payload["wall_seconds_this_invocation"], "peak_gpu_bytes": None})
         for phase in payload["phases"]:
-            rows.append({"run_id": payload.get("run_id", payload["spec"].get("seed")), "family": payload["spec"]["family"], "d": payload["spec"]["d"], "stage": f"a{phase['iteration']}_actor_fit", "seconds": phase["training"]["wall_seconds"], "peak_gpu_bytes": phase["training"].get("peak_gpu_bytes")})
+            rows.append({"run_id": run_id, "family": payload["spec"]["family"], "d": payload["spec"]["d"], "stage": f"a{phase['iteration']}_actor_fit", "cost_category": "training_component", "cost_scope": "component_nonadditive", "seconds": phase["training"]["wall_seconds"], "peak_gpu_bytes": phase["training"].get("peak_gpu_bytes")})
+            rows.append({"run_id": run_id, "family": payload["spec"]["family"], "d": payload["spec"]["d"], "stage": f"a{phase['iteration']}_label_generation", "cost_category": "supervision_component", "cost_scope": "component_nonadditive", "seconds": sum(float(phase["labels"][name]["wall_seconds"]) for name in ("train", "validation", "replication")), "peak_gpu_bytes": max(phase["labels"][name].get("peak_gpu_bytes") or 0 for name in ("train", "validation", "replication"))})
     for row in precision:
-        rows.append({"run_id": row["training_seed"], "family": row["family"], "d": row["d"], "stage": f"precision_inference_{row['steps']}", "seconds": row["inference_seconds"], "peak_gpu_bytes": None})
+        rows.append({"run_id": row["training_seed"], "family": row["family"], "d": row["d"], "stage": f"precision_inference_{row['steps']}", "cost_category": "post_freeze_precision_diagnostic", "cost_scope": "component", "seconds": row["inference_seconds"], "peak_gpu_bytes": row.get("peak_gpu_bytes")})
     for row in full_history:
-        rows.append({"run_id": f"fh_{row['family']}_n{row['n']}_M{row['M']}_s{row['seed']}", "family": row["family"], "d": row["d"], "stage": "full_history_inference", "seconds": row["wall_seconds"], "peak_gpu_bytes": row["peak_gpu_bytes"]})
+        rows.append({"run_id": f"fh_{row['family']}_n{row['n']}_M{row['M']}_s{row['seed']}", "family": row["family"], "d": row["d"], "stage": "full_history_inference", "cost_category": "baseline_frontier_evaluation", "cost_scope": "top_level", "seconds": row["wall_seconds"], "peak_gpu_bytes": row["peak_gpu_bytes"]})
+    for path in sorted(RESULTS_DIR.glob("post_freeze_*.json")):
+        payload = _load(path)
+        rows.append({
+            "run_id": payload.get("run_id", payload["selected_row"]["run_id"]),
+            "family": payload["spec"]["family"], "d": payload["spec"]["d"],
+            "stage": "post_freeze_actor_and_policy_audit",
+            "cost_category": "ground_truth_diagnostic",
+            "cost_scope": "top_level", "seconds": payload["wall_seconds"],
+            "peak_gpu_bytes": None,
+        })
+    for family in ("primary", "coupled"):
+        path = REFERENCE_DIR / f"{family}_refinement_audit.json"
+        if path.exists():
+            payload = _load(path)
+            rows.append({"run_id": f"reference_{family}_n{payload['refined_n']}", "family": family, "d": 2, "stage": "independent_reference_refinement", "cost_category": "diagnostic_cpu_reference", "cost_scope": "top_level_latest_refinement", "seconds": payload["wall_seconds"], "peak_gpu_bytes": None})
     return rows
 
 
