@@ -30,9 +30,11 @@ has a common-bank post-freeze diagnostic for every `a0,...,a4` checkpoint; its
 reference-free selector chose `a3`, and no test truth entered training or
 selection. The corresponding joint-convex diagnostic is also complete; its
 reference-free selector chose `a4`, which had the smallest common-bank MCV
-error, though the `a3`--`a4` difference is below MC resolution. The next
-scheduled cells are the reproduced Full-History MLP dimension curve and the
-serial 100D external-baseline batches.
+error, though the `a3`--`a4` difference is below MC resolution. The frozen
+six-dimensional Full-History MLP reproduction is complete, including the
+previously missing 400D point, with 512 repetitions and bootstrap intervals at
+every dimension. The next scheduled cells are the serial 100D external-baseline
+batches.
 
 Validated resumable launchers now cover the Stage B baselines, Stage C Actor
 dimension extremes, Stage D remaining Actor dimensions, baseline dimension

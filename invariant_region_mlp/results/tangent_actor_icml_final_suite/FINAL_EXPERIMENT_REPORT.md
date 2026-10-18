@@ -148,13 +148,21 @@ fits, while the policy-value metric becomes MC limited after `a1`.
 
 ### MLP dimensional-failure mechanism
 
-At 100D, raw Full-History MLP with the audited `n=m=3` recursion has RMSE
-`39.2967`. The separately trained Tangent-Actor has 64-step MCV RMSE
+The reproduced raw Full-History MLP curve uses the audited `n=m=3` recursion
+and 512 independent repetitions per dimension. Its RMSEs at
+`d=20,50,100,200,400,1000` are respectively
+
+`7.5654, 19.4756, 39.2967, 79.0731, 158.0477, 396.9779`.
+
+All samples were finite. At the newly completed 400D point, the 95% bootstrap
+interval is `[154.1189, 162.0082]`. The separately trained 100D Tangent-Actor
+has 64-step MCV RMSE
 `0.0066623` and 128-step MCV RMSE `0.0063182`. This Tangent-Actor result uses
 the documented minimum-norm subgradient at the nonsmooth origin and is labeled
-`adapted`; it is not a smooth-PDE convergence theorem. The missing raw MLP
-400D point and remaining Tangent-Actor dimensions are still pending. No claim
-of fundamental Full-History MLP nonconvergence is made.
+`adapted`; it is not a smooth-PDE convergence theorem. The remaining
+Tangent-Actor dimensions are still pending. No claim of fundamental
+Full-History MLP nonconvergence is made; this is the frozen low-level mechanism
+experiment rather than an asymptotic convergence study.
 
 ### MCV and high-accuracy evidence
 
@@ -189,6 +197,12 @@ double counted. Failed and cancelled scheduler attempts remain visible in
 `RESOURCE_ACCOUNTING.csv`; the corrected pre-allocation cancellation consumed
 zero GPU time.
 
+The Full-History implementation is CPU-only, but the DeltaAI GH partition
+requires every submitted job to reserve a GPU. Its 11-second scheduler
+allocation is therefore charged as `0.0031` GH200 GPU-hours, bringing the
+incremental total to `2.1008` hours even though the algorithm did not use GPU
+arithmetic.
+
 No speed claim is currently supported. The final comparison will separate
 Actor fitting, reference-free model selection, frozen-model inference, and
 total allocated compute. Published baselines that are still improving at
@@ -208,11 +222,10 @@ present, and Allen–Cahn has no artificial MCV row. The suite status remains
 
 1. Run the source-faithful 100D Deep BSDE native solves and DPI, PINN-HTE, and
    SDGD-PINN whole-function transfers.
-2. Reproduce the six-dimensional raw Full-History MLP curve, including 400D.
-3. Execute dimension extremes, then the intermediate dimension grid.
-4. Complete missing independent training seeds and the frozen
+2. Execute dimension extremes, then the intermediate dimension grid.
+3. Complete missing independent training seeds and the frozen
    64/128/256/512 evaluation frontier.
-5. Regenerate all tables and figures, quantify incomplete or resource-limited
+4. Regenerate all tables and figures, quantify incomplete or resource-limited
    cells, and only then assign Scientific GO, Benchmark GO, and compute
    efficiency separately.
 
