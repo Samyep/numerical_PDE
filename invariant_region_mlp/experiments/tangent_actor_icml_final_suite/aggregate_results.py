@@ -82,6 +82,28 @@ def _compact(value: Any) -> str | None:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
 
 
+def _max_key(value: Any, key: str) -> float | None:
+    found: list[float] = []
+    if isinstance(value, dict):
+        for name, item in value.items():
+            if name == key:
+                try:
+                    number = float(item)
+                    if np.isfinite(number):
+                        found.append(number)
+                except (TypeError, ValueError):
+                    pass
+            nested = _max_key(item, key)
+            if nested is not None:
+                found.append(nested)
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            nested = _max_key(item, key)
+            if nested is not None:
+                found.append(nested)
+    return max(found) if found else None
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -272,7 +294,17 @@ def _new_tangent_rows() -> tuple[list[dict[str, Any]], list[dict[str, Any]], lis
         training_path = RAW_DIR / f"training_{run_id}.json"
         training = json.loads(training_path.read_text())
         config = training.get("configuration", {})
-        training_seconds = training.get("invocation_seconds")
+        invocation_seconds = training.get("invocation_seconds")
+        phase_seconds = sum(
+            float(phase.get("phase_seconds") or 0.0)
+            for phase in training.get("phases", [])
+        )
+        training_seconds = phase_seconds or invocation_seconds
+        model_selection_seconds = (
+            max(float(invocation_seconds) - phase_seconds, 0.0)
+            if invocation_seconds is not None and phase_seconds else None
+        )
+        training_peak = _max_key(training, "peak_gpu_bytes")
         selected = result.get("selected_actor")
         checkpoint = training.get("selection", {}).get("selected_checkpoint")
         bank_hash = result.get("test_bank_sha256")
@@ -298,9 +330,14 @@ def _new_tangent_rows() -> tuple[list[dict[str, Any]], list[dict[str, Any]], lis
                 mc_rmse_contribution=metric.get("mc_rmse_contribution"),
                 variance_reduction=metric.get("variance_reduction"),
                 weight_ess_fraction=metric.get("weight_ess_fraction"),
-                training_seconds=training_seconds, inference_seconds=metric.get("inference_seconds"),
-                total_seconds=(float(training_seconds or 0.0) + float(metric.get("inference_seconds") or 0.0)),
-                peak_gpu_bytes=metric.get("peak_gpu_bytes"),
+                training_seconds=training_seconds,
+                model_selection_seconds=model_selection_seconds,
+                inference_seconds=metric.get("inference_seconds"),
+                total_seconds=(float(invocation_seconds or training_seconds or 0.0)
+                               + float(metric.get("inference_seconds") or 0.0)),
+                peak_gpu_bytes=max(
+                    float(training_peak or 0.0), float(metric.get("peak_gpu_bytes") or 0.0),
+                ) or None,
                 nonfinite_count=metric.get("nonfinite_count"),
                 hyperparameters=_compact(config),
                 notes=(
@@ -327,9 +364,10 @@ def _new_tangent_rows() -> tuple[list[dict[str, Any]], list[dict[str, Any]], lis
                 "mc_standard_error": metric.get("mc_standard_error"),
                 "steps": metric["steps"], "paths": metric["paths"],
                 "estimator": metric["estimator"], "training_seconds": training_seconds,
+                "model_selection_seconds": model_selection_seconds,
                 "inference_seconds": metric.get("inference_seconds"),
-                "total_seconds": float(training_seconds or 0.0) + float(metric.get("inference_seconds") or 0.0),
-                "peak_gpu_bytes": None, "nonfinite_count": metric.get("nonfinite_count"),
+                "total_seconds": float(invocation_seconds or training_seconds or 0.0) + float(metric.get("inference_seconds") or 0.0),
+                "peak_gpu_bytes": training_peak, "nonfinite_count": metric.get("nonfinite_count"),
                 "full_training_cost_charged": False,
                 "notes": "post-freeze native point; independent MC stream",
             })
