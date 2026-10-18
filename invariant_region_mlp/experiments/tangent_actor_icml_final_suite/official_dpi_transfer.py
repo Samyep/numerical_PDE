@@ -501,6 +501,8 @@ def execute(
     profile: str = "auto",
 ) -> dict[str, Any]:
     _dirs()
+    if mode == "official" and seed != 0:
+        raise ValueError("single-seed benchmark protocol permits only seed 0")
     if EXTERNAL_ROOT.joinpath(".git").exists():
         import subprocess
         revision = subprocess.check_output(

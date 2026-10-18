@@ -175,6 +175,8 @@ def _restore_rng(state: dict[str, Any]) -> None:
 
 
 def execute(family: str, d: int, seed: int, device: torch.device, *, smoke: bool = False):
+    if not smoke and seed != 0:
+        raise ValueError("single-seed benchmark protocol permits only seed 0")
     RAW_DIR.mkdir(parents=True, exist_ok=True); CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
     tag = "smoke" if smoke else "official"
     run_id = f"deep_bsde_{family}_d{d}_{tag}_s{seed}"
