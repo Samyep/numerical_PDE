@@ -43,3 +43,7 @@ for M in 384 512; do
     --family primary --d 100 --lam 0.2 --actor-seed 0 --baseline-seed "$TRAINING_SEED" \
     --n 3 --M "$M" --role endpoint
 done
+
+srun --network=no_vni python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.full_history_frontier \
+  --family primary --d 100 --lam 0.2 --actor-seed 0 --baseline-seed "$TRAINING_SEED" \
+  --n 4 --M 96 --role endpoint
