@@ -25,6 +25,7 @@ def test_native_anchors_are_frozen() -> None:
 def test_nonsmooth_problem_is_never_silently_called_faithful() -> None:
     for method in METHODS:
         assert compatibility("mlp_failure", method, 100)[0] == "adapted"
+        assert compatibility("mlp_failure", method, 100)[1] == "pending"
 
 
 def test_protocol_hash_is_stable_length() -> None:
