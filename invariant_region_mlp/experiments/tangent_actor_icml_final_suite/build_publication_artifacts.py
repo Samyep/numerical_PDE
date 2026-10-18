@@ -592,6 +592,8 @@ def build_reproducibility_manifest(artifacts: Iterable[Path]) -> Path:
 
 def build_artifact_audit(artifacts: Iterable[Path]) -> Path:
     manifest = json.loads((RESULTS_DIR / "EXECUTION_MANIFEST.json").read_text())
+    main = pd.read_csv(RESULTS_DIR / "MAIN_RESULTS.csv")
+    native = pd.read_csv(RESULTS_DIR / "NATIVE_POINT_RESULTS.csv")
     counts: dict[str, int] = {}
     for row in manifest["method_cells"]:
         counts[row["execution_status"]] = counts.get(row["execution_status"], 0) + 1
@@ -604,12 +606,60 @@ def build_artifact_audit(artifacts: Iterable[Path]) -> Path:
         })
     pending = sum(count for status, count in counts.items() if not status.startswith("completed")
                   and status != "unsupported")
+    main_text = main.astype(str)
+    native_text = native.astype(str)
+    source_paths = list(main["source_artifact"].dropna()) + list(native["source_artifact"].dropna())
+    checks = {
+        "main_has_no_deep_bsde": int((main["method"] == "deep_bsde").sum()) == 0,
+        "deep_bsde_rows_are_native_only": bool(
+            len(native[native["method"] == "deep_bsde"]) > 0
+            and (native[native["method"] == "deep_bsde"]["full_training_cost_charged"] == True).all()  # noqa: E712
+        ),
+        "smoke_artifacts_excluded": bool(
+            not main_text.apply(lambda column: column.str.contains("smoke", case=False)).any(axis=1).any()
+            and not native_text.apply(lambda column: column.str.contains("smoke", case=False)).any(axis=1).any()
+        ),
+        "main_scientific_key_unique": int(
+            main.duplicated(["pde", "dimension", "method", "seed"]).sum()
+        ) == 0,
+        "main_metrics_finite": bool(
+            np.isfinite(main[["value_rmse", "value_relative_l2"]].to_numpy(dtype=float)).all()
+        ),
+        "native_errors_finite": bool(
+            np.isfinite(native["absolute_error"].to_numpy(dtype=float)).all()
+        ),
+        "reference_uncertainty_complete": bool(
+            np.isfinite(main["reference_uncertainty"].to_numpy(dtype=float)).all()
+            and np.isfinite(native["reference_uncertainty"].to_numpy(dtype=float)).all()
+        ),
+        "test_bank_hash_complete_for_whole_function": bool(main["test_bank_sha256"].notna().all()),
+        "source_provenance_complete": bool(
+            main[["source_commit", "source_artifact", "method_status"]].notna().all().all()
+            and native[["source_commit", "source_artifact", "method_status"]].notna().all().all()
+        ),
+        "source_artifacts_exist_in_workspace": bool(
+            all((SOURCE_ROOT / str(item)).exists() for item in source_paths)
+        ),
+        "allen_cahn_has_no_artificial_mcv": int(
+            ((main["pde"] == "allen_cahn") & (main["estimator"] == "mcv")).sum()
+        ) == 0,
+        "complete_rows_are_finite": bool(
+            (pd.to_numeric(main["nonfinite_count"], errors="coerce").fillna(0) == 0).all()
+            and (pd.to_numeric(native["nonfinite_count"], errors="coerce").fillna(0) == 0).all()
+        ),
+    }
+    checks_passed = all(checks.values())
+    if not checks_passed:
+        failed = sorted(name for name, passed in checks.items() if not passed)
+        raise RuntimeError(f"canonical artifact audit failed: {failed}")
     payload = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "suite_status": "complete" if pending == 0 else "in_progress",
         "execution_status_counts": counts, "pending_supported_method_cells": pending,
-        "deep_bsde_excluded_from_whole_function_main_table": True,
-        "smoke_results_excluded": True,
+        "canonical_checks_passed": checks_passed,
+        "canonical_checks": checks,
+        "deep_bsde_excluded_from_whole_function_main_table": checks["main_has_no_deep_bsde"],
+        "smoke_results_excluded": checks["smoke_artifacts_excluded"],
         "artifacts": records,
     }
     path = RESULTS_DIR / "FINAL_ARTIFACT_AUDIT.json"
