@@ -2,11 +2,12 @@
 #SBATCH --job-name=icml_baseline_pack
 #SBATCH --account=bgvf-dtai-gh
 #SBATCH --partition=ghx4-interactive
-#SBATCH --nodes=1
+#SBATCH --nodes=2
 #SBATCH --ntasks=4
+#SBATCH --ntasks-per-node=2
 #SBATCH --cpus-per-task=12
-#SBATCH --gpus-per-node=4
-#SBATCH --mem=440G
+#SBATCH --gpus-per-node=2
+#SBATCH --mem=220G
 #SBATCH --time=02:00:00
 #SBATCH --exclude=gh097
 #SBATCH --output=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/slurm/%x_%j.out
