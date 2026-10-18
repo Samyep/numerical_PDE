@@ -1,0 +1,479 @@
+{
+  "ground_truth_used_for_training_or_selection": false,
+  "mathematical_audit": {
+    "convex_sign_transform_identity_max_abs": 0.0,
+    "dense_basis": {
+      "10": {
+        "basis_max_abs_entry": 0.6568475400630748,
+        "basis_orthogonality_max_abs": 2.220446049250313e-16,
+        "dense_nonzero_fraction": 1.0
+      },
+      "100": {
+        "basis_max_abs_entry": 0.2645772484586233,
+        "basis_orthogonality_max_abs": 8.881784197001252e-16,
+        "dense_nonzero_fraction": 1.0
+      },
+      "20": {
+        "basis_max_abs_entry": 0.5211267694968238,
+        "basis_orthogonality_max_abs": 4.440892098500626e-16,
+        "dense_nonzero_fraction": 1.0
+      },
+      "200": {
+        "basis_max_abs_entry": 0.21983182399232193,
+        "basis_orthogonality_max_abs": 4.440892098500626e-16,
+        "dense_nonzero_fraction": 1.0
+      },
+      "400": {
+        "basis_max_abs_entry": 0.19464023545151202,
+        "basis_orthogonality_max_abs": 1.3322676295501878e-15,
+        "dense_nonzero_fraction": 1.0
+      },
+      "50": {
+        "basis_max_abs_entry": 0.43451202364477537,
+        "basis_orthogonality_max_abs": 8.881784197001252e-16,
+        "dense_nonzero_fraction": 1.0
+      }
+    },
+    "existing_reference_artifact_sha256": {
+      "joint": "e45c6d2c45f529926da38277b7121315d47d99bef1cb57062e96f28076d5a3ed",
+      "mlp_failure": "8593612ad7d6f72f125783ac64f56dfdb63c68c1a8f197d27f447ca089e665f8",
+      "nonconvex": "313ac02dd68c2db663e4b1521fe44a38f277e3a25f8b4c333b0d66fe715a6f94",
+      "original": "9ec4fa667274cde81387cc378135d38e9b895e271d7f8fedc44d0d7abd745dc1"
+    },
+    "joint_tangent_checks": {
+      "joint_concave": {
+        "b_max_abs": 0.0,
+        "c_max_abs": 0.0,
+        "h_max_abs": 0.0
+      },
+      "joint_convex_working": {
+        "b_max_abs": 0.0,
+        "c_max_abs": 0.0,
+        "h_max_abs": 0.0
+      },
+      "nonconvex_coupled": {
+        "b_max_abs": 0.0,
+        "c_max_abs": 4.440892098500626e-16,
+        "h_max_abs": 4.440892098500626e-16
+      }
+    },
+    "mlp_failure_subgradient": {
+      "nonzero_inactive_direction_norm_error": 2.220446049250313e-16,
+      "nonzero_tangent_remainder_max_abs": 1.7763568394002505e-15,
+      "selection_rule": "minimum-norm subgradient b(0)=0",
+      "zero_h_max_abs": 0.0,
+      "zero_subgradient_norm": 0.0
+    },
+    "passed": true,
+    "smooth_tangent_checks": {
+      "allen_cahn": {
+        "b_max_abs": 0.0,
+        "c_max_abs": 0.0,
+        "tangent_reconstruction_max_abs": 3.3306690738754696e-16
+      },
+      "hjb_log": {
+        "b_max_abs": 0.0,
+        "c_max_abs": 0.0,
+        "tangent_reconstruction_max_abs": 0.0
+      },
+      "ou_gmm": {
+        "b_max_abs": 0.0,
+        "c_max_abs": 0.0,
+        "tangent_reconstruction_max_abs": 2.842170943040401e-14
+      }
+    }
+  },
+  "ou_gmm_transfer_parameters": {
+    "10": {
+      "mean_max": 0.9976290464401245,
+      "mean_min": -0.9922218322753906,
+      "parameter_array_sha256": "74f37dfee50b6811e6ac2e7c6ceb737a34e0bb74eb5e37f077a5236df911ac8d",
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/ou_gmm_d10.npz",
+      "pi": [
+        0.19058146887717858,
+        0.0778063313131479,
+        0.3963222347048913,
+        0.3173103603568675,
+        0.017979604747914702
+      ],
+      "pi_sum": 0.9999999999999999,
+      "seed": 3059525685,
+      "sha256": "cac9782050c45e92296f15105e4c9fefdcc2dbb0eade1c70a8b5d76162644202",
+      "source": "official constructor distributions: means U[-1,1], covariance 2I, normalized U[0,1] weights"
+    },
+    "100": {
+      "mean_max": 0.9919810780779197,
+      "mean_min": -0.9992893604090476,
+      "parameter_array_sha256": "2437348eac3f53d2e3fba9f771b816608562c2757bc65421b12d9b6ccf477024",
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/ou_gmm_d100.npz",
+      "pi": [
+        0.14467784728535774,
+        0.27046834149964694,
+        0.1865999941062482,
+        0.1111693337769943,
+        0.2870844833317529
+      ],
+      "pi_sum": 1.0,
+      "seed": null,
+      "sha256": "3766e77dc79db2a3dd9d1d358665da8e0b7a46119bab3d012ae0fb033396e66e",
+      "source": "official tracked tensors; covariance restored to 2I"
+    },
+    "20": {
+      "mean_max": 0.9942697286605835,
+      "mean_min": -0.9784020185470581,
+      "parameter_array_sha256": "9102f572d937a706ef56d9188f51ce5deafad9b1f673650a914ef2112979b9be",
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/ou_gmm_d20.npz",
+      "pi": [
+        0.10402412680538176,
+        0.054179110959344,
+        0.0842325752781256,
+        0.6188972753762558,
+        0.13866691158089278
+      ],
+      "pi_sum": 1.0,
+      "seed": 4031552014,
+      "sha256": "80d94f1a18dc0ea650412a2086bdcf1d45c7f6f8bd4b7d821bba3249b5282c2f",
+      "source": "official constructor distributions: means U[-1,1], covariance 2I, normalized U[0,1] weights"
+    },
+    "200": {
+      "mean_max": 0.998579740524292,
+      "mean_min": -0.9981687068939209,
+      "parameter_array_sha256": "4cfe1f4cc343bc9de8a25823b059373a5fa9b5b8c8115b101844648e9a1cdd51",
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/ou_gmm_d200.npz",
+      "pi": [
+        0.18971472521599816,
+        0.33205304334617375,
+        0.28994467950175873,
+        0.18050986704183292,
+        0.007777684894236406
+      ],
+      "pi_sum": 0.9999999999999999,
+      "seed": 290077515,
+      "sha256": "37d421f43be19792100e66915e961ca5fd9141cf8bddd1ef13e6b185f37c13c9",
+      "source": "official constructor distributions: means U[-1,1], covariance 2I, normalized U[0,1] weights"
+    },
+    "400": {
+      "mean_max": 0.9990792274475098,
+      "mean_min": -0.9994659423828125,
+      "parameter_array_sha256": "4c395f2178d2cb0c46ebf9b9ca4931333e35ed8e34e82a5a81fe2e3fc4e2d9f2",
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/ou_gmm_d400.npz",
+      "pi": [
+        0.09218063894537956,
+        0.2645587029729663,
+        0.28560705391524205,
+        0.07545780369249305,
+        0.28219580047391907
+      ],
+      "pi_sum": 1.0000000000000002,
+      "seed": 4288097947,
+      "sha256": "d71fb9d1b64f95f3fcbe494757eaa897ca9ce68ebe8ff7bdd4d1299fe53a3300",
+      "source": "official constructor distributions: means U[-1,1], covariance 2I, normalized U[0,1] weights"
+    },
+    "50": {
+      "mean_max": 0.9998884201049805,
+      "mean_min": -0.9985761642456055,
+      "parameter_array_sha256": "c24b0997322d99987de6823ba293722bbee9768bb2b74d9bd1e66e7420d48e1c",
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/ou_gmm_d50.npz",
+      "pi": [
+        0.2839597672877852,
+        0.2942325331143959,
+        0.19685446855009178,
+        0.13755959731800402,
+        0.0873936337297231
+      ],
+      "pi_sum": 1.0000000000000002,
+      "seed": 1001012241,
+      "sha256": "447f091299570db6c37b4492693c2e43d9ef26a2649fa23e42c2ee6820c7a1fd",
+      "source": "official constructor distributions: means U[-1,1], covariance 2I, normalized U[0,1] weights"
+    }
+  },
+  "passed": true,
+  "test_banks": {
+    "allen_cahn_d10": {
+      "array_sha256": "f26c256589bbfd9b7b904bbd015e72d857becbcdada558ccf669fe80e1246d58",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_allen_cahn_d10.npz",
+      "sha256": "18f3aedd3e3682e89839db86ad58c9b9c8116afab6e4b70c5303bfe5d5c7fec4",
+      "states": 960
+    },
+    "allen_cahn_d100": {
+      "historical_exact_reuse": true,
+      "path": "invariant_region_mlp/results/original_pde_benchmark_comparison/evaluation_bank_allen_cahn_d100.npz",
+      "sha256": "731dafc5aac912af3fa584857548e2e649b0eb82a0ea42c10fefb837f4daaad8"
+    },
+    "allen_cahn_d20": {
+      "array_sha256": "53f8678679212cd2e6d50475b3a054e2bf6d9a04ec21242f45bf970617ef4719",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_allen_cahn_d20.npz",
+      "sha256": "a79e1357a0d2c1c49a7f729f216aaf5a9e312f686b7f7da589e0366ac1f3264e",
+      "states": 960
+    },
+    "allen_cahn_d200": {
+      "array_sha256": "90a7387ad994b59efb68ebf44571eb13088b1b0797ab10426e61447454d3496e",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_allen_cahn_d200.npz",
+      "sha256": "1551ab831584e2036eba917bce1756fd0b12a6c121510966740a14d1958ee1cb",
+      "states": 960
+    },
+    "allen_cahn_d400": {
+      "array_sha256": "ffbbaa7b707d86c49dfa4f9d2cb9b324c316350e715310ea86a44aec63a0c2bd",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_allen_cahn_d400.npz",
+      "sha256": "fd04fbdedd51a8de1418097339f16da8006a9ead9c21e875b17c0e3f77447dff",
+      "states": 960
+    },
+    "allen_cahn_d50": {
+      "array_sha256": "1b6e739460ebd1960a83ae0f546d3d1977ba5d7e7e78951858afe5d2e3e0842a",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_allen_cahn_d50.npz",
+      "sha256": "6d0fc0440cf7c7bfefd128932a8ccb8774561dd49b9866c3f678271a51d18f7b",
+      "states": 960
+    },
+    "hjb_log_d10": {
+      "array_sha256": "68dca5aff4e5737d1165dafafa00c3884b99f67006d7fad6f7b061705f30fec3",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_hjb_log_d10.npz",
+      "sha256": "f3dbeb89ffffd0297409cf55e426b7303d2ff7bf3737715928d01b3d230f6e67",
+      "states": 960
+    },
+    "hjb_log_d100": {
+      "historical_exact_reuse": true,
+      "path": "invariant_region_mlp/results/original_pde_benchmark_comparison/evaluation_bank_hjb_log_d100.npz",
+      "sha256": "7f3f3b201d4f137712ffca28a546383527143b537ea16418966a909c2aac5ffb"
+    },
+    "hjb_log_d20": {
+      "array_sha256": "166b1cf666e2a11dddc5f4b821a71aea3cc83ced8ae15abb118d817149331575",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_hjb_log_d20.npz",
+      "sha256": "29508296e2443b30dc34bf197aef58f65b353608d0bf10f99da24f499eca36c5",
+      "states": 960
+    },
+    "hjb_log_d200": {
+      "array_sha256": "8b00097ff148ab61ce61a4a561f2f59d1b16a36dfa1e08ce6db6656d5c9afe17",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_hjb_log_d200.npz",
+      "sha256": "4079cf41133f32221647b1819f6c5ed754e61178ed09d50bde0a249d2940e6da",
+      "states": 960
+    },
+    "hjb_log_d400": {
+      "array_sha256": "58244ed82c579ceacf23df6a47cc34094307eeab1ba42f0bca585d6f646a1fac",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_hjb_log_d400.npz",
+      "sha256": "7618caca220f88930331780ac44cad732aa2f568d5774048d27027ce58ea60c8",
+      "states": 960
+    },
+    "hjb_log_d50": {
+      "array_sha256": "79e1b6b5b69856bde7d581cacb44a3dfdd41203dac007f964e3222a633e9ff39",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_hjb_log_d50.npz",
+      "sha256": "73e47df55b27a5a88671a423ab4bd64660befd39d2bd985fa5ebabdc998d45bd",
+      "states": 960
+    },
+    "joint_concave_d10": {
+      "array_sha256": "dba0a86a2bb0bfcd3400cfc7ed18f7568e30195baa9e74cbfee69cc3224c66a7",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_joint_concave_d10.npz",
+      "sha256": "2ece5157f8645d679eded0532a0abfb0d2de308c5efc82b88986f5500480a394",
+      "states": 960
+    },
+    "joint_concave_d100": {
+      "array_sha256": "5b2dd0ea3f0fd92be3657357720672fdbde9405bed106b6be949a8d14b87612b",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_joint_concave_d100.npz",
+      "sha256": "4b11953513f7beca4d171af337d5866d0104133b036bf19000252c55db11cbf1",
+      "states": 960
+    },
+    "joint_concave_d20": {
+      "array_sha256": "e21787246df623aaaaa07d35d25a889bb69deee3261432d90c507a07b49a0a25",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_joint_concave_d20.npz",
+      "sha256": "45bd9c40b84b0f685cf1406d3e13f0d2075754c691c4bc82073e872e3ed7db3f",
+      "states": 960
+    },
+    "joint_concave_d200": {
+      "array_sha256": "777eeb4a5327757ca793e5db77655ca91c0247ad4aac5cea95a0b933841a9311",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_joint_concave_d200.npz",
+      "sha256": "1463b6c8464eb569cf4beb89db195e681456ce9f8b5e984fe3765f8cbacfb793",
+      "states": 960
+    },
+    "joint_concave_d400": {
+      "array_sha256": "8f1763f57937a9a8d3adfc7b79516c88db9ae373b0028ef05030f078173467d6",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_joint_concave_d400.npz",
+      "sha256": "d5efa332c05235ac9e42bd86024f53ae1ccff10992b32ad4759b8c25f5e0ab45",
+      "states": 960
+    },
+    "joint_concave_d50": {
+      "array_sha256": "aa5976a566dfdb1fae77a59fbc1882dc9515f23b98aae45805915bbd555b5b59",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_joint_concave_d50.npz",
+      "sha256": "d8a159dd8eeb9bc94f0e25864fd4c321311378b7727ec6400963de3dd2867997",
+      "states": 960
+    },
+    "joint_convex_d10": {
+      "array_sha256": "d3b0613849e2427ae2f172a40210ce3ec2611e1f9b61801852666fd16a655dfe",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_joint_convex_d10.npz",
+      "sha256": "3f21e9ae8becf7b6ea9c15fff311b6b7ffe710e02d583307ae55b24ec6ea4322",
+      "states": 960
+    },
+    "joint_convex_d100": {
+      "array_sha256": "c8d0c831ca04e7efa318f22fb04d0dd618ad3c6705483c69a5319e82b3ab0cce",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_joint_convex_d100.npz",
+      "sha256": "37d85cded403a93b5528446b55f4378681fcac67672bccbb7b54f746db8ea760",
+      "states": 960
+    },
+    "joint_convex_d20": {
+      "array_sha256": "5748b1b440c24b5c32413c7149f59ebe9f3c428306cb73c57c764687cbea0c28",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_joint_convex_d20.npz",
+      "sha256": "5df947cba5c327bd64510ebff8033a86e5386d37e901d10f64ac24b0155a0399",
+      "states": 960
+    },
+    "joint_convex_d200": {
+      "array_sha256": "340e5d40092c170c439c6a1fdf83d1e808f0d6ece3937a374ddfaeffd4a63991",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_joint_convex_d200.npz",
+      "sha256": "cc8c5c778cf6f08f6b8af63b3e58b3611f4c36d66754f5ed342775cba80a3f93",
+      "states": 960
+    },
+    "joint_convex_d400": {
+      "array_sha256": "b31a321f924aa34ffbea5f3864328af9d21c456794b10dbc71519cffe7baa0c9",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_joint_convex_d400.npz",
+      "sha256": "ec7ad2ff3e84c7d45a3351a844977e767b2b3ddb08043929ca4d086f1053bd52",
+      "states": 960
+    },
+    "joint_convex_d50": {
+      "array_sha256": "ba3102131f7665a869f1a65bd3860214d3bb892356c2f598060c9c23d080005c",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_joint_convex_d50.npz",
+      "sha256": "f0fe0bfa7ccc30c99917581866c9be2194d06f2233e5869702a645fd925f59a9",
+      "states": 960
+    },
+    "mlp_failure_d100": {
+      "array_sha256": "3387b443afc6d11fa41702470bd497301ef03587f9e0db37614b6cc5e0c78784",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_mlp_failure_d100.npz",
+      "sha256": "8498bcd0b6b61ad5de08096dc40263299c7adae545a95e6a2bddeead0280f277",
+      "states": 960
+    },
+    "mlp_failure_d1000": {
+      "array_sha256": "1c67576f17dcb1407d49094ec3e4b07ab762331c31754e7beb1166aad3c1ed96",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_mlp_failure_d1000.npz",
+      "sha256": "1651b9c2791f03d8adc5f2b8dee9fa455a16c0ffb7c357a756bc68a5a47c0997",
+      "states": 960
+    },
+    "mlp_failure_d20": {
+      "array_sha256": "e49dd83f1f051aa5d5f1b2bbeacd723b8d25a25b382532b16a881b23efbed020",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_mlp_failure_d20.npz",
+      "sha256": "21b1e28b466579482ebdda27df9534ba08852f6e300ddab15d8c569a45fa659d",
+      "states": 960
+    },
+    "mlp_failure_d200": {
+      "array_sha256": "cb534a5b1c266024c8d1747ecea4dcc432f6d26a932ebb43203ea98ef5888c0c",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_mlp_failure_d200.npz",
+      "sha256": "a65b73449357ec497fa5abe3bccdef51fa3c92d1a1112b2bc55a45b161e57764",
+      "states": 960
+    },
+    "mlp_failure_d400": {
+      "array_sha256": "1285a50bda16b6343cf27616b50dde9ee6125c7cb097de9d78646189de85a624",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_mlp_failure_d400.npz",
+      "sha256": "53aa28a9e924fd1876de53172c084c36745fc90f61fd19db86783c55325a5367",
+      "states": 960
+    },
+    "mlp_failure_d50": {
+      "array_sha256": "1e8241303217754986770290fdc8de1d661c592521ad8722e7d051316fc5ea6c",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_mlp_failure_d50.npz",
+      "sha256": "b0a612929635da5d5eb4a2daddba8800456b9a544713fcb5bd78237b7de1cc34",
+      "states": 960
+    },
+    "nonconvex_coupled_d10": {
+      "array_sha256": "ef88f7f0d844ffe3fa71f192045038b842c89f05fc5d304eb6df3541e74a21c6",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_nonconvex_coupled_d10.npz",
+      "sha256": "1b5164bc36c8bfc2b1f5b28692cd89f61c43f4b5b2997c2861592396dc33bceb",
+      "states": 960
+    },
+    "nonconvex_coupled_d100": {
+      "historical_exact_reuse": true,
+      "path": "invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/post_freeze_coupled_d100_k2_lam0p2_eta1_main_mcv_s0.npz",
+      "sha256": "3aef1dc9855657a66f1744f0cdfe3d12e80b009f52b158154a1da799e42044de"
+    },
+    "nonconvex_coupled_d20": {
+      "array_sha256": "7bd14d06f1b356b272431a18df21a9c48569a2c225b16b4e26e09063e64cf5fb",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_nonconvex_coupled_d20.npz",
+      "sha256": "c0892b34be395a68d891eb254e44dbd71e213c0e6d09bd962a7b7b488fa89db6",
+      "states": 960
+    },
+    "nonconvex_coupled_d200": {
+      "array_sha256": "9448ccef92a86dd8b1ecd52dbc206f4a73109fab391ae2f465aa353f493c8d69",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_nonconvex_coupled_d200.npz",
+      "sha256": "cd6597fccf8a6a266a9b9832c9f914e4200d31331ceb1efb6eda5cb9d55880a9",
+      "states": 960
+    },
+    "nonconvex_coupled_d400": {
+      "array_sha256": "f90a0aa1b873fd94f02524bc2641d55dfa7610d0af10350e78be21177af722c9",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_nonconvex_coupled_d400.npz",
+      "sha256": "5d6021211fab9768326b42e2baecbb0d7ef5ba109df733914dc41e85fdcee4ba",
+      "states": 960
+    },
+    "nonconvex_coupled_d50": {
+      "array_sha256": "f844d4b7d5cd9032803ebb68a2e180d1270600996ec830645f6a1c6bf25864cc",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_nonconvex_coupled_d50.npz",
+      "sha256": "6c1fa54894a3605d0a9549bf3a28ec974e8d1129a719fb8b3b5b47b692c178b8",
+      "states": 960
+    },
+    "ou_gmm_d10": {
+      "array_sha256": "024201a7a7bb355c3ecf4ed771399fadac84ea047a48ea10963433840c2ee9b2",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_ou_gmm_d10.npz",
+      "sha256": "4453796c9d30cfd7c0a3915af4f296065d855df6f74482b3fe7f3d5d216c327f",
+      "states": 960
+    },
+    "ou_gmm_d100": {
+      "historical_exact_reuse": true,
+      "path": "invariant_region_mlp/results/original_pde_benchmark_comparison/evaluation_bank_dpi_ou_gmm_d100.npz",
+      "sha256": "14426c76454e0ac11133090a188b782343a297702e0ca4e8f106748bbff028d4"
+    },
+    "ou_gmm_d20": {
+      "array_sha256": "4245989121ec42809c36337805c56f419dab69fa5e5ee6f2aea9c11b441cf330",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_ou_gmm_d20.npz",
+      "sha256": "edba8f7f29d0e6e1aa4b5692f21303e7f9ca55e6822d515e2a0025774248dad5",
+      "states": 960
+    },
+    "ou_gmm_d200": {
+      "array_sha256": "8000d41c422235b43fd89f2d644b7371dd2e7e10b81dfcafbe13b10a0dde1898",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_ou_gmm_d200.npz",
+      "sha256": "e580d4b757243f5e45487fe6be3b98ba5fb8c5b793767a63ab9d7779ebd2862f",
+      "states": 960
+    },
+    "ou_gmm_d400": {
+      "array_sha256": "3ef265f1c605c26724e1d77d8fe4909086cfbac342d4af638716b1cbea0dd51e",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_ou_gmm_d400.npz",
+      "sha256": "8a5cf275cde98becd06a1ba49767bbcdbb5197cb9b2b9fbb504cfa09c0836dce",
+      "states": 960
+    },
+    "ou_gmm_d50": {
+      "array_sha256": "2320d53ae173c7ec4c0e07e9744d52ab5e413290747fa5d9a75d7378e27faaad",
+      "historical_exact_reuse": false,
+      "path": "invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_ou_gmm_d50.npz",
+      "sha256": "eea8d9345cf26836e91e29d8c7a9e306599cb40446548f9589a53ea080043ea9",
+      "states": 960
+    }
+  }
+}
