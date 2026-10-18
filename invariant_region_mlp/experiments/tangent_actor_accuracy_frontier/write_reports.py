@@ -167,7 +167,7 @@ def _nonseparable_report(
     _write("NONSEPARABLE_HIGH_BUDGET_REPORT.md", lines)
 
 
-def _ambient_report(rows: list[dict[str, str]]) -> None:
+def _ambient_report(rows: list[dict[str, str]], summary: dict) -> None:
     lines = [
         "# Ambient 400D Generalization Audit",
         "",
@@ -196,6 +196,23 @@ def _ambient_report(rows: list[dict[str, str]]) -> None:
         "",
         "The diagnosis distinguishes supervision noise from statistical generalization by combining label-replication error, train/held-out fit, checkpoint step, active/inactive post-freeze errors, and the learned output spectrum. The frozen persistent-gap trigger requires at least three update phases with held-out Gradient RMSE at least 1.5× the train RMSE and an excess of at least half the independent label-replication RMSE. A low-rank row is an explicitly named ablation and does not replace the full-ambient primary method.",
     ])
+    helpful = summary.get("helpful_low_rank")
+    transfer = summary.get("low_rank_coupled_transfer")
+    if helpful:
+        lines.extend([
+            "",
+            "## Frozen low-rank decision",
+            "",
+            f"Rank `{helpful['rank']}` satisfies the predeclared helpfulness rule with a `{helpful['fixed_point_reduction_vs_full_ambient']:.1%}` reduction in the independent ranking-audit consistency score. This decision does not use PDE Ground Truth.",
+        ])
+        if transfer:
+            lines.append(
+                f"Its one-seed coupled-PDE transfer has 64-step Value RMSE `{transfer['value_rmse']:.6g}` versus `{transfer['full_ambient_value_rmse']:.6g}` for the corresponding full-ambient Actor."
+            )
+        else:
+            lines.append("The required coupled-PDE transfer has not been completed.")
+    elif summary.get("low_rank_runs"):
+        lines.extend(["", "No learned rank satisfies the frozen reference-free helpfulness rule, so the conditional coupled-PDE transfer is not triggered."])
     _write("AMBIENT_400D_GENERALIZATION_AUDIT.md", lines)
 
 
@@ -261,7 +278,7 @@ def _main_report(summary: dict, euler, full, nonsep, ambient) -> None:
         f"5. **Nonseparable improvement.** Three-seed supporting result: **{summary['nonseparable_support']}**; lower mean error than the strongest coupled Full-History endpoint: **{summary['coupled_actor_beats_full_history']}**.",
         f"6. **Seed stability.** The primary 512-step seed standard deviation is `{summary.get('primary_actor_512_rmse_sd', math.nan):.3g}`; nonseparable trajectories are reported without selecting the best seed.",
         f"7. **400D matched budget.** Seed 0 crossed the predeclared 10% gate: **{summary['d400_seed0_meaningful']}**. Replicated success criterion met: **{summary['d400_fixed']}**.",
-        f"8. **Learned low rank.** `{summary['low_rank_runs']}` completed ablation rows are reported individually; no oracle subspace is used.",
+        f"8. **Learned low rank.** `{summary['low_rank_runs']}` completed ablation rows are reported individually; the frozen helpful result is `{summary.get('helpful_low_rank')}` and its coupled transfer is `{summary.get('low_rank_coupled_transfer')}`. No oracle subspace is used.",
         f"9. **Remaining error.** The largest 512-step diagnostic component is **{summary.get('dominant_remaining_error')}**. The reported component magnitudes are `{summary.get('primary_512_error_components')}`; the Actor term is a residual proxy after removing measured MC, reference, and CRN time-step contributions, rather than an exact decomposition.",
         "10. **Defensible claim.** Tangent-Actor is an accurate learned linearization method for the tested smooth bounded-curvature, locally stable semilinear PDEs. Claims of universal nonconvex convergence, a global reference-free certificate, or general speed superiority are not supported.",
         "",
@@ -295,7 +312,7 @@ def run() -> None:
     _high_precision(euler, reference)
     _full_history_report(full, summary)
     _nonseparable_report(nonsep, euler, summary, coupled_reference)
-    _ambient_report(ambient)
+    _ambient_report(ambient, summary)
     _main_report(summary, euler, full, nonsep, ambient)
 
 

@@ -275,6 +275,9 @@ def _ambient_rows() -> list[dict[str, Any]]:
                 for item in selection["ranking_audit_diagnostics"]
                 if item["actor"] == selection["selected_actor"]
             ),
+            "ranking_selection_stable": selection.get(
+                "ranking_stable_when_paths_and_steps_doubled"
+            ),
             "training_points": fit_config.get("training_points"),
             "optimizer_steps": fit_config.get("optimizer_steps"),
             "selected_optimizer_step": None if selected_fit is None else selected_fit["selected_step"],
@@ -481,6 +484,45 @@ def run() -> dict[str, Any]:
     coupled_actor_finest_sd = None if not coupled_finest else _mean_sd([row["value_rmse"] for row in coupled_finest])[1]
     d400 = [row for row in ambient if row["source"] == "frontier" and row["d"] == 400]
     low_rank = [row for row in ambient if row["source"] == "low_rank"]
+    full_ambient_seed0 = next((row for row in d400 if row["seed"] == 0), None)
+    helpful_candidates = []
+    helpful_rule = frozen_protocol["ambient_400"]["low_rank_helpful_definition"]
+    if full_ambient_seed0 is not None:
+        for row in low_rank:
+            reduction = (
+                full_ambient_seed0["fixed_point_score"] - row["fixed_point_score"]
+            ) / max(full_ambient_seed0["fixed_point_score"], 1e-300)
+            if (
+                reduction >= float(helpful_rule["minimum_reduction_vs_full_ambient"])
+                and row["ranking_selection_stable"] is True
+            ):
+                helpful_candidates.append((row["fixed_point_score"], row, reduction))
+    helpful_low_rank = None
+    low_rank_transfer = None
+    if helpful_candidates:
+        _, helpful_row, helpful_reduction = min(helpful_candidates, key=lambda item: item[0])
+        helpful_low_rank = {
+            "rank": int(helpful_row["rank"]),
+            "fixed_point_score": helpful_row["fixed_point_score"],
+            "fixed_point_reduction_vs_full_ambient": helpful_reduction,
+            "selected_value_rmse": helpful_row["selected_value_rmse"],
+        }
+        transfer_paths = sorted(RESULTS_DIR.glob(
+            f"post_freeze_coupled_d100*_lowrank_r{int(helpful_row['rank'])}.json"
+        ))
+        if transfer_paths:
+            transfer_payload = _load(transfer_paths[0])
+            standard_coupled = next((
+                row for row in nonseparable
+                if row["seed"] == transfer_payload["spec"]["seed"] and row["selected"]
+            ), None)
+            low_rank_transfer = {
+                "rank": int(transfer_payload["rank"]),
+                "seed": int(transfer_payload["spec"]["seed"]),
+                "selected_actor": transfer_payload["selection"]["selected_actor"],
+                "value_rmse": float(transfer_payload["selected_row"]["mcv_value_rmse"]),
+                "full_ambient_value_rmse": None if standard_coupled is None else float(standard_coupled["value_rmse_64"]),
+            }
     primary_advantage = None if strongest is None or not primary512 else strongest["rmse_mean"] - primary_actor_mean
     primary_by_steps = []
     for steps in (64, 128, 256, 512):
@@ -581,6 +623,8 @@ def run() -> dict[str, Any]:
         "d400_value_improvement_mean": None if not d400 else float(np.mean(d400_improvements)),
         "d400_value_improvement_sd": None if not d400 else _mean_sd(d400_improvements)[1],
         "low_rank_runs": len(low_rank),
+        "helpful_low_rank": helpful_low_rank,
+        "low_rank_coupled_transfer": low_rank_transfer,
         "counts": {
             "precision_rows": len(precision), "full_history_rows": len(full_history),
             "nonseparable_rows": len(nonseparable), "ambient_rows": len(ambient),
