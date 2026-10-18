@@ -434,7 +434,10 @@ def execute(
     output = RAW_DIR / f"{run_id}.json"
     if output.exists() and json.loads(output.read_text()).get("status") in {"complete", "smoke_nonresult"}:
         return json.loads(output.read_text())
-    full_seed = stable_seed("icml_sdgd_transfer_v2", family, d, resolved_profile, seed)
+    # For the official single-seed protocol, match the pinned source's
+    # ``--SEED 0`` semantics literally. Evaluation-bank seeds remain separate
+    # and deterministic, but every optimizer/data RNG starts from seed 0.
+    full_seed = int(seed)
     random.seed(full_seed); np.random.seed(full_seed); torch.manual_seed(full_seed)
     if device.type == "cuda":
         torch.cuda.manual_seed_all(full_seed)
@@ -524,6 +527,7 @@ def execute(
     result = {
         "run_id": run_id, "method": "sdgd_pinn_official_transfer",
         "family": family, "dimension": d, "seed": seed,
+        "effective_rng_seed": full_seed,
         "status": "smoke_nonresult" if smoke else "complete",
         "classification": classification,
         "benchmark_profile": resolved_profile,
