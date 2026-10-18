@@ -61,6 +61,16 @@ REFERENCE_NAMES = {
     "mlp_failure": "exact one-dimensional Gaussian expectation",
     "allen_cahn": "dimension-specific radial PDE Richardson reference",
 }
+REFERENCE_UNCERTAINTY_DEFAULTS = {
+    "hjb_log": 5.33e-15,
+    "ou_gmm": 1.19e-12,
+    "joint_concave": 8.453967703870988e-05,
+    "joint_convex": 7.78411804651081e-05,
+    "nonconvex_coupled": 8.079690914758104e-06,
+    # This closed-form reference is limited only by floating-point evaluation.
+    "mlp_failure": 0.0,
+    "allen_cahn": 9.644675185722928e-06,
+}
 
 
 def _finite(value: Any) -> Any:
@@ -102,6 +112,20 @@ def _max_key(value: Any, key: str) -> float | None:
             if nested is not None:
                 found.append(nested)
     return max(found) if found else None
+
+
+def _reference_uncertainty(payload: Any, pde: str) -> float | None:
+    """Read the numerical-reference floor without depending on one schema."""
+    for key in (
+        "reference_uncertainty_value_rmse",
+        "reference_uncertainty_rmse",
+        "reference_uncertainty_proxy",
+        "conservative_uncertainty",
+    ):
+        value = _max_key(payload, key)
+        if value is not None:
+            return value
+    return REFERENCE_UNCERTAINTY_DEFAULTS.get(pde)
 
 
 def _sha256(path: Path) -> str:
@@ -176,7 +200,9 @@ def _historical_original_rows() -> tuple[list[dict[str, Any]], list[dict[str, An
             ),
             estimator="mcv" if method == "tangent_actor" and pde != "allen_cahn" else "direct",
             states=int(item["states"]), test_bank_sha256=HISTORICAL_BANK_HASHES[pde],
-            reference=REFERENCE_NAMES[pde], value_rmse=item["value_rmse"],
+            reference=REFERENCE_NAMES[pde],
+            reference_uncertainty=_reference_uncertainty({}, pde),
+            value_rmse=item["value_rmse"],
             value_relative_l2=item["value_relative_l2"], value_bias=item["value_bias"],
             value_mae=item["value_mae"],
             gradient_component_rmse=item["gradient_component_rmse"],
@@ -217,6 +243,7 @@ def _historical_original_rows() -> tuple[list[dict[str, Any]], list[dict[str, An
             "run_id": f"historical_native_{item['benchmark']}_{method}_s{int(item['seed'])}",
             "point": "t=0,x=0", "prediction": item["prediction"],
             "reference": item["reference"], "absolute_error": item["absolute_error"],
+            "reference_uncertainty": _reference_uncertainty({}, pde),
             "relative_error": item["relative_error"], "mc_standard_error": item["mc_standard_error"],
             "steps": None, "paths": None, "estimator": None,
             "training_seconds": item["training_seconds"],
@@ -323,6 +350,7 @@ def _new_tangent_rows() -> tuple[list[dict[str, Any]], list[dict[str, Any]], lis
                 steps=metric["steps"], paths=metric["paths"], estimator=metric["estimator"],
                 states=result.get("states"), test_bank=result.get("test_bank"),
                 test_bank_sha256=bank_hash, reference=_compact(result.get("reference")),
+                reference_uncertainty=_reference_uncertainty(result, pde),
                 value_rmse=metric["value_rmse"], value_relative_l2=metric["relative_l2"],
                 value_bias=metric["bias"], value_mae=metric["mae"],
                 actor_value_rmse=result.get("value_actor_rmse"),
@@ -360,6 +388,7 @@ def _new_tangent_rows() -> tuple[list[dict[str, Any]], list[dict[str, Any]], lis
                 "run_id": run_id, "point": "t=0,x=0",
                 "prediction": metric["prediction"], "reference": metric["reference"],
                 "absolute_error": metric["absolute_error"],
+                "reference_uncertainty": _reference_uncertainty(result, pde),
                 "relative_error": metric["absolute_error"] / max(abs(metric["reference"]), 1e-300),
                 "mc_standard_error": metric.get("mc_standard_error"),
                 "steps": metric["steps"], "paths": metric["paths"],
@@ -392,6 +421,7 @@ def _new_function_baselines() -> tuple[list[dict[str, Any]], list[dict[str, Any]
                 states=result.get("test_states", result.get("states")),
                 test_bank=result.get("test_bank"), test_bank_sha256=result.get("test_bank_sha256"),
                 reference=_compact(result.get("reference_metadata", REFERENCE_NAMES.get(pde))),
+                reference_uncertainty=_reference_uncertainty(result, pde),
                 value_rmse=result["value_rmse"], value_relative_l2=result["value_relative_l2"],
                 value_bias=result.get("value_bias"), value_mae=result.get("value_mae"),
                 gradient_component_rmse=result.get("gradient_component_rmse"),
@@ -415,6 +445,7 @@ def _new_function_baselines() -> tuple[list[dict[str, Any]], list[dict[str, Any]
                     "source_artifact": str(path.relative_to(SOURCE_ROOT)), "run_id": result["run_id"],
                     "point": item.get("point", "t=0,x=0"), "prediction": item["prediction"],
                     "reference": item["reference"], "absolute_error": item["absolute_error"],
+                    "reference_uncertainty": _reference_uncertainty(result, pde),
                     "relative_error": item["absolute_error"] / max(abs(item["reference"]), 1e-300),
                     "mc_standard_error": None, "steps": None, "paths": None, "estimator": "network",
                     "training_seconds": training, "inference_seconds": result.get("inference_seconds"),
@@ -438,6 +469,7 @@ def _new_deep_bsde_rows() -> list[dict[str, Any]]:
             "source_artifact": str(path.relative_to(SOURCE_ROOT)), "run_id": result["run_id"],
             "point": "t=0,x=0", "prediction": result["reported_y0"],
             "reference": result["native_reference"], "absolute_error": result["native_absolute_error"],
+            "reference_uncertainty": _reference_uncertainty(result, pde),
             "relative_error": result["native_relative_error"], "mc_standard_error": None,
             "steps": result["configuration"]["intervals"], "paths": None,
             "estimator": "native scalar Y0", "training_seconds": result["training_seconds_this_invocation"],
