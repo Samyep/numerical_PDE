@@ -44,13 +44,14 @@ require_four_complete() {
   local job=$1 dimension=$2
   python - "$job" "$dimension" <<'PY'
 import sys
-from invariant_region_mlp.experiments.tangent_actor_icml_final_suite.whole_function_status import attempts
+from invariant_region_mlp.experiments.tangent_actor_icml_final_suite.whole_function_status import METHODS, cell_budget
 job, dimension = sys.argv[1], int(sys.argv[2])
-rows = [r for r in attempts() if str(r.get("job_id")) == job and int(r.get("dimension", -1)) == dimension]
-statuses = {r.get("method"): r.get("status") for r in rows}
-expected = {"tangent_actor", "dpi", "pinn_hte", "sdgd_pinn"}
-print({"job": job, "dimension": dimension, "statuses": statuses})
-if set(statuses) != expected or any(statuses[name] != "COMPLETE" for name in expected):
+statuses = {
+    method: cell_budget(method, "joint_concave", dimension)["status"]
+    for method in METHODS
+}
+print({"trigger_job": job, "dimension": dimension, "cumulative_statuses": statuses})
+if any(statuses[method] != "COMPLETE" for method in METHODS):
     raise SystemExit("pilot did not produce four COMPLETE cells; stopping staged dispatch")
 PY
 }
