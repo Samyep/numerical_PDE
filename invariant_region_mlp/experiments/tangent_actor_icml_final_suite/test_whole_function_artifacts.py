@@ -94,3 +94,14 @@ def test_slurm_duration_parser_for_dispatch_reservation() -> None:
 
     assert _duration_seconds("02:00:00") == 7200
     assert _duration_seconds("1-02:03:04") == 93784
+
+
+def test_historical_compute_falls_back_from_nan_allocation() -> None:
+    from .whole_function_artifacts import _historical_gpu_seconds
+
+    assert _historical_gpu_seconds({
+        "allocated_gpu_seconds": float("nan"), "total_seconds": 3600.0,
+    }) == 3600.0
+    assert _historical_gpu_seconds({
+        "allocated_gpu_seconds": 1800.0, "total_seconds": 3600.0,
+    }) == 1800.0

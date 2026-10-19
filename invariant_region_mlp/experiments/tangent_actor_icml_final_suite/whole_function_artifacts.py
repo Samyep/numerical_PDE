@@ -76,6 +76,20 @@ def _terminal_status(items: list[dict[str, Any]]) -> tuple[str, bool]:
     return value if value in {"COMPLETE", "OUT_OF_TIME", "OUT_OF_MEMORY", "FAILED"} else "FAILED", running
 
 
+def _historical_gpu_seconds(source: dict[str, Any] | None) -> float:
+    """Use the first finite historical cost instead of accepting truthy NaN."""
+    if source is None:
+        return 0.0
+    for name in ("allocated_gpu_seconds", "total_seconds"):
+        try:
+            value = float(source.get(name))
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value) and value > 0:
+            return value
+    return 0.0
+
+
 def build_results_frame() -> tuple[pd.DataFrame, list[dict[str, Any]]]:
     main = _read_main()
     duplicate = main.duplicated(["pde", "dimension", "method", "seed"], keep=False)
@@ -102,8 +116,7 @@ def build_results_frame() -> tuple[pd.DataFrame, list[dict[str, Any]]]:
                 )
                 measured_seconds = (
                     attempt_seconds if attempt_seconds > 0
-                    else float(source.get("allocated_gpu_seconds") or source.get("total_seconds") or 0.0)
-                    if source is not None else 0.0
+                    else _historical_gpu_seconds(source)
                 )
                 row: dict[str, Any] = {
                     "pde": pde, "pde_label": PDE_LABELS[pde],
