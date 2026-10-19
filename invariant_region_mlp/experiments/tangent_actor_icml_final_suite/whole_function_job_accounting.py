@@ -15,6 +15,7 @@ from .protocol import RESULTS_DIR
 
 
 FIELDS = ("JobIDRaw", "JobName%64", "Partition", "State", "ElapsedRaw", "ExitCode", "AllocTRES%100", "Submit", "Start", "End")
+CAP_SECONDS = 120 * 3600
 
 
 def _gpu_count(value: str) -> int:
@@ -72,5 +73,69 @@ def collect(start: str = "2026-10-19") -> dict[str, Any]:
     return payload
 
 
+def _duration_seconds(value: str) -> int:
+    days = 0
+    if "-" in value:
+        day, value = value.split("-", 1)
+        days = int(day)
+    fields = [int(item) for item in value.split(":")]
+    if len(fields) == 3:
+        hours, minutes, seconds = fields
+    elif len(fields) == 2:
+        hours, minutes, seconds = 0, fields[0], fields[1]
+    else:
+        raise ValueError(f"unsupported Slurm duration {value!r}")
+    return days * 86400 + hours * 3600 + minutes * 60 + seconds
+
+
+def verify_reservation(job_id: str) -> dict[str, Any]:
+    """Fail closed unless this allocation's full GPU request fits the suite cap."""
+    collect()
+    accounting_path = RESULTS_DIR / "WHOLE_FUNCTION_JOB_ACCOUNTING.csv"
+    with accounting_path.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    prior = sum(
+        float(row.get("allocated_gpu_seconds") or 0.0)
+        for row in rows if str(row.get("job_id")) != str(job_id)
+    )
+    info = subprocess.run(
+        ["scontrol", "show", "job", "-o", str(job_id)],
+        check=True, capture_output=True, text=True,
+    ).stdout
+    time_match = re.search(r"\bTimeLimit=(\S+)", info)
+    tres_match = re.search(r"\bReqTRES=([^ ]+)", info)
+    if not time_match or not tres_match:
+        raise RuntimeError("could not read TimeLimit and ReqTRES for budget reservation")
+    gpus = _gpu_count(tres_match.group(1))
+    if gpus <= 0:
+        raise RuntimeError("allocation has no GPU in ReqTRES")
+    wall_seconds = _duration_seconds(time_match.group(1))
+    reserved = wall_seconds * gpus
+    passed = prior + reserved <= CAP_SECONDS
+    payload = {
+        "generated_utc": datetime.now(timezone.utc).isoformat(),
+        "job_id": str(job_id), "gpu_count": gpus,
+        "wall_seconds": wall_seconds, "reserved_gpu_seconds": reserved,
+        "prior_allocated_gpu_seconds": prior,
+        "cap_gpu_seconds": CAP_SECONDS,
+        "status": "PASS" if passed else "FAIL",
+    }
+    directory = RESULTS_DIR / "whole_function_dispatch_reservations"
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / f"job_{job_id}.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8",
+    )
+    if not passed:
+        raise RuntimeError(
+            f"job reservation exceeds suite cap: prior={prior}, reserved={reserved}, cap={CAP_SECONDS}"
+        )
+    return payload
+
+
 if __name__ == "__main__":
-    print(json.dumps(collect(), indent=2, sort_keys=True))
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--reserve-job-id")
+    args = parser.parse_args()
+    payload = verify_reservation(args.reserve_job_id) if args.reserve_job_id else collect()
+    print(json.dumps(payload, indent=2, sort_keys=True))

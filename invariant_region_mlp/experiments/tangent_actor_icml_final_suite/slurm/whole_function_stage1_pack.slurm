@@ -25,6 +25,8 @@ conda activate base
 cd "$SOURCE_ROOT"
 export PYTHONPATH="$SOURCE_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.review_gate || exit $?
+python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.whole_function_job_accounting \
+  --reserve-job-id "$SLURM_JOB_ID" || exit $?
 nvidia-smi --query-gpu=index,name,memory.total,driver_version --format=csv,noheader
 
 methods=(tangent_actor dpi pinn_hte sdgd_pinn)

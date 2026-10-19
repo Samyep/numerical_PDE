@@ -1,0 +1,52 @@
+#!/bin/bash
+#SBATCH --job-name=icml_whole_stage
+#SBATCH --account=bgvf-dtai-gh
+#SBATCH --partition=ghx4
+#SBATCH --nodes=2
+#SBATCH --ntasks=4
+#SBATCH --ntasks-per-node=2
+#SBATCH --cpus-per-task=12
+#SBATCH --gpus-per-node=2
+#SBATCH --mem=220G
+#SBATCH --time=16:00:00
+#SBATCH --exclude=gh097
+#SBATCH --output=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/slurm/%x_%j.out
+#SBATCH --error=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/slurm/%x_%j.err
+
+set -uo pipefail
+
+SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
+TASK_FILE=${TASK_FILE:?submit with an immutable queue CSV}
+TASK_FILE_SHA256=${TASK_FILE_SHA256:?submit with TASK_FILE_SHA256}
+actual_sha=$(sha256sum "$TASK_FILE" | awk '{print $1}')
+if [[ "$actual_sha" != "$TASK_FILE_SHA256" ]]; then
+  echo "task file changed after submission" >&2
+  exit 2
+fi
+
+module load default
+source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
+conda activate base
+cd "$SOURCE_ROOT"
+export PYTHONPATH="$SOURCE_ROOT${PYTHONPATH:+:$PYTHONPATH}"
+python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.review_gate || exit $?
+python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.whole_function_job_accounting \
+  --reserve-job-id "$SLURM_JOB_ID" || exit $?
+nvidia-smi --query-gpu=index,name,memory.total,driver_version --format=csv,noheader
+
+worker="$SOURCE_ROOT/invariant_region_mlp/experiments/tangent_actor_icml_final_suite/slurm/run_whole_function_queue_worker.sh"
+pids=()
+for slot in 0 1 2 3; do
+  slot_out="$SOURCE_ROOT/invariant_region_mlp/results/tangent_actor_icml_final_suite/slurm/${SLURM_JOB_ID}_queue_slot${slot}.out"
+  slot_err="$SOURCE_ROOT/invariant_region_mlp/results/tangent_actor_icml_final_suite/slurm/${SLURM_JOB_ID}_queue_slot${slot}.err"
+  srun --exclusive --exact --nodes=1 --ntasks=1 --cpus-per-task="$SLURM_CPUS_PER_TASK" \
+    --mem=110G --gpus-per-node=1 --gpus-per-task=1 --gpu-bind=single:1 --network=no_vni \
+    --output="$slot_out" --error="$slot_err" "$worker" "$TASK_FILE" "$slot" &
+  pids+=("$!")
+done
+
+status=0
+for slot in 0 1 2 3; do
+  wait "${pids[$slot]}" || status=1
+done
+exit "$status"

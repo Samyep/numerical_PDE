@@ -52,3 +52,36 @@ def test_checkpointed_allocation_is_pending_until_cumulative_cap(
     assert budget["used_gpu_seconds"] == 6900
     assert budget["remaining_gpu_seconds"] == 21600 - 6900
     assert artifacts._terminal_status([payload]) == ("PENDING", False)
+
+
+def test_balanced_queue_is_frozen_without_accuracy(monkeypatch) -> None:
+    from . import whole_function_queue as queue
+
+    rows = []
+    for dimension in (20, 50, 200):
+        for method in ("tangent_actor", "dpi", "pinn_hte", "sdgd_pinn"):
+            rows.append({
+                "pde": "joint_concave", "dimension": dimension, "method": method,
+                "status": "PENDING", "active_slurm_attempt": False,
+            })
+    monkeypatch.setattr(queue, "_active_suite_jobs", lambda: [])
+    monkeypatch.setattr(queue, "build_results_frame", lambda: (pd.DataFrame(rows), []))
+    estimates = pd.DataFrame([
+        {"pde": row["pde"], "dimension": row["dimension"], "method": row["method"],
+         "estimated_gpu_hours": 1 + index / 10}
+        for index, row in enumerate(rows)
+    ])
+    monkeypatch.setattr(queue.pd, "read_csv", lambda _: estimates)
+    first, meta = queue.generate("stage2", slots=4)
+    second, _ = queue.generate("stage2", slots=4)
+    assert first == second
+    assert len(first) == 12
+    assert {row["slot"] for row in first} == {0, 1, 2, 3}
+    assert meta["ordering"].endswith("no accuracy or test metric used")
+
+
+def test_slurm_duration_parser_for_dispatch_reservation() -> None:
+    from .whole_function_job_accounting import _duration_seconds
+
+    assert _duration_seconds("02:00:00") == 7200
+    assert _duration_seconds("1-02:03:04") == 93784
