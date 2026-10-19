@@ -80,3 +80,9 @@ The 128-step joint concave MCV RMSE (`2.1347e-4`) is near its MC contribution (`
 **Open, blocking a submission-wide head-to-head claim:** P0 nonconvex same-bank evaluation and corresponding regeneration; additional reference-array parity check for Allen–Cahn. **Open, blocking full-grid and general-dimensional claims:** 175 gated cells; no dimension scaling curve yet; single-seed uncertainty; structured/effective-low-dimensional PDE coverage; native-fidelity conditional ratings.
 
 The `REVIEW_GATE_STATUS.json` status **must remain** `pending_independent_review`. This review does **not** grant permission to run the expensive dimension sweep. Prioritize cheap frozen-checkpoint same-bank evaluation and accurate paper framing before considering new training.
+
+## Additional publication-table completeness issue
+
+The generated `tables/native_point_comparison.tex` contains nonconvex-coupled single-point results for Deep BSDE, DPI, PINN-HTE, and SDGD-PINN, but **no Tangent-Actor nonconvex-coupled native-point row**. This absence is not evidence of failure or a win; a table caption or an explicit missing-data entry is necessary before making claims of complete native-point coverage. The `joint_convex` Tangent-Actor primary row is labeled `adapted` (sign-transform path) even though the whole-function discussion informally calls it a final-method win; retain and explain that classification consistently.
+
+The primary native-point table's single-seed `Abs. error (mean ± sd)` header should also be replaced as noted above. No native-point checkpoint or numerical estimate was manufactured to fill the missing row.
