@@ -43,12 +43,14 @@ def record(args: argparse.Namespace) -> Path:
     previous: dict[str, Any] = {}
     if path.exists():
         previous = json.loads(path.read_text(encoding="utf-8"))
-    try:
-        git_head = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[3], text=True,
-        ).strip()
-    except Exception:
-        git_head = None
+    git_head = previous.get("git_head")
+    if not git_head:
+        try:
+            git_head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[3], text=True,
+            ).strip()
+        except Exception:
+            git_head = None
     payload = {
         **previous,
         "method": args.method,

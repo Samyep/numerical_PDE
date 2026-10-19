@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import json
+from types import SimpleNamespace
 
 import pandas as pd
 
@@ -52,6 +53,25 @@ def test_checkpointed_allocation_is_pending_until_cumulative_cap(
     assert budget["used_gpu_seconds"] == 6900
     assert budget["remaining_gpu_seconds"] == 21600 - 6900
     assert artifacts._terminal_status([payload]) == ("PENDING", False)
+
+
+def test_attempt_keeps_git_head_from_start(tmp_path: Path, monkeypatch) -> None:
+    from . import whole_function_status as status
+
+    monkeypatch.setattr(status, "STATUS_DIR", tmp_path)
+    heads = iter(("start-head\n", "finish-head\n"))
+    monkeypatch.setattr(status.subprocess, "check_output", lambda *args, **kwargs: next(heads))
+    values = {
+        "method": "dpi", "pde": "joint_concave", "dimension": 20,
+        "job_id": "1", "task_id": "0", "started_utc": "start",
+        "finished_utc": "", "actual_gpu_seconds": 0.0, "exit_code": 0,
+        "stdout": "out", "stderr": "err", "notes": "running",
+    }
+    path = status.record(SimpleNamespace(status="RUNNING", **values))
+    values.update(finished_utc="finish", actual_gpu_seconds=10.0, notes="done")
+    status.record(SimpleNamespace(status="COMPLETE", **values))
+
+    assert json.loads(path.read_text())["git_head"] == "start-head"
 
 
 def test_balanced_queue_is_frozen_without_accuracy(monkeypatch) -> None:
