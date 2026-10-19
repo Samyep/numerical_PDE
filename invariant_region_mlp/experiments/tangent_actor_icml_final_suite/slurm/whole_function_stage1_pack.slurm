@@ -44,8 +44,10 @@ done
 
 status=0
 for slot in 0 1 2 3; do
-  if ! wait "${pids[$slot]}"; then
-    echo "pilot slot failed: slot=$slot method=${methods[$slot]} dimension=$DIMENSION" >&2
+  wait "${pids[$slot]}"
+  code=$?
+  if [[ $code -ne 0 && $code -ne 124 ]]; then
+    echo "pilot slot failed: slot=$slot method=${methods[$slot]} dimension=$DIMENSION exit=$code" >&2
     status=1
   fi
 done

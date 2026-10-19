@@ -4,7 +4,7 @@ set -uo pipefail
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
 DPI_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/external/DeepPicardIteration
 DPI_DEPS=/work/nvme/bgvf/ywang151/original_pde_source_audit/dpi_deps
-CELL_CAP_SECONDS=${CELL_CAP_SECONDS:-21600}
+CELL_CAP_SECONDS=${CELL_CAP_SECONDS:-21420}
 method=${1:?usage: run_whole_function_cell.sh METHOD PDE DIMENSION}
 pde=${2:?usage: run_whole_function_cell.sh METHOD PDE DIMENSION}
 dimension=${3:?usage: run_whole_function_cell.sh METHOD PDE DIMENSION}
@@ -31,6 +31,26 @@ cell_err=${CELL_ERR:-$SOURCE_ROOT/invariant_region_mlp/results/tangent_actor_icm
 started_utc=$(date -u +%FT%TZ)
 started_epoch=$(date +%s)
 
+read -r prior_status remaining_seconds prior_seconds prior_attempts < <(
+  python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.whole_function_status budget \
+    --method "$method" --pde "$pde" --dimension "$dimension"
+)
+if [[ "$prior_status" == "COMPLETE" ]]; then
+  echo "SKIP cell=$tag reason=already_complete"
+  exit 0
+fi
+if [[ "$prior_status" == "OUT_OF_TIME" || "$prior_status" == "OUT_OF_MEMORY" || "$prior_status" == "FAILED" ]]; then
+  echo "SKIP cell=$tag reason=terminal_status status=$prior_status" >&2
+  exit 3
+fi
+if (( remaining_seconds <= 0 )); then
+  echo "SKIP cell=$tag reason=cumulative_six_hour_cap" >&2
+  exit 3
+fi
+if (( CELL_CAP_SECONDS > remaining_seconds )); then
+  CELL_CAP_SECONDS=$remaining_seconds
+fi
+
 record_status() {
   local status=$1 finished_utc=$2 seconds=$3 code=$4 notes=$5
   python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.whole_function_status record \
@@ -47,7 +67,7 @@ if [[ $gate_status -ne 0 ]]; then
   record_status FAILED "$(date -u +%FT%TZ)" 0 "$gate_status" "review gate rejected execution"
   exit "$gate_status"
 fi
-record_status RUNNING "" 0 0 "fixed seed 0; cumulative six GPU-hour cell cap"
+record_status RUNNING "" 0 0 "fixed seed 0; cumulative six GPU-hour cell cap; prior_seconds=$prior_seconds"
 
 command=()
 case "$method" in
@@ -81,7 +101,11 @@ seconds=$((finished_epoch - started_epoch))
 if [[ $code -eq 0 ]]; then
   status=COMPLETE; notes="runner returned complete under frozen protocol"
 elif [[ $code -eq 124 ]]; then
-  status=OUT_OF_TIME; notes="current allocation ended before completion; cumulative cap remains six GPU hours"
+  if (( prior_seconds + seconds >= 21600 )); then
+    status=OUT_OF_TIME; notes="cumulative six GH200-hour cell cap reached"
+  else
+    status=CHECKPOINTED; notes="allocation boundary reached below cumulative cap; resume only from a valid checkpoint"
+  fi
 elif [[ $code -eq 137 ]] || grep -Eiq 'CUDA out of memory|OutOfMemoryError|oom-kill|oom_kill' "$cell_err"; then
   status=OUT_OF_MEMORY; notes="memory failure detected in exit code or stderr"
 else

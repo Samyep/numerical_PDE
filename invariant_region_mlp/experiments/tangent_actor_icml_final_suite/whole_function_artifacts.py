@@ -64,7 +64,10 @@ def _attempt_groups() -> dict[str, list[dict[str, Any]]]:
 
 
 def _terminal_status(items: list[dict[str, Any]]) -> tuple[str, bool]:
-    terminal = [item for item in items if item.get("status") != "RUNNING"]
+    terminal = [
+        item for item in items
+        if item.get("status") not in {"RUNNING", "CHECKPOINTED"}
+    ]
     running = any(item.get("status") == "RUNNING" for item in items)
     if not terminal:
         return "PENDING", running
