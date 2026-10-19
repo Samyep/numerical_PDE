@@ -28,6 +28,19 @@ python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.review
 python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.whole_function_job_accounting \
   --reserve-job-id "$SLURM_JOB_ID" || exit $?
 nvidia-smi --query-gpu=index,name,memory.total,driver_version --format=csv,noheader
+pilot_cell_cap=$(python - "$SLURM_JOB_ID" <<'PY'
+import re
+import subprocess
+import sys
+from invariant_region_mlp.experiments.tangent_actor_icml_final_suite.whole_function_job_accounting import _duration_seconds
+info = subprocess.check_output(["scontrol", "show", "job", "-o", sys.argv[1]], text=True)
+match = re.search(r"\bTimeLimit=(\S+)", info)
+if not match:
+    raise SystemExit("missing Slurm TimeLimit")
+print(max(300, _duration_seconds(match.group(1)) - 300))
+PY
+) || exit $?
+echo "pilot cell cap from allocation: ${pilot_cell_cap}s"
 
 methods=(tangent_actor dpi pinn_hte sdgd_pinn)
 pids=()
@@ -38,7 +51,7 @@ for slot in 0 1 2 3; do
   srun --exclusive --exact --nodes=1 --ntasks=1 --cpus-per-task="$SLURM_CPUS_PER_TASK" \
     --mem=110G --gpus-per-node=1 --gpus-per-task=1 --gpu-bind=single:1 --network=no_vni \
     --output="$task_out" --error="$task_err" \
-    env WHOLE_CELL_TASK_ID="$slot" CELL_CAP_SECONDS=6900 \
+    env WHOLE_CELL_TASK_ID="$slot" CELL_CAP_SECONDS="$pilot_cell_cap" \
     "$SOURCE_ROOT/invariant_region_mlp/experiments/tangent_actor_icml_final_suite/slurm/run_whole_function_cell.sh" \
     "$method" joint_concave "$DIMENSION" &
   pids+=("$!")
