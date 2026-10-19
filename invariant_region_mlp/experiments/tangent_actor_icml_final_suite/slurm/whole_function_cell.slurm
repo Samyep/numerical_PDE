@@ -16,6 +16,12 @@
 set -euo pipefail
 
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
+module load default
+source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
+conda activate base
+cd /work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
+nvidia-smi --query-gpu=index,name,memory.total,driver_version --format=csv,noheader
+python -c 'import torch; print("torch.cuda.is_available=", torch.cuda.is_available(), "count=", torch.cuda.device_count())'
 TASK_FILE=${TASK_FILE:?submit with an immutable three-column method,pde,dimension task file}
 line=$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "$TASK_FILE")
 IFS=',' read -r method pde dimension extra <<< "$line"
@@ -23,6 +29,7 @@ if [[ -z "${method:-}" || -z "${pde:-}" || ! "${dimension:-}" =~ ^[0-9]+$ || -n 
   echo "Invalid or missing task line for array index $SLURM_ARRAY_TASK_ID: $line" >&2
   exit 2
 fi
-exec env CELL_CAP_SECONDS=21420 \
+exec srun --ntasks=1 --gpus-per-task=1 --gpu-bind=verbose,closest \
+  env CELL_CAP_SECONDS=21420 \
   "$SOURCE_ROOT/invariant_region_mlp/experiments/tangent_actor_icml_final_suite/slurm/run_whole_function_cell.sh" \
   "$method" "$pde" "$dimension"

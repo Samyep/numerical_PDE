@@ -7,13 +7,14 @@
 #SBATCH --ntasks-per-node=2
 #SBATCH --cpus-per-task=12
 #SBATCH --gpus-per-node=2
+#SBATCH --gpu-bind=verbose,closest
 #SBATCH --mem=220G
 #SBATCH --time=16:00:00
 #SBATCH --exclude=gh097
 #SBATCH --output=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/slurm/%x_%j.out
 #SBATCH --error=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/slurm/%x_%j.err
 
-set -uo pipefail
+set -euo pipefail
 
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
 TASK_FILE=${TASK_FILE:?submit with an immutable queue CSV}
@@ -33,6 +34,7 @@ python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.review
 python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.whole_function_job_accounting \
   --reserve-job-id "$SLURM_JOB_ID" || exit $?
 nvidia-smi --query-gpu=index,name,memory.total,driver_version --format=csv,noheader
+python -c 'import torch; print("torch.cuda.is_available=", torch.cuda.is_available(), "count=", torch.cuda.device_count())'
 
 worker="$SOURCE_ROOT/invariant_region_mlp/experiments/tangent_actor_icml_final_suite/slurm/run_whole_function_queue_worker.sh"
 pids=()
