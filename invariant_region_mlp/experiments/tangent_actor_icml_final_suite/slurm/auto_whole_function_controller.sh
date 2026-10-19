@@ -5,9 +5,10 @@ set -euo pipefail
 
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
 RESULTS_DIR="$SOURCE_ROOT/invariant_region_mlp/results/tangent_actor_icml_final_suite"
-PACK_SCRIPT="$SOURCE_ROOT/invariant_region_mlp/experiments/tangent_actor_icml_final_suite/slurm/whole_function_four_gpu_pack.slurm"
+PACK_SCRIPT="$SOURCE_ROOT/invariant_region_mlp/experiments/tangent_actor_icml_final_suite/slurm/whole_function_eight_gpu_wave.slurm"
 QUEUE_DIR="$RESULTS_DIR/whole_function_dispatch_queues"
 PREDECESSOR_JOB=${1:?usage: auto_whole_function_controller.sh STAGE1_D50_JOB_ID}
+WORKERS=8
 
 source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
 conda activate base
@@ -89,39 +90,74 @@ print(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
 PY
 }
 
-submit_stage() {
-  local stage=$1 desired_wall_seconds=$2
+pending_count() {
+  local stage=$1
+  python - "$stage" <<'PY'
+import sys
+from invariant_region_mlp.experiments.tangent_actor_icml_final_suite.whole_function_artifacts import build_results_frame
+stage = sys.argv[1]
+dims = {"stage2": {20, 50, 200}, "stage3": {400}}[stage]
+frame, _ = build_results_frame()
+print(int((frame["dimension"].isin(dims) & (frame["status"] == "PENDING")).sum()))
+PY
+}
+
+submit_wave() {
+  local stage=$1 wave=$2
   if squeue -h -u "$USER" -o '%j' | grep -q '^icml_whole'; then
     echo "duplicate protection: another icml_whole job is active" >&2
     return 6
   fi
   mkdir -p "$QUEUE_DIR"
-  local task_file="$QUEUE_DIR/${stage}_$(date -u +%Y%m%dT%H%M%SZ).csv"
+  local task_file="$QUEUE_DIR/${stage}_wave${wave}_$(date -u +%Y%m%dT%H%M%SZ).csv"
   python -m invariant_region_mlp.experiments.tangent_actor_icml_final_suite.whole_function_queue \
-    --stage "$stage" --slots 4 --output "$task_file" >&2
+    --stage "$stage" --slots "$WORKERS" --output "$task_file" >&2
   local task_sha
   task_sha=$(sha256sum "$task_file" | awk '{print $1}')
   local remaining max_wall wall duration
   remaining=$(remaining_gpu_seconds)
-  max_wall=$((remaining / 4))
-  wall=$desired_wall_seconds
+  max_wall=$((remaining / WORKERS))
+  wall=7200
   (( wall > max_wall )) && wall=$max_wall
   # Keep a small unreserved tail rather than risk a rounding race at 120 hours.
   (( wall > 60 )) && wall=$((wall - 60))
-  if (( wall < 1800 )); then
-    echo "insufficient global budget for a four-GPU stage: remaining_gpu_seconds=$remaining" >&2
+  if (( wall < 900 )); then
+    echo "insufficient global budget for an eight-GPU wave: remaining_gpu_seconds=$remaining" >&2
     return 7
   fi
   duration=$(format_duration "$wall")
-  local export_vars="ALL,TASK_FILE=$task_file,TASK_FILE_SHA256=$task_sha"
-  sbatch --test-only --partition=ghx4 --time="$duration" --job-name="icml_whole_${stage}" \
+  local export_vars="ALL,TASK_FILE=$task_file,TASK_FILE_SHA256=$task_sha,WORKERS=$WORKERS"
+  local job_name="icml_whole_${stage}w${wave}"
+  local resources=(--partition=ghx4-interactive --nodes=2 --ntasks=8 --ntasks-per-node=4
+    --gpus-per-node=4 --cpus-per-task=12 --mem=440G --time="$duration")
+  sbatch --test-only "${resources[@]}" --job-name="$job_name" \
     --export="$export_vars" "$PACK_SCRIPT" >&2
   local job
-  job=$(sbatch --parsable --partition=ghx4 --time="$duration" --job-name="icml_whole_${stage}" \
+  job=$(sbatch --parsable "${resources[@]}" --job-name="$job_name" \
     --export="$export_vars" "$PACK_SCRIPT")
-  echo "$job" > "$RESULTS_DIR/${stage^^}_JOB_ID.txt"
-  echo "$(timestamp) submitted stage=$stage job=$job duration=$duration task_sha=$task_sha" >&2
+  echo "$job" > "$RESULTS_DIR/${stage^^}_WAVE${wave}_JOB_ID.txt"
+  echo "$(timestamp) submitted stage=$stage wave=$wave job=$job duration=$duration task_sha=$task_sha" >&2
   printf '%s\n' "$job"
+}
+
+run_waves() {
+  local stage=$1 max_waves=$2
+  local wave before after job
+  for ((wave=1; wave<=max_waves; wave++)); do
+    before=$(pending_count "$stage")
+    if (( before == 0 )); then
+      echo "$(timestamp) stage=$stage complete before wave=$wave"
+      break
+    fi
+    if ! job=$(submit_wave "$stage" "$wave"); then
+      echo "$(timestamp) stage=$stage stopped before wave=$wave due to queue/budget guard" >&2
+      break
+    fi
+    wait_for_job "$job"
+    refresh_and_audit
+    after=$(pending_count "$stage")
+    echo "$(timestamp) stage=$stage wave=$wave pending_before=$before pending_after=$after job=$job"
+  done
 }
 
 wait_for_job "$PREDECESSOR_JOB"
@@ -129,16 +165,10 @@ refresh_and_audit
 require_stage1_complete
 pytest -q invariant_region_mlp/experiments/tangent_actor_icml_final_suite
 
-stage2_job=$(submit_stage stage2 57600)
-wait_for_job "$stage2_job"
-refresh_and_audit
+run_waves stage2 4
 pytest -q invariant_region_mlp/experiments/tangent_actor_icml_final_suite
 
-# The frozen estimate requires about 45.4 GPU-hours for 400D.  Twelve hours
-# on four GPUs supplies 48 hours while the reservation guard clamps this to
-# the exact remaining global allowance if earlier stages ran long.
-stage3_job=$(submit_stage stage3 43200)
-wait_for_job "$stage3_job"
+run_waves stage3 3
 refresh_and_audit
 pytest -q invariant_region_mlp/experiments/tangent_actor_icml_final_suite
-echo "$(timestamp) whole-function staged execution finished stage2=$stage2_job stage3=$stage3_job"
+echo "$(timestamp) whole-function staged execution finished"

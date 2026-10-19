@@ -27,7 +27,7 @@ conda activate base
 cd "$SOURCE_ROOT"
 export PYTHONPATH="$SOURCE_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 
-tail -n +2 "$TASK_FILE" | while IFS=',' read -r slot sequence method pde dimension estimate extra; do
+tail -n +2 "$TASK_FILE" | while IFS=',' read -r slot sequence method pde dimension estimate high_estimate extra; do
   [[ "$slot" == "$SLOT" ]] || continue
   if [[ -n "${extra:-}" ]]; then
     echo "invalid queue row: slot=$slot sequence=$sequence" >&2
@@ -50,18 +50,24 @@ tail -n +2 "$TASK_FILE" | while IFS=',' read -r slot sequence method pde dimensi
   fi
   cap=$cell_remaining
   (( cap > available )) && cap=$available
-  # DPI and PINN do not expose a trustworthy mid-run continuation in the
-  # pinned source. Never start them unless this allocation can supply their
-  # entire remaining per-cell allowance.
+  # DPI and PINN do not expose a trustworthy mid-run continuation.  Start
+  # them only when this wave can supply the frozen pre-run high estimate plus
+  # five minutes.  Long nonresumable cells are deferred to a long allocation.
   if [[ "$method" == "dpi" || "$method" == "pinn_hte" ]]; then
-    if [[ "$prior_status" == "CHECKPOINTED" || $cap -lt $cell_remaining ]]; then
-      echo "QUEUE_DEFER slot=$SLOT seq=$sequence cell=${method}/${pde}/d${dimension} reason=nonresumable"
+    required=$(python - "$high_estimate" <<'PY'
+import math
+import sys
+print(min(21600, math.ceil(float(sys.argv[1]) * 3600) + 300))
+PY
+)
+    if [[ "$prior_status" == "CHECKPOINTED" || $required -gt $available ]]; then
+      echo "QUEUE_DEFER slot=$SLOT seq=$sequence cell=${method}/${pde}/d${dimension} reason=nonresumable required=$required available=$available"
       continue
     fi
   fi
   export WHOLE_CELL_TASK_ID="${SLOT}_${sequence}"
   export CELL_CAP_SECONDS=$cap
-  echo "QUEUE_BEGIN slot=$SLOT seq=$sequence cell=${method}/${pde}/d${dimension} cap=$cap estimate_hours=$estimate"
+  echo "QUEUE_BEGIN slot=$SLOT seq=$sequence cell=${method}/${pde}/d${dimension} cap=$cap estimate_hours=$estimate high_hours=$high_estimate"
   "$HELPER" "$method" "$pde" "$dimension"
   code=$?
   echo "QUEUE_END slot=$SLOT seq=$sequence cell=${method}/${pde}/d${dimension} exit=$code"

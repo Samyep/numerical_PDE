@@ -1,4 +1,4 @@
-"""Create deterministic, estimate-balanced task queues for a four-GPU pack."""
+"""Create deterministic, estimate-balanced task queues for multi-GPU waves."""
 
 from __future__ import annotations
 
@@ -31,11 +31,13 @@ def generate(stage: str, slots: int = 4) -> tuple[list[dict], dict]:
         & (~frame["active_slurm_attempt"])
     ].copy()
     estimate_frame = pd.read_csv(ESTIMATES)
-    estimate = {
-        (row.pde, int(row.dimension), row.method): min(6.0, float(row.estimated_gpu_hours))
-        for row in estimate_frame.itertuples()
-        if row.method in METHODS
-    }
+    estimate = {}
+    for row in estimate_frame.itertuples():
+        if row.method not in METHODS:
+            continue
+        point = min(6.0, float(row.estimated_gpu_hours))
+        high = min(6.0, float(getattr(row, "high_gpu_hours", point * 2.2)))
+        estimate[(row.pde, int(row.dimension), row.method)] = (point, high)
     method_order = {name: index for index, name in enumerate(METHODS)}
     pde_order = {name: index for index, name in enumerate(frame["pde"].drop_duplicates())}
     queues: list[list[dict]] = [[] for _ in range(slots)]
@@ -43,11 +45,13 @@ def generate(stage: str, slots: int = 4) -> tuple[list[dict], dict]:
     for dimension in dimensions:
         rows = []
         for row in pending[pending["dimension"] == dimension].itertuples():
-            hours = estimate.get((row.pde, int(row.dimension), row.method), 6.0)
-            rows.append((hours, pde_order[row.pde], method_order[row.method], row))
+            hours, high_hours = estimate.get(
+                (row.pde, int(row.dimension), row.method), (6.0, 6.0),
+            )
+            rows.append((hours, high_hours, pde_order[row.pde], method_order[row.method], row))
         # Longest-processing-time placement is deterministic and does not use accuracy.
-        rows.sort(key=lambda item: (-item[0], item[1], item[2]))
-        for hours, _, _, row in rows:
+        rows.sort(key=lambda item: (-item[0], item[2], item[3]))
+        for hours, high_hours, _, _, row in rows:
             slot = min(range(slots), key=lambda index: (loads[index], index))
             record = {
                 "slot": slot,
@@ -56,6 +60,7 @@ def generate(stage: str, slots: int = 4) -> tuple[list[dict], dict]:
                 "pde": row.pde,
                 "dimension": int(row.dimension),
                 "estimated_gpu_hours": hours,
+                "high_gpu_hours": high_hours,
             }
             queues[slot].append(record)
             loads[slot] += hours
@@ -101,7 +106,10 @@ def main() -> None:
     with args.output.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
             handle,
-            fieldnames=("slot", "sequence", "method", "pde", "dimension", "estimated_gpu_hours"),
+            fieldnames=(
+                "slot", "sequence", "method", "pde", "dimension",
+                "estimated_gpu_hours", "high_gpu_hours",
+            ),
             lineterminator="\n",
         )
         writer.writeheader(); writer.writerows(records)

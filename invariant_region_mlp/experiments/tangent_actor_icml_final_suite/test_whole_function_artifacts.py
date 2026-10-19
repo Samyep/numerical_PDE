@@ -97,6 +97,7 @@ def test_balanced_queue_is_frozen_without_accuracy(monkeypatch) -> None:
     assert first == second
     assert len(first) == 12
     assert {row["slot"] for row in first} == {0, 1, 2, 3}
+    assert all(row["high_gpu_hours"] >= row["estimated_gpu_hours"] for row in first)
     assert meta["ordering"].endswith("no accuracy or test metric used")
     for slot in {row["slot"] for row in first}:
         methods = [row["method"] for row in first if row["slot"] == slot]
