@@ -3,7 +3,7 @@
 set -uo pipefail
 
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
-PILOT_SCRIPT="$SOURCE_ROOT/invariant_region_mlp/experiments/tangent_actor_icml_final_suite/slurm/whole_function_stage1_pack.slurm"
+PILOT_SCRIPT="$SOURCE_ROOT/invariant_region_mlp/experiments/tangent_actor_icml_final_suite/slurm/whole_function_stage1_two_gpu.slurm"
 RESULTS_DIR="$SOURCE_ROOT/invariant_region_mlp/results/tangent_actor_icml_final_suite"
 first_job=${1:?usage: auto_stage1_controller.sh FIRST_JOB_ID}
 
