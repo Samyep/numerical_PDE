@@ -63,8 +63,10 @@ if squeue -h -u "$USER" -o '%j' | grep -q '^icml_whole'; then
   echo "duplicate protection: another icml_whole job is active" >&2
   exit 6
 fi
-sbatch --test-only --time=01:30:00 --export=ALL,DIMENSION=50 "$PILOT_SCRIPT" || exit $?
-second_job=$(sbatch --parsable --time=01:30:00 --export=ALL,DIMENSION=50 "$PILOT_SCRIPT") || exit $?
+sbatch --test-only --partition=ghx4,ghx4-interactive --time=01:30:00 \
+  --export=ALL,DIMENSION=50 "$PILOT_SCRIPT" || exit $?
+second_job=$(sbatch --parsable --partition=ghx4,ghx4-interactive --time=01:30:00 \
+  --export=ALL,DIMENSION=50 "$PILOT_SCRIPT") || exit $?
 echo "$second_job" > "$RESULTS_DIR/STAGE1_D50_JOB_ID.txt"
 echo "$(date -u +%FT%TZ) submitted d50 job=$second_job"
 wait_for_job "$second_job"
