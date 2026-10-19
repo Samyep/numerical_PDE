@@ -1,0 +1,122 @@
+{
+  "code_commit_at_calibration": "922f65f608de6f2881e30fc9b086caee32970967",
+  "elapsed_seconds": 4.015761999995448,
+  "environment": {
+    "cuda_runtime": "12.8",
+    "device": "cuda",
+    "gpu_compute_capability": "12.0",
+    "gpu_name": "NVIDIA GeForce RTX 5070 Ti",
+    "gpu_total_memory_bytes": 17094475776,
+    "numpy": "2.3.4",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.11 | packaged by conda-forge | (main, Jun  4 2025, 14:29:09) [MSC v.1943 64 bit (AMD64)]",
+    "torch": "2.11.0+cu128"
+  },
+  "fallback_violation_normalization": {
+    "ESS_med": "max((5-x)/5,0)",
+    "f_cv": "max((0.05-x)/0.05,0)",
+    "heat_only_skill": "max((0.15-x)/0.15,0)",
+    "z_rms_lower": "max((0.5-x)/0.5,0)",
+    "z_rms_upper": "max((x-4)/4,0)"
+  },
+  "grid_rows": 20,
+  "production_solver_touched_B6": false,
+  "revision": "highdim_nosym_v1",
+  "selection_rule": "qualify iff ESS_med>=5, 0.5<=z_rms<=4, heat_only_skill>=0.15, f_cv>=0.05; maximize r_glob, tie-break smaller beta",
+  "selections": {
+    "100": {
+      "dimension": 100,
+      "heat_monte_carlo": {
+        "arithmetic": "float64",
+        "common_random_numbers_across_states_and_configurations": true,
+        "mean_standard_error_by_beta": {
+          "1.0": 0.0010645899121465574,
+          "1.5": 0.0026269081019483264,
+          "2.0": 0.005202799982366464,
+          "3.0": 0.01203904421615906,
+          "4.0": 0.019294447379236246
+        },
+        "samples_per_state": 4096,
+        "wall_seconds": 0.6304610000224784
+      },
+      "selected_beta": 1.5,
+      "selected_gamma": 1.0,
+      "selected_r_glob": 28.986504306789154,
+      "selected_row": {
+        "ESS_med": 119.41126485374727,
+        "K": 200,
+        "bank_sha256": "84b2132607bc6b17e44adbea838915f8ce657813f6a0987e34deca308660f1c1",
+        "beta": 1.5,
+        "configuration_seconds_excluding_shared_heat": 0.018885599973145872,
+        "dimension": 100,
+        "f_cv": 0.07192104337977895,
+        "f_mean": -1.1084494657684318,
+        "f_std": 0.07972084211182419,
+        "gamma": 1.0,
+        "heat_only_rmse": 0.1709644911543876,
+        "heat_only_skill": 0.262953955377485,
+        "normalized_constraint_violation": 0.0,
+        "pde_id": "B6",
+        "qualifies": true,
+        "r_glob": 28.986504306789154,
+        "r_loc": 30.598097308341835,
+        "r_loc_max": 48.60077465117037,
+        "r_loc_min": 7.083048724058724,
+        "test_states": 960,
+        "u_std": 0.6501689275179702,
+        "unequal_norm_range": 5.556333994132308,
+        "z_rms": 1.4889254284674112,
+        "z_variance_outside_top10": 0.5009127673091937
+      },
+      "status": "qualified",
+      "test_bank_sha256": "84b2132607bc6b17e44adbea838915f8ce657813f6a0987e34deca308660f1c1"
+    },
+    "400": {
+      "dimension": 400,
+      "heat_monte_carlo": {
+        "arithmetic": "float64",
+        "common_random_numbers_across_states_and_configurations": true,
+        "mean_standard_error_by_beta": {
+          "1.0": 0.0005374343358056786,
+          "1.5": 0.0014669526087909073,
+          "2.0": 0.0033877090734015687,
+          "3.0": 0.00947333941283417,
+          "4.0": 0.016292766039218268
+        },
+        "samples_per_state": 4096,
+        "wall_seconds": 1.7721066999947652
+      },
+      "selected_beta": 2.0,
+      "selected_gamma": 1.0,
+      "selected_r_glob": 77.14368595668773,
+      "selected_row": {
+        "ESS_med": 263.6524138355908,
+        "K": 800,
+        "bank_sha256": "0df59abc155e90aa674532760578dc2563cbdb4aade97a849961c8a8edd9f2f9",
+        "beta": 2.0,
+        "configuration_seconds_excluding_shared_heat": 0.0907959999749437,
+        "dimension": 400,
+        "f_cv": 0.16317577347244044,
+        "f_mean": -1.1410748009319158,
+        "f_std": 0.18619576323197637,
+        "gamma": 1.0,
+        "heat_only_rmse": 0.18978841285762216,
+        "heat_only_skill": 0.24180312114531635,
+        "normalized_constraint_violation": 0.0,
+        "pde_id": "B6",
+        "qualifies": true,
+        "r_glob": 77.14368595668773,
+        "r_loc": 51.77596451814165,
+        "r_loc_max": 110.6296504059189,
+        "r_loc_min": 4.781264946213756,
+        "test_states": 960,
+        "u_std": 0.7848881848947065,
+        "unequal_norm_range": 8.524093824032027,
+        "z_rms": 1.5106785236653866,
+        "z_variance_outside_top10": 0.7420483149267953
+      },
+      "status": "qualified",
+      "test_bank_sha256": "0df59abc155e90aa674532760578dc2563cbdb4aade97a849961c8a8edd9f2f9"
+    }
+  }
+}
