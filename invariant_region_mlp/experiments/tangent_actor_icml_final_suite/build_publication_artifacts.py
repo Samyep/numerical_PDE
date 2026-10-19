@@ -630,7 +630,7 @@ def build_reproducibility_manifest(artifacts: Iterable[Path]) -> Path:
             "python -m pytest -q invariant_region_mlp/experiments/tangent_actor_icml_final_suite",
         ],
         "slurm_jobs": jobs,
-        "test_status": "24 passed after Stage 0 paired-bank repair; see final-suite pytest output",
+        "test_status": "27 passed after Stage 0 and scheduling guards; see final-suite pytest output",
         "artifacts": [
             {
                 "path": str(path.relative_to(SOURCE_ROOT)), "bytes": path.stat().st_size,
