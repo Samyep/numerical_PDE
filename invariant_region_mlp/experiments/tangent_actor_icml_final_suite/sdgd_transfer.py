@@ -30,6 +30,7 @@ from invariant_region_mlp.experiments.original_pde_benchmark_comparison.referenc
 
 from .benchmarks import AllenCahnBenchmark, HJBLogBenchmark, MLPFailureBenchmark, OUGMMBenchmark
 from .deep_bsde_transfer import DriverBenchmark
+from .paired_bank_repair import array_sha256
 from .prepare_suite import sha256_file, write_json
 from .protocol import RESULTS_DIR, SOURCE_COMMITS, stable_seed
 from .run_joint_actor import reference as periodic_reference
@@ -173,7 +174,9 @@ def _common_bank(family: str, d: int):
             )
             np.savez_compressed(path, t=t, x=x, truth=truth)
         with np.load(path) as data:
-            return np.asarray(data["t"]), np.asarray(data["x"]), path, sha256_file(path)
+            t = np.asarray(data["t"])
+            x = np.asarray(data["x"])
+            return t, x, path, array_sha256(t, x), sha256_file(path)
     item = audit["test_banks"][key]
     source_root = Path(__file__).resolve().parents[3]
     path = source_root / item["path"]
@@ -185,7 +188,9 @@ def _common_bank(family: str, d: int):
             t, x = data["test_t"], data["test_x"]
         else:
             t, x = data["t"], data["x"]
-    return np.asarray(t), np.asarray(x), path, item["sha256"]
+    t = np.asarray(t)
+    x = np.asarray(x)
+    return t, x, path, array_sha256(t, x), item["sha256"]
 
 
 def _rng_state():
@@ -213,7 +218,7 @@ class HJBSolver:
         self.xf = self._resample()
         count = min(config.reporting_points, 16) if smoke else config.reporting_points
         if family == "hjb_log" and benchmark.d == 250 and not smoke:
-            t, x, _, _ = _common_bank(family, benchmark.d)
+            t, x, _, _, _ = _common_bank(family, benchmark.d)
             truth = _truth(family, benchmark, t, x, smoke=False)
         else:
             t, x, truth = _bank(
@@ -485,9 +490,10 @@ def execute(
     checkpoint = CHECKPOINT_DIR / f"{run_id}.pt"
     torch.save(solver.model.state_dict(), checkpoint)
 
-    t, x, bank_path, bank_hash = _common_bank(family, d)
+    t, x, bank_path, bank_hash, bank_file_hash = _common_bank(family, d)
     if smoke:
         t, x = t[:16], x[:16]
+        bank_hash = array_sha256(t, x)
     truth = _truth(family, benchmark, t, x, smoke=smoke)
     predictions, gradients = [], []
     inference_started = time.perf_counter()
@@ -552,11 +558,16 @@ def execute(
         "inference_seconds": inference_seconds,
         "peak_gpu_bytes": int(torch.cuda.max_memory_allocated(device)) if device.type == "cuda" else None,
         "parameter_count": sum(item.numel() for item in solver.model.parameters()),
-        "test_bank": str(bank_path), "test_bank_sha256": bank_hash, "states": len(t),
+        "test_bank": str(bank_path), "test_bank_sha256": bank_hash,
+        "test_bank_array_sha256": bank_hash,
+        "test_bank_file_sha256": bank_file_hash,
+        "reference_array_sha256": array_sha256(np.asarray(truth)),
+        "states": len(t),
         "value_rmse": float(np.sqrt(np.mean(error**2))),
         "value_relative_l2": float(np.linalg.norm(error) / np.linalg.norm(truth)),
         "value_relative_mae": float(np.abs(error).sum() / np.abs(truth).sum()),
         "value_bias": float(np.mean(error)), "prediction_file": str(prediction_path),
+        "prediction_file_sha256": sha256_file(prediction_path),
         "native": {
             "point": "t=0,x=0", "prediction": native_prediction,
             "reference": native_truth, "absolute_error": abs(native_prediction - native_truth),

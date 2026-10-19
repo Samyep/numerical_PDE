@@ -1,0 +1,657 @@
+{
+  "dimension": 100,
+  "generated_utc": "2026-10-19T21:07:52.117867+00:00",
+  "method_count_per_pde": 4,
+  "pde_count": 7,
+  "results": {
+    "allen_cahn": {
+      "methods_found": [
+        "dpi",
+        "pinn_hte",
+        "sdgd_pinn",
+        "tangent_actor"
+      ],
+      "records": [
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_allen_cahn_d100_dpi_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "dpi",
+          "recomputed_metrics": {
+            "value_bias": 0.00013876049908270263,
+            "value_mae": 0.000832075930814612,
+            "value_relative_l2": 0.023283336477256496,
+            "value_rmse": 0.0010665354252435818
+          },
+          "reference_array_sha256": "d377fba6f91460e87e072c6960e246244230af69d5946a718434123d1687e986",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/dpi_allen_cahn_d100_semilinear_paper_official_s0.npz",
+          "source_prediction_file_sha256": "153ea8c4279583dc347917e4f98e5321849529bced7dae71267f4399efec7ea3",
+          "states": 410,
+          "status": "PASS",
+          "test_bank_array_sha256": "8c1a0e9f69953a06660f1ef10db8ceac261f2d06318d8ad5d1fa5892f08ce1f2"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_allen_cahn_d100_pinn_hte_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "pinn_hte",
+          "recomputed_metrics": {
+            "value_bias": 0.0003171873247138667,
+            "value_mae": 0.0007187749592862286,
+            "value_relative_l2": 0.020695439190385412,
+            "value_rmse": 0.0009479920998041262
+          },
+          "reference_array_sha256": "d377fba6f91460e87e072c6960e246244230af69d5946a718434123d1687e986",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/pinn_hte_allen_cahn_d100_semilinear_paper_official_s0.npz",
+          "source_prediction_file_sha256": "2ac3becc5ec6358f6089b402f1e9bbf969eb3b07b58a29780c350bbca155c5dd",
+          "states": 410,
+          "status": "PASS",
+          "test_bank_array_sha256": "8c1a0e9f69953a06660f1ef10db8ceac261f2d06318d8ad5d1fa5892f08ce1f2"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_allen_cahn_d100_sdgd_pinn_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "sdgd_pinn",
+          "recomputed_metrics": {
+            "value_bias": 0.0002582726126603902,
+            "value_mae": 0.0019054478351460515,
+            "value_relative_l2": 0.0587773621012847,
+            "value_rmse": 0.0026924035970800134
+          },
+          "reference_array_sha256": "d377fba6f91460e87e072c6960e246244230af69d5946a718434123d1687e986",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/sdgd_pinn_allen_cahn_d100_semilinear_sde_official_s0.npz",
+          "source_prediction_file_sha256": "664f42a21bcb0712eaa196388776c5e2a4418c08d59705886b6ed87cc1de302b",
+          "states": 410,
+          "status": "PASS",
+          "test_bank_array_sha256": "8c1a0e9f69953a06660f1ef10db8ceac261f2d06318d8ad5d1fa5892f08ce1f2"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_allen_cahn_d100_tangent_actor_s0_n64p0_p1024_direct.npz",
+          "errors": [],
+          "method": "tangent_actor",
+          "recomputed_metrics": {
+            "value_bias": 1.6293922076742303e-05,
+            "value_mae": 0.00011717897137904711,
+            "value_relative_l2": 0.0037850524324825534,
+            "value_rmse": 0.00017338118656620924
+          },
+          "reference_array_sha256": "d377fba6f91460e87e072c6960e246244230af69d5946a718434123d1687e986",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/predictions/actor_allen_cahn_d100_focused_s0_a4_n64.npz",
+          "source_prediction_file_sha256": "d4482c3e84c9cee74e263e4a862b6b55881c17afb2ae2c055b6732a45377b531",
+          "states": 410,
+          "status": "PASS",
+          "test_bank_array_sha256": "8c1a0e9f69953a06660f1ef10db8ceac261f2d06318d8ad5d1fa5892f08ce1f2"
+        }
+      ],
+      "reference_array_sha256": [
+        "d377fba6f91460e87e072c6960e246244230af69d5946a718434123d1687e986"
+      ],
+      "same_actual_reference_array": true,
+      "same_actual_t_x_arrays": true,
+      "states": [
+        410
+      ],
+      "status": "PASS",
+      "test_bank_array_sha256": [
+        "8c1a0e9f69953a06660f1ef10db8ceac261f2d06318d8ad5d1fa5892f08ce1f2"
+      ],
+      "winner_if_paired": "tangent_actor"
+    },
+    "hjb_log": {
+      "methods_found": [
+        "dpi",
+        "pinn_hte",
+        "sdgd_pinn",
+        "tangent_actor"
+      ],
+      "records": [
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_hjb_log_d100_dpi_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "dpi",
+          "recomputed_metrics": {
+            "value_bias": 0.07101761169034244,
+            "value_mae": 0.0795700591614087,
+            "value_relative_l2": 0.0292151703512102,
+            "value_rmse": 0.1339349462286953
+          },
+          "reference_array_sha256": "0a5111621d7c7769fbd671c35a41f7b8d79e8a271d10268bf12f5e36ad50fc97",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/dpi_hjb_log_d100_semilinear_paper_official_s0.npz",
+          "source_prediction_file_sha256": "a9cd4cda2c6f8c1e16fb414f2bbede128eae47fb3abe5349bc94f377a83166d7",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "c712b031bc607a0c8699283a3252da8367542be200512c94baed41c03ab2ca82"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_hjb_log_d100_pinn_hte_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "pinn_hte",
+          "recomputed_metrics": {
+            "value_bias": 0.040303452626110334,
+            "value_mae": 0.04360102360498699,
+            "value_relative_l2": 0.011696357409534295,
+            "value_rmse": 0.05362114894026917
+          },
+          "reference_array_sha256": "0a5111621d7c7769fbd671c35a41f7b8d79e8a271d10268bf12f5e36ad50fc97",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/pinn_hte_hjb_log_d100_semilinear_paper_official_s0.npz",
+          "source_prediction_file_sha256": "0ab58cd212acb5cf833f929f1609e0f14b809ec941f4dd09d8ff89ac2ebcf891",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "c712b031bc607a0c8699283a3252da8367542be200512c94baed41c03ab2ca82"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_hjb_log_d100_sdgd_pinn_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "sdgd_pinn",
+          "recomputed_metrics": {
+            "value_bias": 0.025187940009500722,
+            "value_mae": 0.027771815246222832,
+            "value_relative_l2": 0.008699900128462551,
+            "value_rmse": 0.0398840958958291
+          },
+          "reference_array_sha256": "0a5111621d7c7769fbd671c35a41f7b8d79e8a271d10268bf12f5e36ad50fc97",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/sdgd_pinn_hjb_log_d100_hjb_adversarial_official_s0.npz",
+          "source_prediction_file_sha256": "eebdaa480ce563b6bfbd00959e43fb6bf83116c46604c8f8a42bf58fab6dedf3",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "c712b031bc607a0c8699283a3252da8367542be200512c94baed41c03ab2ca82"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_hjb_log_d100_tangent_actor_s0_n64p0_p1024_mcv.npz",
+          "errors": [],
+          "method": "tangent_actor",
+          "recomputed_metrics": {
+            "value_bias": 0.0003342041073092735,
+            "value_mae": 0.0005731298776876596,
+            "value_relative_l2": 0.0001775563460665983,
+            "value_rmse": 0.0008139948998109592
+          },
+          "reference_array_sha256": "0a5111621d7c7769fbd671c35a41f7b8d79e8a271d10268bf12f5e36ad50fc97",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/predictions/actor_hjb_log_d100_focused_s0_a4_n64.npz",
+          "source_prediction_file_sha256": "e536738ede13b4e52e8c9844976857ab599f6def2d13f82930666eca9d8150d1",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "c712b031bc607a0c8699283a3252da8367542be200512c94baed41c03ab2ca82"
+        }
+      ],
+      "reference_array_sha256": [
+        "0a5111621d7c7769fbd671c35a41f7b8d79e8a271d10268bf12f5e36ad50fc97"
+      ],
+      "same_actual_reference_array": true,
+      "same_actual_t_x_arrays": true,
+      "states": [
+        960
+      ],
+      "status": "PASS",
+      "test_bank_array_sha256": [
+        "c712b031bc607a0c8699283a3252da8367542be200512c94baed41c03ab2ca82"
+      ],
+      "winner_if_paired": "tangent_actor"
+    },
+    "joint_concave": {
+      "methods_found": [
+        "dpi",
+        "pinn_hte",
+        "sdgd_pinn",
+        "tangent_actor"
+      ],
+      "records": [
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_joint_concave_d100_dpi_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "dpi",
+          "recomputed_metrics": {
+            "value_bias": 0.001778878236633509,
+            "value_mae": 0.0018902446098243546,
+            "value_relative_l2": 0.003606360028707143,
+            "value_rmse": 0.002141731126184076
+          },
+          "reference_array_sha256": "241fa9a5d18eb1852cdd921c0bfcb620c3bad42c7972fa180f4b438b3d2e6cd6",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/dpi_joint_concave_d100_semilinear_paper_official_s0.npz",
+          "source_prediction_file_sha256": "f4a0d3bd72c67ea41f2b1e389ebf1f364357126c9ce438efcc3be23d781adf86",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "5b2dd0ea3f0fd92be3657357720672fdbde9405bed106b6be949a8d14b87612b"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_joint_concave_d100_pinn_hte_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "pinn_hte",
+          "recomputed_metrics": {
+            "value_bias": 0.0007668968602998897,
+            "value_mae": 0.0024383539843488974,
+            "value_relative_l2": 0.005432677499334022,
+            "value_rmse": 0.003226337472194849
+          },
+          "reference_array_sha256": "241fa9a5d18eb1852cdd921c0bfcb620c3bad42c7972fa180f4b438b3d2e6cd6",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/pinn_hte_joint_concave_d100_semilinear_paper_official_s0.npz",
+          "source_prediction_file_sha256": "07bae34a2b0b0fcece6a759f5e1dc59e4f671889517ed26c0a5dcb3d2bb9e9df",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "5b2dd0ea3f0fd92be3657357720672fdbde9405bed106b6be949a8d14b87612b"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_joint_concave_d100_sdgd_pinn_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "sdgd_pinn",
+          "recomputed_metrics": {
+            "value_bias": -0.013701328963525383,
+            "value_mae": 0.016063252361791285,
+            "value_relative_l2": 0.039287582596620456,
+            "value_rmse": 0.023331957389144738
+          },
+          "reference_array_sha256": "241fa9a5d18eb1852cdd921c0bfcb620c3bad42c7972fa180f4b438b3d2e6cd6",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/sdgd_pinn_joint_concave_d100_semilinear_sde_official_s0.npz",
+          "source_prediction_file_sha256": "0dae90203903e95e75434fb7ce1b82b1b403b618d9fbc5300ea0ec1f359c5b5e",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "5b2dd0ea3f0fd92be3657357720672fdbde9405bed106b6be949a8d14b87612b"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_joint_concave_d100_tangent_actor_s0_n64_p1024_mcv.npz",
+          "errors": [],
+          "method": "tangent_actor",
+          "recomputed_metrics": {
+            "value_bias": 0.0001210719688543442,
+            "value_mae": 0.00021560491946500152,
+            "value_relative_l2": 0.0005440640430426978,
+            "value_rmse": 0.0003231066466871389
+          },
+          "reference_array_sha256": "241fa9a5d18eb1852cdd921c0bfcb620c3bad42c7972fa180f4b438b3d2e6cd6",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/joint_concave_d100_k2_mature_s0.npz",
+          "source_prediction_file_sha256": "230275c6883d32f944e9ebb4fa00a0b5e6464fd4b7d135d2df1048d5950efff0",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "5b2dd0ea3f0fd92be3657357720672fdbde9405bed106b6be949a8d14b87612b"
+        }
+      ],
+      "reference_array_sha256": [
+        "241fa9a5d18eb1852cdd921c0bfcb620c3bad42c7972fa180f4b438b3d2e6cd6"
+      ],
+      "same_actual_reference_array": true,
+      "same_actual_t_x_arrays": true,
+      "states": [
+        960
+      ],
+      "status": "PASS",
+      "test_bank_array_sha256": [
+        "5b2dd0ea3f0fd92be3657357720672fdbde9405bed106b6be949a8d14b87612b"
+      ],
+      "winner_if_paired": "tangent_actor"
+    },
+    "joint_convex": {
+      "methods_found": [
+        "dpi",
+        "pinn_hte",
+        "sdgd_pinn",
+        "tangent_actor"
+      ],
+      "records": [
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_joint_convex_d100_dpi_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "dpi",
+          "recomputed_metrics": {
+            "value_bias": 0.0007380699267586044,
+            "value_mae": 0.001460501865446503,
+            "value_relative_l2": 0.004238061524265521,
+            "value_rmse": 0.0018565739348756435
+          },
+          "reference_array_sha256": "d27db0502f03a0f7af1c9324b831489bf9b774f06700f8695a386bf2f05da1d1",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/dpi_joint_convex_d100_semilinear_paper_official_s0.npz",
+          "source_prediction_file_sha256": "17be79602036e0669968bd66c2b92745e4547b19f478b909ddd71a6647fd96eb",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "c8d0c831ca04e7efa318f22fb04d0dd618ad3c6705483c69a5319e82b3ab0cce"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_joint_convex_d100_pinn_hte_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "pinn_hte",
+          "recomputed_metrics": {
+            "value_bias": -0.0006517044499620777,
+            "value_mae": 0.002580964313951982,
+            "value_relative_l2": 0.007457756666245535,
+            "value_rmse": 0.00326703058932022
+          },
+          "reference_array_sha256": "d27db0502f03a0f7af1c9324b831489bf9b774f06700f8695a386bf2f05da1d1",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/pinn_hte_joint_convex_d100_semilinear_paper_official_s0.npz",
+          "source_prediction_file_sha256": "181abc2dbb896b8c369a534af914e2be84ad2d1ff0092561493807f8f045042d",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "c8d0c831ca04e7efa318f22fb04d0dd618ad3c6705483c69a5319e82b3ab0cce"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_joint_convex_d100_sdgd_pinn_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "sdgd_pinn",
+          "recomputed_metrics": {
+            "value_bias": 0.0016026561890890737,
+            "value_mae": 0.009191794541595799,
+            "value_relative_l2": 0.029172853505159756,
+            "value_rmse": 0.012779795459201514
+          },
+          "reference_array_sha256": "d27db0502f03a0f7af1c9324b831489bf9b774f06700f8695a386bf2f05da1d1",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/sdgd_pinn_joint_convex_d100_semilinear_sde_official_s0.npz",
+          "source_prediction_file_sha256": "76fa5f27b589cc88b4930250be2e126107878f0860f9aa78e1951d45720a7be7",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "c8d0c831ca04e7efa318f22fb04d0dd618ad3c6705483c69a5319e82b3ab0cce"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_joint_convex_d100_tangent_actor_s0_n64_p1024_mcv.npz",
+          "errors": [],
+          "method": "tangent_actor",
+          "recomputed_metrics": {
+            "value_bias": -5.437658919865976e-05,
+            "value_mae": 0.00014848243633251425,
+            "value_relative_l2": 0.0004829719689425934,
+            "value_rmse": 0.0002115762510006945
+          },
+          "reference_array_sha256": "d27db0502f03a0f7af1c9324b831489bf9b774f06700f8695a386bf2f05da1d1",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/joint_convex_d100_k2_mature_s0.npz",
+          "source_prediction_file_sha256": "981871e03abdea9a44ec49c2fb7bbb1e82b1bc282779c7852cf4937934c99461",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "c8d0c831ca04e7efa318f22fb04d0dd618ad3c6705483c69a5319e82b3ab0cce"
+        }
+      ],
+      "reference_array_sha256": [
+        "d27db0502f03a0f7af1c9324b831489bf9b774f06700f8695a386bf2f05da1d1"
+      ],
+      "same_actual_reference_array": true,
+      "same_actual_t_x_arrays": true,
+      "states": [
+        960
+      ],
+      "status": "PASS",
+      "test_bank_array_sha256": [
+        "c8d0c831ca04e7efa318f22fb04d0dd618ad3c6705483c69a5319e82b3ab0cce"
+      ],
+      "winner_if_paired": "tangent_actor"
+    },
+    "mlp_failure": {
+      "methods_found": [
+        "dpi",
+        "pinn_hte",
+        "sdgd_pinn",
+        "tangent_actor"
+      ],
+      "records": [
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_mlp_failure_d100_dpi_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "dpi",
+          "recomputed_metrics": {
+            "value_bias": 0.003594294106768133,
+            "value_mae": 0.00764201172396378,
+            "value_relative_l2": 0.00924083401011162,
+            "value_rmse": 0.010020885916838968
+          },
+          "reference_array_sha256": "703d7aef102cf7f5ef3555e4973dc87218ddcf23eaca13e9331a8f074fe9bb17",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/dpi_mlp_failure_d100_semilinear_paper_official_s0.npz",
+          "source_prediction_file_sha256": "c96e4517862420f59bf682d1cf0e2bfd1d24e927bdcec77ba88ff09f8f4305e7",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "3387b443afc6d11fa41702470bd497301ef03587f9e0db37614b6cc5e0c78784"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_mlp_failure_d100_pinn_hte_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "pinn_hte",
+          "recomputed_metrics": {
+            "value_bias": 0.03133210979006919,
+            "value_mae": 0.03388707979309617,
+            "value_relative_l2": 0.03683045990562758,
+            "value_rmse": 0.039939450981930115
+          },
+          "reference_array_sha256": "703d7aef102cf7f5ef3555e4973dc87218ddcf23eaca13e9331a8f074fe9bb17",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/pinn_hte_mlp_failure_d100_semilinear_paper_official_s0.npz",
+          "source_prediction_file_sha256": "02229366ad5f55df49c6ba04e4289cca48f4a7404682bf8a9f570545bcc337d6",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "3387b443afc6d11fa41702470bd497301ef03587f9e0db37614b6cc5e0c78784"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_mlp_failure_d100_sdgd_pinn_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "sdgd_pinn",
+          "recomputed_metrics": {
+            "value_bias": -0.01303123340420256,
+            "value_mae": 0.04500930348367654,
+            "value_relative_l2": 0.06166533315537957,
+            "value_rmse": 0.06687072486073822
+          },
+          "reference_array_sha256": "703d7aef102cf7f5ef3555e4973dc87218ddcf23eaca13e9331a8f074fe9bb17",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/sdgd_pinn_mlp_failure_d100_semilinear_sde_official_s0.npz",
+          "source_prediction_file_sha256": "89c1ee308893df8368823c55f7fe8dd2636a87dce950598cc12a702fc760ed7a",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "3387b443afc6d11fa41702470bd497301ef03587f9e0db37614b6cc5e0c78784"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_mlp_failure_d100_tangent_actor_s0_n64_p1024_mcv.npz",
+          "errors": [],
+          "method": "tangent_actor",
+          "recomputed_metrics": {
+            "value_bias": 0.0002973436482038087,
+            "value_mae": 0.004214660392923657,
+            "value_relative_l2": 0.006143692284397146,
+            "value_rmse": 0.00666230336165988
+          },
+          "reference_array_sha256": "703d7aef102cf7f5ef3555e4973dc87218ddcf23eaca13e9331a8f074fe9bb17",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/mlp_failure_d100_mature_s0.npz",
+          "source_prediction_file_sha256": "99bc359462babfcc6dbbae2fad12046b47dd6adc787b5251c4229f155759b1b1",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "3387b443afc6d11fa41702470bd497301ef03587f9e0db37614b6cc5e0c78784"
+        }
+      ],
+      "reference_array_sha256": [
+        "703d7aef102cf7f5ef3555e4973dc87218ddcf23eaca13e9331a8f074fe9bb17"
+      ],
+      "same_actual_reference_array": true,
+      "same_actual_t_x_arrays": true,
+      "states": [
+        960
+      ],
+      "status": "PASS",
+      "test_bank_array_sha256": [
+        "3387b443afc6d11fa41702470bd497301ef03587f9e0db37614b6cc5e0c78784"
+      ],
+      "winner_if_paired": "tangent_actor"
+    },
+    "nonconvex_coupled": {
+      "methods_found": [
+        "dpi",
+        "pinn_hte",
+        "sdgd_pinn",
+        "tangent_actor"
+      ],
+      "records": [
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_nonconvex_coupled_d100_dpi_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "dpi",
+          "recomputed_metrics": {
+            "value_bias": -0.0009300050992245009,
+            "value_mae": 0.001298529412010889,
+            "value_relative_l2": 0.0036210470072804662,
+            "value_rmse": 0.0016991249965970503
+          },
+          "reference_array_sha256": "f5d517155aff8bde7da97eba7e24928bbe0a21e65c1ffc4af2ef3ff284ab7c22",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/dpi_nonconvex_coupled_d100_semilinear_paper_official_s0.npz",
+          "source_prediction_file_sha256": "20871e5f7820ca1506fde4060eec557916438c00127dd08484b257882d4bf5f1",
+          "states": 512,
+          "status": "PASS",
+          "test_bank_array_sha256": "85a9430c6f60762f5964a9de46122e8010cd1d96b67b286a6997a824d20c2180"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_nonconvex_coupled_d100_pinn_hte_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "pinn_hte",
+          "recomputed_metrics": {
+            "value_bias": -0.0018807801291659343,
+            "value_mae": 0.0025362863992890385,
+            "value_relative_l2": 0.0065388336210002165,
+            "value_rmse": 0.003068255018974441
+          },
+          "reference_array_sha256": "f5d517155aff8bde7da97eba7e24928bbe0a21e65c1ffc4af2ef3ff284ab7c22",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/pinn_hte_nonconvex_coupled_d100_semilinear_paper_official_s0.npz",
+          "source_prediction_file_sha256": "16a9aa10b85927047025db4e9b414cd43a2c1c5838b5b610a405779044eed5f5",
+          "states": 512,
+          "status": "PASS",
+          "test_bank_array_sha256": "85a9430c6f60762f5964a9de46122e8010cd1d96b67b286a6997a824d20c2180"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_nonconvex_coupled_d100_sdgd_pinn_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "sdgd_pinn",
+          "recomputed_metrics": {
+            "value_bias": -0.0010613943216714425,
+            "value_mae": 0.005408459898790853,
+            "value_relative_l2": 0.018917557831159382,
+            "value_rmse": 0.00887679594351191
+          },
+          "reference_array_sha256": "f5d517155aff8bde7da97eba7e24928bbe0a21e65c1ffc4af2ef3ff284ab7c22",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/sdgd_pinn_nonconvex_coupled_d100_semilinear_sde_official_s0.npz",
+          "source_prediction_file_sha256": "2942bddc2bd45bf711c7aa5c8bbd144aa903299ddaa6845d79710840686adb38",
+          "states": 512,
+          "status": "PASS",
+          "test_bank_array_sha256": "85a9430c6f60762f5964a9de46122e8010cd1d96b67b286a6997a824d20c2180"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_nonconvex_coupled_d100_tangent_actor_s0_n64_p2048_mcv.npz",
+          "errors": [],
+          "method": "tangent_actor",
+          "recomputed_metrics": {
+            "value_bias": 0.0006090335175013741,
+            "value_mae": 0.0006172809523166385,
+            "value_relative_l2": 0.001713642131003267,
+            "value_rmse": 0.0008041022870333495
+          },
+          "reference_array_sha256": "f5d517155aff8bde7da97eba7e24928bbe0a21e65c1ffc4af2ef3ff284ab7c22",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/predictions/selected_precision_coupled_d100_k2_lam0p2_eta1_main_mcv_s0_paths2048_fine512.npz",
+          "source_prediction_file_sha256": "40caeedd474fde002f240c7c8e45e1ac46bb73c5d653b6bf9109a02213dee39f",
+          "states": 512,
+          "status": "PASS",
+          "test_bank_array_sha256": "85a9430c6f60762f5964a9de46122e8010cd1d96b67b286a6997a824d20c2180"
+        }
+      ],
+      "reference_array_sha256": [
+        "f5d517155aff8bde7da97eba7e24928bbe0a21e65c1ffc4af2ef3ff284ab7c22"
+      ],
+      "same_actual_reference_array": true,
+      "same_actual_t_x_arrays": true,
+      "states": [
+        512
+      ],
+      "status": "PASS",
+      "test_bank_array_sha256": [
+        "85a9430c6f60762f5964a9de46122e8010cd1d96b67b286a6997a824d20c2180"
+      ],
+      "winner_if_paired": "tangent_actor"
+    },
+    "ou_gmm": {
+      "methods_found": [
+        "dpi",
+        "pinn_hte",
+        "sdgd_pinn",
+        "tangent_actor"
+      ],
+      "records": [
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_ou_gmm_d100_dpi_s0_nna_pna_direct.npz",
+          "errors": [],
+          "method": "dpi",
+          "recomputed_metrics": {
+            "value_bias": -11.777906727015155,
+            "value_mae": 12.109577991040664,
+            "value_relative_l2": 0.05697230547159249,
+            "value_rmse": 17.663799525399465
+          },
+          "reference_array_sha256": "63fb58cfb217018c43a1de9427874b238b83facfd14a78a5808c27b90d58226d",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/predictions/official_dpi_dpi_s0_official.npz",
+          "source_prediction_file_sha256": "46abbe2d38fc9ad1bf0acc26a2649d1c090fb29017015781612be36af1ec6491",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "632c00f9dfaaa24b9314681f6f44a1ec4aead46b7aefec789774a3d349f72755"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_ou_gmm_d100_pinn_hte_s0_nna_pna_direct.npz",
+          "errors": [],
+          "method": "pinn_hte",
+          "recomputed_metrics": {
+            "value_bias": -25.774292145397386,
+            "value_mae": 26.851415929795987,
+            "value_relative_l2": 0.12472440166597105,
+            "value_rmse": 38.66978541094191
+          },
+          "reference_array_sha256": "63fb58cfb217018c43a1de9427874b238b83facfd14a78a5808c27b90d58226d",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/predictions/official_dpi_pinn_hte_s0_official.npz",
+          "source_prediction_file_sha256": "77430d395a1f2e605223ee6b0a0b27dc375e6e6a09494c7e2a3f89f00e16cced",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "632c00f9dfaaa24b9314681f6f44a1ec4aead46b7aefec789774a3d349f72755"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_ou_gmm_d100_sdgd_pinn_s0_nna_pna_na.npz",
+          "errors": [],
+          "method": "sdgd_pinn",
+          "recomputed_metrics": {
+            "value_bias": -52.92470364420824,
+            "value_mae": 52.92470364420824,
+            "value_relative_l2": 0.20153344308579202,
+            "value_rmse": 62.48380343509085
+          },
+          "reference_array_sha256": "63fb58cfb217018c43a1de9427874b238b83facfd14a78a5808c27b90d58226d",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/predictions/sdgd_pinn_ou_gmm_d100_hjb_adversarial_official_s0.npz",
+          "source_prediction_file_sha256": "022ec13928113cb34418ca63304c83b2ce5a13e0daba9687a3e7d948f49dc1f2",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "632c00f9dfaaa24b9314681f6f44a1ec4aead46b7aefec789774a3d349f72755"
+        },
+        {
+          "canonical_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/paired_predictions/main_ou_gmm_d100_tangent_actor_s0_n64p0_p1024_mcv.npz",
+          "errors": [],
+          "method": "tangent_actor",
+          "recomputed_metrics": {
+            "value_bias": -0.18354435261178445,
+            "value_mae": 0.18363422201777782,
+            "value_relative_l2": 0.0007088164054776148,
+            "value_rmse": 0.21976275636087372
+          },
+          "reference_array_sha256": "63fb58cfb217018c43a1de9427874b238b83facfd14a78a5808c27b90d58226d",
+          "source_prediction_file": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/predictions/actor_dpi_ou_gmm_d100_focused_s0_a4_n64.npz",
+          "source_prediction_file_sha256": "3e32be3e2153260a242c1d212b9aead528bc65e4214109ee56652bca1777913c",
+          "states": 960,
+          "status": "PASS",
+          "test_bank_array_sha256": "632c00f9dfaaa24b9314681f6f44a1ec4aead46b7aefec789774a3d349f72755"
+        }
+      ],
+      "reference_array_sha256": [
+        "63fb58cfb217018c43a1de9427874b238b83facfd14a78a5808c27b90d58226d"
+      ],
+      "same_actual_reference_array": true,
+      "same_actual_t_x_arrays": true,
+      "states": [
+        960
+      ],
+      "status": "PASS",
+      "test_bank_array_sha256": [
+        "632c00f9dfaaa24b9314681f6f44a1ec4aead46b7aefec789774a3d349f72755"
+      ],
+      "winner_if_paired": "tangent_actor"
+    }
+  },
+  "seed": 0,
+  "status": "PASS",
+  "tangent_actor_strict_paired_wins": [
+    "hjb_log",
+    "ou_gmm",
+    "joint_concave",
+    "joint_convex",
+    "nonconvex_coupled",
+    "mlp_failure",
+    "allen_cahn"
+  ],
+  "verification_level": "actual arrays, source/canonical files, and recomputed metrics"
+}

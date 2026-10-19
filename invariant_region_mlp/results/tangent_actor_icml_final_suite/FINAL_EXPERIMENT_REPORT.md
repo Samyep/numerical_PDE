@@ -17,6 +17,14 @@ completion counts. The machine-readable contract is `FROZEN_PROTOCOL.json`.
 All common test banks were generated before final training, and every
 completed result records its test-bank hash.
 
+The 2026-10-19 paired-bank remediation subsequently opened every frozen
+prediction artifact and separated numerical array hashes from NPZ file hashes.
+It established that the reported nonconvex 960/512 mismatch was a metadata
+error: all four methods had used the same 512 states and reference. Allen–Cahn
+was also recomputed against one shared high-accuracy radial reference. The
+strict artifact-level audit now passes on all seven 100D PDEs; full details and
+pre-repair values are preserved in `PAIRWISE_BANK_REMEDIATION_20261019.md`.
+
 The amortized whole-function task contains Tangent-Actor, DPI, PINN-HTE, and
 SDGD-PINN. Deep BSDE remains exclusively in the native single-initial-state
 task, where its full solve cost is charged. The external baselines retain the

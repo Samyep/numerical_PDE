@@ -391,9 +391,10 @@ def evaluate(family: str, d: int, seed: int, device: torch.device, *, smoke: boo
         actor = _initial_actor(run_id, benchmark, ActorConfig(**training["configuration"]), device)
     else:
         actor = _load_actor(Path(training["selection"]["selected_checkpoint"]), benchmark, device)
-    t, x, bank_path, bank_hash = _test_bank(family, d)
+    t, x, bank_path, bank_file_hash = _test_bank(family, d)
     if smoke:
         t, x, paths, steps = t[:16], x[:16], 8, (4,)
+    bank_array_hash = _array_hash(t, x)
     truth, truth_q, reference = _truth(family, benchmark, t, x, smoke=smoke)
     actor_prediction = _predict(actor, benchmark, t, x, device)
     rows, native_rows = [], []
@@ -457,9 +458,13 @@ def evaluate(family: str, d: int, seed: int, device: torch.device, *, smoke: boo
         "run_id": run_id, "method": "terminal_aware_tangent_actor_mcv",
         "family": family, "dimension": d, "seed": seed,
         "selected_actor": selected, "rows": rows, "native_rows": native_rows,
-        "test_bank": str(bank_path), "test_bank_sha256": bank_hash,
+        "test_bank": str(bank_path), "test_bank_sha256": bank_array_hash,
+        "test_bank_array_sha256": bank_array_hash,
+        "test_bank_file_sha256": bank_file_hash,
+        "reference_array_sha256": _array_hash(np.asarray(truth)),
         "states": len(t), "reference": reference,
         "prediction_path": str(prediction_path),
+        "prediction_file_sha256": sha256_file(prediction_path),
         "ground_truth_loaded_only_after_checkpoint_selection": True,
         "status": "complete",
     }

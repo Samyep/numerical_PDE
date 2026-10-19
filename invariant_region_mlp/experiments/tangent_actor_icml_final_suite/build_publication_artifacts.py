@@ -304,7 +304,6 @@ def figure_dimension_scaling() -> list[Path]:
                     capsize=2.5, label=METHOD_LABELS[method], zorder=3,
                 )
         if finite_values:
-            floor = max(min(finite_values) * 0.45, 1e-9)
             for lane, method in enumerate(METHOD_ORDER):
                 completed = set(
                     subset.loc[subset["method"] == method, "dimension"].astype(int)
@@ -312,13 +311,13 @@ def figure_dimension_scaling() -> list[Path]:
                 missing = [d for d in DIMENSIONS if d not in completed]
                 if missing:
                     axis.scatter(
-                        [positions[d] for d in missing],
-                        [floor * (1.0 + 0.18 * lane)] * len(missing),
+                        [positions[d] + (lane - 1.5) * 0.07 for d in missing],
+                        [1.015 + 0.025 * lane] * len(missing),
                         marker="x", s=13, linewidths=0.8,
                         color=COLORS[method], alpha=0.55,
+                        transform=axis.get_xaxis_transform(), clip_on=False,
                     )
             axis.set_yscale("log")
-            axis.set_ylim(bottom=floor * 0.8)
         else:
             axis.text(0.5, 0.5, "All supported cells pending", transform=axis.transAxes,
                       ha="center", va="center", color="#667085")
@@ -333,7 +332,7 @@ def figure_dimension_scaling() -> list[Path]:
         Line2D([0], [0], color=COLORS[m], marker=MARKERS[m], label=METHOD_LABELS[m])
         for m in METHOD_ORDER
     ]
-    fig.suptitle("Dimension scaling (× marks a pending method cell)", y=0.995,
+    fig.suptitle("Dimension scaling (× above an axis marks a pending cell)", y=0.995,
                  fontsize=12, fontweight="bold")
     fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.955),
                ncol=4, frameon=False)
@@ -528,7 +527,7 @@ def table_native() -> Path:
     data = _select_native_primary_rows(data)
     lines = [
         r"\begin{tabular}{lrllrll}", r"\toprule",
-        r"PDE & $d$ & Method & Status & Seeds & Abs. error (mean $\pm$ sd) & Cost (s) \\",
+        r"PDE & $d$ & Method & Status & Seeds & Abs. error (seed 0) & Cost (s) \\",
         r"\midrule",
     ]
     if not data.empty:
@@ -631,7 +630,7 @@ def build_reproducibility_manifest(artifacts: Iterable[Path]) -> Path:
             "python -m pytest -q invariant_region_mlp/experiments/tangent_actor_icml_final_suite",
         ],
         "slurm_jobs": jobs,
-        "test_status": "20 passed; see final-suite pytest output and final report",
+        "test_status": "24 passed after Stage 0 paired-bank repair; see final-suite pytest output",
         "artifacts": [
             {
                 "path": str(path.relative_to(SOURCE_ROOT)), "bytes": path.stat().st_size,
@@ -655,6 +654,10 @@ def build_artifact_audit(artifacts: Iterable[Path]) -> Path:
     native = pd.read_csv(RESULTS_DIR / "NATIVE_POINT_RESULTS.csv")
     scaling = pd.read_csv(RESULTS_DIR / "DIMENSION_SCALING.csv")
     review_gate = json.loads((RESULTS_DIR / "REVIEW_GATE_STATUS.json").read_text())
+    from .verify_paired_banks import audit as paired_bank_audit
+    paired = paired_bank_audit(RESULTS_DIR / "MAIN_RESULTS.csv", dimension=100)
+    paired_path = RESULTS_DIR / "PAIRWISE_BANK_VERIFICATION_100D.json"
+    paired_path.write_text(json.dumps(paired, indent=2, sort_keys=True) + "\n")
     counts: dict[str, int] = {}
     for row in manifest["method_cells"]:
         counts[row["execution_status"]] = counts.get(row["execution_status"], 0) + 1
@@ -694,6 +697,7 @@ def build_artifact_audit(artifacts: Iterable[Path]) -> Path:
             and np.isfinite(native["reference_uncertainty"].to_numpy(dtype=float)).all()
         ),
         "test_bank_hash_complete_for_whole_function": bool(main["test_bank_sha256"].notna().all()),
+        "actual_100d_arrays_and_metrics_are_strictly_paired": paired["status"] == "PASS",
         "source_provenance_complete": bool(
             main[["source_commit", "source_artifact", "method_status"]].notna().all().all()
             and native[["source_commit", "source_artifact", "method_status"]].notna().all().all()
@@ -721,9 +725,13 @@ def build_artifact_audit(artifacts: Iterable[Path]) -> Path:
             (main.loc[main["pde"] == "mlp_failure", "method_status"] == "adapted").all()
             and (native.loc[native["pde"] == "mlp_failure", "method_status"] == "adapted").all()
         ),
-        "stage_b_review_gate_remains_closed": bool(
+        "stage_b_review_gate_has_valid_audited_state": bool(
             review_gate.get("stage_b_status") == "complete"
-            and review_gate.get("status") == "pending_independent_review"
+            and review_gate.get("status") in {"pending_independent_review", "approved"}
+            and (
+                review_gate.get("status") != "approved"
+                or bool(review_gate.get("independent_review_record"))
+            )
         ),
     }
     checks_passed = all(checks.values())
@@ -754,6 +762,9 @@ def _required_deliverables() -> list[Path]:
         RESULTS_DIR / "DIMENSION_COMPATIBILITY_MATRIX.csv",
         RESULTS_DIR / "EXECUTION_MANIFEST.json",
         RESULTS_DIR / "REVIEW_GATE_STATUS.json",
+        RESULTS_DIR / "PAIRWISE_BANK_AUDIT_100D.json",
+        RESULTS_DIR / "PAIRWISE_BANK_VERIFICATION_100D.json",
+        RESULTS_DIR / "PAIRWISE_REEVALUATION_100D.csv",
         RESULTS_DIR / "REFERENCE_ACCURACY_AUDIT.md",
         RESULTS_DIR / "MAIN_RESULTS.csv",
         RESULTS_DIR / "100D_RESULTS.csv",

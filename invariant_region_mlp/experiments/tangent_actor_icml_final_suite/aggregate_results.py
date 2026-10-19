@@ -150,8 +150,14 @@ def _base_row(**overrides: Any) -> dict[str, Any]:
         "run_id": None, "checkpoint": None, "selection_rule": None,
         "steps": None, "paths": None, "estimator": None, "states": None,
         "test_bank": None, "test_bank_sha256": None, "reference": None,
+        "test_bank_array_sha256": None, "test_bank_file_sha256": None,
+        "reference_array_sha256": None, "reference_source": None,
+        "prediction_file": None, "prediction_file_sha256": None,
+        "source_prediction_file": None, "source_prediction_file_sha256": None,
         "reference_uncertainty": None, "value_rmse": None,
         "value_relative_l2": None, "value_bias": None, "value_mae": None,
+        "raw_value_rmse": None, "raw_value_relative_l2": None,
+        "raw_value_bias": None, "raw_value_mae": None,
         "gradient_component_rmse": None, "gradient_vector_rmse": None,
         "gradient_relative_l2": None, "actor_value_rmse": None,
         "actor_gradient_vector_rmse": None, "mc_rmse_contribution": None,
@@ -160,7 +166,8 @@ def _base_row(**overrides: Any) -> dict[str, Any]:
         "inference_seconds": None, "total_seconds": None,
         "allocated_gpu_seconds": None, "peak_gpu_bytes": None,
         "parameter_count": None, "nonfinite_count": None,
-        "hyperparameters": None, "notes": None,
+        "hyperparameters": None, "paired_bank_audit_status": None,
+        "metric_provenance": None, "notes": None,
     }
     row.update(overrides)
     return {key: _finite(value) for key, value in row.items()}
@@ -370,6 +377,11 @@ def _new_tangent_rows() -> tuple[list[dict[str, Any]], list[dict[str, Any]], lis
                 steps=metric["steps"], paths=metric["paths"], estimator=metric["estimator"],
                 states=result.get("states"), test_bank=result.get("test_bank"),
                 test_bank_sha256=bank_hash, reference=_compact(result.get("reference")),
+                test_bank_array_sha256=result.get("test_bank_array_sha256", bank_hash),
+                test_bank_file_sha256=result.get("test_bank_file_sha256"),
+                reference_array_sha256=result.get("reference_array_sha256"),
+                prediction_file=result.get("prediction_path"),
+                prediction_file_sha256=result.get("prediction_file_sha256"),
                 reference_uncertainty=_reference_uncertainty(result, pde),
                 value_rmse=metric["value_rmse"], value_relative_l2=metric["relative_l2"],
                 value_bias=metric["bias"], value_mae=metric["mae"],
@@ -441,6 +453,11 @@ def _new_function_baselines() -> tuple[list[dict[str, Any]], list[dict[str, Any]
                 checkpoint=result.get("checkpoint"), selection_rule="published fixed budget",
                 states=result.get("test_states", result.get("states")),
                 test_bank=result.get("test_bank"), test_bank_sha256=result.get("test_bank_sha256"),
+                test_bank_array_sha256=result.get("test_bank_array_sha256"),
+                test_bank_file_sha256=result.get("test_bank_file_sha256"),
+                reference_array_sha256=result.get("reference_array_sha256"),
+                prediction_file=result.get("prediction_file"),
+                prediction_file_sha256=result.get("prediction_file_sha256"),
                 reference=_compact(result.get("reference_metadata", REFERENCE_NAMES.get(pde))),
                 reference_uncertainty=_reference_uncertainty(result, pde),
                 value_rmse=result["value_rmse"], value_relative_l2=result["value_relative_l2"],
@@ -843,7 +860,7 @@ def aggregate() -> dict[str, Any]:
         row for row in all_native
         if int(row["seed"]) == 0 and row.get("profile_role", "primary") == "primary"
     ]
-    main = _deduplicate(
+    selected_main = _deduplicate(
         primary_main_candidates,
         ("pde", "dimension", "method", "seed"),
     )
@@ -851,11 +868,21 @@ def aggregate() -> dict[str, Any]:
         primary_native_candidates,
         ("pde", "dimension", "method", "seed", "steps", "estimator"),
     )
+    # Copy selected rows before canonical repair because several historical
+    # dictionaries also enter the frontier table. Each table must retain its
+    # own canonical prediction path and provenance.
+    main = [row.copy() for row in selected_main]
+    # Reconstruct the d=100 primary comparison from the immutable prediction
+    # arrays.  This normalizes file-vs-array hashes, corrects the historical
+    # nonconvex state count, and evaluates every method against one numerical
+    # reference array without retraining or checkpoint reselection.
+    from .paired_bank_repair import repair_rows
+    repair_rows(main, scope="main", write_audit=True)
     excluded = []
     # Compare against the final de-duplicated rows, not every candidate.  This
     # keeps superseded-but-valid primary runs visible in the historical export
     # after a corrected profile replaces the same scientific cell.
-    primary_main_ids = {id(row) for row in main}
+    primary_main_ids = {id(row) for row in selected_main}
     primary_native_ids = {id(row) for row in native}
     for table_kind, rows, kept in (
         ("whole_function", all_main, primary_main_ids),
@@ -879,10 +906,11 @@ def aggregate() -> dict[str, Any]:
         row for row in historical_main + nonconvex_frontier + new_tangent_frontier + new_baseline_main
         if int(row["seed"]) == 0 and row.get("profile_role", "primary") == "primary"
     ]
-    frontier = _deduplicate(
+    frontier = [row.copy() for row in _deduplicate(
         frontier_candidates,
         ("pde", "dimension", "method", "seed", "steps", "paths", "estimator"),
-    )
+    )]
+    repair_rows(frontier, scope="frontier", write_audit=False)
     scaling = _dimension_scaling(main)
     ablations = _ablation_rows(frontier)
     _write_csv(RESULTS_DIR / "MAIN_RESULTS.csv", main)

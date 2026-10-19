@@ -28,6 +28,7 @@ from invariant_region_mlp.experiments.original_pde_benchmark_comparison.tangent_
 )
 
 from .benchmarks import MLPFailureBenchmark
+from .paired_bank_repair import array_sha256, file_sha256
 from .prepare_suite import write_json
 from .protocol import RESULTS_DIR, stable_seed
 
@@ -410,8 +411,14 @@ def evaluate(
         "gradient_actor_inactive_rms": float(
             np.sqrt(np.mean(np.square(predicted_q[:, 1:])))
         ),
-        "test_bank": bank_path, "states": len(test_t),
+        "test_bank": bank_path,
+        "test_bank_sha256": array_sha256(test_t, test_x),
+        "test_bank_array_sha256": array_sha256(test_t, test_x),
+        "test_bank_file_sha256": file_sha256(Path(bank_path)),
+        "reference_array_sha256": array_sha256(np.asarray(truth)),
+        "states": len(test_t),
         "prediction_path": str(prediction_path),
+        "prediction_file_sha256": file_sha256(prediction_path),
         "ground_truth_loaded_only_after_checkpoint_selection": True,
         "status": "complete",
     }

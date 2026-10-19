@@ -1,7 +1,19 @@
 {
+  "approval_conditions": [
+    "Stage 1 is the fixed eight-cell joint-concave d20/d50 pilot.",
+    "Audit Stage 1 arrays, metrics, failures, and Slurm allocated time before Stage 2.",
+    "Every attempt, including failed or timed-out work, counts toward 120 GH200-hours.",
+    "Cumulative attempts for any cell may not exceed six GH200-hours.",
+    "Reserve a full six-hour allowance before dispatching each later cell.",
+    "No automatic retry, extra seed, checkpoint reselection, or budget extension.",
+    "Incomplete cells retain blank accuracy and are excluded from numerical curves."
+  ],
   "approval_must_be_explicit": true,
+  "approval_scope": "limited staged whole-function sweep: seven frozen PDEs, dimensions 20/50/200/400, four methods, seed 0; Deep BSDE excluded",
+  "approved_utc": "2026-10-19T21:07:40.379696+00:00",
   "artifacts_ready_utc": "2026-10-19T15:22:52Z",
   "created_utc": "2026-10-18T22:48:57.842696+00:00",
+  "independent_review_record": "invariant_region_mlp/results/tangent_actor_icml_final_suite/INDEPENDENT_REPAIR_REVIEW_20261019.md",
   "review_artifacts": [
     "BASELINE_PAPER_FIDELITY_REVIEW.md",
     "100D_RESULTS.csv",
@@ -11,6 +23,11 @@
     "REMAINING_GPU_HOUR_ESTIMATE.csv"
   ],
   "scope": "post-100D dimension sweep",
+  "stage0_verification": {
+    "independent_verdict": "PASS",
+    "package_tests": "24 passed",
+    "paired_bank_verification": "PASS"
+  },
   "stage_b_status": "complete",
-  "status": "pending_independent_review"
+  "status": "approved"
 }

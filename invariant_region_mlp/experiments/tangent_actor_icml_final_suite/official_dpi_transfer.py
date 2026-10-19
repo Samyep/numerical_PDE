@@ -41,6 +41,7 @@ from invariant_region_mlp.experiments.original_pde_benchmark_comparison.referenc
 )
 
 from .benchmarks import MLPFailureBenchmark, OUGMMBenchmark
+from .paired_bank_repair import array_sha256
 from .prepare_suite import sha256_file, write_json
 from .protocol import RESULTS_DIR, SOURCE_COMMITS, stable_seed
 
@@ -344,7 +345,7 @@ def _horizon_alpha(pde: str) -> tuple[float, float]:
     return 1.0, 1.0
 
 
-def _load_test_bank(pde: str, d: int) -> tuple[np.ndarray, np.ndarray, Path, str]:
+def _load_test_bank(pde: str, d: int) -> tuple[np.ndarray, np.ndarray, Path, str, str]:
     audit = json.loads((RESULTS_DIR / "PREFLIGHT_AUDIT.json").read_text())
     item = audit["test_banks"][f"{pde}_d{d}"]
     path = SOURCE_ROOT / item["path"]
@@ -356,7 +357,9 @@ def _load_test_bank(pde: str, d: int) -> tuple[np.ndarray, np.ndarray, Path, str
             t, x = data["test_t"], data["test_x"]
         else:
             t, x = data["t"], data["x"]
-    return np.asarray(t).reshape(-1), np.asarray(x), path, item["sha256"]
+    t = np.asarray(t).reshape(-1)
+    x = np.asarray(x)
+    return t, x, path, array_sha256(t, x), item["sha256"]
 
 
 def _truth(equation, t: np.ndarray, x: np.ndarray) -> tuple[np.ndarray, np.ndarray | None]:
@@ -558,7 +561,7 @@ def execute(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     equation = runner.equation.to(device=device)
     model = _reconstruct_model(cfg, equation, checkpoint, device)
-    t, x, bank_path, bank_hash = _load_test_bank(pde, d)
+    t, x, bank_path, bank_hash, bank_file_hash = _load_test_bank(pde, d)
     if pde == "allen_cahn" and mode == "official":
         from .run_standard_actor import _allen_reference
         truth, reference_metadata = _allen_reference(d, t, x, smoke=False)
@@ -622,6 +625,9 @@ def execute(
         "official_config": str(config_path), "expanded_config": str(exp_dir / "config.yaml"),
         "overrides": overrides, "checkpoint": str(checkpoint),
         "test_bank": str(bank_path), "test_bank_sha256": bank_hash,
+        "test_bank_array_sha256": bank_hash,
+        "test_bank_file_sha256": bank_file_hash,
+        "reference_array_sha256": array_sha256(np.asarray(truth)),
         "reference_metadata": reference_metadata,
         "test_states": len(t), "value_rmse": float(np.sqrt(np.mean(error**2))),
         "value_relative_l2": float(np.linalg.norm(error) / np.linalg.norm(truth)),
@@ -631,6 +637,7 @@ def execute(
         "peak_gpu_bytes": int(torch.cuda.max_memory_allocated()) if torch.cuda.is_available() else None,
         "parameter_count": sum(item.numel() for item in model.parameters()),
         "prediction_file": str(prediction_path),
+        "prediction_file_sha256": sha256_file(prediction_path),
         "native": {
             "point": "t=0,x=0", "prediction": native_prediction,
             "reference": native_truth,
