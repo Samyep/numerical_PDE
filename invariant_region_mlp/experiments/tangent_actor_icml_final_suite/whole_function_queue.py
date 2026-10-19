@@ -59,6 +59,19 @@ def generate(stage: str, slots: int = 4) -> tuple[list[dict], dict]:
             }
             queues[slot].append(record)
             loads[slot] += hours
+    # DPI and PINN do not expose an exact mid-run continuation in their pinned
+    # sources.  Put them at the front of every allocation so the worker can
+    # offer their full six-hour cell allowance.  This changes dispatch order
+    # only; LPT placement and every scientific setting stay frozen.
+    nonresumable_rank = {"dpi": 0, "pinn_hte": 1}
+    for queue in queues:
+        queue.sort(key=lambda record: (
+            0 if record["method"] in nonresumable_rank else 1,
+            nonresumable_rank.get(record["method"], 0),
+            record["sequence"],
+        ))
+        for sequence, record in enumerate(queue):
+            record["sequence"] = sequence
     records = [record for queue in queues for record in queue]
     metadata = {
         "stage": stage,
@@ -69,8 +82,9 @@ def generate(stage: str, slots: int = 4) -> tuple[list[dict], dict]:
         "estimated_slot_gpu_hours": loads,
         "maximum_estimated_slot_gpu_hours": max(loads, default=0.0),
         "ordering": (
-            "dimension stage order, then deterministic LPT using frozen pre-run runtime "
-            "estimates; no accuracy or test metric used"
+            "deterministic LPT placement using frozen pre-run runtime estimates; within "
+            "each slot nonresumable DPI/PINN run first, followed by stable LPT order; "
+            "no accuracy or test metric used"
         ),
     }
     return records, metadata

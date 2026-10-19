@@ -78,6 +78,15 @@ def test_balanced_queue_is_frozen_without_accuracy(monkeypatch) -> None:
     assert len(first) == 12
     assert {row["slot"] for row in first} == {0, 1, 2, 3}
     assert meta["ordering"].endswith("no accuracy or test metric used")
+    for slot in {row["slot"] for row in first}:
+        methods = [row["method"] for row in first if row["slot"] == slot]
+        first_resumable = next(
+            (index for index, method in enumerate(methods)
+             if method not in {"dpi", "pinn_hte"}),
+            len(methods),
+        )
+        assert all(method in {"dpi", "pinn_hte"} for method in methods[:first_resumable])
+        assert all(method not in {"dpi", "pinn_hte"} for method in methods[first_resumable:])
 
 
 def test_slurm_duration_parser_for_dispatch_reservation() -> None:
