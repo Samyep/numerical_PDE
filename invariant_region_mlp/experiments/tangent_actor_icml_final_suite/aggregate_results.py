@@ -19,7 +19,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from .protocol import RESULTS_DIR, SOURCE_COMMITS
+from .protocol import RESULTS_DIR, SOURCE_COMMITS, dimensions_for
 
 
 PACKAGE_DIR = Path(__file__).resolve().parent
@@ -430,11 +430,12 @@ def _new_function_baselines() -> tuple[list[dict[str, Any]], list[dict[str, Any]
         for path, result in _json_files(pattern):
             method = METHOD_ALIASES[result["method"]]
             pde = result.get("pde", result.get("family"))
+            classification = "adapted" if pde == "mlp_failure" else result["classification"]
             training = result.get("training_seconds", result.get("cumulative_training_seconds"))
             row = _base_row(
                 pde=pde, dimension=int(result["dimension"]), method=method,
                 method_label=METHOD_LABELS[method], seed=int(result["seed"]),
-                method_status=result["classification"], source_kind="new_final_suite",
+                method_status=classification, source_kind="new_final_suite",
                 source_commit=result["official_source_commit"],
                 source_artifact=str(path.relative_to(SOURCE_ROOT)), run_id=result["run_id"],
                 checkpoint=result.get("checkpoint"), selection_rule="published fixed budget",
@@ -452,7 +453,7 @@ def _new_function_baselines() -> tuple[list[dict[str, Any]], list[dict[str, Any]
                 peak_gpu_bytes=result.get("peak_gpu_bytes"), parameter_count=result.get("parameter_count"),
                 nonfinite_count=result.get("nonfinite_count", 0),
                 hyperparameters=_compact(result.get("configuration", result.get("overrides"))),
-                notes="official-method transfer" if result["classification"] != "native_official" else "native official reproduction",
+                notes="official-method transfer" if classification != "native_official" else "native official reproduction",
                 benchmark_profile=result.get("benchmark_profile", "legacy_unprofiled"),
                 profile_role=result.get("profile_role", (
                     "primary" if pde == "ou_gmm" and method in {"dpi", "pinn_hte"}
@@ -468,7 +469,7 @@ def _new_function_baselines() -> tuple[list[dict[str, Any]], list[dict[str, Any]
                 native.append({
                     "pde": pde, "dimension": int(result["dimension"]), "method": method,
                     "method_label": METHOD_LABELS[method], "seed": int(result["seed"]),
-                    "method_status": result["classification"], "execution_status": "complete",
+                    "method_status": classification, "execution_status": "complete",
                     "source_kind": "new_final_suite", "source_commit": result["official_source_commit"],
                     "source_artifact": str(path.relative_to(SOURCE_ROOT)), "run_id": result["run_id"],
                     "point": item.get("point", "t=0,x=0"), "prediction": item["prediction"],
@@ -477,7 +478,11 @@ def _new_function_baselines() -> tuple[list[dict[str, Any]], list[dict[str, Any]
                     "relative_error": item["absolute_error"] / max(abs(item["reference"]), 1e-300),
                     "mc_standard_error": None, "steps": None, "paths": None, "estimator": "network",
                     "training_seconds": training, "inference_seconds": result.get("inference_seconds"),
-                    "total_seconds": result.get("total_seconds"), "peak_gpu_bytes": result.get("peak_gpu_bytes"),
+                    "total_seconds": result.get(
+                        "total_seconds",
+                        float(training or 0.0) + float(result.get("inference_seconds") or 0.0),
+                    ),
+                    "peak_gpu_bytes": result.get("peak_gpu_bytes"),
                     "nonfinite_count": result.get("nonfinite_count", 0),
                     "full_training_cost_charged": True,
                     "notes": "same frozen network at native point",
@@ -491,10 +496,11 @@ def _new_deep_bsde_rows() -> list[dict[str, Any]]:
     rows = []
     for path, result in _json_files("deep_bsde_*_official_s*.json"):
         pde = result["family"]
+        classification = "adapted" if pde == "mlp_failure" else result["classification"]
         rows.append({
             "pde": pde, "dimension": int(result["dimension"]), "method": "deep_bsde",
             "method_label": METHOD_LABELS["deep_bsde"], "seed": int(result["seed"]),
-            "method_status": result["classification"], "execution_status": "complete",
+            "method_status": classification, "execution_status": "complete",
             "source_kind": "new_final_suite", "source_commit": result["official_source_commit"],
             "source_artifact": str(path.relative_to(SOURCE_ROOT)), "run_id": result["run_id"],
             "point": "t=0,x=0", "prediction": result["reported_y0"],
@@ -543,6 +549,11 @@ def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
 def _dimension_scaling(main: list[dict[str, Any]]) -> list[dict[str, Any]]:
     grouped: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
     for row in main:
+        # Native paper anchors outside the frozen dimension grid (currently
+        # SDGD HJB-Log at d=250) belong in MAIN_RESULTS and the fidelity
+        # review, but not in the predeclared dimension-scaling experiment.
+        if int(row["dimension"]) not in dimensions_for(row["pde"]):
+            continue
         grouped[(row["pde"], row["dimension"], row["method"], row["method_status"])].append(row)
     output = []
     for (pde, d, method, status), rows in grouped.items():

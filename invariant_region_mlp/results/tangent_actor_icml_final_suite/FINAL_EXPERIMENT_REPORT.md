@@ -1,18 +1,21 @@
 # ICML final benchmark suite report
 
-**Execution status:** staged execution in progress on 2026-10-18. This document
-records only completed, audited evidence. It does not assign the final
-Scientific GO, Benchmark GO, or compute-efficiency verdict while supported
-benchmark cells remain pending.
+**Execution status:** the corrected single-seed 100D comparison and all native
+paper-fidelity anchors are complete as of 2026-10-19. The post-100D dimension
+sweep is intentionally blocked pending independent review. This document does
+not assign a full-grid Scientific GO, Benchmark GO, or compute-efficiency
+verdict while that gate remains closed.
 
 ## Frozen protocol
 
 The suite starts from commit
 `d36ab9e79d0e6ffe49c43d60cdb28a064dc9ac09` and uses seven PDE families, a
-six-dimension grid, five solver entries, and three requested training seeds.
-The machine-readable contract is `FROZEN_PROTOCOL.json`. All common test banks
-were generated before final training, and every completed result records its
-test-bank hash.
+six-dimension grid, five solver entries, and one fixed primary training seed
+(`0`) per method cell. The single-seed amendment preserves earlier multi-seed
+artifacts as historical evidence but excludes them from rankings and
+completion counts. The machine-readable contract is `FROZEN_PROTOCOL.json`.
+All common test banks were generated before final training, and every
+completed result records its test-bank hash.
 
 The amortized whole-function task contains Tangent-Actor, DPI, PINN-HTE, and
 SDGD-PINN. Deep BSDE remains exclusively in the native single-initial-state
@@ -30,52 +33,52 @@ and selection decision are frozen.
 
 ## Current coverage
 
-The current canonical aggregation contains 23 completed PDE–dimension–method
-cells out of 210 requested cells, 24 whole-function rows, 41 native-point rows,
-42 accuracy-frontier rows, 16 dimension-scaling rows, and 111 ablation rows.
-These counts include exact, hash-audited historical reuse. Smoke runs are
-excluded. The execution manifest
-records the actual seed count for every cell rather than manufacturing
-replication intervals.
+The canonical aggregation contains 35 completed PDE-dimension-method cells out
+of 210 requested cells, 29 whole-function rows, 44 native-point rows, 41
+accuracy-frontier rows, 28 dimension-scaling rows, and 111 ablation rows.
+These counts include exact, hash-audited historical reuse. Smoke runs and
+superseded baseline profiles are excluded. The extra whole-function row is the
+source-native SDGD 250D fidelity anchor; it is deliberately excluded from the
+predeclared `10/20/50/100/200/400` dimension-scaling table.
 
-Completed 100D evidence currently includes:
+Completed 100D evidence includes:
 
 - Tangent-Actor on HJB-Log, OU/GMM, joint concave, joint convex, nonconvex
   coupled, the nonsmooth MLP-failure PDE, and Allen–Cahn.
-- Native SDGD-PINN on HJB-Log.
-- Native DPI and PINN-HTE on OU/GMM.
-- DPI whole-function results on all seven families.
+- Corrected DPI, PINN-HTE, and SDGD-PINN whole-function results on all seven
+  families at their complete published budgets.
+- Native SDGD-PINN on HJB-Log at 250D and native DPI/PINN-HTE on OU/GMM at
+  100D for the paper-fidelity review.
 - Native Deep BSDE on all seven 100D families, reported only in the separate
   single-point table.
 
-The mature 100D joint-convex Tangent-Actor cell and its common-bank
-all-iteration diagnostic are complete. The remaining external 100D transfers,
-dimension extremes, intermediate dimensions, and missing independent seeds
-remain pending.
+The remaining supported cells are the post-review dimension sweep. No such job
+has been launched because `REVIEW_GATE_STATUS.json` remains
+`pending_independent_review`.
 
 ## Audited numerical findings to date
 
-The following values are measured results, not extrapolated endpoints. Main
-rows use the frozen 64-step protocol; finer Euler results remain in
-`ACCURACY_COMPUTE_FRONTIER.csv`.
+The following seed-0 Value RMSEs are measured endpoints. Tangent-Actor rows use
+the frozen 64-step primary protocol; finer Euler results remain numerical
+audits in `ACCURACY_COMPUTE_FRONTIER.csv`.
 
-| PDE and method | Seeds | Value RMSE | Relative L2 | Evidence status |
-|---|---:|---:|---:|---|
-| HJB-Log, Tangent-Actor + MCV | 3 | mean `8.535e-4` | mean `1.862e-4` | exact historical reuse |
-| HJB-Log, SDGD-PINN | 1 | `2.992e-2` | `6.527e-3` | native official reuse |
-| OU/GMM, Tangent-Actor + MCV | 3 | mean `2.210e-1` | mean `7.126e-4` | exact historical reuse |
-| OU/GMM, DPI | 1 | `1.766e1` | `5.697e-2` | native official reuse |
-| OU/GMM, PINN-HTE | 1 | `3.867e1` | `1.247e-1` | native official reuse |
-| Joint concave, Tangent-Actor + MCV | 1 | `3.231e-4` | `5.441e-4` | new final-suite run |
-| Joint convex, Tangent-Actor + MCV | 1 | `2.116e-4` | `4.830e-4` | new final-suite run |
-| Nonconvex coupled, Tangent-Actor + MCV | 3 | mean `8.093e-4` | mean `1.725e-3` | exact historical reuse |
-| MLP failure, Tangent-Actor + MCV | 1 | `6.662e-3` | `6.144e-3` | adapted minimum-norm subgradient |
-| Allen–Cahn, value-only Tangent-Actor | 3 | mean `1.666e-4` | mean `3.636e-3` | exact historical reuse |
+| PDE, 100D | Tangent-Actor | PINN-HTE | SDGD-PINN | DPI |
+|---|---:|---:|---:|---:|
+| HJB-Log | `0.000814` | `0.053621` | `0.039884` | `0.133935` |
+| OU/GMM | `0.219763` | `38.6698` | `62.4838` | `17.6638` |
+| Joint concave | `0.000323` | `0.003226` | `0.023332` | `0.002142` |
+| Joint convex | `0.000212` | `0.003267` | `0.012780` | `0.001857` |
+| Nonconvex coupled | `0.000804` | `0.003068` | `0.008877` | `0.001699` |
+| MLP failure | `0.006662` | `0.039939` | `0.066871` | `0.010021` |
+| Allen-Cahn | `0.000173` | `0.000948` | `0.002692` | `0.001067` |
 
-The table is incomplete and cannot yet support a full cross-method ranking.
-In particular, the current external comparisons cover only their native 100D
-anchors. A low error against an unfinished competitor grid is not recorded as
-a benchmark win.
+Tangent-Actor has the lowest measured seed-0 whole-function RMSE on all seven
+100D PDEs under the frozen budgets. This is evidence for a 100D accuracy
+advantage, with important limits: most external rows are faithful transfers
+rather than native paper tasks; MLP-failure rows are adapted to a nonsmooth
+driver; Tangent-Actor usually spends more compute than DPI/PINN-HTE; and one
+seed provides no training-seed uncertainty. The result does not establish a
+universal or full-dimension ranking.
 
 ### Joint-concave mature run
 
@@ -192,22 +195,39 @@ passed the compatibility audit.
 
 | 100D whole-function PDE | DPI RMSE | Relative L2 | Training seconds |
 |---|---:|---:|---:|
-| HJB-Log | `0.31236` | `0.06813` | `404.2` |
-| Joint concave | `0.009068` | `0.01527` | `835.6` |
-| Joint convex | `0.011836` | `0.02702` | `822.9` |
-| Nonconvex coupled | `0.013287` | `0.02832` | `2258.1` |
-| MLP failure | `0.050436` | `0.04651` | `390.6` |
-| Allen–Cahn | `0.002286` | `0.04991` | `314.1` |
+| HJB-Log | `0.133935` | `0.029215` | `447.5` |
+| Joint concave | `0.002142` | `0.003606` | `1244.3` |
+| Joint convex | `0.001857` | `0.004238` | `1234.0` |
+| Nonconvex coupled | `0.001699` | `0.003621` | `4011.6` |
+| MLP failure | `0.010021` | `0.009241` | `261.4` |
+| Allen-Cahn | `0.001067` | `0.023284` | `414.5` |
 
-Together with the reused OU/GMM DPI RMSE `17.66`, Tangent-Actor currently has
-lower measured 100D whole-function error on all seven families. This is a
-single-seed DPI comparison outside its native OU/GMM problem, and
-Tangent-Actor usually spends substantially more fitting time; it is evidence
-for an accuracy advantage under the frozen budgets, not a universal method or
-speed claim. The nonconvex DPI transfer is a useful cost exception: it used
-about 2,258 seconds, slightly more than one mature Tangent-Actor training run,
-because its full recursive label generation was much slower for the coupled
-driver.
+Together with the reused OU/GMM DPI RMSE `17.66`, Tangent-Actor has lower
+measured 100D whole-function error on all seven families. This is a single-seed
+DPI comparison outside its native OU/GMM problem, and Tangent-Actor usually
+spends substantially more fitting time. The nonconvex DPI transfer is a cost
+exception: it used `4011.6` seconds, more than Tangent-Actor's `3098.4` seconds
+of training plus `25.1` seconds of primary inference.
+
+### Corrected PINN-HTE and SDGD-PINN transfers
+
+The corrected PINN-HTE runs use the source HTE-16 configuration only for its
+native OU/GMM problem and the paper's generic semilinear PINN profile on the
+other PDEs. Their 100D RMSEs are `0.053621`, `38.6698`, `0.003226`, `0.003267`,
+`0.003068`, `0.039939`, and `0.000948` in the PDE order of the main table.
+Training took between `281` and `1241` seconds. The native OU/GMM result remains
+CONDITIONAL in the paper-fidelity review because its rMAE and gradient rMAE are
+worse than the approximate paper bars.
+
+SDGD-PINN completed every 10,000-epoch fixed budget with exact RNG-preserving
+checkpoint continuation. Its corresponding RMSEs are `0.039884`, `62.4838`,
+`0.023332`, `0.012780`, `0.008877`, `0.066871`, and `0.002692`; training took
+`5396--14701` seconds. The source-native 250D HJB-Log anchor reached relative
+L2 `0.009072` in `204.39` minutes, versus the paper's five-seed value
+`0.006147` in `210` minutes. Its source fidelity and runtime match, but the
+accuracy gap gives a CONDITIONAL verdict. The broad-test-law OU/GMM transfer
+is reported as a distribution/profile limitation and is not used to discredit
+SDGD on its native published HJB benchmark.
 
 ### MLP dimensional-failure mechanism
 
@@ -253,53 +273,52 @@ refinement and remain pending until their own audit succeeds.
 
 ## Compute accounting
 
-Through the completed joint-convex iteration diagnostic, the final-suite
-incremental allocation is `2.0978` GH200 GPU-hours. The separately labeled
-historical source experiments account for `21.9911` GPU-hours and are not
-double counted. Failed and cancelled scheduler attempts remain visible in
-`RESOURCE_ACCOUNTING.csv`; the corrected pre-allocation cancellation consumed
-zero GPU time.
+The final-suite incremental Slurm ledger records `35.2136` allocated GH200
+GPU-hours since the suite's accounting start. Of these, `11.6939` hours belong
+to jobs whose final Slurm state is COMPLETED and `23.5197` to jobs marked
+TIMEOUT/CANCELLED. The latter is not discarded compute: the two-hour SDGD jobs
+checkpointed every 100 epochs and resumed the exact model, optimizer,
+scheduler, collocation, and RNG states in the next allocation. The accounting
+classification follows Slurm's final state while the scientific work is
+retained.
 
-The Full-History implementation is CPU-only, but the DeltaAI GH partition
-requires every submitted job to reserve a GPU. Its 11-second scheduler
-allocation is therefore charged as `0.0031` GH200 GPU-hours, bringing the
-incremental total to `2.1008` hours even though the algorithm did not use GPU
-arithmetic.
-
-The five-cell Deep BSDE batch used another 5 minutes 59 seconds of allocated
-GH200 time. The current incremental total is `2.2006` GPU-hours. Two pending
-jobs were cancelled before allocation solely to obtain an appropriate
-backfill walltime; both remain in the accounting log with zero usage.
-
-The completed six-cell DPI batch used 1 hour 26 minutes 25 seconds. Including
-its preserved 56-second failed compatibility attempt, the current incremental
-allocation is `3.6564` GPU-hours: `3.6408` completed and `0.0156`
-failed/cancelled hours.
+Separately labeled historical source experiments account for `21.9911`
+GPU-hours and are not double counted. The interactive queue's allocation-credit
+multiplier is not folded into `RESOURCE_ACCOUNTING.csv`; that file reports
+physical allocated GPU-hours. Failed pre-allocation attempts remain visible
+with zero usage.
 
 No speed claim is currently supported. The final comparison will separate
 Actor fitting, reference-free model selection, frozen-model inference, and
 total allocated compute. Published baselines that are still improving at
 their fixed budget will be labeled compute limited.
 
+Using the completed seed-0 100D wall times, the blocked 175-cell post-gate
+dimension sweep is estimated at `139.53` GPU-hours. The deliberately wide
+extrapolation range is `81.67--284.82` GPU-hours. SDGD dominates the point
+estimate at `94.14` hours, followed by Tangent-Actor `21.35`, DPI `13.87`,
+PINN-HTE `6.29`, and Deep BSDE `3.89`. Queue wait is excluded.
+
 ## Independent artifact checks
 
-`FINAL_ARTIFACT_AUDIT.json` currently passes twelve executable consistency
+`FINAL_ARTIFACT_AUDIT.json` passes the executable consistency
 checks: Deep BSDE is absent from the whole-function table, Deep BSDE costs are
 charged in the native table, smoke artifacts are absent, main scientific keys
 are unique, metrics and nonfinite counts are valid, reference uncertainties
 and test-bank hashes are complete, source provenance and source artifacts are
 present, and Allen–Cahn has no artificial MCV row. The suite status remains
-`in_progress` because supported method cells are still pending.
+`in_progress` because the independently gated dimension sweep is pending.
 
-## Remaining work before a final verdict
+## Review-gated next step
 
-1. Run the source-faithful 100D PINN-HTE and SDGD-PINN whole-function transfers.
-2. Execute dimension extremes, then the intermediate dimension grid.
-3. Complete missing independent training seeds and the frozen
-   64/128/256/512 evaluation frontier.
-4. Regenerate all tables and figures, quantify incomplete or resource-limited
-   cells, and only then assign Scientific GO, Benchmark GO, and compute
-   efficiency separately.
+The 100D comparison, native fidelity anchors, convergence plot, corrected
+tables, and single-seed compute estimate are complete. The next action is an
+independent review of `BASELINE_PAPER_FIDELITY_REVIEW.md`. The remaining
+dimension extremes and intermediate grid must not be launched until
+`REVIEW_GATE_STATUS.json` is explicitly changed to `approved`. If approved,
+the sweep will retain one seed per method cell and the original fixed budgets;
+if not approved, the frozen 100D results remain available without being used
+to justify a broader ranking.
 
 The canonical numerical sources are `MAIN_RESULTS.csv`,
 `NATIVE_POINT_RESULTS.csv`, `ACCURACY_COMPUTE_FRONTIER.csv`,

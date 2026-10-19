@@ -67,12 +67,19 @@ COLORS = {
 }
 PDE_COLORS = {
     "hjb_log": "#2A6FBB", "ou_gmm": "#8C5AAE",
-    "joint_concave": "#2E8B57", "nonconvex_coupled": "#C73E1D",
-    "mlp_failure": "#D18F00",
+    "joint_concave": "#2E8B57", "joint_convex": "#008C95",
+    "nonconvex_coupled": "#C73E1D", "mlp_failure": "#D18F00",
+    "allen_cahn": "#B5477A",
 }
 MARKERS = {
     "tangent_actor": "o", "pinn_hte": "s", "sdgd_pinn": "^",
     "dpi": "D", "deep_bsde": "P",
+}
+FRONTIER_LABEL_OFFSETS = {
+    "hjb_log": (4, 6), "ou_gmm": (4, 5),
+    "joint_concave": (4, 12), "joint_convex": (-52, -9),
+    "nonconvex_coupled": (4, -3), "mlp_failure": (4, 7),
+    "allen_cahn": (4, 8),
 }
 
 
@@ -205,15 +212,19 @@ def _representative_frontier(frame: pd.DataFrame) -> pd.DataFrame:
     if frame.empty:
         return frame
     data = frame[frame["pde"].isin((
-        "hjb_log", "ou_gmm", "joint_concave", "nonconvex_coupled", "mlp_failure",
+        "hjb_log", "ou_gmm", "joint_concave", "joint_convex",
+        "nonconvex_coupled", "mlp_failure", "allen_cahn",
     ))].copy()
-    data = data[(data["method"] != "tangent_actor") | (data["estimator"] == "mcv")]
+    data = data[
+        (data["method"] != "tangent_actor")
+        | data["estimator"].isin(("mcv", "direct"))
+    ]
     return data
 
 
 def figure_accuracy_compute() -> list[Path]:
     data = _representative_frontier(_read("ACCURACY_COMPUTE_FRONTIER.csv"))
-    fig, axes = plt.subplots(1, 2, figsize=(9.0, 4.5), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.8), sharey=True)
     for axis, cost, title in (
         (axes[0], "total_seconds", "Training + selection + inference"),
         (axes[1], "inference_seconds", "Frozen-model inference"),
@@ -241,8 +252,10 @@ def figure_accuracy_compute() -> list[Path]:
                         endpoint = rows.iloc[-1]
                         axis.annotate(
                             PDE_LABELS[pde], (endpoint[cost], endpoint["value_rmse"]),
-                            xytext=(4, 3), textcoords="offset points", fontsize=6.7,
+                            xytext=FRONTIER_LABEL_OFFSETS[pde], textcoords="offset points",
+                            fontsize=6.7,
                             color=PDE_COLORS[pde],
+                            bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.62, "pad": 0.25},
                         )
         axis.set_xscale("log")
         axis.set_yscale("log")
@@ -260,7 +273,7 @@ def figure_accuracy_compute() -> list[Path]:
     ]
     fig.suptitle("Measured accuracy–compute frontier", y=0.995, fontsize=12, fontweight="bold")
     fig.legend(handles=pde_handles, loc="upper center", bbox_to_anchor=(0.5, 0.935),
-               ncol=5, frameon=False)
+               ncol=7, frameon=False, fontsize=8)
     fig.legend(handles=method_handles, loc="upper center", bbox_to_anchor=(0.5, 0.88),
                ncol=4, frameon=False)
     fig.tight_layout(rect=(0, 0, 1, 0.79))
@@ -273,6 +286,11 @@ def figure_dimension_scaling() -> list[Path]:
     positions = {dimension: index for index, dimension in enumerate(DIMENSIONS)}
     for axis, pde in zip(axes.flat, PDE_ORDER, strict=True):
         subset = data[data["pde"] == pde] if not data.empty else pd.DataFrame()
+        if not subset.empty:
+            # Keep source-native fidelity anchors such as SDGD d=250 out of
+            # the frozen six-dimension sweep.  Aggregation enforces this too;
+            # the local filter keeps the plot builder robust to older CSVs.
+            subset = subset[subset["dimension"].isin(DIMENSIONS)]
         finite_values: list[float] = []
         for method in METHOD_ORDER:
             rows = subset[subset["method"] == method].sort_values("dimension") if not subset.empty else pd.DataFrame()
@@ -613,7 +631,7 @@ def build_reproducibility_manifest(artifacts: Iterable[Path]) -> Path:
             "python -m pytest -q invariant_region_mlp/experiments/tangent_actor_icml_final_suite",
         ],
         "slurm_jobs": jobs,
-        "test_status": "13 passed; see commit history and final report",
+        "test_status": "20 passed; see final-suite pytest output and final report",
         "artifacts": [
             {
                 "path": str(path.relative_to(SOURCE_ROOT)), "bytes": path.stat().st_size,
@@ -635,6 +653,8 @@ def build_artifact_audit(artifacts: Iterable[Path]) -> Path:
     manifest = json.loads((RESULTS_DIR / "EXECUTION_MANIFEST.json").read_text())
     main = pd.read_csv(RESULTS_DIR / "MAIN_RESULTS.csv")
     native = pd.read_csv(RESULTS_DIR / "NATIVE_POINT_RESULTS.csv")
+    scaling = pd.read_csv(RESULTS_DIR / "DIMENSION_SCALING.csv")
+    review_gate = json.loads((RESULTS_DIR / "REVIEW_GATE_STATUS.json").read_text())
     counts: dict[str, int] = {}
     for row in manifest["method_cells"]:
         counts[row["execution_status"]] = counts.get(row["execution_status"], 0) + 1
@@ -688,6 +708,23 @@ def build_artifact_audit(artifacts: Iterable[Path]) -> Path:
             (pd.to_numeric(main["nonfinite_count"], errors="coerce").fillna(0) == 0).all()
             and (pd.to_numeric(native["nonfinite_count"], errors="coerce").fillna(0) == 0).all()
         ),
+        "dimension_scaling_uses_only_frozen_grids": bool(all(
+            int(row.dimension) in (MLP_DIMENSIONS if row.pde == "mlp_failure" else DIMENSIONS)
+            for row in scaling.itertuples()
+        )),
+        "sdgd_250d_anchor_excluded_from_dimension_sweep": bool(
+            ((main["pde"] == "hjb_log") & (main["dimension"] == 250)
+             & (main["method"] == "sdgd_pinn")).any()
+            and not ((scaling["pde"] == "hjb_log") & (scaling["dimension"] == 250)).any()
+        ),
+        "mlp_failure_rows_are_adapted": bool(
+            (main.loc[main["pde"] == "mlp_failure", "method_status"] == "adapted").all()
+            and (native.loc[native["pde"] == "mlp_failure", "method_status"] == "adapted").all()
+        ),
+        "stage_b_review_gate_remains_closed": bool(
+            review_gate.get("stage_b_status") == "complete"
+            and review_gate.get("status") == "pending_independent_review"
+        ),
     }
     checks_passed = all(checks.values())
     if not checks_passed:
@@ -716,12 +753,21 @@ def _required_deliverables() -> list[Path]:
         package / "BASELINE_FIDELITY_MATRIX.md",
         RESULTS_DIR / "DIMENSION_COMPATIBILITY_MATRIX.csv",
         RESULTS_DIR / "EXECUTION_MANIFEST.json",
+        RESULTS_DIR / "REVIEW_GATE_STATUS.json",
         RESULTS_DIR / "REFERENCE_ACCURACY_AUDIT.md",
         RESULTS_DIR / "MAIN_RESULTS.csv",
+        RESULTS_DIR / "100D_RESULTS.csv",
         RESULTS_DIR / "NATIVE_POINT_RESULTS.csv",
         RESULTS_DIR / "ACCURACY_COMPUTE_FRONTIER.csv",
         RESULTS_DIR / "DIMENSION_SCALING.csv",
         RESULTS_DIR / "ABLATION_RESULTS.csv",
+        RESULTS_DIR / "HISTORICAL_AND_NONPRIMARY_RESULTS.csv",
+        RESULTS_DIR / "BASELINE_PAPER_FIDELITY_REVIEW.md",
+        RESULTS_DIR / "BASELINE_CONVERGENCE.csv",
+        RESULTS_DIR / "fidelity_figures/baseline_native_convergence.pdf",
+        RESULTS_DIR / "fidelity_figures/baseline_native_convergence.png",
+        RESULTS_DIR / "REMAINING_GPU_HOUR_ESTIMATE.json",
+        RESULTS_DIR / "REMAINING_GPU_HOUR_ESTIMATE.csv",
         RESULTS_DIR / "RESOURCE_ACCOUNTING.csv",
         RESULTS_DIR / "REPRODUCIBILITY_MANIFEST.json",
         RESULTS_DIR / "FINAL_EXPERIMENT_REPORT.md",

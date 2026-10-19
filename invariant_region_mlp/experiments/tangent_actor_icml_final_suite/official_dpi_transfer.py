@@ -603,9 +603,11 @@ def execute(
         "run_id": run_id, "method": method, "pde": pde, "dimension": d,
         "seed": seed, "mode": mode,
         "status": "complete" if mode == "official" else f"{mode}_nonresult",
-        "classification": "native_official" if (
-            pde == "ou_gmm" and d == 100 and resolved_profile == "hjb_pis"
-        ) else "faithful_transfer",
+        "classification": (
+            "native_official" if (
+                pde == "ou_gmm" and d == 100 and resolved_profile == "hjb_pis"
+            ) else ("adapted" if pde == "mlp_failure" else "faithful_transfer")
+        ),
         "benchmark_profile": resolved_profile,
         "profile_role": (
             "primary" if resolved_profile == _resolve_profile(pde, "auto")

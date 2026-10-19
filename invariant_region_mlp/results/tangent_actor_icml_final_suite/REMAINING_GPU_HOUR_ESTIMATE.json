@@ -1,0 +1,31 @@
+{
+  "by_method_gpu_hours": {
+    "deep_bsde": 3.8878124273707373,
+    "dpi": 13.865358155249353,
+    "pinn_hte": 6.289563888343906,
+    "sdgd_pinn": 94.14247985991675,
+    "tangent_actor": 21.347026045980947
+  },
+  "details_csv": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/REMAINING_GPU_HOUR_ESTIMATE.csv",
+  "generated_utc": "2026-10-19T15:27:16.628928+00:00",
+  "high_gpu_hours": 284.81590954270575,
+  "low_gpu_hours": 81.66606982647167,
+  "method_cells": 175,
+  "model": {
+    "basis": "observed seed-0 100D primary wall time, one GPU per job",
+    "dimension_scaling": {
+      "deep_bsde": "((d+10)/110)^2",
+      "pinn_hte": "0.7 + 0.3*d/100",
+      "sdgd_pinn": "0.6 + 0.4*d/100",
+      "tangent_actor_and_dpi": "0.5 + 0.5*d/100"
+    },
+    "intervals": "0.65x-1.75x normally; 0.55x-2.20x at d<=20 or d>=400",
+    "queue_wait_excluded": true
+  },
+  "point_estimate_gpu_hours": 139.5322403768617,
+  "review_gate": "pending_independent_review",
+  "scope": "post-gate dimension sweep only; 100D and fidelity-anchor work excluded",
+  "training_seeds": [
+    0
+  ]
+}

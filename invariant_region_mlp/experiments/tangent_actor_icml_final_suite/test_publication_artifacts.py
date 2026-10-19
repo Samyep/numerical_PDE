@@ -5,7 +5,7 @@ import json
 import pandas as pd
 import pytest
 
-from .build_publication_artifacts import _select_native_primary_rows
+from .build_publication_artifacts import _representative_frontier, _select_native_primary_rows
 
 
 def test_native_table_uses_the_single_frozen_primary_seed() -> None:
@@ -59,3 +59,35 @@ def test_superseded_profile_does_not_keep_manifest_cell_complete(tmp_path, monke
     assert cell["completed_seeds"] == []
     assert cell["historical_completed_seeds"] == [0, 1]
     assert cell["all_observed_completed_seeds"] == [0, 1]
+
+
+def test_dimension_scaling_excludes_native_anchor_outside_frozen_grid() -> None:
+    from .aggregate_results import _dimension_scaling
+
+    common = {
+        "pde": "hjb_log", "method": "sdgd_pinn",
+        "method_status": "native_official", "seed": 0,
+        "value_rmse": 0.05, "value_relative_l2": 0.009,
+        "total_seconds": 100.0,
+    }
+    rows = _dimension_scaling([
+        {**common, "dimension": 100},
+        {**common, "dimension": 250},
+    ])
+    assert [row["dimension"] for row in rows] == [100]
+
+
+def test_accuracy_frontier_keeps_all_seven_pdes_and_value_only_actor() -> None:
+    pdes = (
+        "hjb_log", "ou_gmm", "joint_concave", "joint_convex",
+        "nonconvex_coupled", "mlp_failure", "allen_cahn",
+    )
+    frame = pd.DataFrame([
+        {
+            "pde": pde, "method": "tangent_actor",
+            "estimator": "direct" if pde == "allen_cahn" else "mcv",
+        }
+        for pde in pdes
+    ])
+    selected = _representative_frontier(frame)
+    assert set(selected["pde"]) == set(pdes)

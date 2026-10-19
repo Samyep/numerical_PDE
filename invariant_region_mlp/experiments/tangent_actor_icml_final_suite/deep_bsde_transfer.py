@@ -248,7 +248,10 @@ def execute(family: str, d: int, seed: int, device: torch.device, *, smoke: bool
         "run_id": run_id, "method": "deep_bsde_official_pytorch_compatibility_port",
         "family": family, "dimension": d, "seed": seed,
         "status": "smoke_nonresult" if smoke else "complete",
-        "classification": "native_official" if (d == 100 and family in {"hjb_log", "allen_cahn"}) else "faithful_transfer",
+        "classification": (
+            "native_official" if (d == 100 and family in {"hjb_log", "allen_cahn"})
+            else ("adapted" if family == "mlp_failure" else "faithful_transfer")
+        ),
         "configuration": asdict(config), "source_configuration": (
             "allencahn_d100.json" if family == "allen_cahn" else "hjb_lq_d100.json"
         ),
