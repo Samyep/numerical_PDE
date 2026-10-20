@@ -33,6 +33,7 @@ from invariant_region_mlp.experiments.nonconvex_tangent_actor.common import (
 )
 from invariant_region_mlp.experiments.nonconvex_tangent_actor.configuration import ExperimentSpec
 from invariant_region_mlp.experiments.nonconvex_tangent_actor.full_history_baseline import RawDriver
+from invariant_region_mlp.experiments.nonconvex_tangent_actor.reference2d import load_reference
 from invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.full_history_frontier import (
     _predict_tiled,
 )
@@ -91,6 +92,7 @@ def actor_endpoint(spec: ExperimentSpec) -> dict:
         "total_seconds_512": costs[0] if len(costs) == 1 else None,
         "source_json": str(path),
         "source_json_sha256": sha_file(path),
+        "reference_path": payload["reference_path"],
         "source_bank_array_sha256": payload["test_bank_sha256"],
     }
 
@@ -109,6 +111,12 @@ def get_bank(spec: ExperimentSpec, original: dict):
         raise ValueError(f"Frozen test bank shape unexpected: {t.shape}, {x.shape}, {truth.shape}")
     if not all(np.isfinite(item).all() for item in (t, x, truth)):
         raise ValueError("Nonfinite frozen bank/reference")
+    frozen_ref_path = Path(original["reference_path"])
+    if not frozen_ref_path.exists():
+        raise FileNotFoundError(f"Independent frozen numerical reference missing: {frozen_ref_path}")
+    independent_truth = load_reference(frozen_ref_path).value(t, x @ spec.driver().B)
+    if not np.allclose(truth, independent_truth, rtol=0.0, atol=1e-9):
+        raise RuntimeError("Actor bank truth disagrees with independent 2D reference")
     bank_hash = array_sha256(t, x)
     if bank_hash != original["source_bank_array_sha256"]:
         raise RuntimeError("Frozen Actor test bank array hash mismatch")
