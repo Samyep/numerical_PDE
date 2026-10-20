@@ -22,6 +22,29 @@ def test_empty_whole_function_grid_has_140_pending_cells(monkeypatch) -> None:
     assert attempts == []
 
 
+def test_complete_ledger_waits_for_canonical_aggregation(monkeypatch) -> None:
+    from . import whole_function_artifacts as artifacts
+
+    attempt = {
+        "method": "dpi", "pde": "joint_concave", "dimension": 20,
+        "status": "COMPLETE", "actual_gpu_seconds": 10,
+        "finished_utc": "2026-10-20T00:00:00Z",
+    }
+    monkeypatch.setattr(artifacts, "_read_main", lambda: pd.DataFrame())
+    monkeypatch.setattr(
+        artifacts, "_attempt_groups",
+        lambda: {"dpi__joint_concave__d20": [attempt]},
+    )
+    frame, _ = artifacts.build_results_frame()
+    row = frame[
+        (frame["method"] == "dpi")
+        & (frame["pde"] == "joint_concave")
+        & (frame["dimension"] == 20)
+    ].iloc[0]
+    assert row["status"] == "PENDING"
+    assert pd.isna(row["value_rmse"])
+
+
 def test_stage1_pilot_covers_both_dimensions_and_all_methods() -> None:
     from .whole_function_status import METHODS
 

@@ -109,7 +109,14 @@ def build_results_frame() -> tuple[pd.DataFrame, list[dict[str, Any]]]:
                 source = indexed.get((pde, dimension, method))
                 cell_attempts = grouped_attempts.get(key(method, pde, dimension), [])
                 terminal, active = _terminal_status(cell_attempts)
-                status = "COMPLETE" if source is not None else terminal
+                # A runner ledger can become COMPLETE just before the raw
+                # result is folded into MAIN_RESULTS.  Accuracy is canonical
+                # only after that aggregation; keep this brief race pending.
+                status = (
+                    "COMPLETE" if source is not None
+                    else "PENDING" if terminal == "COMPLETE"
+                    else terminal
+                )
                 attempt_seconds = sum(
                     float(item.get("actual_gpu_seconds") or 0.0)
                     for item in cell_attempts if item.get("status") != "RUNNING"
@@ -288,12 +295,25 @@ def _scaling_figure(frame: pd.DataFrame, metric: str, name: str, ylabel: str) ->
     fig, axes = plt.subplots(3, 3, figsize=(10.5, 8.0), sharex=True)
     for axis, pde in zip(axes.flat, PDE_ORDER, strict=False):
         subset = done[done["pde"] == pde]
-        for method in METHODS:
+        all_rows = frame[frame["pde"] == pde]
+        for method_index, method in enumerate(METHODS):
             rows = subset[subset["method"] == method].sort_values("dimension")
-            if rows.empty:
-                continue
-            axis.plot(rows["dimension"], rows[metric], color=COLORS[method],
-                      marker=MARKERS[method], linewidth=1.5, label=METHOD_LABELS[method])
+            if not rows.empty:
+                axis.plot(rows["dimension"], rows[metric], color=COLORS[method],
+                          marker=MARKERS[method], linewidth=1.5, label=METHOD_LABELS[method])
+            missing = all_rows[
+                (all_rows["method"] == method) & (all_rows["status"] != "COMPLETE")
+            ]
+            for item in missing.itertuples():
+                letter = {
+                    "PENDING": "P", "OUT_OF_TIME": "T",
+                    "OUT_OF_MEMORY": "M", "FAILED": "F",
+                }.get(item.status, "?")
+                axis.text(
+                    item.dimension, -0.07 - 0.04 * method_index, letter,
+                    transform=axis.get_xaxis_transform(), ha="center", va="top",
+                    color=COLORS[method], fontsize=5.5, clip_on=False,
+                )
         if not subset.empty:
             axis.set_yscale("log")
         else:
@@ -309,14 +329,18 @@ def _scaling_figure(frame: pd.DataFrame, metric: str, name: str, ylabel: str) ->
         axis.set_xlabel("Ambient dimension $d$")
     handles = [Line2D([0], [0], color=COLORS[m], marker=MARKERS[m], label=METHOD_LABELS[m]) for m in METHODS]
     fig.legend(handles=handles, loc="upper center", ncol=4, frameon=False)
-    fig.suptitle("Completed cells only; missing/OOT cells have no numerical marker", y=0.965, fontsize=10)
-    fig.tight_layout(rect=(0, 0, 1, 0.93))
+    fig.suptitle(
+        "Numerical curves use completed cells only; letters below x-axis: "
+        "P pending, T time cap, M memory, F failed",
+        y=0.975, fontsize=9.5,
+    )
+    fig.tight_layout(rect=(0, 0.02, 1, 0.94), h_pad=2.8)
     return _save(fig, name)
 
 
-def _compute_figure(frame: pd.DataFrame) -> list[Path]:
+def _compute_figure(frame: pd.DataFrame, audit_payload: dict[str, Any]) -> list[Path]:
     done = frame[(frame["status"] == "COMPLETE") & (frame["cell_gpu_hours"] > 0)]
-    fig, axis = plt.subplots(figsize=(7.3, 4.8))
+    fig, (axis, costs) = plt.subplots(1, 2, figsize=(11.0, 4.5))
     for method in METHODS:
         rows = done[done["method"] == method]
         axis.scatter(rows["cell_gpu_hours"], rows["value_relative_l2"],
@@ -328,6 +352,38 @@ def _compute_figure(frame: pd.DataFrame) -> list[Path]:
     axis.set_ylabel("Value relative $L^2$")
     axis.set_title("Whole-function accuracy–compute endpoints")
     axis.legend(frameon=False, ncol=2)
+
+    cost_fields = (
+        ("training_seconds", "Training", "#4C78A8"),
+        ("model_selection_seconds", "Model selection", "#F58518"),
+        ("inference_seconds", "Frozen inference", "#54A24B"),
+        ("cell_gpu_seconds", "Total cell allocation", "#7F7F7F"),
+    )
+    y = np.arange(len(METHODS), dtype=float)
+    offsets = np.linspace(-0.24, 0.24, len(cost_fields))
+    for offset, (field, label, color) in zip(offsets, cost_fields, strict=True):
+        values = []
+        for method in METHODS:
+            rows = done[done["method"] == method]
+            values.append(
+                pd.to_numeric(rows[field], errors="coerce").fillna(0).clip(lower=0).sum()
+                / 3600.0
+            )
+        positive_y = [position + offset for position, value in zip(y, values, strict=True) if value > 0]
+        positive_values = [value for value in values if value > 0]
+        costs.scatter(positive_values, positive_y, s=32, color=color, label=label)
+    costs.set_xscale("log")
+    costs.set_yticks(y, [f"{METHOD_LABELS[m]} (n={len(done[done['method'] == m])})" for m in METHODS])
+    costs.invert_yaxis()
+    costs.set_xlabel("Summed GPU hours over completed cells")
+    costs.set_title("Measured cost components and enclosing total")
+    costs.legend(frameon=False, fontsize=7)
+    costs.text(
+        0.98, 0.02,
+        f"Suite Slurm allocation: {audit_payload['new_gpu_hours']:.2f} GH200 h",
+        transform=costs.transAxes, ha="right", va="bottom", fontsize=7, color="#4A5568",
+    )
+    fig.tight_layout()
     return _save(fig, "whole_function_accuracy_compute")
 
 
@@ -449,7 +505,7 @@ def build() -> dict[str, Any]:
     figures = []
     figures += _scaling_figure(frame, "value_rmse", "whole_function_accuracy_comparison", "Value RMSE")
     figures += _scaling_figure(frame, "value_relative_l2", "whole_function_dimension_scaling", "Value relative $L^2$")
-    figures += _compute_figure(frame)
+    figures += _compute_figure(frame, audit_payload)
     table = _latex(frame)
     report = _report(frame, audit_payload)
     return {
