@@ -5,7 +5,12 @@ from pathlib import Path
 
 import numpy as np
 
-from .paired_bank_repair import array_sha256, file_sha256, verify_canonical_prediction
+from .paired_bank_repair import (
+    array_sha256,
+    canonical_bank_arrays,
+    file_sha256,
+    verify_canonical_prediction,
+)
 
 
 def _write_prediction(path: Path, t: np.ndarray, x: np.ndarray) -> dict[str, float]:
@@ -31,6 +36,24 @@ def test_numerical_array_hash_is_independent_of_npz_container(tmp_path: Path) ->
 
     assert file_sha256(first) != file_sha256(second)
     assert array_sha256(t, x) == array_sha256(t.copy(), x.copy())
+
+
+def test_new_dimension_ou_reference_uses_one_exact_float64_path() -> None:
+    import torch
+
+    from .benchmarks import OUGMMBenchmark
+    from .protocol import RESULTS_DIR
+
+    canonical = canonical_bank_arrays("ou_gmm", 20)
+    benchmark = OUGMMBenchmark.from_npz(RESULTS_DIR / "inputs/ou_gmm_d20.npz")
+    expected = benchmark.exact_value(
+        torch.as_tensor(canonical["t"], dtype=torch.float64),
+        torch.as_tensor(canonical["x"], dtype=torch.float64),
+    ).numpy()
+
+    assert canonical["truth"].dtype == np.float64
+    assert np.array_equal(canonical["truth"], expected)
+    assert len(canonical["truth"]) == 960
 
 
 def test_strict_pairing_audit_opens_arrays_and_detects_tampering(

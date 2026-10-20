@@ -79,8 +79,40 @@ def _load_npz(path: Path) -> dict[str, np.ndarray]:
 
 
 def _canonical_bank(pde: str, dimension: int) -> dict[str, Any]:
+    # The transferred OU equation and the suite benchmark evaluate the same
+    # closed-form Gaussian-mixture density in a slightly different operation
+    # order.  That can change the last one or two float64 bits.  Use the suite
+    # benchmark as the single post-freeze reference at new dimensions so the
+    # strict array-hash audit compares identical numerical truth arrays.  The
+    # original prediction artifacts and their embedded references remain
+    # untouched and are recorded below as provenance.
     if dimension != 100:
-        raise KeyError("the archival repair is intentionally restricted to d=100")
+        if pde != "ou_gmm":
+            raise KeyError(
+                "non-100D canonical reconstruction is currently needed only for OU/GMM"
+            )
+        import torch
+
+        from .benchmarks import OUGMMBenchmark
+
+        bank_path = RESULTS_DIR / "inputs" / f"test_bank_ou_gmm_d{dimension}.npz"
+        parameter_path = RESULTS_DIR / "inputs" / f"ou_gmm_d{dimension}.npz"
+        bank = _load_npz(bank_path)
+        benchmark = OUGMMBenchmark.from_npz(parameter_path)
+        t = np.asarray(bank["t"], dtype=np.float64)
+        x = np.asarray(bank["x"], dtype=np.float64)
+        truth = benchmark.exact_value(
+            torch.as_tensor(t, dtype=torch.float64),
+            torch.as_tensor(x, dtype=torch.float64),
+        ).numpy()
+        return {
+            "t": t,
+            "x": x,
+            "truth": truth,
+            "indices": None,
+            "path": bank_path,
+            "reference_source": parameter_path,
+        }
 
     original_names = {
         "hjb_log": "evaluation_bank_hjb_log_d100.npz",
@@ -254,21 +286,27 @@ def _tag(value: Any) -> str:
 def repair_rows(
     rows: list[dict[str, Any]], *, scope: str, write_audit: bool = False,
 ) -> dict[str, Any] | None:
-    """Mutate completed seed-0 100D rows to canonical same-bank metrics."""
+    """Mutate completed rows to canonical same-bank metrics.
+
+    The archival reconstruction covers every 100D PDE.  At new dimensions it
+    additionally normalizes OU/GMM's analytically identical references, whose
+    two source implementations can differ by float64 roundoff only.
+    """
     PAIRED_PREDICTION_DIR.mkdir(parents=True, exist_ok=True)
     records: list[dict[str, Any]] = []
 
     for row in rows:
+        dimension = int(row.get("dimension", -1))
+        pde = str(row.get("pde"))
         if (
-            int(row.get("dimension", -1)) != 100
+            (dimension != 100 and pde != "ou_gmm")
             or int(row.get("seed", -1)) != 0
             or row.get("method") not in METHODS
-            or row.get("pde") not in PDES
+            or pde not in PDES
         ):
             continue
 
-        pde = str(row["pde"])
-        bank = _canonical_bank(pde, 100)
+        bank = _canonical_bank(pde, dimension)
         t = np.asarray(bank["t"], dtype=np.float64)
         x = np.asarray(bank["x"], dtype=np.float64)
         truth = np.asarray(bank["truth"], dtype=np.float64).reshape(-1)
@@ -311,7 +349,7 @@ def repair_rows(
             )
 
         filename = (
-            f"{scope}_{pde}_d100_{row['method']}_s0_"
+            f"{scope}_{pde}_d{dimension}_{row['method']}_s0_"
             f"n{_tag(row.get('steps'))}_p{_tag(row.get('paths'))}_"
             f"{_tag(row.get('estimator'))}.npz"
         )
@@ -352,7 +390,7 @@ def repair_rows(
 
         records.append({
             "pde": pde,
-            "dimension": 100,
+            "dimension": dimension,
             "method": row["method"],
             "seed": 0,
             "scope": scope,
@@ -385,7 +423,8 @@ def repair_rows(
 
     groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for record in records:
-        groups[record["pde"]].append(record)
+        if record["dimension"] == 100:
+            groups[record["pde"]].append(record)
     results: dict[str, Any] = {}
     for pde in PDES:
         group = groups[pde]
@@ -429,8 +468,9 @@ def repair_rows(
     path = RESULTS_DIR / "PAIRWISE_BANK_AUDIT_100D.json"
     path.write_text(json.dumps(audit, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
+    audit_records = [record for record in records if record["dimension"] == 100]
     columns: list[str] = []
-    for record in records:
+    for record in audit_records:
         for key in record:
             if key not in columns:
                 columns.append(key)
@@ -440,7 +480,7 @@ def repair_rows(
     ) as handle:
         writer = csv.DictWriter(handle, fieldnames=columns, lineterminator="\n")
         writer.writeheader()
-        writer.writerows(records)
+        writer.writerows(audit_records)
 
     if status != "PASS":
         failed = [pde for pde, item in results.items() if item["status"] != "PASS"]
