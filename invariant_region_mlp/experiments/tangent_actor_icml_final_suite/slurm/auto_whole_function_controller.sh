@@ -117,7 +117,10 @@ submit_wave() {
   local remaining max_wall wall duration
   remaining=$(remaining_gpu_seconds)
   max_wall=$((remaining / WORKERS))
-  wall=7200
+  # One-hour backfill windows start much earlier than full-node two-hour
+  # requests on the observed GH200 queue.  Checkpointable methods resume in a
+  # later wave; nonresumable methods retain their frozen high-bound guard.
+  wall=3600
   (( wall > max_wall )) && wall=$max_wall
   # Keep a small unreserved tail rather than risk a rounding race at 120 hours.
   (( wall > 60 )) && wall=$((wall - 60))
@@ -128,8 +131,8 @@ submit_wave() {
   duration=$(format_duration "$wall")
   local export_vars="ALL,TASK_FILE=$task_file,TASK_FILE_SHA256=$task_sha,WORKERS=$WORKERS"
   local job_name="icml_whole_${stage}w${wave}"
-  local resources=(--partition=ghx4-interactive --nodes=1 --ntasks=4 --ntasks-per-node=4
-    --gpus-per-node=4 --cpus-per-task=12 --mem=440G --time="$duration")
+  local resources=(--partition=ghx4-interactive --nodes=2 --ntasks=4 --ntasks-per-node=2
+    --gpus-per-node=2 --cpus-per-task=12 --mem=220G --time="$duration")
   sbatch --test-only "${resources[@]}" --job-name="$job_name" \
     --export="$export_vars" "$PACK_SCRIPT" >&2
   local job
@@ -165,10 +168,10 @@ refresh_and_audit
 require_stage1_complete
 pytest -q invariant_region_mlp/experiments/tangent_actor_icml_final_suite
 
-run_waves stage2 8
+run_waves stage2 16
 pytest -q invariant_region_mlp/experiments/tangent_actor_icml_final_suite
 
-run_waves stage3 6
+run_waves stage3 12
 refresh_and_audit
 pytest -q invariant_region_mlp/experiments/tangent_actor_icml_final_suite
 echo "$(timestamp) whole-function staged execution finished"
