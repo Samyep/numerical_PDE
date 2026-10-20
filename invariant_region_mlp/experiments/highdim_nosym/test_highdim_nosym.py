@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-from .analyze import _curtailed_rows, _json_rows
+from .analyze import CRITERIA, _curtailed_rows, _json_rows
 from .equations import fixed_points, make_actor_benchmark, make_b6_equation, make_s05_equation
 from .protocol import fh_tasks
 from .solver import B6TorchEquation, load_b6_selection
@@ -32,6 +32,12 @@ def test_compute_curtailment_is_not_treated_as_an_estimate(tmp_path) -> None:
     assert len(curtailed) == 1
     assert curtailed[0]["status"] == "curtailed_after_rep0"
     assert curtailed[0]["rep0_seconds"] == 1801.0
+
+
+def test_report_criteria_retain_preregistered_meaning() -> None:
+    assert CRITERIA["H1"].startswith("H1 (learning is decisive):")
+    assert 'A failure means "one policy-improvement step suffices here"' in CRITERIA["H2"]
+    assert CRITERIA["H6"].endswith("Report r_glob for S05 alongside.")
 
 
 def test_b6_construction_and_terminal_identity() -> None:

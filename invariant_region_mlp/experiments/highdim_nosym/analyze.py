@@ -36,28 +36,34 @@ from .protocol import (
 
 CRITERIA = {
     "H1": (
-        "RMSE(TA) <= 0.5 x RMSE(TA_a0) in all 4 (PDE, d) cells."
+        "H1 (learning is decisive): RMSE(TA) <= 0.5 x RMSE(TA_a0) "
+        "in all 4 (PDE, d) cells."
     ),
     "H2": (
-        "RMSE(TA) <= 0.8 x RMSE(a1), both under the same post-freeze "
-        "common-random-number diagnostic, in at least 2 of the 4 cells."
+        "H2 (more than one update matters): RMSE(TA) <= 0.8 x RMSE(a1), "
+        "both under the same post-freeze common-random-number diagnostic, "
+        "in at least 2 of the 4 cells. A failure means \"one policy-improvement "
+        "step suffices here\" and must be stated plainly."
     ),
     "H3": (
-        "RMSE(TA) <= 0.5 x the minimum RMSE over the entire frozen FH_raw "
-        "grid, in all 4 cells."
+        "H3 (beats raw Full-History MLP): RMSE(TA) <= 0.5 x the minimum "
+        "RMSE over the entire frozen FH_raw grid, in all 4 cells."
     ),
     "H4": (
-        "RMSE(TA) <= the minimum RMSE over all frozen FH_raw, FH_path and "
-        "FH_rep cells (any cost), in at least 3 of the 4 cells."
+        "H4 (beats every Full-History variant): RMSE(TA) <= the minimum RMSE "
+        "over all frozen FH_raw, FH_path and FH_rep cells (any cost), in at "
+        "least 3 of the 4 cells."
     ),
     "H5": (
-        "In at least 2 of the 4 cells, the best Full-History family does not "
-        "reach 2 x RMSE(TA) within its frozen grid, or needs more GPU seconds "
-        "than TA's total to do so."
+        "H5 (efficiency vs the best Full-History variant): in at least 2 of "
+        "the 4 cells, the best Full-History family does not reach 2 x RMSE(TA) "
+        "within its frozen grid, or needs more GPU seconds than TA's total to "
+        "do so."
     ),
     "H6": (
-        "For B6, r_glob >= d/4 at the frozen calibration, and H1 holds on "
-        "B6 at both d."
+        "H6 (no dependence on a fixed subspace): for B6, r_glob >= d/4 at "
+        "the frozen calibration, and H1 holds on B6 at both d. Report r_glob "
+        "for S05 alongside."
     ),
 }
 
@@ -609,13 +615,46 @@ def _report(
         item = outcomes[key]
         lines.extend([f"### {key}", "", f"> {text}", "", f"**Verdict: {item['verdict']}.**", ""])
         if item.get("details"):
-            lines.extend(["| PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |", "|---|---:|---:|---:|---:|---|"])
-            for row in item["details"]:
-                primary = row.get("ta_rmse", row.get("r_glob"))
-                comparison = row.get("comparison_rmse", row.get("rank_threshold"))
-                ratio = row.get("ratio", row.get("h1_met"))
-                met = "not evaluated" if row.get("met") is None else ("yes" if row["met"] else "no")
-                lines.append(f"| {row['pde_id']} | {row['dimension']} | {_number(primary)} | {_number(comparison)} | {_number(ratio)} | {met} |")
+            if key in {"H1", "H2", "H3", "H4"}:
+                lines.extend([
+                    "| PDE | d | TA RMSE | comparator RMSE | TA / comparator | met |",
+                    "|---|---:|---:|---:|---:|---|",
+                ])
+                for row in item["details"]:
+                    met = "not evaluated" if row.get("met") is None else ("yes" if row["met"] else "no")
+                    lines.append(
+                        f"| {row['pde_id']} | {row['dimension']} | "
+                        f"{_number(row.get('ta_rmse'))} | "
+                        f"{_number(row.get('comparison_rmse'))} | "
+                        f"{_number(row.get('ratio'))} | {met} |"
+                    )
+            elif key == "H5":
+                lines.extend([
+                    "| PDE | d | TA RMSE | 2 x TA RMSE | FH reached | FH GPU s | TA total GPU s | met |",
+                    "|---|---:|---:|---:|---|---:|---:|---|",
+                ])
+                for row in item["details"]:
+                    met = "not evaluated" if row.get("met") is None else ("yes" if row["met"] else "no")
+                    lines.append(
+                        f"| {row['pde_id']} | {row['dimension']} | "
+                        f"{_number(row.get('ta_rmse'))} | {_number(row.get('threshold'))} | "
+                        f"{'yes' if row.get('fh_reached') else 'no'} | "
+                        f"{_number(row.get('fh_min_seconds'))} | "
+                        f"{_number(row.get('ta_total_seconds'))} | {met} |"
+                    )
+            else:
+                lines.extend([
+                    "| PDE | d | r_glob | d / 4 | H1 met | met |",
+                    "|---|---:|---:|---:|---|---|",
+                ])
+                for row in item["details"]:
+                    met = "not evaluated" if row.get("met") is None else ("yes" if row["met"] else "no")
+                    lines.append(
+                        f"| {row['pde_id']} | {row['dimension']} | "
+                        f"{_number(row.get('r_glob'))} | "
+                        f"{_number(row.get('rank_threshold'))} | "
+                        f"{'yes' if row.get('h1_met') else 'no'} | {met} |"
+                    )
             lines.append("")
 
     lines.extend(["## B6 calibration (reference-only, frozen before solver runs)", "", "| d | beta | gamma | ESS med | z RMS | f CV | heat skill | r glob | outside top 10 | r loc | qualifies | selected |", "|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|"])
@@ -656,7 +695,7 @@ def _report(
         f"- Mechanical criterion failures: {', '.join(failures) if failures else 'none among evaluated criteria'}.",
         f"- Frozen Full-History rows not yet available: {missing}; affected criteria are marked `NOT EVALUATED (COMPUTE)` rather than removed.",
         "- Runtime hardware deviation: the requested GH200 was unavailable; all new timings are from an NVIDIA GeForce RTX 5070 Ti. Historical reused S05 rows were generated on the same GPU model.",
-        "- The two final-suite DPI unit tests that import the external `picard` package were not runnable because that optional package is absent; the 16 relevant highdim/nonridge tests passed.",
+        "- The two final-suite DPI unit tests that import the external `picard` package were not runnable because that optional package is absent; the 18 relevant highdim/nonridge tests passed.",
         "- Reused S05 artifacts do not contain per-point predictions, so their MC/non-MC decomposition is unavailable; no proxy was invented.",
         "- B6 d=400 selected r_glob is below d/4. The frozen selector was applied unchanged and the resulting H6 failure is retained.",
     ])

@@ -15,11 +15,11 @@
 
 ### H1
 
-> RMSE(TA) <= 0.5 x RMSE(TA_a0) in all 4 (PDE, d) cells.
+> H1 (learning is decisive): RMSE(TA) <= 0.5 x RMSE(TA_a0) in all 4 (PDE, d) cells.
 
 **Verdict: FAIL.**
 
-| PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
+| PDE | d | TA RMSE | comparator RMSE | TA / comparator | met |
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | 0.00258117 | 0.711292 | no |
 | B6 | 100 | 0.00133404 | 0.00164973 | 0.808644 | no |
@@ -28,11 +28,11 @@
 
 ### H2
 
-> RMSE(TA) <= 0.8 x RMSE(a1), both under the same post-freeze common-random-number diagnostic, in at least 2 of the 4 cells.
+> H2 (more than one update matters): RMSE(TA) <= 0.8 x RMSE(a1), both under the same post-freeze common-random-number diagnostic, in at least 2 of the 4 cells. A failure means "one policy-improvement step suffices here" and must be stated plainly.
 
 **Verdict: FAIL.**
 
-| PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
+| PDE | d | TA RMSE | comparator RMSE | TA / comparator | met |
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | 0.0018801 | 0.976527 | no |
 | B6 | 100 | 0.00133404 | 0.00134267 | 0.993576 | no |
@@ -41,11 +41,11 @@
 
 ### H3
 
-> RMSE(TA) <= 0.5 x the minimum RMSE over the entire frozen FH_raw grid, in all 4 cells.
+> H3 (beats raw Full-History MLP): RMSE(TA) <= 0.5 x the minimum RMSE over the entire frozen FH_raw grid, in all 4 cells.
 
 **Verdict: PASS.**
 
-| PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
+| PDE | d | TA RMSE | comparator RMSE | TA / comparator | met |
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | 0.277487 | 0.00661642 | yes |
 | B6 | 100 | 0.00133404 | 0.0865748 | 0.0154091 | yes |
@@ -54,11 +54,11 @@
 
 ### H4
 
-> RMSE(TA) <= the minimum RMSE over all frozen FH_raw, FH_path and FH_rep cells (any cost), in at least 3 of the 4 cells.
+> H4 (beats every Full-History variant): RMSE(TA) <= the minimum RMSE over all frozen FH_raw, FH_path and FH_rep cells (any cost), in at least 3 of the 4 cells.
 
 **Verdict: NOT EVALUATED (COMPUTE).**
 
-| PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
+| PDE | d | TA RMSE | comparator RMSE | TA / comparator | met |
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | 0.00705174 | 0.260357 | yes |
 | B6 | 100 | 0.00133404 | 0.00297944 | 0.44775 | yes |
@@ -67,27 +67,27 @@
 
 ### H5
 
-> In at least 2 of the 4 cells, the best Full-History family does not reach 2 x RMSE(TA) within its frozen grid, or needs more GPU seconds than TA's total to do so.
+> H5 (efficiency vs the best Full-History variant): in at least 2 of the 4 cells, the best Full-History family does not reach 2 x RMSE(TA) within its frozen grid, or needs more GPU seconds than TA's total to do so.
 
 **Verdict: PASS.**
 
-| PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
-|---|---:|---:|---:|---:|---|
-| S05 | 100 | 0.00183597 | NA | NA | yes |
-| B6 | 100 | 0.00133404 | NA | NA | yes |
-| S05 | 400 | 0.00196131 | NA | NA | not evaluated |
-| B6 | 400 | 0.00288083 | NA | NA | not evaluated |
+| PDE | d | TA RMSE | 2 x TA RMSE | FH reached | FH GPU s | TA total GPU s | met |
+|---|---:|---:|---:|---|---:|---:|---|
+| S05 | 100 | 0.00183597 | 0.00367194 | no | NA | 2262.76 | yes |
+| B6 | 100 | 0.00133404 | 0.00266809 | no | NA | 1018.63 | yes |
+| S05 | 400 | 0.00196131 | 0.00392261 | no | NA | 2257.42 | not evaluated |
+| B6 | 400 | 0.00288083 | 0.00576167 | no | NA | 1004.26 | not evaluated |
 
 ### H6
 
-> For B6, r_glob >= d/4 at the frozen calibration, and H1 holds on B6 at both d.
+> H6 (no dependence on a fixed subspace): for B6, r_glob >= d/4 at the frozen calibration, and H1 holds on B6 at both d. Report r_glob for S05 alongside.
 
 **Verdict: FAIL.**
 
-| PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
-|---|---:|---:|---:|---:|---|
-| B6 | 100 | 28.9865 | 25 | 0 | no |
-| B6 | 400 | 77.1437 | 100 | 0 | no |
+| PDE | d | r_glob | d / 4 | H1 met | met |
+|---|---:|---:|---:|---|---|
+| B6 | 100 | 28.9865 | 25 | no | no |
+| B6 | 400 | 77.1437 | 100 | no | no |
 
 ## B6 calibration (reference-only, frozen before solver runs)
 
@@ -133,16 +133,68 @@ S05 global gradient-covariance effective ranks (same definition as `r_glob`): d=
 |---|---:|---:|---|---|---:|---:|---:|---:|
 | B6 | 100 | 0 | a0 | a0 | 64 | 0.00164973 | 0.00159905 | 27.2393 |
 | B6 | 100 | 0 | a1 | a1 | 64 | 0.00134267 | 0.00137374 | 26.1169 |
+| B6 | 100 | 0 | a2 | a2 | 64 | 0.00133691 | 0.00135746 | 25.9633 |
+| B6 | 100 | 0 | a3 | a3 | 64 | 0.00132962 | 0.0013526 | 26.0839 |
+| B6 | 100 | 0 | a4 | a4 | 64 | 0.00133404 | 0.00134975 | 25.9982 |
 | B6 | 100 | 0 | selected | a4 | 64 | 0.00133404 | 0.00134975 | 27.1994 |
+| B6 | 100 | 0 | a0 | a0 | 128 | 0.00138807 | 0.00129405 | 51.6989 |
+| B6 | 100 | 0 | a1 | a1 | 128 | 0.00101688 | 0.00100193 | 51.2513 |
+| B6 | 100 | 0 | a2 | a2 | 128 | 0.000990414 | 0.000978913 | 51.6932 |
+| B6 | 100 | 0 | a3 | a3 | 128 | 0.000987268 | 0.000972092 | 51.5529 |
+| B6 | 100 | 0 | a4 | a4 | 128 | 0.000986859 | 0.000968324 | 51.3127 |
+| B6 | 100 | 0 | a0 | a0 | 256 | 0.00119801 | 0.00111603 | 102.412 |
+| B6 | 100 | 0 | a1 | a1 | 256 | 0.000765929 | 0.000751881 | 101.763 |
+| B6 | 100 | 0 | a2 | a2 | 256 | 0.000732696 | 0.000720698 | 102.787 |
+| B6 | 100 | 0 | a3 | a3 | 256 | 0.000723549 | 0.000711187 | 102.638 |
+| B6 | 100 | 0 | a4 | a4 | 256 | 0.000719632 | 0.000706248 | 101.874 |
 | B6 | 400 | 0 | a0 | a0 | 64 | 0.00387309 | 0.00296428 | 25.3635 |
 | B6 | 400 | 0 | a1 | a1 | 64 | 0.00338624 | 0.00280701 | 25.961 |
+| B6 | 400 | 0 | a2 | a2 | 64 | 0.00306259 | 0.00265954 | 25.7473 |
+| B6 | 400 | 0 | a3 | a3 | 64 | 0.00294622 | 0.00259265 | 25.8255 |
+| B6 | 400 | 0 | a4 | a4 | 64 | 0.00288083 | 0.00254932 | 25.9492 |
 | B6 | 400 | 0 | selected | a4 | 64 | 0.00288083 | 0.00254932 | 25.3878 |
+| B6 | 400 | 0 | a0 | a0 | 128 | 0.00321328 | 0.00252346 | 51.2054 |
+| B6 | 400 | 0 | a1 | a1 | 128 | 0.00273818 | 0.00233162 | 50.876 |
+| B6 | 400 | 0 | a2 | a2 | 128 | 0.00238383 | 0.00213943 | 50.9878 |
+| B6 | 400 | 0 | a3 | a3 | 128 | 0.00228188 | 0.00205287 | 51.0124 |
+| B6 | 400 | 0 | a4 | a4 | 128 | 0.00219677 | 0.00200144 | 51.435 |
+| B6 | 400 | 0 | a0 | a0 | 256 | 0.00287646 | 0.00227116 | 101.12 |
+| B6 | 400 | 0 | a1 | a1 | 256 | 0.00234904 | 0.00205376 | 101.088 |
+| B6 | 400 | 0 | a2 | a2 | 256 | 0.00203753 | 0.00182815 | 101.635 |
+| B6 | 400 | 0 | a3 | a3 | 256 | 0.00187392 | 0.0017223 | 101.884 |
+| B6 | 400 | 0 | a4 | a4 | 256 | 0.00179514 | 0.00165772 | 102.179 |
 | S05 | 100 | 0 | a0 | a0 | 64 | 0.00258117 | 0.00200584 | 45.2258 |
 | S05 | 100 | 0 | a1 | a1 | 64 | 0.0018801 | 0.00187247 | 43.4902 |
+| S05 | 100 | 0 | a2 | a2 | 64 | 0.00185394 | 0.00185067 | 43.2644 |
+| S05 | 100 | 0 | a3 | a3 | 64 | 0.00184959 | 0.00183912 | 43.623 |
+| S05 | 100 | 0 | a4 | a4 | 64 | 0.00183597 | 0.00183033 | 43.6172 |
 | S05 | 100 | 0 | selected | a4 | 64 | 0.00183597 | 0.00183033 | 45.6979 |
+| S05 | 100 | 0 | a0 | a0 | 128 | 0.00211895 | 0.0015561 | 86.0906 |
+| S05 | 100 | 0 | a1 | a1 | 128 | 0.00142144 | 0.00138092 | 86.0808 |
+| S05 | 100 | 0 | a2 | a2 | 128 | 0.00139071 | 0.00135411 | 85.9273 |
+| S05 | 100 | 0 | a3 | a3 | 128 | 0.00137939 | 0.00133807 | 86.8111 |
+| S05 | 100 | 0 | a4 | a4 | 128 | 0.00135454 | 0.00132517 | 86.3852 |
+| S05 | 100 | 0 | a0 | a0 | 256 | 0.00180049 | 0.00127837 | 171.523 |
+| S05 | 100 | 0 | a1 | a1 | 256 | 0.00109345 | 0.00105339 | 171.079 |
+| S05 | 100 | 0 | a2 | a2 | 256 | 0.00105477 | 0.00101744 | 171.337 |
+| S05 | 100 | 0 | a3 | a3 | 256 | 0.00103181 | 0.000996482 | 172.64 |
+| S05 | 100 | 0 | a4 | a4 | 256 | 0.00101396 | 0.000979745 | 171.142 |
 | S05 | 400 | 0 | a0 | a0 | 64 | 0.00234057 | 0.00196193 | 44.902 |
 | S05 | 400 | 0 | a1 | a1 | 64 | 0.00214024 | 0.00198289 | 43.2905 |
+| S05 | 400 | 0 | a2 | a2 | 64 | 0.00202297 | 0.0019366 | 43.654 |
+| S05 | 400 | 0 | a3 | a3 | 64 | 0.0019784 | 0.00190353 | 43.8208 |
+| S05 | 400 | 0 | a4 | a4 | 64 | 0.00196131 | 0.00187815 | 43.6979 |
 | S05 | 400 | 0 | selected | a4 | 64 | 0.00196131 | 0.00187815 | 44.3855 |
+| S05 | 400 | 0 | a0 | a0 | 128 | 0.00189635 | 0.0015251 | 86.6483 |
+| S05 | 400 | 0 | a1 | a1 | 128 | 0.00171014 | 0.0015531 | 86.8456 |
+| S05 | 400 | 0 | a2 | a2 | 128 | 0.00154996 | 0.00149389 | 86.7567 |
+| S05 | 400 | 0 | a3 | a3 | 128 | 0.00148843 | 0.00144903 | 86.7553 |
+| S05 | 400 | 0 | a4 | a4 | 128 | 0.00144111 | 0.00141374 | 86.8148 |
+| S05 | 400 | 0 | a0 | a0 | 256 | 0.00161246 | 0.00124663 | 173.046 |
+| S05 | 400 | 0 | a1 | a1 | 256 | 0.0013765 | 0.00127854 | 172.715 |
+| S05 | 400 | 0 | a2 | a2 | 256 | 0.00126203 | 0.00120431 | 172.915 |
+| S05 | 400 | 0 | a3 | a3 | 256 | 0.0011992 | 0.00114881 | 172.856 |
+| S05 | 400 | 0 | a4 | a4 | 256 | 0.00113096 | 0.00110569 | 171.99 |
 
 The headline uses the arithmetic mean of the four independently replicated 256-path RMSE values; the repetitions are not pooled into a 1,024-path estimator. Truth was loaded only after reference-free checkpoint selection.
 
@@ -244,7 +296,7 @@ The headline uses the arithmetic mean of the four independently replicated 256-p
 - Mechanical criterion failures: H1, H2, H6.
 - Frozen Full-History rows not yet available: 4; affected criteria are marked `NOT EVALUATED (COMPUTE)` rather than removed.
 - Runtime hardware deviation: the requested GH200 was unavailable; all new timings are from an NVIDIA GeForce RTX 5070 Ti. Historical reused S05 rows were generated on the same GPU model.
-- The two final-suite DPI unit tests that import the external `picard` package were not runnable because that optional package is absent; the 16 relevant highdim/nonridge tests passed.
+- The two final-suite DPI unit tests that import the external `picard` package were not runnable because that optional package is absent; the 18 relevant highdim/nonridge tests passed.
 - Reused S05 artifacts do not contain per-point predictions, so their MC/non-MC decomposition is unavailable; no proxy was invented.
 - B6 d=400 selected r_glob is below d/4. The frozen selector was applied unchanged and the resulting H6 failure is retained.
 - Compute-curtailed: B6, d=400, FH_rep, n=4, M=16, rep=1 after rep0 took 4701.56 GPU seconds.
@@ -256,7 +308,7 @@ The headline uses the arithmetic mean of the four independently replicated 256-p
 
 - Preregistration commit: `d97ea678c0daddf1b74117289237591593e9aeed`.
 - Calibration freeze commit: `a3d3887817b84d3f6b2aaa57ed787dab3825e2dc`.
-- Analysis commit/worktree head: `b661075f63fd2b3dc3772dc292974b78d1ae2cdc`.
+- Analysis commit/worktree head: `f7d328a052ce28b6be095aec0dc7a61df921ee73`.
 - Imported nonridge commit: `d384f4e8`; byte-identity audit: PASS (11/11 blobs identical).
 - Frozen final-suite protocol SHA-256: `80e81e5388e71aabbd5f5553939b84c4e265b5871a889402882288037491ee79`.
 - Frozen review-gate SHA-256: `ee59264b2e8348be33a0a19c3dc97941772df9c6edfadfa57c8688759f707f19`.
