@@ -134,10 +134,11 @@ def test_balanced_queue_is_frozen_without_accuracy(monkeypatch) -> None:
 
 
 def test_slurm_duration_parser_for_dispatch_reservation() -> None:
-    from .whole_function_job_accounting import _duration_seconds
+    from .whole_function_job_accounting import _billing_units, _duration_seconds
 
     assert _duration_seconds("02:00:00") == 7200
     assert _duration_seconds("1-02:03:04") == 93784
+    assert _billing_units("billing=4000,cpu=24,gres/gpu=2,mem=220G") == 4000
 
 
 def test_historical_compute_falls_back_from_nan_allocation() -> None:

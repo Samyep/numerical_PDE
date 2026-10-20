@@ -380,7 +380,8 @@ def _compute_figure(frame: pd.DataFrame, audit_payload: dict[str, Any]) -> list[
     costs.legend(frameon=False, fontsize=7)
     costs.text(
         0.98, 0.02,
-        f"Suite Slurm allocation: {audit_payload['new_gpu_hours']:.2f} GH200 h",
+        f"Suite allocation: {audit_payload['new_gpu_hours']:.2f} GH200 h; "
+        f"charge: {audit_payload['job_accounting']['account_credit_hours']:.2f} credit-h",
         transform=costs.transAxes, ha="right", va="bottom", fontsize=7, color="#4A5568",
     )
     fig.tight_layout()
@@ -449,6 +450,7 @@ def _report(frame: pd.DataFrame, audit_payload: dict[str, Any]) -> Path:
         f"- FAILED: {counts['FAILED']}",
         f"- PENDING: {counts['PENDING']}",
         f"- New measured GPU time: {audit_payload['new_gpu_hours']:.3f} GH200 hours (120-hour cap).",
+        f"- Slurm account charge: {audit_payload['job_accounting']['account_credit_hours']:.3f} credit-hours.",
         "",
         "Incomplete cells have blank accuracy fields and are absent from all numerical curves.",
         "",
@@ -496,6 +498,7 @@ def build() -> dict[str, Any]:
         "suite_status": audit_payload["suite_status"],
         "grid_cells": 140, "status_counts": audit_payload["status_counts"],
         "new_gpu_hours": audit_payload["new_gpu_hours"],
+        "account_credit_hours": audit_payload["job_accounting"]["account_credit_hours"],
         "cell_gpu_hour_cap": 6.0, "suite_gpu_hour_cap": 120.0,
         "active_cells": frame.loc[frame["active_slurm_attempt"],
                                   ["pde", "dimension", "method"]].to_dict("records"),

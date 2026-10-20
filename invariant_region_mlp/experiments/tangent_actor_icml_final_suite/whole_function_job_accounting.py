@@ -23,6 +23,11 @@ def _gpu_count(value: str) -> int:
     return int(match.group(1)) if match else 0
 
 
+def _billing_units(value: str) -> int:
+    match = re.search(r"(?:^|,)billing=(\d+)(?:,|$)", value or "")
+    return int(match.group(1)) if match else 0
+
+
 def collect(start: str = "2026-10-19") -> dict[str, Any]:
     command = [
         "sacct", "-X", "-S", start, "-u", getpass.getuser(), "-n", "-P",
@@ -38,12 +43,15 @@ def collect(start: str = "2026-10-19") -> dict[str, Any]:
             continue
         elapsed = int(float(raw.get("ElapsedRaw") or 0))
         gpus = _gpu_count(str(raw.get("AllocTRES") or ""))
+        billing = _billing_units(str(raw.get("AllocTRES") or ""))
         rows.append({
             "job_id": raw.get("JobIDRaw"), "job_name": raw.get("JobName"),
             "partition": raw.get("Partition"), "state": raw.get("State"),
             "elapsed_seconds": elapsed, "allocated_gpu_count": gpus,
             "allocated_gpu_seconds": elapsed * gpus,
             "allocated_gpu_hours": elapsed * gpus / 3600.0,
+            "allocated_billing_units": billing,
+            "account_credit_hours": elapsed * billing / (3600.0 * 1000.0),
             "exit_code": raw.get("ExitCode"), "alloc_tres": raw.get("AllocTRES"),
             "submit": raw.get("Submit"), "start": raw.get("Start"), "end": raw.get("End"),
         })
@@ -52,20 +60,26 @@ def collect(start: str = "2026-10-19") -> dict[str, Any]:
     columns = list(rows[0]) if rows else [
         "job_id", "job_name", "partition", "state", "elapsed_seconds",
         "allocated_gpu_count", "allocated_gpu_seconds", "allocated_gpu_hours",
-        "exit_code", "alloc_tres", "submit", "start", "end",
+        "allocated_billing_units", "account_credit_hours", "exit_code",
+        "alloc_tres", "submit", "start", "end",
     ]
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=columns, lineterminator="\n")
         writer.writeheader(); writer.writerows(rows)
     allocated = sum(float(item["allocated_gpu_seconds"]) for item in rows)
+    credits = sum(float(item["account_credit_hours"]) for item in rows)
     payload = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "query_start": start, "job_name_prefix": "icml_whole",
         "jobs": len(rows), "allocated_gpu_seconds": allocated,
         "allocated_gpu_hours": allocated / 3600.0,
+        "account_credit_hours": credits,
         "cap_gpu_hours": 120.0,
         "within_cap": allocated <= 120 * 3600,
-        "source": "Slurm sacct allocation records; includes failed and timed-out jobs",
+        "source": (
+            "Slurm sacct allocation records; includes failed and timed-out jobs. "
+            "Account credit hours are elapsed hours times AllocTRES billing units / 1000."
+        ),
     }
     (RESULTS_DIR / "WHOLE_FUNCTION_JOB_ACCOUNTING.json").write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8",
