@@ -147,6 +147,10 @@ S05 global gradient-covariance effective ranks (same definition as `r_glob`): d=
 | B6 | 100 | 0 | a2 | a2 | 256 | 0.000732696 | 0.000720698 | 102.787 |
 | B6 | 100 | 0 | a3 | a3 | 256 | 0.000723549 | 0.000711187 | 102.638 |
 | B6 | 100 | 0 | a4 | a4 | 256 | 0.000719632 | 0.000706248 | 101.874 |
+| B6 | 100 | 1 | a0 | a0 | 64 | 0.0016738 | 0.0015968 | 26.0407 |
+| B6 | 100 | 1 | selected | a4 | 64 | 0.00138672 | 0.00135092 | 26.3323 |
+| B6 | 100 | 2 | a0 | a0 | 64 | 0.00172389 | 0.00158941 | 27.8846 |
+| B6 | 100 | 2 | selected | a4 | 64 | 0.00134734 | 0.00134806 | 28.0994 |
 | B6 | 400 | 0 | a0 | a0 | 64 | 0.00387309 | 0.00296428 | 25.3635 |
 | B6 | 400 | 0 | a1 | a1 | 64 | 0.00338624 | 0.00280701 | 25.961 |
 | B6 | 400 | 0 | a2 | a2 | 64 | 0.00306259 | 0.00265954 | 25.7473 |
@@ -179,6 +183,10 @@ S05 global gradient-covariance effective ranks (same definition as `r_glob`): d=
 | S05 | 100 | 0 | a2 | a2 | 256 | 0.00105477 | 0.00101744 | 171.337 |
 | S05 | 100 | 0 | a3 | a3 | 256 | 0.00103181 | 0.000996482 | 172.64 |
 | S05 | 100 | 0 | a4 | a4 | 256 | 0.00101396 | 0.000979745 | 171.142 |
+| S05 | 100 | 1 | a0 | a0 | 64 | 0.00262355 | 0.00200042 | 44.2903 |
+| S05 | 100 | 1 | selected | a4 | 64 | 0.00184682 | 0.00182419 | 44.2452 |
+| S05 | 100 | 2 | a0 | a0 | 64 | 0.00261069 | 0.00200248 | 43.8371 |
+| S05 | 100 | 2 | selected | a4 | 64 | 0.00186323 | 0.00182826 | 43.6934 |
 | S05 | 400 | 0 | a0 | a0 | 64 | 0.00234057 | 0.00196193 | 44.902 |
 | S05 | 400 | 0 | a1 | a1 | 64 | 0.00214024 | 0.00198289 | 43.2905 |
 | S05 | 400 | 0 | a2 | a2 | 64 | 0.00202297 | 0.0019366 | 43.654 |
@@ -291,6 +299,11 @@ The headline uses the arithmetic mean of the four independently replicated 256-p
 | S05 | 400 | FH_raw | 4 | 6 | 3 | 0 | 2.60158e+14 | 1.73805e+14 | 7.3011 | 0 |
 | S05 | 400 | FH_raw | 4 | 10 | 3 | 0 | 5.67604e+12 | 3.79202e+12 | 51.7859 | 0 |
 
+## Optional Stage C (exploratory)
+
+- **Residual-Jensen noise-replicate test: NOT EVALUATED (OPTIONAL COMPUTE).** The registered primary study, iteration audits, and d=100 seed-robustness runs were prioritized; no post-hoc exploratory update was started.
+- **DPI neural baseline: NOT EVALUATED (OPTIONAL DEPENDENCY).** The official implementation requires the external `picard` package, which is absent from this environment; no substitute implementation was introduced.
+
 ## Failures and deviations
 
 - Mechanical criterion failures: H1, H2, H6.
@@ -308,7 +321,7 @@ The headline uses the arithmetic mean of the four independently replicated 256-p
 
 - Preregistration commit: `d97ea678c0daddf1b74117289237591593e9aeed`.
 - Calibration freeze commit: `a3d3887817b84d3f6b2aaa57ed787dab3825e2dc`.
-- Analysis commit/worktree head: `f7d328a052ce28b6be095aec0dc7a61df921ee73`.
+- Analysis commit/worktree head: `c2249f8b33bbf73aad71f0173fb940ef6c560c7d`.
 - Imported nonridge commit: `d384f4e8`; byte-identity audit: PASS (11/11 blobs identical).
 - Frozen final-suite protocol SHA-256: `80e81e5388e71aabbd5f5553939b84c4e265b5871a889402882288037491ee79`.
 - Frozen review-gate SHA-256: `ee59264b2e8348be33a0a19c3dc97941772df9c6edfadfa57c8688759f707f19`.

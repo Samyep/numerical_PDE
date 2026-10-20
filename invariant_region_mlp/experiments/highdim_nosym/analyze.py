@@ -691,6 +691,15 @@ def _report(
     missing = len(fh_tasks()) - (0 if fh.empty else int(fh.repetitions.sum()))
     failures = sorted(key for key, item in outcomes.items() if item["verdict"] == "FAIL")
     lines.extend([
+        "", "## Optional Stage C (exploratory)", "",
+        "- **Residual-Jensen noise-replicate test: NOT EVALUATED (OPTIONAL COMPUTE).** "
+        "The registered primary study, iteration audits, and d=100 seed-robustness runs were prioritized; "
+        "no post-hoc exploratory update was started.",
+        "- **DPI neural baseline: NOT EVALUATED (OPTIONAL DEPENDENCY).** "
+        "The official implementation requires the external `picard` package, which is absent from this environment; "
+        "no substitute implementation was introduced.",
+    ])
+    lines.extend([
         "", "## Failures and deviations", "",
         f"- Mechanical criterion failures: {', '.join(failures) if failures else 'none among evaluated criteria'}.",
         f"- Frozen Full-History rows not yet available: {missing}; affected criteria are marked `NOT EVALUATED (COMPUTE)` rather than removed.",
