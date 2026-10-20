@@ -111,6 +111,8 @@ class RawOUFullHistory:
 
     U_0=0, U_1=E[g(X_T)] and for n>=2, differences
     f(U_l)-1[l>1] f(U_{l-1}) at levels l=1,...,n-1.
+    We integrate the known constant -d source exactly once for n>=2,
+    without sampling its zero gradient. The quadratic part remains sampled.
     The base f(u,z) = -0.5||z||^2-d is evaluated without projection.
     """
 
@@ -173,7 +175,9 @@ class RawOUFullHistory:
 
     def driver(self, state: torch.Tensor):
         z = state[..., 1:]
-        return -0.5 * z.square().sum(dim=-1) - self.d
+        # Treat the known spatially constant -d source deterministically.
+        # This removes pure MC noise in its gradient; no oracle value is used.
+        return -0.5 * z.square().sum(dim=-1)
 
     def solve(self, n: int, t: torch.Tensor, x: torch.Tensor):
         t = t.to(dtype=self.dtype, device=self.device).reshape(-1)
@@ -186,6 +190,10 @@ class RawOUFullHistory:
 
         output = self.terminal_estimate(n, t, x)
         remaining = (self.T - t).clamp_min(0)
+        if n >= 2:
+            # Source -d contributes exactly -d*(T-t) to value, zero to z.
+            # n=1 is the heat/OU semigroup initialization (no f yet).
+            output[:, 0] += -self.d * remaining
         tiny = torch.finfo(self.dtype).tiny
 
         for level in range(1, n):
@@ -328,6 +336,7 @@ def run_one(
         "depth": DEPTH, "M": M, "seed": seed, "dtype": "float32",
         "states": TEST_POINTS, "time_beta_alpha": ALPHA,
         "terminal_gradient": "analytic_known_g_pathwise",
+        "known_constant_source": "-d*(T-t) integrated exactly for n>=2",
         "OU_kernel": "X_s=exp(h)x+sqrt((exp(2h)-1)/2)Z",
         "OU_BEL": "exp(h)/sqrt((exp(2h)-1)/2)*Z",
         "training_seconds": 0.0, "value_rmse": None,
