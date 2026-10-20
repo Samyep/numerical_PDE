@@ -52,8 +52,8 @@ def sha_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def actor_endpoint(spec: ExperimentSpec) -> dict:
-    path = OLD_RESULTS / f"post_freeze_{spec.run_id}.json"
+def actor_endpoint(spec: ExperimentSpec, source_results: Path) -> dict:
+    path = source_results / f"post_freeze_{spec.run_id}.json"
     if not path.exists():
         raise FileNotFoundError(f"Frozen post-freeze Actor report missing: {path}")
     payload = json.loads(path.read_text())
@@ -71,7 +71,7 @@ def actor_endpoint(spec: ExperimentSpec) -> dict:
     if not math.isfinite(float(row["mcv_value_rmse"])):
         raise ValueError("Actor endpoint is nonfinite")
     costs = []
-    table = OLD_RESULTS / "BASELINE_COMPARISON.csv"
+    table = source_results / "BASELINE_COMPARISON.csv"
     if table.exists():
         with table.open(newline="") as f:
             for line in csv.DictReader(f):
@@ -97,8 +97,8 @@ def actor_endpoint(spec: ExperimentSpec) -> dict:
     }
 
 
-def get_bank(spec: ExperimentSpec, original: dict):
-    path = OLD_PREDICTIONS / f"post_freeze_{spec.run_id}.npz"
+def get_bank(spec: ExperimentSpec, original: dict, source_results: Path):
+    path = source_results / "predictions" / f"post_freeze_{spec.run_id}.npz"
     if not path.exists():
         raise FileNotFoundError(
             f"The original frozen prediction NPZ is only on the HPC workspace: {path}"
@@ -137,6 +137,8 @@ def main() -> None:
     parser.add_argument("--max-seconds", type=float, default=1800.0)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--data-root", type=Path, default=OLD_RESULTS,
+                        help="Existing original HPC results/nonconvex_tangent_actor directory; may be in another checkout")
     args = parser.parse_args()
     if (args.n, args.M) not in GRID:
         parser.error(f"(n, M) must be one of {GRID}; no post-hoc extensions")
@@ -149,8 +151,8 @@ def main() -> None:
         family=args.family, d=args.d, lam=args.lam,
         eta=args.eta, seed=args.actor_seed, budget=args.budget, estimator="mcv"
     )
-    a = actor_endpoint(spec)
-    t, x, truth, bank, bank_hash = get_bank(spec, a)
+    a = actor_endpoint(spec, args.data_root)
+    t, x, truth, bank, bank_hash = get_bank(spec, a, args.data_root)
     descriptor = {
         "pde": spec.run_id, "n": args.n, "M": args.M,
         "baseline_seed": args.baseline_seed, "actor_seed": args.actor_seed,
