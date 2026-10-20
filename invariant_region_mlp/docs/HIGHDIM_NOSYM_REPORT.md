@@ -5,8 +5,8 @@
 | Criterion | Verdict | Wins / evaluated | Required |
 |---|---|---:|---:|
 | H1 | **FAIL** | 0 / 4 | 4 |
-| H2 | **NOT EVALUATED (COMPUTE)** | 0 / 0 | 2 |
-| H3 | **NOT EVALUATED (COMPUTE)** | 3 / 3 | 4 |
+| H2 | **FAIL** | 0 / 4 | 2 |
+| H3 | **PASS** | 4 / 4 | 4 |
 | H4 | **NOT EVALUATED (COMPUTE)** | 2 / 2 | 3 |
 | H5 | **PASS** | 2 / 2 | 2 |
 | H6 | **FAIL** | 0 / 2 | 2 |
@@ -30,27 +30,27 @@
 
 > RMSE(TA) <= 0.8 x RMSE(a1), both under the same post-freeze common-random-number diagnostic, in at least 2 of the 4 cells.
 
-**Verdict: NOT EVALUATED (COMPUTE).**
+**Verdict: FAIL.**
 
 | PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
 |---|---:|---:|---:|---:|---|
-| S05 | 100 | 0.00183597 | NA | NA | not evaluated |
-| B6 | 100 | 0.00133404 | NA | NA | not evaluated |
-| S05 | 400 | 0.00196131 | NA | NA | not evaluated |
-| B6 | 400 | 0.00288083 | NA | NA | not evaluated |
+| S05 | 100 | 0.00183597 | 0.0018801 | 0.976527 | no |
+| B6 | 100 | 0.00133404 | 0.00134267 | 0.993576 | no |
+| S05 | 400 | 0.00196131 | 0.00214024 | 0.916395 | no |
+| B6 | 400 | 0.00288083 | 0.00338624 | 0.850746 | no |
 
 ### H3
 
 > RMSE(TA) <= 0.5 x the minimum RMSE over the entire frozen FH_raw grid, in all 4 cells.
 
-**Verdict: NOT EVALUATED (COMPUTE).**
+**Verdict: PASS.**
 
 | PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | 0.277487 | 0.00661642 | yes |
 | B6 | 100 | 0.00133404 | 0.0865748 | 0.0154091 | yes |
 | S05 | 400 | 0.00196131 | 2.21073 | 0.000887174 | yes |
-| B6 | 400 | 0.00288083 | NA | NA | not evaluated |
+| B6 | 400 | 0.00288083 | 0.614943 | 0.00468472 | yes |
 
 ### H4
 
@@ -132,12 +132,16 @@ S05 global gradient-covariance effective ranks (same definition as `r_glob`): d=
 | PDE | d | seed | actor | resolved | steps | RMSE | MC contribution | GPU s |
 |---|---:|---:|---|---|---:|---:|---:|---:|
 | B6 | 100 | 0 | a0 | a0 | 64 | 0.00164973 | 0.00159905 | 27.2393 |
+| B6 | 100 | 0 | a1 | a1 | 64 | 0.00134267 | 0.00137374 | 26.1169 |
 | B6 | 100 | 0 | selected | a4 | 64 | 0.00133404 | 0.00134975 | 27.1994 |
 | B6 | 400 | 0 | a0 | a0 | 64 | 0.00387309 | 0.00296428 | 25.3635 |
+| B6 | 400 | 0 | a1 | a1 | 64 | 0.00338624 | 0.00280701 | 25.961 |
 | B6 | 400 | 0 | selected | a4 | 64 | 0.00288083 | 0.00254932 | 25.3878 |
 | S05 | 100 | 0 | a0 | a0 | 64 | 0.00258117 | 0.00200584 | 45.2258 |
+| S05 | 100 | 0 | a1 | a1 | 64 | 0.0018801 | 0.00187247 | 43.4902 |
 | S05 | 100 | 0 | selected | a4 | 64 | 0.00183597 | 0.00183033 | 45.6979 |
 | S05 | 400 | 0 | a0 | a0 | 64 | 0.00234057 | 0.00196193 | 44.902 |
+| S05 | 400 | 0 | a1 | a1 | 64 | 0.00214024 | 0.00198289 | 43.2905 |
 | S05 | 400 | 0 | selected | a4 | 64 | 0.00196131 | 0.00187815 | 44.3855 |
 
 The headline uses the arithmetic mean of the four independently replicated 256-path RMSE values; the repetitions are not pooled into a 1,024-path estimator. Truth was loaded only after reference-free checkpoint selection.
@@ -168,6 +172,28 @@ The headline uses the arithmetic mean of the four independently replicated 256-p
 | B6 | 100 | FH_raw | 3 | 24 | 3 | 0 | 8.49411 | 13.0645 | 8.47555 | 0 |
 | B6 | 100 | FH_raw | 4 | 6 | 3 | 0 | 1.55323e+07 | 2.38896e+07 | 1.97461 | 0 |
 | B6 | 100 | FH_raw | 4 | 10 | 3 | 0 | 302251 | 464881 | 13.1797 | 0 |
+| B6 | 400 | FH_rep | 3 | 16 | 3 | 0 | 0.0141569 | 0.0180369 | 96.9625 | 0 |
+| B6 | 400 | FH_rep | 3 | 24 | 3 | 0 | 0.00990633 | 0.0126213 | 325.049 | 0 |
+| B6 | 400 | FH_rep | 3 | 32 | 3 | 0 | 0.00800669 | 0.0102011 | 770.877 | 0 |
+| B6 | 400 | FH_rep | 4 | 6 | 3 | 0 | 0.0318964 | 0.0406382 | 101.063 | 0 |
+| B6 | 400 | FH_rep | 4 | 10 | 3 | 0 | 0.0123677 | 0.0157573 | 743.519 | 0 |
+| B6 | 400 | FH_rep | 4 | 16 | 1 | 0 | 0.00631384 | 0.00804425 | 4701.21 | 0 |
+| B6 | 400 | FH_path | 2 | 16 | 3 | 0 | 0.0493957 | 0.0629334 | 1.37888 | 0 |
+| B6 | 400 | FH_path | 2 | 64 | 3 | 0 | 0.0240641 | 0.0306593 | 20.9124 | 0 |
+| B6 | 400 | FH_path | 2 | 256 | 3 | 0 | 0.0183454 | 0.0233732 | 331.766 | 0 |
+| B6 | 400 | FH_path | 3 | 8 | 3 | 0 | 2.94472 | 3.75177 | 5.61142 | 0 |
+| B6 | 400 | FH_path | 3 | 16 | 3 | 0 | 1.37119 | 1.74699 | 43.0433 | 0 |
+| B6 | 400 | FH_path | 3 | 24 | 3 | 0 | 0.905014 | 1.15305 | 144.451 | 0 |
+| B6 | 400 | FH_path | 4 | 6 | 3 | 0 | 5359.06 | 6827.79 | 29.9325 | 0 |
+| B6 | 400 | FH_path | 4 | 10 | 3 | 0 | 793.667 | 1011.19 | 220.091 | 0 |
+| B6 | 400 | FH_raw | 2 | 16 | 3 | 0 | 10.1028 | 12.8717 | 0.791078 | 0 |
+| B6 | 400 | FH_raw | 2 | 64 | 3 | 0 | 2.49873 | 3.18355 | 10.6689 | 0 |
+| B6 | 400 | FH_raw | 2 | 256 | 3 | 0 | 0.614943 | 0.783479 | 168.596 | 0 |
+| B6 | 400 | FH_raw | 3 | 8 | 3 | 0 | 40132.9 | 51132 | 2.95713 | 0 |
+| B6 | 400 | FH_raw | 3 | 16 | 3 | 0 | 4505.35 | 5740.12 | 22.2553 | 0 |
+| B6 | 400 | FH_raw | 3 | 24 | 3 | 0 | 1324.22 | 1687.14 | 74.7657 | 0 |
+| B6 | 400 | FH_raw | 4 | 6 | 3 | 0 | 2.47622e+12 | 3.15487e+12 | 15.9951 | 0 |
+| B6 | 400 | FH_raw | 4 | 10 | 3 | 0 | 4.28646e+10 | 5.46124e+10 | 115.579 | 0 |
 | S05 | 100 | FH_rep | 3 | 16 | 3 | 3 | 0.0237027 | 0.0193267 | 10.1359 | 0 |
 | S05 | 100 | FH_rep | 3 | 24 | 3 | 3 | 0.0153439 | 0.0125111 | 34.064 | 0 |
 | S05 | 100 | FH_rep | 3 | 32 | 3 | 3 | 0.010683 | 0.00871071 | 80.5085 | 0 |
@@ -215,12 +241,14 @@ The headline uses the arithmetic mean of the four independently replicated 256-p
 
 ## Failures and deviations
 
-- Mechanical criterion failures: H1, H6.
-- Frozen Full-History rows not yet available: 68; affected criteria are marked `NOT EVALUATED (COMPUTE)` rather than removed.
+- Mechanical criterion failures: H1, H2, H6.
+- Frozen Full-History rows not yet available: 4; affected criteria are marked `NOT EVALUATED (COMPUTE)` rather than removed.
 - Runtime hardware deviation: the requested GH200 was unavailable; all new timings are from an NVIDIA GeForce RTX 5070 Ti. Historical reused S05 rows were generated on the same GPU model.
 - The two final-suite DPI unit tests that import the external `picard` package were not runnable because that optional package is absent; the 16 relevant highdim/nonridge tests passed.
 - Reused S05 artifacts do not contain per-point predictions, so their MC/non-MC decomposition is unavailable; no proxy was invented.
 - B6 d=400 selected r_glob is below d/4. The frozen selector was applied unchanged and the resulting H6 failure is retained.
+- Compute-curtailed: B6, d=400, FH_rep, n=4, M=16, rep=1 after rep0 took 4701.56 GPU seconds.
+- Compute-curtailed: B6, d=400, FH_rep, n=4, M=16, rep=2 after rep0 took 4701.56 GPU seconds.
 - Compute-curtailed: S05, d=400, FH_rep, n=4, M=16, rep=1 after rep0 took 2124.8 GPU seconds.
 - Compute-curtailed: S05, d=400, FH_rep, n=4, M=16, rep=2 after rep0 took 2124.8 GPU seconds.
 
@@ -228,7 +256,7 @@ The headline uses the arithmetic mean of the four independently replicated 256-p
 
 - Preregistration commit: `d97ea678c0daddf1b74117289237591593e9aeed`.
 - Calibration freeze commit: `a3d3887817b84d3f6b2aaa57ed787dab3825e2dc`.
-- Analysis commit/worktree head: `b501bf54556664778bbcbecbafa4afa3f6edcb4d`.
+- Analysis commit/worktree head: `b661075f63fd2b3dc3772dc292974b78d1ae2cdc`.
 - Imported nonridge commit: `d384f4e8`; byte-identity audit: PASS (11/11 blobs identical).
 - Frozen final-suite protocol SHA-256: `80e81e5388e71aabbd5f5553939b84c4e265b5871a889402882288037491ee79`.
 - Frozen review-gate SHA-256: `ee59264b2e8348be33a0a19c3dc97941772df9c6edfadfa57c8688759f707f19`.
