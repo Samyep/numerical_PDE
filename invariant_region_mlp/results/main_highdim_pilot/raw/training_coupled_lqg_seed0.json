@@ -1,0 +1,518 @@
+{
+  "benchmark_label": "RECREATED_PUBLISHED_BENCHMARK",
+  "configuration": {
+    "activation": "silu",
+    "batch_size": 256,
+    "checkpoint_interval": 150,
+    "depth": 3,
+    "gradient_clip": 10.0,
+    "label_estimator": "mcv",
+    "label_time_steps": 16,
+    "learning_rate": 0.00015,
+    "optimizer_steps": 1500,
+    "parent_batch": 4,
+    "path_chunk": 32,
+    "paths_per_label": 64,
+    "training_distribution": "frozen_pde_specific",
+    "training_points": 2048,
+    "validation_points": 256,
+    "width": 256
+  },
+  "equation": {
+    "T": 0.5,
+    "coefficient_seed": [
+      20261201,
+      100,
+      73
+    ],
+    "coefficient_sha256": "5b515c419d78ec4c18a779be46467bef651912b7db6786e66eb26477e6ce3fb5",
+    "condition_number": 14.3437230713418,
+    "d": 100,
+    "eigenvalue_max": 6.159847000119702,
+    "eigenvalue_min": 0.42944547726432586,
+    "family": "published_coupled_lqg_recreated",
+    "label": "RECREATED_PUBLISHED_BENCHMARK",
+    "matrix_sha256": "1192944f0bb16339012ce498d71d316833f4f83c608c5868830267b2dc0c06a4",
+    "name": "published_coupled_lqg_d100",
+    "official_repository_commit_audited": "c2412b942b1720084accf9ac9651c6085e073919",
+    "official_source_conflict": "ICLR Section 3.3 uses T=0.5; repository LQG.md/class defaults to T=1. The paper interval is used, and coefficients are one frozen global draw.",
+    "paper_time_interval": [
+      0.0,
+      0.5
+    ],
+    "sigma": 1.4142135623730951,
+    "state_distribution": "uniform volume measure on the unit ball"
+  },
+  "ground_truth_used_for_training_or_selection": false,
+  "pde": "coupled_lqg",
+  "phases": [
+    {
+      "checkpoint": "C:\\Users\\Yeping\\workspace\\HCFL\\ir-mlp-main-highdim-pilot-5070-worktree\\invariant_region_mlp\\results\\main_highdim_pilot\\checkpoints\\coupled_lqg_seed0_a1.pt",
+      "checkpoint_sha256": "28f1e11413042e2e57908aedd9295c28f9439cf76e0e829f926ebfab31c95b05",
+      "iteration": 1,
+      "labels": {
+        "gradient_label_replication_component_rmse": 0.006039549951707415,
+        "gradient_label_replication_vector_rmse": 0.06039549951707416,
+        "ground_truth_used": false,
+        "iteration": 1,
+        "replication": {
+          "actor_target": "gradient",
+          "alpha": 1.0,
+          "analytic_nonterminal_reference_used": false,
+          "c_max": 0.0,
+          "c_min": 0.0,
+          "complete_corrected_payoff_differentiated": true,
+          "estimator": "direct_alpha1_mcv",
+          "ground_truth_used": false,
+          "kind": "differentiable_linear_tangent_feynman_kac",
+          "label_rms": 0.023059395442644678,
+          "left_endpoint_predictable_martingale": true,
+          "martingale_path_mean": -0.0022663298435929846,
+          "martingale_path_std": 0.47950433276086546,
+          "nonfinite_count": 0,
+          "paths": 64,
+          "peak_gpu_bytes": 30625280,
+          "points": 256,
+          "seed": 3458067213,
+          "source_actor_frozen": true,
+          "time_steps": 16,
+          "wall_seconds": 3.2737888999981806,
+          "weight_ess_fraction": 1.0
+        },
+        "source": "a0",
+        "train": {
+          "actor_target": "gradient",
+          "alpha": 1.0,
+          "analytic_nonterminal_reference_used": false,
+          "c_max": 0.0,
+          "c_min": 0.0,
+          "complete_corrected_payoff_differentiated": true,
+          "estimator": "direct_alpha1_mcv",
+          "ground_truth_used": false,
+          "kind": "differentiable_linear_tangent_feynman_kac",
+          "label_rms": 0.02709291742290288,
+          "left_endpoint_predictable_martingale": true,
+          "martingale_path_mean": 4.909937401720299e-05,
+          "martingale_path_std": 0.47292316487292835,
+          "nonfinite_count": 0,
+          "paths": 64,
+          "peak_gpu_bytes": 30625280,
+          "points": 2048,
+          "seed": 2518063393,
+          "source_actor_frozen": true,
+          "time_steps": 16,
+          "wall_seconds": 26.449119199998677,
+          "weight_ess_fraction": 1.0
+        },
+        "train_bank_sha256": "93dba356ead7350c503e5dcffe23a87e2a3182649e0a7269f87aba6cb59cd644",
+        "validation": {
+          "actor_target": "gradient",
+          "alpha": 1.0,
+          "analytic_nonterminal_reference_used": false,
+          "c_max": 0.0,
+          "c_min": 0.0,
+          "complete_corrected_payoff_differentiated": true,
+          "estimator": "direct_alpha1_mcv",
+          "ground_truth_used": false,
+          "kind": "differentiable_linear_tangent_feynman_kac",
+          "label_rms": 0.022653734210536305,
+          "left_endpoint_predictable_martingale": true,
+          "martingale_path_mean": 0.0005014389809332442,
+          "martingale_path_std": 0.48224967750113357,
+          "nonfinite_count": 0,
+          "paths": 64,
+          "peak_gpu_bytes": 30625280,
+          "points": 256,
+          "seed": 3094421817,
+          "source_actor_frozen": true,
+          "time_steps": 16,
+          "wall_seconds": 3.352041200036183,
+          "weight_ess_fraction": 1.0
+        },
+        "validation_bank_sha256": "b0b0d909834f341e526262f711aae3a490b312cd0bd77add1f2ffcfb8b628493"
+      },
+      "oom_chunk_fallback_used": false,
+      "phase_seconds": 36.8125678000506,
+      "trace": [
+        {
+          "learning_rate": 0.00015,
+          "step": 0.0,
+          "train_rmse": 0.2353281811196615,
+          "validation_normalized_mse": 76.6949892608729,
+          "validation_rmse": 0.23726805425355513
+        },
+        {
+          "learning_rate": 0.00014999983550665344,
+          "step": 1.0,
+          "train_rmse": 0.23532195022067032,
+          "validation_normalized_mse": 76.6907093380267,
+          "validation_rmse": 0.23726143385277368
+        },
+        {
+          "learning_rate": 0.00014632923872213657,
+          "step": 150.0,
+          "train_rmse": 0.22449417731779633,
+          "validation_normalized_mse": 70.6069632937145,
+          "validation_rmse": 0.22765623022099354
+        },
+        {
+          "learning_rate": 0.00013567627457812122,
+          "step": 300.0,
+          "train_rmse": 0.2012742341282668,
+          "validation_normalized_mse": 58.00844092810533,
+          "validation_rmse": 0.20634852551509025
+        },
+        {
+          "learning_rate": 0.00011908389392193551,
+          "step": 450.0,
+          "train_rmse": 0.18186549741109487,
+          "validation_normalized_mse": 47.76405897448574,
+          "validation_rmse": 0.18724334297080134
+        },
+        {
+          "learning_rate": 9.817627457812103e-05,
+          "step": 600.0,
+          "train_rmse": 0.17106289021744567,
+          "validation_normalized_mse": 42.33453638501158,
+          "validation_rmse": 0.17628005500127825
+        },
+        {
+          "learning_rate": 7.500000000000005e-05,
+          "step": 750.0,
+          "train_rmse": 0.1631060664285258,
+          "validation_normalized_mse": 38.457369439525884,
+          "validation_rmse": 0.16801403444481086
+        },
+        {
+          "learning_rate": 5.1823725421878974e-05,
+          "step": 900.0,
+          "train_rmse": 0.15752303671307985,
+          "validation_normalized_mse": 35.82804062793827,
+          "validation_rmse": 0.16216879971619466
+        },
+        {
+          "learning_rate": 3.091610607806458e-05,
+          "step": 1050.0,
+          "train_rmse": 0.1538112001610583,
+          "validation_normalized_mse": 34.17190708348265,
+          "validation_rmse": 0.15837636891695517
+        },
+        {
+          "learning_rate": 1.4323725421878976e-05,
+          "step": 1200.0,
+          "train_rmse": 0.15183237225272506,
+          "validation_normalized_mse": 33.291254944764994,
+          "validation_rmse": 0.15632227132077248
+        },
+        {
+          "learning_rate": 3.67076127786348e-06,
+          "step": 1350.0,
+          "train_rmse": 0.15106605131221595,
+          "validation_normalized_mse": 32.95354689091104,
+          "validation_rmse": 0.15552738009759653
+        },
+        {
+          "learning_rate": 0.0,
+          "step": 1500.0,
+          "train_rmse": 0.15095055785418726,
+          "validation_normalized_mse": 32.90654847211724,
+          "validation_rmse": 0.15541643378506742
+        }
+      ],
+      "training": {
+        "activation": "silu",
+        "analytic_nonterminal_features": false,
+        "config": {
+          "activation": "silu",
+          "batch_size": 256,
+          "checkpoint_interval": 150,
+          "depth": 3,
+          "gradient_clip": 10.0,
+          "label_estimator": "mcv",
+          "label_time_steps": 16,
+          "learning_rate": 0.00015,
+          "optimizer_steps": 1500,
+          "parent_batch": 4,
+          "path_chunk": 32,
+          "paths_per_label": 64,
+          "training_distribution": "frozen_pde_specific",
+          "training_points": 2048,
+          "validation_points": 256,
+          "width": 256
+        },
+        "depth": 3,
+        "ground_truth_used": false,
+        "input_dimension": 101,
+        "kind": "terminal_aware_full_ambient_tangent_actor",
+        "oracle_projection": false,
+        "output_dimension": 100,
+        "parameters": 183396,
+        "peak_gpu_bytes": 28785152,
+        "selected_by": "minimum held-out noisy tangent-label error",
+        "selected_step": 1500,
+        "selected_validation_normalized_mse": 32.90654847211724,
+        "selected_validation_rmse": 0.15541643378506742,
+        "target_scale": 0.02709291742290288,
+        "wall_seconds": 2.6475500999949872,
+        "warm_started": true,
+        "width": 256
+      }
+    },
+    {
+      "checkpoint": "C:\\Users\\Yeping\\workspace\\HCFL\\ir-mlp-main-highdim-pilot-5070-worktree\\invariant_region_mlp\\results\\main_highdim_pilot\\checkpoints\\coupled_lqg_seed0_a2.pt",
+      "checkpoint_sha256": "4178d4684c98375f5fc5a52c1f6da6302b9ef228def8200a3d00bb4b70c7f135",
+      "iteration": 2,
+      "labels": {
+        "gradient_label_replication_component_rmse": 0.38292204493261817,
+        "gradient_label_replication_vector_rmse": 3.829220449326182,
+        "ground_truth_used": false,
+        "iteration": 2,
+        "replication": {
+          "actor_target": "gradient",
+          "alpha": 1.0,
+          "analytic_nonterminal_reference_used": false,
+          "c_max": 0.0,
+          "c_min": 0.0,
+          "complete_corrected_payoff_differentiated": true,
+          "estimator": "direct_alpha1_mcv",
+          "ground_truth_used": false,
+          "kind": "differentiable_linear_tangent_feynman_kac",
+          "label_rms": 1.5249093624323091,
+          "left_endpoint_predictable_martingale": true,
+          "martingale_path_mean": -0.02525281945588631,
+          "martingale_path_std": 4.41129989215198,
+          "nonfinite_count": 0,
+          "paths": 64,
+          "peak_gpu_bytes": 30625280,
+          "points": 256,
+          "seed": 1910535867,
+          "source_actor_frozen": true,
+          "time_steps": 16,
+          "wall_seconds": 3.231064499937929,
+          "weight_ess_fraction": 1.0
+        },
+        "source": "a1",
+        "train": {
+          "actor_target": "gradient",
+          "alpha": 1.0,
+          "analytic_nonterminal_reference_used": false,
+          "c_max": 0.0,
+          "c_min": 0.0,
+          "complete_corrected_payoff_differentiated": true,
+          "estimator": "direct_alpha1_mcv",
+          "ground_truth_used": false,
+          "kind": "differentiable_linear_tangent_feynman_kac",
+          "label_rms": 1.5891726713199752,
+          "left_endpoint_predictable_martingale": true,
+          "martingale_path_mean": -0.0026533820950227494,
+          "martingale_path_std": 4.341944661981139,
+          "nonfinite_count": 0,
+          "paths": 64,
+          "peak_gpu_bytes": 30625280,
+          "points": 2048,
+          "seed": 1167110399,
+          "source_actor_frozen": true,
+          "time_steps": 16,
+          "wall_seconds": 26.412117899977602,
+          "weight_ess_fraction": 1.0
+        },
+        "train_bank_sha256": "3d2104151cd05cc290aeafe80b21ebf51b4543f5467d32fbe94cae0595b647e9",
+        "validation": {
+          "actor_target": "gradient",
+          "alpha": 1.0,
+          "analytic_nonterminal_reference_used": false,
+          "c_max": 0.0,
+          "c_min": 0.0,
+          "complete_corrected_payoff_differentiated": true,
+          "estimator": "direct_alpha1_mcv",
+          "ground_truth_used": false,
+          "kind": "differentiable_linear_tangent_feynman_kac",
+          "label_rms": 1.562940572034351,
+          "left_endpoint_predictable_martingale": true,
+          "martingale_path_mean": -0.07864914565507775,
+          "martingale_path_std": 4.407339498439567,
+          "nonfinite_count": 0,
+          "paths": 64,
+          "peak_gpu_bytes": 30625280,
+          "points": 256,
+          "seed": 4174638188,
+          "source_actor_frozen": true,
+          "time_steps": 16,
+          "wall_seconds": 3.2450494000222534,
+          "weight_ess_fraction": 1.0
+        },
+        "validation_bank_sha256": "b0b0d909834f341e526262f711aae3a490b312cd0bd77add1f2ffcfb8b628493"
+      },
+      "oom_chunk_fallback_used": false,
+      "phase_seconds": 35.752621600055136,
+      "trace": [
+        {
+          "learning_rate": 0.00015,
+          "step": 0.0,
+          "train_rmse": 1.5963585635934268,
+          "validation_normalized_mse": 0.9765998230118507,
+          "validation_rmse": 1.5704691462926355
+        },
+        {
+          "learning_rate": 0.00014999983550665344,
+          "step": 1.0,
+          "train_rmse": 1.590441706572174,
+          "validation_normalized_mse": 0.9689099643646569,
+          "validation_rmse": 1.564273899877119
+        },
+        {
+          "learning_rate": 0.00014632923872213657,
+          "step": 150.0,
+          "train_rmse": 1.3363787812350396,
+          "validation_normalized_mse": 0.6875079915490381,
+          "validation_rmse": 1.3176800278003356
+        },
+        {
+          "learning_rate": 0.00013567627457812122,
+          "step": 300.0,
+          "train_rmse": 1.199754669186344,
+          "validation_normalized_mse": 0.5857824623380636,
+          "validation_rmse": 1.216295977902296
+        },
+        {
+          "learning_rate": 0.00011908389392193551,
+          "step": 450.0,
+          "train_rmse": 0.9022035532414424,
+          "validation_normalized_mse": 0.37380570368468197,
+          "validation_rmse": 0.9716146396460482
+        },
+        {
+          "learning_rate": 9.817627457812103e-05,
+          "step": 600.0,
+          "train_rmse": 0.7859412325812279,
+          "validation_normalized_mse": 0.27972002372650684,
+          "validation_rmse": 0.840490610642412
+        },
+        {
+          "learning_rate": 7.500000000000005e-05,
+          "step": 750.0,
+          "train_rmse": 0.7521194235946508,
+          "validation_normalized_mse": 0.2508092489923356,
+          "validation_rmse": 0.7958713330002626
+        },
+        {
+          "learning_rate": 5.1823725421878974e-05,
+          "step": 900.0,
+          "train_rmse": 0.7253624938820445,
+          "validation_normalized_mse": 0.2318277980091695,
+          "validation_rmse": 0.7651627917423384
+        },
+        {
+          "learning_rate": 3.091610607806458e-05,
+          "step": 1050.0,
+          "train_rmse": 0.7082636217315985,
+          "validation_normalized_mse": 0.21959310182844902,
+          "validation_rmse": 0.7446984237958115
+        },
+        {
+          "learning_rate": 1.4323725421878976e-05,
+          "step": 1200.0,
+          "train_rmse": 0.6995068033762798,
+          "validation_normalized_mse": 0.21390263267756474,
+          "validation_rmse": 0.734986145810612
+        },
+        {
+          "learning_rate": 3.67076127786348e-06,
+          "step": 1350.0,
+          "train_rmse": 0.6962336554353189,
+          "validation_normalized_mse": 0.21171366989991097,
+          "validation_rmse": 0.7312157514650693
+        },
+        {
+          "learning_rate": 0.0,
+          "step": 1500.0,
+          "train_rmse": 0.6956751617740886,
+          "validation_normalized_mse": 0.21133935510230764,
+          "validation_rmse": 0.7305690620888249
+        }
+      ],
+      "training": {
+        "activation": "silu",
+        "analytic_nonterminal_features": false,
+        "config": {
+          "activation": "silu",
+          "batch_size": 256,
+          "checkpoint_interval": 150,
+          "depth": 3,
+          "gradient_clip": 10.0,
+          "label_estimator": "mcv",
+          "label_time_steps": 16,
+          "learning_rate": 0.00015,
+          "optimizer_steps": 1500,
+          "parent_batch": 4,
+          "path_chunk": 32,
+          "paths_per_label": 64,
+          "training_distribution": "frozen_pde_specific",
+          "training_points": 2048,
+          "validation_points": 256,
+          "width": 256
+        },
+        "depth": 3,
+        "ground_truth_used": false,
+        "input_dimension": 101,
+        "kind": "terminal_aware_full_ambient_tangent_actor",
+        "oracle_projection": false,
+        "output_dimension": 100,
+        "parameters": 183396,
+        "peak_gpu_bytes": 28785152,
+        "selected_by": "minimum held-out noisy tangent-label error",
+        "selected_step": 1500,
+        "selected_validation_normalized_mse": 0.21133935510230764,
+        "selected_validation_rmse": 0.7305690620888249,
+        "target_scale": 1.5891726713199752,
+        "wall_seconds": 2.6433849999448285,
+        "warm_started": true,
+        "width": 256
+      }
+    }
+  ],
+  "seed": 0,
+  "selection": {
+    "criterion": "minimum independent noise-corrected fixed-point inconsistency",
+    "ground_truth_used": false,
+    "rows": [
+      {
+        "actor": "a0",
+        "gradient_noise_corrected_component_rmse": 0.2335205253295372,
+        "gradient_raw_component_rmse": 0.23352978714170813,
+        "ground_truth_used": false,
+        "minimum_weight_ess_fraction": 1.0,
+        "nonfinite_count": 0,
+        "normalized_total_inconsistency": 54.435460520250615
+      },
+      {
+        "actor": "a1",
+        "gradient_noise_corrected_component_rmse": 1.6513258688090153,
+        "gradient_raw_component_rmse": 1.6570698414168645,
+        "ground_truth_used": false,
+        "minimum_weight_ess_fraction": 1.0,
+        "nonfinite_count": 0,
+        "normalized_total_inconsistency": 1.0044645922878652
+      },
+      {
+        "actor": "a2",
+        "gradient_noise_corrected_component_rmse": 11419.772860245977,
+        "gradient_raw_component_rmse": 11478.655373455258,
+        "ground_truth_used": false,
+        "minimum_weight_ess_fraction": 1.0,
+        "nonfinite_count": 0,
+        "normalized_total_inconsistency": 0.9897657747313036
+      }
+    ],
+    "selected_actor": "a2",
+    "wall_seconds": 10.146336800069548
+  },
+  "status": "complete",
+  "study_revision": "main_highdim_pilot_5070_v1",
+  "timing": {
+    "fitting_seconds": 5.290935099939816,
+    "label_generation_seconds": 65.96318109997083,
+    "selector_seconds": 10.146336800069548,
+    "training_total_invocation_seconds": 82.73120959999505
+  }
+}

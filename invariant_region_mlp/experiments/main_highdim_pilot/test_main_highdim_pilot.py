@@ -6,6 +6,7 @@ import numpy as np
 import torch
 
 from .actors import JointTerminalActor
+from .b6_adapter import load_b6_reuse
 from .common import load_dense, load_lqg
 from .equations import CoupledLQGEquation, DenseFourierDriver
 from .prepare import prepare
@@ -96,4 +97,23 @@ def test_frozen_inputs_are_idempotent_and_dimension_100() -> None:
     assert dense.d == lqg.d == 100
     assert first["coupled_lqg"]["benchmark_label"] == "RECREATED_PUBLISHED_BENCHMARK"
     assert JOINT_CONFIG.optimizer_steps == 1500
+
+
+def test_b6_read_only_adapter_audits_both_frozen_dimensions() -> None:
+    expected_banks = {
+        100: "84b2132607bc6b17e44adbea838915f8ce657813f6a0987e34deca308660f1c1",
+        400: "0df59abc155e90aa674532760578dc2563cbdb4aade97a849961c8a8edd9f2f9",
+    }
+    for dimension, bank_hash in expected_banks.items():
+        reuse = load_b6_reuse(dimension)
+        assert reuse["audit_status"] == "PASS"
+        assert reuse["label"] == "REUSED_MATURE_RESULT"
+        assert reuse["calibration"]["bank_sha256"] == bank_hash
+        assert [row["actor_request"] for row in reuse["iterations"]] == [
+            "a0",
+            "a1",
+            "a2",
+            "a3",
+            "a4",
+        ]
 
