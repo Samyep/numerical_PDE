@@ -4,12 +4,12 @@
 
 | Criterion | Verdict | Wins / evaluated | Required |
 |---|---|---:|---:|
-| H1 | **NOT EVALUATED (COMPUTE)** | 0 / 3 | 4 |
+| H1 | **FAIL** | 0 / 4 | 4 |
 | H2 | **NOT EVALUATED (COMPUTE)** | 0 / 0 | 2 |
 | H3 | **NOT EVALUATED (COMPUTE)** | 3 / 3 | 4 |
 | H4 | **NOT EVALUATED (COMPUTE)** | 2 / 2 | 3 |
 | H5 | **PASS** | 2 / 2 | 2 |
-| H6 | **NOT EVALUATED (COMPUTE)** | 0 / 1 | 2 |
+| H6 | **FAIL** | 0 / 2 | 2 |
 
 ## Pre-registered criteria (verbatim)
 
@@ -17,14 +17,14 @@
 
 > RMSE(TA) <= 0.5 x RMSE(TA_a0) in all 4 (PDE, d) cells.
 
-**Verdict: NOT EVALUATED (COMPUTE).**
+**Verdict: FAIL.**
 
 | PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | 0.00258117 | 0.711292 | no |
 | B6 | 100 | 0.00133404 | 0.00164973 | 0.808644 | no |
 | S05 | 400 | 0.00196131 | 0.00234057 | 0.837961 | no |
-| B6 | 400 | NA | NA | NA | not evaluated |
+| B6 | 400 | 0.00288083 | 0.00387309 | 0.743808 | no |
 
 ### H2
 
@@ -37,7 +37,7 @@
 | S05 | 100 | 0.00183597 | NA | NA | not evaluated |
 | B6 | 100 | 0.00133404 | NA | NA | not evaluated |
 | S05 | 400 | 0.00196131 | NA | NA | not evaluated |
-| B6 | 400 | NA | NA | NA | not evaluated |
+| B6 | 400 | 0.00288083 | NA | NA | not evaluated |
 
 ### H3
 
@@ -50,7 +50,7 @@
 | S05 | 100 | 0.00183597 | 0.277487 | 0.00661642 | yes |
 | B6 | 100 | 0.00133404 | 0.0865748 | 0.0154091 | yes |
 | S05 | 400 | 0.00196131 | 2.21073 | 0.000887174 | yes |
-| B6 | 400 | NA | NA | NA | not evaluated |
+| B6 | 400 | 0.00288083 | NA | NA | not evaluated |
 
 ### H4
 
@@ -63,7 +63,7 @@
 | S05 | 100 | 0.00183597 | 0.00705174 | 0.260357 | yes |
 | B6 | 100 | 0.00133404 | 0.00297944 | 0.44775 | yes |
 | S05 | 400 | 0.00196131 | NA | NA | not evaluated |
-| B6 | 400 | NA | NA | NA | not evaluated |
+| B6 | 400 | 0.00288083 | NA | NA | not evaluated |
 
 ### H5
 
@@ -76,18 +76,18 @@
 | S05 | 100 | 0.00183597 | NA | NA | yes |
 | B6 | 100 | 0.00133404 | NA | NA | yes |
 | S05 | 400 | 0.00196131 | NA | NA | not evaluated |
-| B6 | 400 | NA | NA | NA | not evaluated |
+| B6 | 400 | 0.00288083 | NA | NA | not evaluated |
 
 ### H6
 
 > For B6, r_glob >= d/4 at the frozen calibration, and H1 holds on B6 at both d.
 
-**Verdict: NOT EVALUATED (COMPUTE).**
+**Verdict: FAIL.**
 
 | PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
 |---|---:|---:|---:|---:|---|
 | B6 | 100 | 28.9865 | 25 | 0 | no |
-| B6 | 400 | 77.1437 | 100 | NA | not evaluated |
+| B6 | 400 | 77.1437 | 100 | 0 | no |
 
 ## B6 calibration (reference-only, frozen before solver runs)
 
@@ -133,6 +133,8 @@ S05 global gradient-covariance effective ranks (same definition as `r_glob`): d=
 |---|---:|---:|---|---|---:|---:|---:|---:|
 | B6 | 100 | 0 | a0 | a0 | 64 | 0.00164973 | 0.00159905 | 27.2393 |
 | B6 | 100 | 0 | selected | a4 | 64 | 0.00133404 | 0.00134975 | 27.1994 |
+| B6 | 400 | 0 | a0 | a0 | 64 | 0.00387309 | 0.00296428 | 25.3635 |
+| B6 | 400 | 0 | selected | a4 | 64 | 0.00288083 | 0.00254932 | 25.3878 |
 | S05 | 100 | 0 | a0 | a0 | 64 | 0.00258117 | 0.00200584 | 45.2258 |
 | S05 | 100 | 0 | selected | a4 | 64 | 0.00183597 | 0.00183033 | 45.6979 |
 | S05 | 400 | 0 | a0 | a0 | 64 | 0.00234057 | 0.00196193 | 44.902 |
@@ -213,7 +215,7 @@ The headline uses the arithmetic mean of the four independently replicated 256-p
 
 ## Failures and deviations
 
-- Mechanical criterion failures: none among evaluated criteria.
+- Mechanical criterion failures: H1, H6.
 - Frozen Full-History rows not yet available: 68; affected criteria are marked `NOT EVALUATED (COMPUTE)` rather than removed.
 - Runtime hardware deviation: the requested GH200 was unavailable; all new timings are from an NVIDIA GeForce RTX 5070 Ti. Historical reused S05 rows were generated on the same GPU model.
 - The two final-suite DPI unit tests that import the external `picard` package were not runnable because that optional package is absent; the 16 relevant highdim/nonridge tests passed.
@@ -226,7 +228,7 @@ The headline uses the arithmetic mean of the four independently replicated 256-p
 
 - Preregistration commit: `d97ea678c0daddf1b74117289237591593e9aeed`.
 - Calibration freeze commit: `a3d3887817b84d3f6b2aaa57ed787dab3825e2dc`.
-- Analysis commit/worktree head: `dba32fdf363aa8bc12c9eb7ff6f6eeb02c17e223`.
+- Analysis commit/worktree head: `b501bf54556664778bbcbecbafa4afa3f6edcb4d`.
 - Imported nonridge commit: `d384f4e8`; byte-identity audit: PASS (11/11 blobs identical).
 - Frozen final-suite protocol SHA-256: `80e81e5388e71aabbd5f5553939b84c4e265b5871a889402882288037491ee79`.
 - Frozen review-gate SHA-256: `ee59264b2e8348be33a0a19c3dc97941772df9c6edfadfa57c8688759f707f19`.
