@@ -1,6 +1,6 @@
 {
-  "completed_actor_replicates": 8,
-  "completed_fh_rows": 99,
+  "completed_actor_replicates": 16,
+  "completed_fh_rows": 165,
   "criteria": {
     "H1": {
       "details": [
@@ -13,12 +13,12 @@
           "ta_rmse": 0.0018359682407239472
         },
         {
-          "comparison_rmse": null,
+          "comparison_rmse": 0.0016497302969095177,
           "dimension": 100,
-          "met": null,
+          "met": false,
           "pde_id": "B6",
-          "ratio": null,
-          "ta_rmse": null
+          "ratio": 0.8086435752558863,
+          "ta_rmse": 0.0013340438055008672
         },
         {
           "comparison_rmse": null,
@@ -37,7 +37,7 @@
           "ta_rmse": null
         }
       ],
-      "evaluated": 1,
+      "evaluated": 2,
       "required": 4,
       "verdict": "NOT EVALUATED (COMPUTE)",
       "wins": 0
@@ -58,7 +58,7 @@
           "met": null,
           "pde_id": "B6",
           "ratio": null,
-          "ta_rmse": null
+          "ta_rmse": 0.0013340438055008672
         },
         {
           "comparison_rmse": null,
@@ -93,12 +93,12 @@
           "ta_rmse": 0.0018359682407239472
         },
         {
-          "comparison_rmse": null,
+          "comparison_rmse": 0.08657479468787527,
           "dimension": 100,
-          "met": null,
+          "met": true,
           "pde_id": "B6",
-          "ratio": null,
-          "ta_rmse": null
+          "ratio": 0.015409147781527445,
+          "ta_rmse": 0.0013340438055008672
         },
         {
           "comparison_rmse": null,
@@ -117,10 +117,10 @@
           "ta_rmse": null
         }
       ],
-      "evaluated": 1,
+      "evaluated": 2,
       "required": 4,
       "verdict": "NOT EVALUATED (COMPUTE)",
-      "wins": 1
+      "wins": 2
     },
     "H4": {
       "details": [
@@ -133,12 +133,12 @@
           "ta_rmse": 0.0018359682407239472
         },
         {
-          "comparison_rmse": null,
+          "comparison_rmse": 0.002979440415160897,
           "dimension": 100,
-          "met": null,
+          "met": true,
           "pde_id": "B6",
-          "ratio": null,
-          "ta_rmse": null
+          "ratio": 0.44774978506453056,
+          "ta_rmse": 0.0013340438055008672
         },
         {
           "comparison_rmse": null,
@@ -157,10 +157,10 @@
           "ta_rmse": null
         }
       ],
-      "evaluated": 1,
+      "evaluated": 2,
       "required": 3,
       "verdict": "NOT EVALUATED (COMPUTE)",
-      "wins": 1
+      "wins": 2
     },
     "H5": {
       "details": [
@@ -178,11 +178,11 @@
           "dimension": 100,
           "fh_min_seconds": null,
           "fh_reached": false,
-          "met": null,
+          "met": true,
           "pde_id": "B6",
-          "ta_rmse": null,
-          "ta_total_seconds": null,
-          "threshold": null
+          "ta_rmse": 0.0013340438055008672,
+          "ta_total_seconds": 1018.6280844249559,
+          "threshold": 0.0026680876110017344
         },
         {
           "dimension": 400,
@@ -205,17 +205,17 @@
           "threshold": null
         }
       ],
-      "evaluated": 1,
+      "evaluated": 2,
       "required": 2,
-      "verdict": "NOT EVALUATED (COMPUTE)",
-      "wins": 1
+      "verdict": "PASS",
+      "wins": 2
     },
     "H6": {
       "details": [
         {
           "dimension": 100,
-          "h1_met": null,
-          "met": null,
+          "h1_met": false,
+          "met": false,
           "pde_id": "B6",
           "r_glob": 28.986504306789158,
           "rank_threshold": 25.0
@@ -229,7 +229,7 @@
           "rank_threshold": 100.0
         }
       ],
-      "evaluated": 0,
+      "evaluated": 1,
       "required": 2,
       "verdict": "NOT EVALUATED (COMPUTE)",
       "wins": 0
@@ -237,7 +237,7 @@
   },
   "expected_fh_rows": 264,
   "provenance": {
-    "analysis_commit": "09bffa2bb794a93f40a1ddec04b36cb4d160598a",
+    "analysis_commit": "2b0f71f7327d3551ce8d76489e70425f017a057d",
     "calibration_freeze_commit": "a3d3887817b84d3f6b2aaa57ed787dab3825e2dc",
     "frozen_protocol_sha256": "80e81e5388e71aabbd5f5553939b84c4e265b5871a889402882288037491ee79",
     "gpu_name": "NVIDIA GeForce RTX 5070 Ti",

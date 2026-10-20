@@ -4,12 +4,12 @@
 
 | Criterion | Verdict | Wins / evaluated | Required |
 |---|---|---:|---:|
-| H1 | **NOT EVALUATED (COMPUTE)** | 0 / 1 | 4 |
+| H1 | **NOT EVALUATED (COMPUTE)** | 0 / 2 | 4 |
 | H2 | **NOT EVALUATED (COMPUTE)** | 0 / 0 | 2 |
-| H3 | **NOT EVALUATED (COMPUTE)** | 1 / 1 | 4 |
-| H4 | **NOT EVALUATED (COMPUTE)** | 1 / 1 | 3 |
-| H5 | **NOT EVALUATED (COMPUTE)** | 1 / 1 | 2 |
-| H6 | **NOT EVALUATED (COMPUTE)** | 0 / 0 | 2 |
+| H3 | **NOT EVALUATED (COMPUTE)** | 2 / 2 | 4 |
+| H4 | **NOT EVALUATED (COMPUTE)** | 2 / 2 | 3 |
+| H5 | **PASS** | 2 / 2 | 2 |
+| H6 | **NOT EVALUATED (COMPUTE)** | 0 / 1 | 2 |
 
 ## Pre-registered criteria (verbatim)
 
@@ -22,7 +22,7 @@
 | PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | 0.00258117 | 0.711292 | no |
-| B6 | 100 | NA | NA | NA | not evaluated |
+| B6 | 100 | 0.00133404 | 0.00164973 | 0.808644 | no |
 | S05 | 400 | NA | NA | NA | not evaluated |
 | B6 | 400 | NA | NA | NA | not evaluated |
 
@@ -35,7 +35,7 @@
 | PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | NA | NA | not evaluated |
-| B6 | 100 | NA | NA | NA | not evaluated |
+| B6 | 100 | 0.00133404 | NA | NA | not evaluated |
 | S05 | 400 | NA | NA | NA | not evaluated |
 | B6 | 400 | NA | NA | NA | not evaluated |
 
@@ -48,7 +48,7 @@
 | PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | 0.277487 | 0.00661642 | yes |
-| B6 | 100 | NA | NA | NA | not evaluated |
+| B6 | 100 | 0.00133404 | 0.0865748 | 0.0154091 | yes |
 | S05 | 400 | NA | NA | NA | not evaluated |
 | B6 | 400 | NA | NA | NA | not evaluated |
 
@@ -61,7 +61,7 @@
 | PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | 0.00705174 | 0.260357 | yes |
-| B6 | 100 | NA | NA | NA | not evaluated |
+| B6 | 100 | 0.00133404 | 0.00297944 | 0.44775 | yes |
 | S05 | 400 | NA | NA | NA | not evaluated |
 | B6 | 400 | NA | NA | NA | not evaluated |
 
@@ -69,12 +69,12 @@
 
 > In at least 2 of the 4 cells, the best Full-History family does not reach 2 x RMSE(TA) within its frozen grid, or needs more GPU seconds than TA's total to do so.
 
-**Verdict: NOT EVALUATED (COMPUTE).**
+**Verdict: PASS.**
 
 | PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | NA | NA | yes |
-| B6 | 100 | NA | NA | NA | not evaluated |
+| B6 | 100 | 0.00133404 | NA | NA | yes |
 | S05 | 400 | NA | NA | NA | not evaluated |
 | B6 | 400 | NA | NA | NA | not evaluated |
 
@@ -86,7 +86,7 @@
 
 | PDE | d | TA RMSE / r_glob | comparison / threshold | ratio / H1 | met |
 |---|---:|---:|---:|---:|---|
-| B6 | 100 | 28.9865 | 25 | NA | not evaluated |
+| B6 | 100 | 28.9865 | 25 | 0 | no |
 | B6 | 400 | 77.1437 | 100 | NA | not evaluated |
 
 ## B6 calibration (reference-only, frozen before solver runs)
@@ -131,6 +131,8 @@ S05 global gradient-covariance effective ranks (same definition as `r_glob`): d=
 
 | PDE | d | seed | actor | resolved | steps | RMSE | MC contribution | GPU s |
 |---|---:|---:|---|---|---:|---:|---:|---:|
+| B6 | 100 | 0 | a0 | a0 | 64 | 0.00164973 | 0.00159905 | 27.2393 |
+| B6 | 100 | 0 | selected | a4 | 64 | 0.00133404 | 0.00134975 | 27.1994 |
 | S05 | 100 | 0 | a0 | a0 | 64 | 0.00258117 | 0.00200584 | 45.2258 |
 | S05 | 100 | 0 | selected | a4 | 64 | 0.00183597 | 0.00183033 | 45.6979 |
 
@@ -140,6 +142,28 @@ The headline uses the arithmetic mean of the four independently replicated 256-p
 
 | PDE | d | method | n | M | reps | reused | RMSE | skill | GPU s | nonfinite |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| B6 | 100 | FH_rep | 3 | 16 | 3 | 0 | 0.0106588 | 0.0163939 | 9.80927 | 0 |
+| B6 | 100 | FH_rep | 3 | 24 | 3 | 0 | 0.00669937 | 0.0103041 | 32.9594 | 0 |
+| B6 | 100 | FH_rep | 3 | 32 | 3 | 0 | 0.00470947 | 0.00724346 | 78.1395 | 0 |
+| B6 | 100 | FH_rep | 4 | 6 | 3 | 0 | 0.0171328 | 0.0263513 | 11.1174 | 0 |
+| B6 | 100 | FH_rep | 4 | 10 | 3 | 0 | 0.00669291 | 0.0102941 | 76.2747 | 0 |
+| B6 | 100 | FH_rep | 4 | 16 | 3 | 0 | 0.00297944 | 0.00458256 | 482.29 | 0 |
+| B6 | 100 | FH_path | 2 | 16 | 3 | 0 | 0.0426869 | 0.0656551 | 0.180162 | 0 |
+| B6 | 100 | FH_path | 2 | 64 | 3 | 0 | 0.0164603 | 0.025317 | 2.09848 | 0 |
+| B6 | 100 | FH_path | 2 | 256 | 3 | 0 | 0.00847328 | 0.0130324 | 33.604 | 0 |
+| B6 | 100 | FH_path | 3 | 8 | 3 | 0 | 0.518291 | 0.797164 | 0.67549 | 0 |
+| B6 | 100 | FH_path | 3 | 16 | 3 | 0 | 0.252203 | 0.387904 | 4.34311 | 0 |
+| B6 | 100 | FH_path | 3 | 24 | 3 | 0 | 0.16726 | 0.257256 | 14.5248 | 0 |
+| B6 | 100 | FH_path | 4 | 6 | 3 | 0 | 19.8313 | 30.5018 | 3.21938 | 0 |
+| B6 | 100 | FH_path | 4 | 10 | 3 | 0 | 3.84832 | 5.91895 | 22.3193 | 0 |
+| B6 | 100 | FH_raw | 2 | 16 | 3 | 0 | 1.45919 | 2.24432 | 0.194804 | 0 |
+| B6 | 100 | FH_raw | 2 | 64 | 3 | 0 | 0.357972 | 0.550583 | 1.21793 | 0 |
+| B6 | 100 | FH_raw | 2 | 256 | 3 | 0 | 0.0865748 | 0.133157 | 19.3622 | 0 |
+| B6 | 100 | FH_raw | 3 | 8 | 3 | 0 | 221.05 | 339.989 | 0.436529 | 0 |
+| B6 | 100 | FH_raw | 3 | 16 | 3 | 0 | 27.135 | 41.7353 | 2.53926 | 0 |
+| B6 | 100 | FH_raw | 3 | 24 | 3 | 0 | 8.49411 | 13.0645 | 8.47555 | 0 |
+| B6 | 100 | FH_raw | 4 | 6 | 3 | 0 | 1.55323e+07 | 2.38896e+07 | 1.97461 | 0 |
+| B6 | 100 | FH_raw | 4 | 10 | 3 | 0 | 302251 | 464881 | 13.1797 | 0 |
 | S05 | 100 | FH_rep | 3 | 16 | 3 | 3 | 0.0237027 | 0.0193267 | 10.1359 | 0 |
 | S05 | 100 | FH_rep | 3 | 24 | 3 | 3 | 0.0153439 | 0.0125111 | 34.064 | 0 |
 | S05 | 100 | FH_rep | 3 | 32 | 3 | 3 | 0.010683 | 0.00871071 | 80.5085 | 0 |
@@ -177,7 +201,7 @@ The headline uses the arithmetic mean of the four independently replicated 256-p
 ## Failures and deviations
 
 - Mechanical criterion failures: none among evaluated criteria.
-- Frozen Full-History rows not yet available: 165; affected criteria are marked `NOT EVALUATED (COMPUTE)` rather than removed.
+- Frozen Full-History rows not yet available: 99; affected criteria are marked `NOT EVALUATED (COMPUTE)` rather than removed.
 - Runtime hardware deviation: the requested GH200 was unavailable; all new timings are from an NVIDIA GeForce RTX 5070 Ti. Historical reused S05 rows were generated on the same GPU model.
 - The two final-suite DPI unit tests that import the external `picard` package were not runnable because that optional package is absent; the 16 relevant highdim/nonridge tests passed.
 - Reused S05 artifacts do not contain per-point predictions, so their MC/non-MC decomposition is unavailable; no proxy was invented.
@@ -187,7 +211,7 @@ The headline uses the arithmetic mean of the four independently replicated 256-p
 
 - Preregistration commit: `d97ea678c0daddf1b74117289237591593e9aeed`.
 - Calibration freeze commit: `a3d3887817b84d3f6b2aaa57ed787dab3825e2dc`.
-- Analysis commit/worktree head: `09bffa2bb794a93f40a1ddec04b36cb4d160598a`.
+- Analysis commit/worktree head: `2b0f71f7327d3551ce8d76489e70425f017a057d`.
 - Imported nonridge commit: `d384f4e8`; byte-identity audit: PASS (11/11 blobs identical).
 - Frozen final-suite protocol SHA-256: `80e81e5388e71aabbd5f5553939b84c4e265b5871a889402882288037491ee79`.
 - Frozen review-gate SHA-256: `ee59264b2e8348be33a0a19c3dc97941772df9c6edfadfa57c8688759f707f19`.
