@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import torch
 
+from .analyze import _curtailed_rows, _json_rows
 from .equations import fixed_points, make_actor_benchmark, make_b6_equation, make_s05_equation
 from .protocol import fh_tasks
 from .solver import B6TorchEquation, load_b6_selection
@@ -13,6 +14,24 @@ from .solver import B6TorchEquation, load_b6_selection
 def test_frozen_grid_has_expected_size() -> None:
     # Per problem: 2 dimensions x 3 repetitions x (8 raw + 8 path + 6 repaired).
     assert len(fh_tasks()) == 2 * 2 * 3 * 22
+
+
+def test_compute_curtailment_is_not_treated_as_an_estimate(tmp_path) -> None:
+    result = {"pde_id": "S05", "dimension": 400, "method": "raw", "n": 2, "M": 16}
+    (tmp_path / "rep00.json").write_text(__import__("json").dumps(result), encoding="utf-8")
+    marker = {
+        "reason": "threshold",
+        "rep0_seconds": 1801.0,
+        "task": {"pde_id": "S05", "d": 400, "method": "raw", "n": 2, "M": 16, "repetition": 1},
+    }
+    (tmp_path / "rep01.curtailed.json").write_text(
+        __import__("json").dumps(marker), encoding="utf-8"
+    )
+    assert len(_json_rows(tmp_path)) == 1
+    curtailed = _curtailed_rows(tmp_path)
+    assert len(curtailed) == 1
+    assert curtailed[0]["status"] == "curtailed_after_rep0"
+    assert curtailed[0]["rep0_seconds"] == 1801.0
 
 
 def test_b6_construction_and_terminal_identity() -> None:

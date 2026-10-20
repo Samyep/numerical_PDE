@@ -4,9 +4,9 @@
 
 | Criterion | Verdict | Wins / evaluated | Required |
 |---|---|---:|---:|
-| H1 | **NOT EVALUATED (COMPUTE)** | 0 / 2 | 4 |
+| H1 | **NOT EVALUATED (COMPUTE)** | 0 / 3 | 4 |
 | H2 | **NOT EVALUATED (COMPUTE)** | 0 / 0 | 2 |
-| H3 | **NOT EVALUATED (COMPUTE)** | 2 / 2 | 4 |
+| H3 | **NOT EVALUATED (COMPUTE)** | 3 / 3 | 4 |
 | H4 | **NOT EVALUATED (COMPUTE)** | 2 / 2 | 3 |
 | H5 | **PASS** | 2 / 2 | 2 |
 | H6 | **NOT EVALUATED (COMPUTE)** | 0 / 1 | 2 |
@@ -23,7 +23,7 @@
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | 0.00258117 | 0.711292 | no |
 | B6 | 100 | 0.00133404 | 0.00164973 | 0.808644 | no |
-| S05 | 400 | NA | NA | NA | not evaluated |
+| S05 | 400 | 0.00196131 | 0.00234057 | 0.837961 | no |
 | B6 | 400 | NA | NA | NA | not evaluated |
 
 ### H2
@@ -36,7 +36,7 @@
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | NA | NA | not evaluated |
 | B6 | 100 | 0.00133404 | NA | NA | not evaluated |
-| S05 | 400 | NA | NA | NA | not evaluated |
+| S05 | 400 | 0.00196131 | NA | NA | not evaluated |
 | B6 | 400 | NA | NA | NA | not evaluated |
 
 ### H3
@@ -49,7 +49,7 @@
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | 0.277487 | 0.00661642 | yes |
 | B6 | 100 | 0.00133404 | 0.0865748 | 0.0154091 | yes |
-| S05 | 400 | NA | NA | NA | not evaluated |
+| S05 | 400 | 0.00196131 | 2.21073 | 0.000887174 | yes |
 | B6 | 400 | NA | NA | NA | not evaluated |
 
 ### H4
@@ -62,7 +62,7 @@
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | 0.00705174 | 0.260357 | yes |
 | B6 | 100 | 0.00133404 | 0.00297944 | 0.44775 | yes |
-| S05 | 400 | NA | NA | NA | not evaluated |
+| S05 | 400 | 0.00196131 | NA | NA | not evaluated |
 | B6 | 400 | NA | NA | NA | not evaluated |
 
 ### H5
@@ -75,7 +75,7 @@
 |---|---:|---:|---:|---:|---|
 | S05 | 100 | 0.00183597 | NA | NA | yes |
 | B6 | 100 | 0.00133404 | NA | NA | yes |
-| S05 | 400 | NA | NA | NA | not evaluated |
+| S05 | 400 | 0.00196131 | NA | NA | not evaluated |
 | B6 | 400 | NA | NA | NA | not evaluated |
 
 ### H6
@@ -135,6 +135,8 @@ S05 global gradient-covariance effective ranks (same definition as `r_glob`): d=
 | B6 | 100 | 0 | selected | a4 | 64 | 0.00133404 | 0.00134975 | 27.1994 |
 | S05 | 100 | 0 | a0 | a0 | 64 | 0.00258117 | 0.00200584 | 45.2258 |
 | S05 | 100 | 0 | selected | a4 | 64 | 0.00183597 | 0.00183033 | 45.6979 |
+| S05 | 400 | 0 | a0 | a0 | 64 | 0.00234057 | 0.00196193 | 44.902 |
+| S05 | 400 | 0 | selected | a4 | 64 | 0.00196131 | 0.00187815 | 44.3855 |
 
 The headline uses the arithmetic mean of the four independently replicated 256-path RMSE values; the repetitions are not pooled into a 1,024-path estimator. Truth was loaded only after reference-free checkpoint selection.
 
@@ -191,27 +193,40 @@ The headline uses the arithmetic mean of the four independently replicated 256-p
 | S05 | 400 | FH_rep | 3 | 32 | 3 | 3 | 0.0102832 | 0.00686995 | 352.12 | 0 |
 | S05 | 400 | FH_rep | 4 | 6 | 3 | 3 | 0.03233 | 0.0215988 | 45.0893 | 0 |
 | S05 | 400 | FH_rep | 4 | 10 | 3 | 3 | 0.0131393 | 0.00877801 | 332.197 | 0 |
+| S05 | 400 | FH_rep | 4 | 16 | 1 | 0 | 0.00629363 | 0.00420461 | 2109.83 | 0 |
 | S05 | 400 | FH_path | 2 | 16 | 3 | 3 | 0.0927653 | 0.0619742 | 0.718062 | 0 |
 | S05 | 400 | FH_path | 2 | 64 | 3 | 3 | 0.0421755 | 0.0281764 | 9.51981 | 0 |
 | S05 | 400 | FH_path | 2 | 256 | 3 | 3 | 0.0272684 | 0.0182173 | 150.715 | 0 |
+| S05 | 400 | FH_path | 3 | 8 | 3 | 0 | 15.1065 | 10.0923 | 2.69361 | 0 |
 | S05 | 400 | FH_path | 3 | 16 | 3 | 3 | 7.44757 | 4.97554 | 19.4894 | 0 |
+| S05 | 400 | FH_path | 3 | 24 | 3 | 0 | 4.97737 | 3.32526 | 65.7476 | 0 |
+| S05 | 400 | FH_path | 4 | 6 | 3 | 0 | 53800.6 | 35942.8 | 13.5599 | 0 |
+| S05 | 400 | FH_path | 4 | 10 | 3 | 0 | 11387.8 | 7607.9 | 98.8178 | 0 |
+| S05 | 400 | FH_raw | 2 | 16 | 3 | 0 | 35.8169 | 23.9284 | 0.553182 | 0 |
 | S05 | 400 | FH_raw | 2 | 64 | 3 | 3 | 8.89762 | 5.94427 | 4.86999 | 0 |
+| S05 | 400 | FH_raw | 2 | 256 | 3 | 0 | 2.21073 | 1.47694 | 76.2904 | 0 |
+| S05 | 400 | FH_raw | 3 | 8 | 3 | 0 | 454065 | 303349 | 1.51136 | 0 |
 | S05 | 400 | FH_raw | 3 | 16 | 3 | 3 | 53531.9 | 35763.3 | 10.0745 | 0 |
+| S05 | 400 | FH_raw | 3 | 24 | 3 | 0 | 15632.4 | 10443.6 | 34.2148 | 0 |
+| S05 | 400 | FH_raw | 4 | 6 | 3 | 0 | 2.60158e+14 | 1.73805e+14 | 7.3011 | 0 |
+| S05 | 400 | FH_raw | 4 | 10 | 3 | 0 | 5.67604e+12 | 3.79202e+12 | 51.7859 | 0 |
 
 ## Failures and deviations
 
 - Mechanical criterion failures: none among evaluated criteria.
-- Frozen Full-History rows not yet available: 99; affected criteria are marked `NOT EVALUATED (COMPUTE)` rather than removed.
+- Frozen Full-History rows not yet available: 68; affected criteria are marked `NOT EVALUATED (COMPUTE)` rather than removed.
 - Runtime hardware deviation: the requested GH200 was unavailable; all new timings are from an NVIDIA GeForce RTX 5070 Ti. Historical reused S05 rows were generated on the same GPU model.
 - The two final-suite DPI unit tests that import the external `picard` package were not runnable because that optional package is absent; the 16 relevant highdim/nonridge tests passed.
 - Reused S05 artifacts do not contain per-point predictions, so their MC/non-MC decomposition is unavailable; no proxy was invented.
 - B6 d=400 selected r_glob is below d/4. The frozen selector was applied unchanged and the resulting H6 failure is retained.
+- Compute-curtailed: S05, d=400, FH_rep, n=4, M=16, rep=1 after rep0 took 2124.8 GPU seconds.
+- Compute-curtailed: S05, d=400, FH_rep, n=4, M=16, rep=2 after rep0 took 2124.8 GPU seconds.
 
 ## Provenance
 
 - Preregistration commit: `d97ea678c0daddf1b74117289237591593e9aeed`.
 - Calibration freeze commit: `a3d3887817b84d3f6b2aaa57ed787dab3825e2dc`.
-- Analysis commit/worktree head: `2b0f71f7327d3551ce8d76489e70425f017a057d`.
+- Analysis commit/worktree head: `dba32fdf363aa8bc12c9eb7ff6f6eeb02c17e223`.
 - Imported nonridge commit: `d384f4e8`; byte-identity audit: PASS (11/11 blobs identical).
 - Frozen final-suite protocol SHA-256: `80e81e5388e71aabbd5f5553939b84c4e265b5871a889402882288037491ee79`.
 - Frozen review-gate SHA-256: `ee59264b2e8348be33a0a19c3dc97941772df9c6edfadfa57c8688759f707f19`.

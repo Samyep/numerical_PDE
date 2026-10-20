@@ -93,7 +93,7 @@ def _json_rows(root: Path) -> list[dict[str, Any]]:
     if not root.is_dir():
         return rows
     for path in sorted(root.rglob("*.json")):
-        if path.name.endswith(".failure.json"):
+        if path.name.endswith((".failure.json", ".curtailed.json")):
             continue
         try:
             row = json.loads(path.read_text(encoding="utf-8"))
@@ -101,6 +101,29 @@ def _json_rows(root: Path) -> list[dict[str, Any]]:
             continue
         row["artifact_path"] = str(path)
         rows.append(row)
+    return rows
+
+
+def _curtailed_rows(root: Path) -> list[dict[str, Any]]:
+    """Read compute-curtailment markers without treating them as estimates."""
+    rows: list[dict[str, Any]] = []
+    if not root.is_dir():
+        return rows
+    for path in sorted(root.rglob("*.curtailed.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        task = payload.get("task", {})
+        rows.append(
+            {
+                **task,
+                "status": "curtailed_after_rep0",
+                "reason": payload.get("reason"),
+                "rep0_seconds": payload.get("rep0_seconds"),
+                "artifact_path": str(path),
+            }
+        )
     return rows
 
 
@@ -149,7 +172,12 @@ def _fh_frames() -> tuple[pd.DataFrame, pd.DataFrame]:
         row["repetitions"] = len(data)
         row["expected_repetitions"] = 3
         row["complete"] = len(data) == 3
-        row["reused_repetitions"] = int(data.get("reused", False).fillna(False).sum())
+        reused = (
+            data["reused"].eq(True)
+            if "reused" in data.columns
+            else pd.Series(False, index=data.index, dtype=bool)
+        )
+        row["reused_repetitions"] = int(reused.sum())
         for column in (
             "value_rmse", "skill", "value_relative_l2", "value_bias",
             "gradient_vector_rmse", "gradient_relative_l2", "wall_time_seconds",
@@ -563,6 +591,7 @@ def _report(
     outcomes: dict[str, Any], actor: pd.DataFrame, fh: pd.DataFrame,
     training: dict[tuple[str, int, int], dict[str, Any]], calibration: pd.DataFrame,
     validation: dict[str, Any], s05_ranks: dict[int, float], provenance: dict[str, Any],
+    curtailed: pd.DataFrame,
 ) -> None:
     lines = [
         "# High-effective-dimension, symmetry-free benchmark",
@@ -620,7 +649,7 @@ def _report(
             nonfinite = (row.mean_nonfinite_state_count if np.isfinite(row.mean_nonfinite_state_count) else 0) + (row.mean_nonfinite_generator_count if np.isfinite(row.mean_nonfinite_generator_count) else 0)
             lines.append(f"| {row.pde_id} | {int(row.dimension)} | {METHOD_LABELS[row.method]} | {int(row.n)} | {int(row.M)} | {int(row.repetitions)} | {int(row.reused_repetitions)} | {_number(row.mean_value_rmse)} | {_number(row.mean_skill)} | {_number(row.mean_wall_time_seconds)} | {_number(nonfinite)} |")
 
-    missing = len(fh_tasks()) - (0 if fh.empty else len(_json_rows(RAW_ROOT / "fh")))
+    missing = len(fh_tasks()) - (0 if fh.empty else int(fh.repetitions.sum()))
     failures = sorted(key for key, item in outcomes.items() if item["verdict"] == "FAIL")
     lines.extend([
         "", "## Failures and deviations", "",
@@ -630,7 +659,18 @@ def _report(
         "- The two final-suite DPI unit tests that import the external `picard` package were not runnable because that optional package is absent; the 16 relevant highdim/nonridge tests passed.",
         "- Reused S05 artifacts do not contain per-point predictions, so their MC/non-MC decomposition is unavailable; no proxy was invented.",
         "- B6 d=400 selected r_glob is below d/4. The frozen selector was applied unchanged and the resulting H6 failure is retained.",
-        "", "## Provenance", "",
+    ])
+    if curtailed.empty:
+        lines.append("- No Full-History repetitions were curtailed by the pre-registered 30-minute rule.")
+    else:
+        for _, row in curtailed.sort_values(["pde_id", "d", "method", "n", "M", "repetition"]).iterrows():
+            lines.append(
+                f"- Compute-curtailed: {row.pde_id}, d={int(row.d)}, "
+                f"{METHOD_LABELS[row.method]}, n={int(row.n)}, M={int(row.M)}, "
+                f"rep={int(row.repetition)} after rep0 took {_number(row.rep0_seconds)} GPU seconds."
+            )
+    lines.extend(["", "## Provenance", ""])
+    lines.extend([
         f"- Preregistration commit: `{provenance['preregistration_commit']}`.",
         f"- Calibration freeze commit: `{provenance['calibration_freeze_commit']}`.",
         f"- Analysis commit/worktree head: `{provenance['analysis_commit']}`.",
@@ -664,6 +704,7 @@ def analyze() -> dict[str, Any]:
     ensure_directories()
     actor_rows, actor_summary, training = _actor_frames()
     fh_rows, fh_summary = _fh_frames()
+    curtailed_rows = pd.DataFrame(_curtailed_rows(RAW_ROOT / "fh"))
     calibration = pd.read_csv(RESULTS_ROOT / "b6_calibration.csv")
     validation = json.loads((RESULTS_ROOT / "validation_summary.json").read_text(encoding="utf-8"))
     outcomes, threshold_rows = _criteria(actor_summary, fh_summary, training, calibration)
@@ -676,7 +717,11 @@ def analyze() -> dict[str, Any]:
     if not fh_export.empty:
         fh_export["row_family"] = "full_history"
         fh_export["method"] = fh_export["method"].map(METHOD_LABELS)
-    pd.concat((actor_export, fh_export), ignore_index=True, sort=False).to_csv(
+    curtailed_export = curtailed_rows.copy()
+    if not curtailed_export.empty:
+        curtailed_export["row_family"] = "full_history_curtailed"
+        curtailed_export["method"] = curtailed_export["method"].map(METHOD_LABELS)
+    pd.concat((actor_export, fh_export, curtailed_export), ignore_index=True, sort=False).to_csv(
         RESULTS_ROOT / "main_rows.csv", index=False
     )
     iteration = (
@@ -714,13 +759,17 @@ def analyze() -> dict[str, Any]:
         "s05_r_glob": {str(key): value for key, value in s05_ranks.items()},
         "completed_actor_replicates": len(actor_rows),
         "completed_fh_rows": len(fh_rows),
+        "curtailed_fh_rows": len(curtailed_rows),
         "expected_fh_rows": len(fh_tasks()),
         "provenance": provenance,
         "validation_all_passed": validation.get("all_passed", False),
     }
     write_json_atomic(RESULTS_ROOT / "analysis_summary.json", payload)
     _plots(actor_summary, fh_summary, frontier, calibration)
-    _report(outcomes, actor_summary, fh_summary, training, calibration, validation, s05_ranks, provenance)
+    _report(
+        outcomes, actor_summary, fh_summary, training, calibration, validation,
+        s05_ranks, provenance, curtailed_rows,
+    )
     print(json.dumps(payload, indent=2, sort_keys=True, allow_nan=True), flush=True)
     return payload
 
