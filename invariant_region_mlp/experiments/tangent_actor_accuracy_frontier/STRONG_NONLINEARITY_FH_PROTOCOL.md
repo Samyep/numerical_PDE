@@ -39,19 +39,21 @@ It does not retrain/reselect the Actor or change the final-suite 140-cell grid.
 ## Instructions on the GH200 HPC workspace
 
 ```bash
-# Use a scratch checkout of branch ir-mlp-strong-nonlinearity-fh-audit.
-# Keep the original HPC results/nonconvex_tangent_actor/{predictions,references}
-# available at the same project-relative paths. These large files are not
-# stored in GitHub.
-
-python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.strong_nonlinearity_fh_pair --dry-run
+# From the existing source checkout, create an isolated code worktree.
+# The main 140-cell sweep continues unchanged in the original checkout.
+git fetch origin ir-mlp-strong-nonlinearity-fh-audit
+git worktree add ../source_fh_strong origin/ir-mlp-strong-nonlinearity-fh-audit
+cd ../source_fh_strong
+# Point to original, untracked HPC prediction and independent reference files.
+DATA_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/nonconvex_tangent_actor
+python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.strong_nonlinearity_fh_pair --data-root "$DATA_ROOT" --dry-run
 
 # Example single cell; the 1800-second shell cap is in addition to the
 # script's own per-cell timeout. Always charge actual Slurm GPU allocation.
 timeout -k 60s 1800s python -m invariant_region_mlp.experiments.tangent_actor_accuracy_frontier.strong_nonlinearity_fh_pair \
   --family primary --lam 0.5 --eta 0 --budget pilot --d 100 \
   --actor-seed 0 --baseline-seed 0 --n 3 --M 32 \
-  --device cuda --max-seconds 1750
+  --data-root "$DATA_ROOT" --device cuda --max-seconds 1750
 
 # Repeat for the remaining frozen configurations, respecting available
 # Slurm GPU allocations. Independent configs may run concurrently ONLY on
