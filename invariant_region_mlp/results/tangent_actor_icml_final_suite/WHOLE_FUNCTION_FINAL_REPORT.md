@@ -1,18 +1,18 @@
 # Tangent-Actor whole-function benchmark
 
-**Integrity audit:** PASS. **Execution:** in_progress. Generated 2026-10-20T01:25:57.504045+00:00.
+**Integrity audit:** PASS. **Execution:** in_progress. Generated 2026-10-20T02:56:51.331272+00:00.
 
 This benchmark contains the predeclared 7 PDE x 5 dimension x 4 method grid. Every training seed is 0. Deep BSDE is excluded because it is a separate single-point task.
 
 ## Execution coverage
 
-- COMPLETE: 36
+- COMPLETE: 57
 - OUT_OF_TIME: 0
 - OUT_OF_MEMORY: 0
 - FAILED: 0
-- PENDING: 104
-- New measured GPU time: 5.984 GH200 hours (120-hour cap).
-- Slurm account charge: 12.017 credit-hours.
+- PENDING: 83
+- New measured GPU time: 9.718 GH200 hours (120-hour cap).
+- Slurm account charge: 19.486 credit-hours.
 
 Incomplete cells have blank accuracy fields and are absent from all numerical curves.
 Cell time is summed from completed attempts, including checkpoint resumes and failed attempts. Suite allocation time also includes reserved idle capacity, so the two totals need not agree.
@@ -44,13 +44,13 @@ The total below is measured cell GPU time. Training, selection, and inference co
 | Method | Complete cells | Cell GPU h | Training h | Selection h | Inference h |
 |---|---:|---:|---:|---:|---:|
 | Tangent-Actor + MCV | 9 | 4.714 | 4.108 | 0.145 | 0.283 |
-| DPI | 9 | 2.966 | 2.946 | 0.000 | 0.000 |
-| PINN-HTE | 9 | 1.383 | 1.368 | 0.000 | 0.000 |
-| SDGD-PINN | 9 | 18.502 | 18.474 | 0.000 | 0.000 |
+| DPI | 22 | 4.926 | 4.804 | 0.000 | 0.000 |
+| PINN-HTE | 17 | 2.550 | 2.487 | 0.000 | 0.000 |
+| SDGD-PINN | 9 | 19.076 | 18.474 | 0.000 | 0.000 |
 
 ## Stability and capped runs
 
-All 36 completed rows have finite primary metrics, and the audit found no reported nonfinite outputs. Checkpoint resumes are charged to the same six-hour cell budget. A cell is marked OUT_OF_TIME only after its cumulative attempts reach that cap; capped checkpoints never enter the complete ranking.
+All 57 completed rows have finite primary metrics, and the audit found no reported nonfinite outputs. Checkpoint resumes are charged to the same six-hour cell budget. A cell is marked OUT_OF_TIME only after its cumulative attempts reach that cap; capped checkpoints never enter the complete ranking.
 
 No cell has yet ended as OUT_OF_TIME, OUT_OF_MEMORY, or FAILED.
 
