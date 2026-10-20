@@ -120,7 +120,10 @@ submit_wave() {
   # One-hour backfill windows start much earlier than full-node two-hour
   # requests on the observed GH200 queue.  Checkpointable methods resume in a
   # later wave; nonresumable methods retain their frozen high-bound guard.
-  wall=3600
+  # submit_wave subtracts a 60-second suite-budget tail below, so start from
+  # 3660 seconds to request an exact one-hour Slurm window.  The worker keeps
+  # its separate four-minute teardown margin.
+  wall=3660
   (( wall > max_wall )) && wall=$max_wall
   # Keep a small unreserved tail rather than risk a rounding race at 120 hours.
   (( wall > 60 )) && wall=$((wall - 60))
