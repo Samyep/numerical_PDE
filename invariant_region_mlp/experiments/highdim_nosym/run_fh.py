@@ -192,6 +192,7 @@ def run_tasks(
     *,
     device: str = "cuda",
     reuse: bool = True,
+    reuse_only: bool = False,
     limit: int | None = None,
 ) -> dict[str, Any]:
     ensure_directories()
@@ -202,6 +203,33 @@ def run_tasks(
         if task_complete(task):
             completed += 1
             continue
+        if int(task["repetition"]) > 0:
+            first = dict(task)
+            first["repetition"] = 0
+            first_path = fh_task_path(first)
+            if first_path.is_file():
+                first_row = json.loads(first_path.read_text(encoding="utf-8"))
+                if float(first_row.get("task_wall_seconds", 0.0)) > 1800.0:
+                    write_json_atomic(
+                        path.with_suffix(".curtailed.json"),
+                        {
+                            "study_revision": REVISION,
+                            "task": task,
+                            "reason": "rep0 exceeded the pre-registered 30-minute per-seed threshold",
+                            "rep0_seconds": first_row["task_wall_seconds"],
+                        },
+                    )
+                    print(
+                        json.dumps(
+                            {
+                                "progress": f"{index}/{len(selected)}",
+                                "status": "curtailed_after_rep0",
+                                **task,
+                            }
+                        ),
+                        flush=True,
+                    )
+                    continue
         if reuse:
             row = reuse_s05_task(task)
             if row is not None:
@@ -213,6 +241,8 @@ def run_tasks(
                     flush=True,
                 )
                 continue
+        if reuse_only:
+            continue
         started = time.perf_counter()
         try:
             row = run_fh_task(task, device=device)
@@ -274,6 +304,7 @@ def main() -> None:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--no-reuse", action="store_true")
+    parser.add_argument("--reuse-only", action="store_true")
     args = parser.parse_args()
     tasks = filtered_tasks(
         pde_id=args.pde,
@@ -284,7 +315,11 @@ def main() -> None:
         repetition=args.repetition,
     )
     result = run_tasks(
-        tasks, device=args.device, reuse=not args.no_reuse, limit=args.limit
+        tasks,
+        device=args.device,
+        reuse=not args.no_reuse,
+        reuse_only=args.reuse_only,
+        limit=args.limit,
     )
     print(json.dumps(result, sort_keys=True), flush=True)
 
