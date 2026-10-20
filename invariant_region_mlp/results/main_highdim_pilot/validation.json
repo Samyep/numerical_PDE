@@ -1,0 +1,291 @@
+{
+  "calibration_rows": [
+    {
+      "benchmark_label": "ANALYTICALLY_INTEGRABLE_HIGH_DIMENSIONAL_STRESS_TEST",
+      "dimension": 100,
+      "driver_mean": 0.2433877735748859,
+      "driver_rms": 0.2647281716355292,
+      "driver_std": 0.10413163079367503,
+      "effective_rank": 23.728666300936577,
+      "heat_mc_paths_total": 32768,
+      "heat_mc_peak_gpu_bytes": 42794496,
+      "heat_mc_pointwise_se_rms": 0.001892343430953748,
+      "heat_mc_seconds": 0.5592987999552861,
+      "nonlinear_heat_rmse": 0.08354330932294968,
+      "nonlinear_skill": 0.2743548386676114,
+      "pde": "Dense Fourier joint",
+      "reference_uncertainty_rmse": 2e-13,
+      "test_states": 512,
+      "u_max": 2.145609871793503,
+      "u_mean": 1.3596305998339955,
+      "u_min": 0.2727210806258209,
+      "u_std": 0.304508240965142,
+      "z_rms": 0.7763685963700623,
+      "z_variance_outside_top10": 0.5084953339756307
+    },
+    {
+      "benchmark_label": "RECREATED_PUBLISHED_BENCHMARK",
+      "dimension": 100,
+      "driver_mean": -0.027713368733550833,
+      "driver_rms": 0.13630947800809387,
+      "driver_std": 0.13346251529278655,
+      "effective_rank": 15.19797383715406,
+      "heat_mc_paths_total": 32768,
+      "heat_mc_peak_gpu_bytes": 32897536,
+      "heat_mc_pointwise_se_rms": 0.0011920896775423691,
+      "heat_mc_seconds": 0.40418119996320456,
+      "nonlinear_heat_rmse": 0.01267198749477187,
+      "nonlinear_skill": 0.015461045924606204,
+      "pde": "Published coupled LQG",
+      "reference_uncertainty_rmse": 5.931029458216581e-16,
+      "test_states": 512,
+      "u_max": 4.989305751260427,
+      "u_mean": 4.027518431542515,
+      "u_min": 0.7725285863557616,
+      "u_std": 0.8196073898599864,
+      "z_rms": 0.2354288373736354,
+      "z_variance_outside_top10": 0.3268609352552152
+    }
+  ],
+  "calibration_total_seconds": 1.4301050000358373,
+  "checks": {
+    "dense_a0_terminal_anchor": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 2e-05,
+      "value": 1.8307691806995763e-07
+    },
+    "dense_discount_weight_sign": {
+      "passed": true,
+      "relation": "ge",
+      "threshold": 0.999998,
+      "value": 1.0016131401062012
+    },
+    "dense_exact_gradient_autodiff": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 2e-11,
+      "value": 2.7755575615628914e-16
+    },
+    "dense_mcv_variance_reduction": {
+      "passed": true,
+      "relation": "ge",
+      "threshold": 1.0,
+      "value": 9.857794984930482
+    },
+    "dense_pde_residual_absolute": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 2e-10,
+      "value": 2.7755575615628914e-16
+    },
+    "dense_pde_residual_relative": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 2e-10,
+      "value": 1.4233128387226758e-16
+    },
+    "dense_plain_mcv_consistency": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 5.0,
+      "value": 0.9789056477672593
+    },
+    "dense_tangent_derivatives": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 2e-12,
+      "value": 0.0
+    },
+    "dense_tangent_reconstruction": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 2e-12,
+      "value": 7.105427357601002e-15
+    },
+    "dense_terminal_identity": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 2e-13,
+      "value": 0.0
+    },
+    "lqg_hopf_cole_independent_mc": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 4.5,
+      "value": 1.6558566213295625
+    },
+    "lqg_integral_gradient_finite_difference": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 2e-07,
+      "value": 1.5792052344629215e-11
+    },
+    "lqg_matrix_construction": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 5e-12,
+      "value": 2.5579538487363607e-13
+    },
+    "lqg_matrix_spd": {
+      "passed": true,
+      "relation": "ge",
+      "threshold": 0.0,
+      "value": 0.42944547726432586
+    },
+    "lqg_mcv_variance_reduction": {
+      "passed": false,
+      "relation": "ge",
+      "threshold": 1.0,
+      "value": 0.5032656027558662
+    },
+    "lqg_pde_residual_absolute": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 2e-08,
+      "value": 5.52292586664116e-16
+    },
+    "lqg_pde_residual_relative": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 2e-08,
+      "value": 1.3156587586773145e-16
+    },
+    "lqg_plain_mcv_consistency": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 5.0,
+      "value": 0.38973987206686916
+    },
+    "lqg_quadrature_finest_difference": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 2e-10,
+      "value": 1.0408340855860843e-15
+    },
+    "lqg_quadrature_refines": {
+      "coarsest": 5.273559366969494e-16,
+      "criterion": "monotone decrease before the 2e-10 convergence floor, or all successive differences already below that floor",
+      "passed": true,
+      "previous": 1.304512053934559e-15,
+      "value": 1.0408340855860843e-15
+    },
+    "lqg_terminal_and_gradient": {
+      "passed": true,
+      "relation": "le",
+      "threshold": 2e-12,
+      "value": 0.0
+    }
+  },
+  "coupled_lqg": {
+    "T": 0.5,
+    "coefficient_seed": [
+      20261201,
+      100,
+      73
+    ],
+    "coefficient_sha256": "5b515c419d78ec4c18a779be46467bef651912b7db6786e66eb26477e6ce3fb5",
+    "condition_number": 14.3437230713418,
+    "d": 100,
+    "eigenvalue_max": 6.159847000119702,
+    "eigenvalue_min": 0.42944547726432586,
+    "family": "published_coupled_lqg_recreated",
+    "label": "RECREATED_PUBLISHED_BENCHMARK",
+    "matrix_sha256": "1192944f0bb16339012ce498d71d316833f4f83c608c5868830267b2dc0c06a4",
+    "name": "published_coupled_lqg_d100",
+    "official_repository_commit_audited": "c2412b942b1720084accf9ac9651c6085e073919",
+    "official_source_conflict": "ICLR Section 3.3 uses T=0.5; repository LQG.md/class defaults to T=1. The paper interval is used, and coefficients are one frozen global draw.",
+    "paper_time_interval": [
+      0.0,
+      0.5
+    ],
+    "sigma": 1.4142135623730951,
+    "state_distribution": "uniform volume measure on the unit ball"
+  },
+  "dense_fourier": {
+    "T": 0.5,
+    "actor_input": "full ambient x",
+    "actor_parameterization": "r=g+tau*R; q=sqrt(2)*grad(g)+tau*Q",
+    "analytically_integrable_high_dimensional_stress_test": true,
+    "d": 100,
+    "family": "dense_fourier_joint",
+    "has_gradient": true,
+    "k": 200,
+    "name": "dense_fourier_joint_d100_k200",
+    "omega_norm_max_error": 5.551115123125783e-16,
+    "omega_sha256": "c41f33bf92c33bf0ab826359a94d00c5d964a875ce57533e43e179994a2293b8",
+    "oracle_projection_used": false,
+    "parameter_seed": [
+      20261201,
+      100,
+      41
+    ],
+    "parameter_sha256": "b96804e2f7c20cbd4e72c0f961a4ebfc21bf46cae120d198b6afe6ce2e2684b6",
+    "phases_sha256": "25e2c4767c484c7f3623d4435495b1309be1642537eeb9d5abda7745ff525e27",
+    "sigma": 1.4142135623730951,
+    "signs_sha256": "9954a1b596790ea78cae267e3112eda4464e819aa0d07728da95cc322f22524d"
+  },
+  "environment": {
+    "git_commit_at_recording": "50908e13560649025aefb874a625e55ecf76edd0",
+    "gpu": {
+      "capability": [
+        12,
+        0
+      ],
+      "cuda_runtime": "12.8",
+      "name": "NVIDIA GeForce RTX 5070 Ti",
+      "total_memory_bytes": 17094475776
+    },
+    "numpy": "2.3.4",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.11",
+    "torch": "2.11.0+cu128"
+  },
+  "ground_truth_used_for_training_or_selection": false,
+  "lqg_quadrature_refinement": {
+    "144_to_192_max_state_difference": 1.304512053934559e-15,
+    "192_to_256_max_state_difference": 1.0408340855860843e-15,
+    "96_to_144_max_state_difference": 5.273559366969494e-16,
+    "independent_mc_max_standard_errors": 1.6558566213295625
+  },
+  "overall_pass": true,
+  "status": "VALIDATED",
+  "stochastic_audits": {
+    "dense": {
+      "antithetic_pairs": 128,
+      "mcv_alpha": 1.0,
+      "mean_mcv_mc_se": 0.0028796671317552008,
+      "mean_mcv_pair_variance": 0.008491502376664295,
+      "mean_plain_mc_se": 0.009041327073888968,
+      "mean_plain_pair_variance": 0.08370748954320656,
+      "nonfinite_count": 0,
+      "paths": 256,
+      "peak_gpu_bytes": 12867072,
+      "seed": 77123,
+      "time_steps": 16,
+      "variance_reduction": 9.857794984930482,
+      "wall_seconds": 0.46491779992356896,
+      "weight_ess_fraction": 0.9881066916319735,
+      "weight_max": 1.9406541585922241,
+      "weight_min": 1.0016131401062012
+    },
+    "lqg": {
+      "antithetic_pairs": 128,
+      "mcv": true,
+      "mcv_alpha": 1.0,
+      "mean_mcv_mc_se": 0.017365045250177125,
+      "mean_mcv_pair_variance": 0.04279158745350713,
+      "mean_plain_mc_se": 0.012896658778771783,
+      "mean_plain_pair_variance": 0.021535534052669624,
+      "nonfinite_count": 0,
+      "paths": 256,
+      "peak_gpu_bytes": 13641728,
+      "seed": 77124,
+      "time_steps": 16,
+      "variance_reduction": 0.5032656027558662,
+      "wall_seconds": 0.3020475000375882,
+      "weight_ess_fraction": 1.0
+    }
+  },
+  "study_revision": "main_highdim_pilot_5070_v1"
+}

@@ -1,0 +1,126 @@
+{
+  "configuration": {
+    "base_seed": 20261201,
+    "dense_parameter_seed": [
+      20261201,
+      100,
+      41
+    ],
+    "dimension": 100,
+    "gradient_actor": {
+      "activation": "silu",
+      "batch_size": 256,
+      "checkpoint_interval": 150,
+      "depth": 3,
+      "gradient_clip": 10.0,
+      "label_estimator": "mcv",
+      "label_time_steps": 16,
+      "learning_rate": 0.00015,
+      "optimizer_steps": 1500,
+      "parent_batch": 4,
+      "path_chunk": 32,
+      "paths_per_label": 64,
+      "training_distribution": "frozen_pde_specific",
+      "training_points": 2048,
+      "validation_points": 256,
+      "width": 256
+    },
+    "heat_mc_paths": 16384,
+    "heat_mc_replicates": 2,
+    "inference_paths": 1024,
+    "inference_replicates": 2,
+    "inference_steps": 64,
+    "joint_actor": {
+      "batch_size": 256,
+      "checkpoint_interval": 150,
+      "depth": 3,
+      "gradient_clip": 10.0,
+      "label_time_steps": 16,
+      "learning_rate": 0.00015,
+      "optimizer_steps": 1500,
+      "parent_batch": 4,
+      "path_chunk": 32,
+      "paths_per_label": 64,
+      "training_points": 2048,
+      "validation_points": 256,
+      "width": 256
+    },
+    "lqg_coefficient_seed": [
+      20261201,
+      100,
+      73
+    ],
+    "per_new_pde_gpu_seconds_cap": 3600,
+    "reference_audit_orders": [
+      96,
+      144,
+      192,
+      256
+    ],
+    "reference_quadrature_order": 192,
+    "revision": "main_highdim_pilot_5070_v1",
+    "selector_states": 64,
+    "state_seed_namespace": "main_highdim_pilot_5070_v1",
+    "terminal_time": 0.5,
+    "test_states": 512,
+    "total_gpu_seconds_cap": 10800,
+    "training_seed": 0,
+    "updates": 2,
+    "validation_states": 256
+  },
+  "coupled_lqg": {
+    "array_sha256": "f85c63030be89316f5cde50c908c09ac1f1a49bf1cfd479bcd1703efd09de133",
+    "bank_file": "C:\\Users\\Yeping\\workspace\\HCFL\\ir-mlp-main-highdim-pilot-5070-worktree\\invariant_region_mlp\\results\\main_highdim_pilot\\inputs\\coupled_lqg_banks.npz",
+    "bank_file_sha256": "43b5f570beced4a480cf2d248c721022de8ca55b35eb9f90d0d435475150bf22",
+    "benchmark_label": "RECREATED_PUBLISHED_BENCHMARK",
+    "counts": {
+      "selector": 64,
+      "test": 512,
+      "train_a1": 2048,
+      "train_a2": 2048,
+      "validation": 256
+    },
+    "official_code_commit_audited": "c2412b942b1720084accf9ac9651c6085e073919",
+    "official_code_url": "https://github.com/Francis-Fan-create/SCaSML",
+    "paper_url": "https://proceedings.iclr.cc/paper_files/paper/2026/file/cf8353a0efc3644454a5591a7cb55c17-Paper-Conference.pdf",
+    "parameter_array_sha256": "5b515c419d78ec4c18a779be46467bef651912b7db6786e66eb26477e6ce3fb5",
+    "parameter_file": "C:\\Users\\Yeping\\workspace\\HCFL\\ir-mlp-main-highdim-pilot-5070-worktree\\invariant_region_mlp\\results\\main_highdim_pilot\\inputs\\coupled_lqg_parameters.npz",
+    "parameter_file_sha256": "6bf96d46d5a9cf86c12d75b9cbd809e7482b0e84b6158b233c944f949c992416",
+    "seeds": {
+      "selector": 3652735846,
+      "test": 3066752120,
+      "train_a1": 1407180894,
+      "train_a2": 1272975525,
+      "validation": 4209337305
+    },
+    "source_resolution": "ICLR Section 3.3 fixes [0,0.5] x B^d. The repository defaults to T=1 and creates coefficient arrays as a function of batch shape; we follow the paper interval and freeze one global coefficient draw.",
+    "state_law": "t~Uniform[0,0.5), x uniform by volume on the Euclidean unit ball"
+  },
+  "dense_fourier": {
+    "array_sha256": "811fe83a60cf505fc5f8068ff18c860a9da45626cf3c7b8a6e3334f4ab69fe01",
+    "bank_file": "C:\\Users\\Yeping\\workspace\\HCFL\\ir-mlp-main-highdim-pilot-5070-worktree\\invariant_region_mlp\\results\\main_highdim_pilot\\inputs\\dense_fourier_banks.npz",
+    "bank_file_sha256": "892d263eacb8782226e02c9ecc9edacb5b2e19f9436715291632db3b94a1124d",
+    "counts": {
+      "selector": 64,
+      "test": 512,
+      "train_a1": 2048,
+      "train_a2": 2048,
+      "validation": 256
+    },
+    "omega_sha256": "c41f33bf92c33bf0ab826359a94d00c5d964a875ce57533e43e179994a2293b8",
+    "parameter_array_sha256": "b96804e2f7c20cbd4e72c0f961a4ebfc21bf46cae120d198b6afe6ce2e2684b6",
+    "parameter_file": "C:\\Users\\Yeping\\workspace\\HCFL\\ir-mlp-main-highdim-pilot-5070-worktree\\invariant_region_mlp\\results\\main_highdim_pilot\\inputs\\dense_fourier_parameters.npz",
+    "parameter_file_sha256": "416f7673b513dd6fac01b75fe499ccb16fcb97b5bf415b259094f43a45933fc7",
+    "phases_sha256": "25e2c4767c484c7f3623d4435495b1309be1642537eeb9d5abda7745ff525e27",
+    "seeds": {
+      "selector": 65868271,
+      "test": 1128137281,
+      "train_a1": 249319477,
+      "train_a2": 2065389254,
+      "validation": 560422955
+    },
+    "signs_sha256": "9954a1b596790ea78cae267e3112eda4464e819aa0d07728da95cc322f22524d",
+    "state_law": "t~Uniform[0,0.5), x~Uniform[-1,1]^100"
+  },
+  "status": "FROZEN_BEFORE_TRAINING"
+}
