@@ -1,0 +1,133 @@
+{
+  "cells": [],
+  "definitions": {
+    "b6_fullrank": {
+      "equation": "u_t + Delta u - 0.5 ||z||^2 = 0; z=sqrt(2) grad u",
+      "exact_transform": "Hopf-Cole",
+      "parameter_seed": "SeedSequence([20261201,d,66])",
+      "terminal": "-log[(1/(2d)) sum_m exp(b_m^T x)]"
+    },
+    "dense_fourier": {
+      "actor": "joint value-gradient terminal-aware Actor",
+      "equation": "u_t + Delta u + 0.5 tanh(u) ||z||^2 = 0; z=sqrt(2) grad u",
+      "exact_transform": "sinh",
+      "omega_row_norm": 1.0,
+      "parameter_seed": "SeedSequence([20261201,d,41])",
+      "terminal": "asinh[0.5 + 2/sqrt(2d) sum_j a_j sin(omega_j^T x+phi_j)]"
+    }
+  },
+  "frozen_manifest_available": false,
+  "protocol": {
+    "actor_updates": 4,
+    "audit_euler_steps": [
+      128,
+      256
+    ],
+    "b6_calibration": {
+      "betas": [
+        1.0,
+        1.5,
+        2.0,
+        3.0,
+        4.0
+      ],
+      "fixed_existing_selections": {
+        "100": {
+          "beta": 1.5,
+          "gamma": 1.0
+        },
+        "400": {
+          "beta": 2.0,
+          "gamma": 1.0
+        }
+      },
+      "gammas": [
+        0.0,
+        1.0
+      ],
+      "heat_samples": 4096,
+      "selection_rule": "qualify iff ESS_med>=5, 0.5<=z_rms<=4, heat_only_skill>=0.15, f_cv>=0.05; maximize r_glob; tie-break smaller beta then gamma"
+    },
+    "base_seed": 20261201,
+    "branch": "ir-mlp-icml-two-highdim-expansion",
+    "cell_gpu_seconds_cap": 21600,
+    "dimensions": [
+      20,
+      50,
+      100,
+      200,
+      400
+    ],
+    "evaluation_paths": 1024,
+    "global_gpu_seconds_cap": 432000,
+    "gradient_actor": {
+      "activation": "silu",
+      "batch_size": 512,
+      "checkpoint_interval": 250,
+      "depth": 4,
+      "gradient_clip": 10.0,
+      "label_estimator": "mcv",
+      "label_time_steps": 32,
+      "learning_rate": 0.00015,
+      "optimizer_steps": 5000,
+      "parent_batch": 8,
+      "path_chunk": 32,
+      "paths_per_label": 128,
+      "training_distribution": "function",
+      "training_points": 8192,
+      "validation_points": 512,
+      "width": 384
+    },
+    "ground_truth_policy": "exact solutions are evaluation/calibration only and are forbidden from labels, optimization, checkpoint selection, and stopping",
+    "inference_replicates": 2,
+    "joint_actor": {
+      "batch_size": 512,
+      "checkpoint_interval": 250,
+      "depth": 4,
+      "gradient_clip": 10.0,
+      "label_time_steps": 32,
+      "learning_rate": 0.00015,
+      "optimizer_steps": 5000,
+      "parent_batch": 8,
+      "path_chunk": 32,
+      "paths_per_label": 128,
+      "training_points": 8192,
+      "validation_points": 512,
+      "width": 384
+    },
+    "methods": [
+      "tangent_actor",
+      "dpi",
+      "pinn_hte",
+      "sdgd_pinn"
+    ],
+    "pdes": [
+      "b6_fullrank",
+      "dense_fourier"
+    ],
+    "primary_euler_steps": 64,
+    "protocol_sha256": "370f9c23fabe95305cfd582ce4739242974ca0f7b8d1af911515d97a68a510fe",
+    "revision": "main_highdim_expansion_v1",
+    "selection": {
+      "external_baselines": "source-faithful fixed protocol; no final-test model selection",
+      "formal_seed": 0,
+      "tangent_actor": "reference-free held-out noisy tangent labels and fixed-point consistency"
+    },
+    "source_commits": {
+      "b6_validated": "281977883e0a5ce4f05895878680b582620461be",
+      "dense_fourier_pilot": "3d3d4c80f0b29af39e7d509a143812a1f5a702f0",
+      "dpi": "e8616c2f531c9f95299b246a13c1180b8f02822a",
+      "dpi_pinn_hte": "e8616c2f531c9f95299b246a13c1180b8f02822a",
+      "icml_final_suite": "f762109160a5c0bb6bba928370491bc9bbd04232",
+      "pinn_hte": "e8616c2f531c9f95299b246a13c1180b8f02822a",
+      "sdgd_pinn": "c597cc4fe9caac0b3ca118ea84453405f25ff833"
+    },
+    "test_distributions": {
+      "b6_fullrank": "t~Uniform[0,0.25), x~Uniform([-1,1]^d)",
+      "dense_fourier": "t~Uniform[0,0.5), x~Uniform([-1,1]^d)"
+    },
+    "test_states": 960,
+    "training_seed": 0,
+    "validation_states": 512
+  }
+}
