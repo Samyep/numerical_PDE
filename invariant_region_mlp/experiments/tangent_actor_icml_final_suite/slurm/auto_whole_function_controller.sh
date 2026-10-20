@@ -5,10 +5,10 @@ set -euo pipefail
 
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
 RESULTS_DIR="$SOURCE_ROOT/invariant_region_mlp/results/tangent_actor_icml_final_suite"
-PACK_SCRIPT="$SOURCE_ROOT/invariant_region_mlp/experiments/tangent_actor_icml_final_suite/slurm/whole_function_eight_gpu_wave.slurm"
+PACK_SCRIPT="$SOURCE_ROOT/invariant_region_mlp/experiments/tangent_actor_icml_final_suite/slurm/whole_function_four_gpu_wave.slurm"
 QUEUE_DIR="$RESULTS_DIR/whole_function_dispatch_queues"
 PREDECESSOR_JOB=${1:?usage: auto_whole_function_controller.sh STAGE1_D50_JOB_ID}
-WORKERS=8
+WORKERS=4
 
 source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
 conda activate base
@@ -122,13 +122,13 @@ submit_wave() {
   # Keep a small unreserved tail rather than risk a rounding race at 120 hours.
   (( wall > 60 )) && wall=$((wall - 60))
   if (( wall < 900 )); then
-    echo "insufficient global budget for an eight-GPU wave: remaining_gpu_seconds=$remaining" >&2
+    echo "insufficient global budget for a four-GPU wave: remaining_gpu_seconds=$remaining" >&2
     return 7
   fi
   duration=$(format_duration "$wall")
   local export_vars="ALL,TASK_FILE=$task_file,TASK_FILE_SHA256=$task_sha,WORKERS=$WORKERS"
   local job_name="icml_whole_${stage}w${wave}"
-  local resources=(--partition=ghx4-interactive --nodes=2 --ntasks=8 --ntasks-per-node=4
+  local resources=(--partition=ghx4-interactive --nodes=1 --ntasks=4 --ntasks-per-node=4
     --gpus-per-node=4 --cpus-per-task=12 --mem=440G --time="$duration")
   sbatch --test-only "${resources[@]}" --job-name="$job_name" \
     --export="$export_vars" "$PACK_SCRIPT" >&2
@@ -165,10 +165,10 @@ refresh_and_audit
 require_stage1_complete
 pytest -q invariant_region_mlp/experiments/tangent_actor_icml_final_suite
 
-run_waves stage2 4
+run_waves stage2 8
 pytest -q invariant_region_mlp/experiments/tangent_actor_icml_final_suite
 
-run_waves stage3 3
+run_waves stage3 6
 refresh_and_audit
 pytest -q invariant_region_mlp/experiments/tangent_actor_icml_final_suite
 echo "$(timestamp) whole-function staged execution finished"
