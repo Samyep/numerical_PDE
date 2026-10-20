@@ -57,6 +57,14 @@ def test_weighted_BEL_matches_direct_expression():
     assert torch.allclose(stable,direct,rtol=1e-10,atol=1e-10)
 
 
+def test_weighted_BEL_has_correct_zero_time_limit():
+    remaining = torch.tensor([0.3, 0.7], dtype=torch.float64)
+    fraction = torch.zeros((2, 1), dtype=torch.float64)
+    stable = weighted_ou_bel(remaining, fraction, remaining[:, None] * fraction)
+    expected = torch.sqrt(remaining)[:, None] / ALPHA
+    assert torch.equal(stable, expected)
+
+
 def test_GMM_terminal_and_gradient_match_definition():
     bench = _benchmark(7)
     model = RawOUFullHistory(bench, 2, torch.device("cpu"), seed=15, dtype=torch.float64)

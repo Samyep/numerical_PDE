@@ -30,9 +30,20 @@ def read_points(comparison: dict, folder: Path):
         row = json.loads(path.read_text())
         if row.get("status") != "COMPLETE":
             incomplete.append({
-                "M": M, "status": row.get("status", "UNKNOWN"),
+                "M": M, "n": DEPTH, "states": TEST_POINTS,
+                "status": row.get("status", "UNKNOWN"),
                 "completed_states": row.get("completed_states", 0),
                 "gpu_seconds": row.get("gpu_seconds", 0.0),
+                "charged_gpu_seconds": row.get("charged_gpu_seconds", row.get("gpu_seconds", 0.0)),
+                "rmse": None, "relative_l2": None,
+                "peak_gpu_bytes": row.get("peak_gpu_bytes", 0),
+                "nan_count": row.get("nan_count", 0),
+                "inf_count": row.get("inf_count", 0),
+                "oom_count": row.get("oom_count", 0),
+                "timeout_count": row.get("timeout_count", 0),
+                "gpu_name": row.get("gpu_name", "UNKNOWN"),
+                "prediction_sha256": None,
+                "error": row.get("error"),
             })
             continue
         if row.get("depth") != DEPTH or row.get("states") != TEST_POINTS:
@@ -62,8 +73,18 @@ def read_points(comparison: dict, folder: Path):
             raise RuntimeError(f"RMSE changed from measured saved prediction: {npz_path}")
         point = {
             "M": M, "n": DEPTH, "states": TEST_POINTS,
+            "completed_states": TEST_POINTS,
             "gpu_seconds": float(row["gpu_seconds"]),
+            "charged_gpu_seconds": float(row.get("charged_gpu_seconds", row["gpu_seconds"])),
             "rmse": rmse, "relative_l2": float(row["relative_l2"]),
+            "peak_gpu_bytes": int(row.get("peak_gpu_bytes", 0)),
+            "nan_count": int(row.get("nan_count", 0)),
+            "inf_count": int(row.get("inf_count", 0)),
+            "oom_count": int(row.get("oom_count", 0)),
+            "timeout_count": int(row.get("timeout_count", 0)),
+            "gpu_name": row.get("gpu_name", "UNKNOWN"),
+            "prediction_sha256": row["prediction_sha256"],
+            "error": None,
             "status": "COMPLETE"
         }
         if not math.isfinite(point["gpu_seconds"]) or point["gpu_seconds"] <= 0:
@@ -73,15 +94,15 @@ def read_points(comparison: dict, folder: Path):
 
 
 def make_plot(comparison: dict, points: list[dict], folder: Path):
+    gpu_names = {p["gpu_name"] for p in points}
+    if gpu_names != {"NVIDIA GeForce RTX 5070 Ti"}:
+        raise RuntimeError(f"Expected one RTX 5070 Ti timing source, found {sorted(gpu_names)}")
     fig, ax = plt.subplots(figsize=(7.4, 4.8))
     ax.set_xscale("log")
     ax.set_yscale("log")
     target_rmse = comparison["actor_rmse"]
-    target_seconds = comparison["actor_total_seconds"]
     ax.axhline(target_rmse, color="#AD5C26", ls="--", lw=1.3,
                label=f"Tangent-Actor target RMSE {target_rmse:.4g}")
-    ax.plot(target_seconds, target_rmse, color="#AD5C26", marker="D", ms=7,
-            label=f"Tangent-Actor measured total {target_seconds:.0f} s")
     if points:
         ax.plot([p["gpu_seconds"] for p in points],
                 [p["rmse"] for p in points], marker="o", lw=1.9,
@@ -94,12 +115,18 @@ def make_plot(comparison: dict, points: list[dict], folder: Path):
         candidate = min(hits, key=lambda p:p["gpu_seconds"])
         ax.axvline(candidate["gpu_seconds"], color="#3B8B70", ls=":", lw=1.2,
                    label=f"First observed FH target hit: {candidate['gpu_seconds']:.1f} s")
-    ax.set_xlabel("Measured GH200 inference time for 960 points (seconds)")
-    ax.set_ylabel("Whole-function Value RMSE (lower is better)")
-    ax.set_title("OU/GMM HJB, 100D: Full-History MLP accuracy–compute")
+    ax.set_xlabel("Measured RTX 5070 Ti GPU time for 960 queries (seconds)")
+    ax.set_ylabel("Whole-function Value RMSE")
+    ax.set_title("OU/GMM HJB, d=100: Full-History MLP time–accuracy")
     ax.grid(True, which="both", alpha=0.23)
     ax.legend(fontsize=8, loc="best")
+    fig.text(
+        0.99, 0.01,
+        f"Historical Tangent-Actor total: {comparison['actor_total_seconds']:.0f} s on GH200 (not plotted on the RTX time axis)",
+        ha="right", va="bottom", fontsize=7,
+    )
     fig.tight_layout()
+    fig.subplots_adjust(bottom=0.16)
     fig.savefig(folder / "ou_gmm_fh_time_accuracy.png", dpi=200)
     fig.savefig(folder / "ou_gmm_fh_time_accuracy.pdf")
     plt.close(fig)
@@ -126,20 +153,24 @@ def main():
         "actor_rmse": comp["actor_rmse"],
         "actor_total_seconds": comp["actor_total_seconds"],
         "MLP_points": points, "incomplete_cells": incomplete,
-        "target_status": "REACHED_IN_MEASURED_GRID" if hit else "NOT_REACHED_IN_MEASURED_GRID",
+        "target_status": "REACHED_IN_MEASURED_GRID" if hit else "NOT_REACHED_WITHIN_TESTED_BUDGET",
         "FH_first_observed_target_seconds": hit["gpu_seconds"] if hit else None,
         "FH_first_observed_target_M": hit["M"] if hit else None,
-        "actor_vs_FH_time_ratio": (comp["actor_total_seconds"]/hit["gpu_seconds"]
-                                   if hit else None),
+        "timing_comparison_valid": False,
+        "timing_note": "FH timings are RTX 5070 Ti inference-only; Tangent-Actor 1675.9737 s is a historical GH200 total and is not compared on the x-axis.",
         "interpretation": "First measured threshold-reaching completed fixed-grid M, not a proof of optimal M/time; no extrapolated crossing."
     }
     write_json_atomic(folder / "ou_gmm_fh_time_accuracy_summary.json", report)
     csv_path = folder / "ou_gmm_fh_time_accuracy.csv"
     with csv_path.open("w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=[
-            "n", "M", "states", "gpu_seconds", "rmse", "relative_l2", "status"])
+        fields = [
+            "n", "M", "states", "completed_states", "gpu_seconds",
+            "charged_gpu_seconds", "rmse", "relative_l2",
+            "peak_gpu_bytes", "nan_count", "inf_count", "oom_count",
+            "timeout_count", "gpu_name", "prediction_sha256", "status", "error"]
+        writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
-        writer.writerows(points)
+        writer.writerows(sorted(points + incomplete, key=lambda row: row["M"]))
     print(json.dumps({
         "status":report["target_status"], "completed_points":len(points),
         "FH_first_observed_target_seconds":report["FH_first_observed_target_seconds"],

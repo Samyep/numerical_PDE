@@ -94,9 +94,10 @@ def weighted_ou_bel(
         * sqrt(delta/var(delta)) * Z.
     In particular alpha=1/2 cancels the small-fraction singularity.
     """
-    # delta / var(delta) -> 1 as delta -> 0; don't form 0/0.
+    # expm1 is accurate for nonzero small delta, so use the exact ratio there.
+    # Only replace the removable 0/0 value at delta == 0 by its limit 1.
     ratio = torch.where(
-        delta.abs() < 1e-6, torch.ones_like(delta),
+        delta == 0, torch.ones_like(delta),
         torch.sqrt((delta / ou_variance(delta).clamp_min(1e-30)).clamp_min(0)),
     )
     return (
@@ -309,11 +310,12 @@ def run_one(
     progress_path = output_dir / (stem + ".progress.npz")
     pred_path = output_dir / (stem + ".npz")
 
+    previous: dict[str, Any] = {}
     if final_path.exists():
-        completed = json.loads(final_path.read_text())
-        if completed.get("status") == "COMPLETE":
+        previous = json.loads(final_path.read_text())
+        if previous.get("status") == "COMPLETE":
             print(f"SKIP completed M={M}: {final_path}", flush=True)
-            return completed
+            return previous
 
     chunk = eval_chunk_size(M)
     prediction = np.full(TEST_POINTS, np.nan, dtype=np.float64)
@@ -341,19 +343,27 @@ def run_one(
         "OU_BEL": "exp(h)/sqrt((exp(2h)-1)/2)*Z",
         "training_seconds": 0.0, "value_rmse": None,
         "completed_states": finished, "gpu_seconds": accumulated,
+        "peak_gpu_bytes": int(previous.get("peak_gpu_bytes", 0)),
+        "nan_count": 0, "inf_count": 0, "oom_count": 0,
+        "timeout_count": 0, "failed_gpu_seconds": float(previous.get("failed_gpu_seconds", 0.0)),
+        "charged_gpu_seconds": accumulated + float(previous.get("failed_gpu_seconds", 0.0)),
         "actor": static_metadata(comp),
         "single_parameter_sweep": True, "all_grid_M": list(M_GRID),
         "truth_used_for_training": False, "oracle_actor_used": False,
         "terminal_reference_used_inside_MLP": False,
     }
+    if device.type == "cuda":
+        state["gpu_name"] = torch.cuda.get_device_name(device)
+        torch.cuda.reset_peak_memory_stats(device)
     write_json_atomic(final_path, state)
 
+    active_started: float | None = None
     try:
         for chunk_index, begin in enumerate(range(0, TEST_POINTS, chunk)):
             end = min(begin + chunk, TEST_POINTS)
             if end <= finished:
                 continue
-            if accumulated >= max_seconds:
+            if accumulated + state["failed_gpu_seconds"] >= max_seconds:
                 state["status"] = "OUT_OF_TIME"
                 break
             model = RawOUFullHistory(
@@ -364,15 +374,18 @@ def run_one(
             xx = torch.from_numpy(comp["x"][begin:end]).to(device=device, dtype=torch.float32)
             if device.type == "cuda":
                 torch.cuda.synchronize(device)
-            started = time.perf_counter()
+            active_started = time.perf_counter()
             with torch.no_grad():
                 result = model.solve(DEPTH, tt, xx)
             if device.type == "cuda":
                 torch.cuda.synchronize(device)
-            seconds = time.perf_counter() - started
+            seconds = time.perf_counter() - active_started
+            active_started = None
             value = result[:, 0].double().cpu().numpy()
             accumulated += seconds
             if not np.all(np.isfinite(value)):
+                state["nan_count"] += int(np.isnan(value).sum())
+                state["inf_count"] += int(np.isinf(value).sum())
                 state["status"] = "NONFINITE"
                 break
             prediction[begin:end] = value
@@ -384,6 +397,11 @@ def run_one(
             )
             state["completed_states"] = finished
             state["gpu_seconds"] = accumulated
+            state["charged_gpu_seconds"] = accumulated + state["failed_gpu_seconds"]
+            if device.type == "cuda":
+                state["peak_gpu_bytes"] = max(
+                    state["peak_gpu_bytes"], int(torch.cuda.max_memory_allocated(device))
+                )
             write_json_atomic(final_path, state)
             if chunk_index == 0 or end == TEST_POINTS or chunk_index % max(1, (32//chunk)) == 0:
                 print(json.dumps({
@@ -406,10 +424,30 @@ def run_one(
             state["prediction_sha256"] = sha_file(pred_path)
             state["hit_actor_threshold"] = state["value_rmse"] <= comp["actor_rmse"]
     except (KeyboardInterrupt, Exception) as err:
-        state["status"] = "INTERRUPTED" if isinstance(err, KeyboardInterrupt) else "FAILED"
+        if device.type == "cuda":
+            try:
+                torch.cuda.synchronize(device)
+            except Exception:
+                pass
+            state["peak_gpu_bytes"] = max(
+                state["peak_gpu_bytes"], int(torch.cuda.max_memory_allocated(device))
+            )
+        if active_started is not None:
+            state["failed_gpu_seconds"] += time.perf_counter() - active_started
+        state["charged_gpu_seconds"] = accumulated + state["failed_gpu_seconds"]
+        is_oom = isinstance(err, torch.cuda.OutOfMemoryError) or "out of memory" in str(err).lower()
+        if is_oom:
+            state["status"] = "OOM"
+            state["oom_count"] = 1
+        else:
+            state["status"] = "INTERRUPTED" if isinstance(err, KeyboardInterrupt) else "FAILED"
         state["error"] = repr(err)
         write_json_atomic(final_path, state)
+        if is_oom:
+            return state
         raise
+    if state["status"] == "OUT_OF_TIME":
+        state["timeout_count"] = 1
     write_json_atomic(final_path, state)
     return state
 
@@ -439,19 +477,25 @@ def main():
         return
     device = torch.device(args.device)
     if device.type != "cuda" or not torch.cuda.is_available():
-        raise RuntimeError("Run the timed 960-point benchmark on GH200 CUDA, not CPU")
+        raise RuntimeError("Run the timed 960-point benchmark on the declared CUDA GPU, not CPU")
     def billed_solver_seconds() -> float:
         # Fixed-grid cumulative charging persists across --all restarts.
         total = 0.0
         for base in M_GRID:
             f = args.out_dir / f"ou_gmm_d100_fh_n{DEPTH}_M{base}_seed{SEED}.json"
             if f.exists():
-                total += float(json.loads(f.read_text()).get("gpu_seconds", 0.0))
+                row = json.loads(f.read_text())
+                total += float(row.get("gpu_seconds", 0.0))
+                total += float(row.get("failed_gpu_seconds", 0.0))
         return total
 
     for M in M_GRID if args.all else (args.M,):
         record = args.out_dir / f"ou_gmm_d100_fh_n{DEPTH}_M{M}_seed{SEED}.json"
-        already = float(json.loads(record.read_text()).get("gpu_seconds", 0.0)) if record.exists() else 0.0
+        if record.exists():
+            prior = json.loads(record.read_text())
+            already = float(prior.get("gpu_seconds", 0.0)) + float(prior.get("failed_gpu_seconds", 0.0))
+        else:
+            already = 0.0
         remaining = min(args.max_cell_seconds - already,
                         args.max_sweep_seconds - billed_solver_seconds())
         if remaining <= 0:
