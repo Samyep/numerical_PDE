@@ -1,0 +1,80 @@
+{
+  "artifacts": {
+    "actor_prediction_npz": {
+      "path": "C:\\Users\\Yeping\\workspace\\HCFL\\ir-mlp-ou-gmm-fh-time-accuracy-worktree\\invariant_region_mlp\\results\\tangent_actor_icml_final_suite\\paired_predictions\\main_ou_gmm_d100_tangent_actor_s0_n64p0_p1024_mcv.npz",
+      "present": false,
+      "sha256_status": "MISSING"
+    },
+    "main_results": {
+      "path": "C:\\Users\\Yeping\\workspace\\HCFL\\ir-mlp-ou-gmm-fh-time-accuracy-worktree\\invariant_region_mlp\\results\\tangent_actor_icml_final_suite\\MAIN_RESULTS.csv",
+      "present": true,
+      "sha256": "97f86c8e730050cf64aa356db20b7cbaa9ead699a8a02231aaca3ec0b6b14d62",
+      "sha256_status": "PASS"
+    },
+    "parameter_npz": {
+      "path": "C:\\Users\\Yeping\\workspace\\HCFL\\ir-mlp-ou-gmm-fh-time-accuracy-worktree\\invariant_region_mlp\\results\\tangent_actor_icml_final_suite\\inputs\\ou_gmm_d100.npz",
+      "present": false,
+      "sha256_status": "MISSING"
+    }
+  },
+  "comparison": null,
+  "cuda_available": true,
+  "cuda_device": "NVIDIA GeForce RTX 5070 Ti",
+  "deterministic_reconstruction_audit_only": {
+    "parameter_array_matches_frozen": true,
+    "parameter_array_sha256": "2437348eac3f53d2e3fba9f771b816608562c2757bc65421b12d9b6ccf477024",
+    "purpose": "audit-only deterministic reproduction; not written and not accepted by the runner",
+    "test_bank_array_sha256": "632c00f9dfaaa24b9314681f6f44a1ec4aead46b7aefec789774a3d349f72755",
+    "test_bank_matches_frozen": true,
+    "test_states": 960,
+    "truth_array_sha256": "8dba238590cfc6f45a9eceabbb1bc4971054ba7d81993a586821e18582ab901d"
+  },
+  "expected": {
+    "actor_prediction_npz_sha256": "e9570ab56ecc7dcd345e26465a1b3a6f7402c3dd12cc6e0794df141dced3dc3e",
+    "actor_rmse": 0.2197627563608737,
+    "actor_total_seconds_gh200": 1675.973682596581,
+    "parameter_array_sha256": "2437348eac3f53d2e3fba9f771b816608562c2757bc65421b12d9b6ccf477024",
+    "parameter_npz_sha256": "3766e77dc79db2a3dd9d1d358665da8e0b7a46119bab3d012ae0fb033396e66e",
+    "test_bank_array_sha256": "632c00f9dfaaa24b9314681f6f44a1ec4aead46b7aefec789774a3d349f72755"
+  },
+  "formal_gpu_sweep_authorized": false,
+  "git_commit": "fffe0fca43fdb6a9f7adaf5eebf318780d7ac141",
+  "mathematical_checks": {
+    "constant_minus_d_integrated_deterministically": true,
+    "ou_variance_formula_max_abs": 0.0,
+    "passed": true,
+    "pde_residual_relative_max_200_states": 4.631436141997569e-15,
+    "solver_has_no_nonterminal_exact_oracle": true,
+    "terminal_gradient_max_abs": 0.0,
+    "terminal_value_max_abs": 0.0,
+    "weighted_ou_bel_relative_max": 2.026980648162402e-16
+  },
+  "missing_artifacts": [
+    "C:\\Users\\Yeping\\workspace\\HCFL\\ir-mlp-ou-gmm-fh-time-accuracy-worktree\\invariant_region_mlp\\results\\tangent_actor_icml_final_suite\\inputs\\ou_gmm_d100.npz",
+    "C:\\Users\\Yeping\\workspace\\HCFL\\ir-mlp-ou-gmm-fh-time-accuracy-worktree\\invariant_region_mlp\\results\\tangent_actor_icml_final_suite\\paired_predictions\\main_ou_gmm_d100_tangent_actor_s0_n64p0_p1024_mcv.npz"
+  ],
+  "python": "3.12.11",
+  "status": "BLOCKED_MISSING_ARTIFACTS",
+  "torch": "2.11.0+cu128",
+  "unit_tests": {
+    "accepted_for_this_fh_audit": true,
+    "command": [
+      "C:\\Users\\Yeping\\miniforge3\\python.exe",
+      "-m",
+      "pytest",
+      "-q",
+      "invariant_region_mlp/experiments/ou_gmm_fh_frontier/test_runner.py",
+      "invariant_region_mlp/experiments/original_pde_benchmark_comparison/test_original_benchmarks.py",
+      "invariant_region_mlp/experiments/tangent_actor_icml_final_suite/test_benchmarks.py",
+      "invariant_region_mlp/experiments/tangent_actor_icml_final_suite/test_protocol.py",
+      "invariant_region_mlp/experiments/tangent_actor_icml_final_suite/test_paired_banks.py",
+      "invariant_region_mlp/experiments/tangent_actor_icml_final_suite/test_publication_artifacts.py",
+      "invariant_region_mlp/experiments/tangent_actor_icml_final_suite/test_whole_function_artifacts.py",
+      "invariant_region_mlp/experiments/tangent_actor_icml_final_suite/test_final_runners.py"
+    ],
+    "only_failures_are_optional_picard_dependency": true,
+    "ou_and_mathematical_tests_passed": true,
+    "output": ".............................................F.F..                       [100%]\n================================== FAILURES ===================================\n___________ test_official_dpi_transfer_equations_match_frozen_pdes ____________\n\n    def test_official_dpi_transfer_equations_match_frozen_pdes() -> None:\n        from .official_dpi_transfer import register_equations\n>       import picard.equations as eqs\nE       ModuleNotFoundError: No module named 'picard'\n\ninvariant_region_mlp\\experiments\\tangent_actor_icml_final_suite\\test_final_runners.py:36: ModuleNotFoundError\n___________ test_dpi_and_pinn_profiles_are_selected_before_metrics ____________\n\n    def test_dpi_and_pinn_profiles_are_selected_before_metrics() -> None:\n        from .official_dpi_transfer import _config, _resolve_profile, register_equations\n    \n        assert _resolve_profile(\"ou_gmm\", \"auto\") == \"hjb_pis\"\n        for family in (\n            \"hjb_log\", \"joint_concave\", \"joint_convex\",\n            \"nonconvex_coupled\", \"mlp_failure\", \"allen_cahn\",\n        ):\n            assert _resolve_profile(family, \"auto\") == \"semilinear_paper\"\n    \n>       names = register_equations()\n                ^^^^^^^^^^^^^^^^^^^^\n\ninvariant_region_mlp\\experiments\\tangent_actor_icml_final_suite\\test_final_runners.py:104: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\n    def register_equations() -> dict[str, str]:\n        \"\"\"Register source-compatible equation subclasses in ``picard.equations``.\"\"\"\n>       import picard.equations as eqs\nE       ModuleNotFoundError: No module named 'picard'\n\ninvariant_region_mlp\\experiments\\tangent_actor_icml_final_suite\\official_dpi_transfer.py:172: ModuleNotFoundError\n=========================== short test summary info ===========================\nFAILED invariant_region_mlp\\experiments\\tangent_actor_icml_final_suite\\test_final_runners.py::test_official_dpi_transfer_equations_match_frozen_pdes\nFAILED invariant_region_mlp\\experiments\\tangent_actor_icml_final_suite\\test_final_runners.py::test_dpi_and_pinn_profiles_are_selected_before_metrics\n2 failed, 48 passed in 3.79s",
+    "returncode": 1
+  }
+}
