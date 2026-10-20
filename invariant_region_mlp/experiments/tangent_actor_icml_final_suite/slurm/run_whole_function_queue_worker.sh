@@ -52,12 +52,13 @@ tail -n +2 "$TASK_FILE" | while IFS=',' read -r slot sequence method pde dimensi
   (( cap > available )) && cap=$available
   # DPI and PINN do not expose a trustworthy mid-run continuation.  Start
   # them only when this wave can supply the frozen pre-run high estimate plus
-  # five minutes.  Long nonresumable cells are deferred to a long allocation.
+  # one minute, in addition to the four-minute allocation margin above.  Long
+  # nonresumable cells are deferred to a long allocation.
   if [[ "$method" == "dpi" || "$method" == "pinn_hte" ]]; then
     required=$(python - "$high_estimate" <<'PY'
 import math
 import sys
-print(min(21600, math.ceil(float(sys.argv[1]) * 3600) + 300))
+print(min(21600, math.ceil(float(sys.argv[1]) * 3600) + 60))
 PY
 )
     if [[ "$prior_status" == "CHECKPOINTED" || $required -gt $available ]]; then
