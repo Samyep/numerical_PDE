@@ -440,14 +440,25 @@ def main():
     device = torch.device(args.device)
     if device.type != "cuda" or not torch.cuda.is_available():
         raise RuntimeError("Run the timed 960-point benchmark on GH200 CUDA, not CPU")
-    scan_start = time.perf_counter()
+    def billed_solver_seconds() -> float:
+        # Fixed-grid cumulative charging persists across --all restarts.
+        total = 0.0
+        for base in M_GRID:
+            f = args.out_dir / f"ou_gmm_d100_fh_n{DEPTH}_M{base}_seed{SEED}.json"
+            if f.exists():
+                total += float(json.loads(f.read_text()).get("gpu_seconds", 0.0))
+        return total
+
     for M in M_GRID if args.all else (args.M,):
-        used = time.perf_counter() - scan_start
-        remaining = min(args.max_cell_seconds, args.max_sweep_seconds - used)
+        record = args.out_dir / f"ou_gmm_d100_fh_n{DEPTH}_M{M}_seed{SEED}.json"
+        already = float(json.loads(record.read_text()).get("gpu_seconds", 0.0)) if record.exists() else 0.0
+        remaining = min(args.max_cell_seconds - already,
+                        args.max_sweep_seconds - billed_solver_seconds())
         if remaining <= 0:
-            print("SWEEP_OUT_OF_TIME", flush=True)
+            print("SWEEP_OUT_OF_TIME; report censored M without RMSE", flush=True)
             break
-        item = run_one(comp, M, args.out_dir, device, max_seconds=remaining)
+        item = run_one(comp, M, args.out_dir, device,
+                       max_seconds=already + remaining)
         if item["status"] != "COMPLETE":
             print(f"STOP at M={M}, status={item['status']}; no fabricated RMSE", flush=True)
             break
