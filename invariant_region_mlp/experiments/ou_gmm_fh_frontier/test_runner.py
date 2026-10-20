@@ -107,3 +107,24 @@ def test_small_raw_OU_FH_recursion_finite_and_no_oracle():
     assert torch.isfinite(output).all()
     assert model.stats.terminal_samples > 0
     assert model.stats.driver_evaluations > 0
+
+
+def test_full_five_component_exact_solution_has_correct_OU_drift_sign():
+    bench = _benchmark(4)
+    t = torch.tensor([0.2,0.65], dtype=torch.float64, requires_grad=True)
+    x = torch.randn((2,4),generator=torch.Generator().manual_seed(99),
+                    dtype=torch.float64,requires_grad=True)
+    u = bench.exact_value(t,x)
+    u_t = torch.autograd.grad(u.sum(),t,create_graph=True)[0]
+    grad = torch.autograd.grad(u.sum(),x,create_graph=True)[0]
+    laplace = torch.zeros(2,dtype=torch.float64)
+    for j in range(4):
+        component = torch.autograd.grad(
+            grad[:,j].sum(),x,retain_graph=True,create_graph=True
+        )[0][:,j]
+        laplace += component
+    residual = (
+        u_t + .5*laplace + (x*grad).sum(dim=-1)
+        - .5*grad.square().sum(dim=-1) - 4.0
+    )
+    assert torch.max(torch.abs(residual)).item()<1e-10
