@@ -6,6 +6,7 @@ set -euo pipefail
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/icml_two_highdim_expansion
 OLD_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
 RESULTS_DIR=$SOURCE_ROOT/invariant_region_mlp/results/main_highdim_expansion
+OLD_AUDIT=$OLD_ROOT/invariant_region_mlp/results/tangent_actor_icml_final_suite/WHOLE_FUNCTION_AUDIT.json
 QUEUE_DIR=$RESULTS_DIR/dispatch_queues
 STAGE_A=$SOURCE_ROOT/invariant_region_mlp/experiments/main_highdim_expansion/slurm/stage_a.slurm
 WAVE_SCRIPT=$SOURCE_ROOT/invariant_region_mlp/experiments/main_highdim_expansion/slurm/four_gpu_wave.slurm
@@ -29,13 +30,35 @@ old_job_active() {
   squeue -h -u "$USER" -o '%j' | grep -q '^icml_whole'
 }
 
+old_suite_pending() {
+  [[ -f "$OLD_AUDIT" ]] || return 0
+  python - "$OLD_AUDIT" <<'PY'
+import json
+import sys
+from pathlib import Path
+audit = json.loads(Path(sys.argv[1]).read_text())
+pending = int(audit.get("status_counts", {}).get("PENDING", 0))
+raise SystemExit(0 if pending > 0 else 1)
+PY
+}
+
+old_pending_count() {
+  python - "$OLD_AUDIT" <<'PY'
+import json
+import sys
+from pathlib import Path
+p = Path(sys.argv[1])
+print(json.loads(p.read_text()).get("status_counts", {}).get("PENDING", "unknown") if p.is_file() else "unknown")
+PY
+}
+
 wait_for_old_suite() {
-  while old_controller_active || old_job_active; do
-    echo "$(timestamp) waiting_for_original_suite jobs=$(squeue -h -u "$USER" -o '%i:%j:%T' | grep ':icml_whole' | paste -sd, - || true)"
+  while old_controller_active || old_job_active || old_suite_pending; do
+    echo "$(timestamp) waiting_for_original_suite pending=$(old_pending_count) jobs=$(squeue -h -u "$USER" -o '%i:%j:%T' | grep ':icml_whole' | paste -sd, - || true)"
     sleep 60
   done
   echo "$(timestamp) original_suite_idle"
-  if [[ -f "$OLD_ROOT/invariant_region_mlp/results/tangent_actor_icml_final_suite/WHOLE_FUNCTION_AUDIT.json" ]]; then
+  if [[ -f "$OLD_AUDIT" ]]; then
     (cd "$OLD_ROOT" && python - <<'PY'
 import json
 from pathlib import Path
@@ -44,6 +67,8 @@ d=json.loads(p.read_text())
 print({"old_suite_audit": d.get("status"), "status_counts": d.get("status_counts"), "gpu_hours": d.get("new_gpu_hours")})
 if d.get("status") != "PASS":
     raise SystemExit("old suite artifact audit is not PASS")
+if int(d.get("status_counts", {}).get("PENDING", 0)) != 0:
+    raise SystemExit("old suite still has pending cells")
 PY
     )
   fi

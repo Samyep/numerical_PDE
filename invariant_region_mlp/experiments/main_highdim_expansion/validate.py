@@ -37,6 +37,7 @@ from .benchmarks import (
     dense_parameters,
     make_benchmark,
     make_dense_fourier,
+    sample_cube_states,
 )
 from .joint_actor import JointTerminalActor
 from .prepare import file_sha256, prepare
@@ -276,7 +277,12 @@ def _stochastic_checks(device: torch.device) -> tuple[list[dict[str, Any]], dict
     dense = make_dense_fourier(20)
     seed_everything(stable_seed(REVISION, "validation", "dense_actor"))
     dense_actor = JointTerminalActor(dense, width=16, depth=2).to(device)
-    t, x = dense.sample_states(8, seed=stable_seed(REVISION, "validation", "dense_points"))
+    t, x = sample_cube_states(
+        "dense_fourier",
+        20,
+        8,
+        seed=stable_seed(REVISION, "validation", "dense_points"),
+    )
     r_label, q_label, label_meta = mcv_tangent_labels(
         dense,
         dense_actor,
