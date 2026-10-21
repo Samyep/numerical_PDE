@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=icml_whole_wave
 #SBATCH --account=bgvf-dtai-gh
-#SBATCH --partition=ghx4-interactive
+#SBATCH --partition=ghx4
 #SBATCH --nodes=2
 #SBATCH --ntasks=4
 #SBATCH --ntasks-per-node=2
@@ -9,7 +9,7 @@
 #SBATCH --gpus-per-node=2
 #SBATCH --gpu-bind=verbose,closest
 #SBATCH --mem=220G
-#SBATCH --time=01:00:00
+#SBATCH --time=06:10:00
 #SBATCH --exclude=gh097
 #SBATCH --output=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/slurm/%x_%j.out
 #SBATCH --error=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/slurm/%x_%j.err

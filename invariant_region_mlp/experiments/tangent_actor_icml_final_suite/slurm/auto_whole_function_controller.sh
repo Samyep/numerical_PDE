@@ -117,13 +117,12 @@ submit_wave() {
   local remaining max_wall wall duration
   remaining=$(remaining_gpu_seconds)
   max_wall=$((remaining / WORKERS))
-  # One-hour backfill windows start much earlier than full-node two-hour
-  # requests on the observed GH200 queue.  Checkpointable methods resume in a
-  # later wave; nonresumable methods retain their frozen high-bound guard.
-  # submit_wave subtracts a 60-second suite-budget tail below, so start from
-  # 3660 seconds to request an exact one-hour Slurm window.  The worker keeps
-  # its separate four-minute teardown margin.
-  wall=3660
+  # Give every dispatched cell its full six-hour scientific cap, plus ten
+  # minutes for startup and teardown.  This avoids repeatedly queueing short
+  # backfill waves and, critically, lets nonresumable DPI/PINN cells satisfy
+  # their frozen high-runtime guard.  submit_wave subtracts a 60-second
+  # suite-budget tail below, so start one minute above 06:10:00.
+  wall=$((6 * 3600 + 11 * 60))
   (( wall > max_wall )) && wall=$max_wall
   # Keep a small unreserved tail rather than risk a rounding race at 120 hours.
   (( wall > 60 )) && wall=$((wall - 60))
@@ -133,8 +132,8 @@ submit_wave() {
   fi
   duration=$(format_duration "$wall")
   local export_vars="ALL,TASK_FILE=$task_file,TASK_FILE_SHA256=$task_sha,WORKERS=$WORKERS"
-  local job_name="icml_whole_${stage}w${wave}"
-  local resources=(--partition=ghx4-interactive --nodes=2 --ntasks=4 --ntasks-per-node=2
+  local job_name="icml_whole_${stage}longw${wave}"
+  local resources=(--partition=ghx4 --nodes=2 --ntasks=4 --ntasks-per-node=2
     --gpus-per-node=2 --cpus-per-task=12 --mem=220G --time="$duration")
   sbatch --test-only "${resources[@]}" --job-name="$job_name" \
     --export="$export_vars" "$PACK_SCRIPT" >&2
@@ -146,10 +145,26 @@ submit_wave() {
   printf '%s\n' "$job"
 }
 
+next_wave_number() {
+  local stage=$1 path base number maximum=0
+  shopt -s nullglob
+  for path in "$RESULTS_DIR/${stage^^}_WAVE"*_JOB_ID.txt; do
+    base=$(basename "$path")
+    if [[ "$base" =~ ^${stage^^}_WAVE([0-9]+)_JOB_ID\.txt$ ]]; then
+      number=${BASH_REMATCH[1]}
+      (( number > maximum )) && maximum=$number
+    fi
+  done
+  shopt -u nullglob
+  echo $((maximum + 1))
+}
+
 run_waves() {
   local stage=$1 max_waves=$2
-  local wave before after job
-  for ((wave=1; wave<=max_waves; wave++)); do
+  local wave first iteration before after job
+  first=$(next_wave_number "$stage")
+  for ((iteration=0; iteration<max_waves; iteration++)); do
+    wave=$((first + iteration))
     before=$(pending_count "$stage")
     if (( before == 0 )); then
       echo "$(timestamp) stage=$stage complete before wave=$wave"
