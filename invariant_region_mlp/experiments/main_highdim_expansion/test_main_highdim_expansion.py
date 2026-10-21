@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+import json
 import math
 
 import numpy as np
@@ -65,6 +66,15 @@ def test_protocol_is_the_requested_frozen_grid() -> None:
     assert joint["optimizer_steps"] == 5000
     assert joint["width"] == 384 and joint["depth"] == 4
     assert len(frozen_protocol()["protocol_sha256"]) == 64
+
+
+def test_frozen_protocol_is_json_roundtrip_stable() -> None:
+    protocol = frozen_protocol()
+    assert protocol == json.loads(json.dumps(protocol))
+    assert protocol["b6_calibration"]["fixed_existing_selections"] == {
+        "100": {"beta": 1.5, "gamma": 1.0},
+        "400": {"beta": 2.0, "gamma": 1.0},
+    }
 
 
 def test_dense_parameter_draw_matches_validated_100d_pilot() -> None:

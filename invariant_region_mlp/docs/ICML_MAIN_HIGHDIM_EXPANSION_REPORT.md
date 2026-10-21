@@ -2,7 +2,7 @@
 
 **Execution state:** IN_PROGRESS_OR_TERMINALLY_INCOMPLETE
 **Cells:** 0 complete, 40 pending, 0 out of time, 0 OOM, 0 failed.
-**Expansion allocation:** 0.000 GH200 hours under the separate 120-hour cap.
+**Expansion allocation:** 0.011 GH200 hours under the separate 120-hour cap.
 **Artifact audit:** PASS.
 
 The primary Tangent-Actor row is the reference-free selected Actor evaluated once with 1,024 paths and 64 Euler steps (replicate 0). Replicate 1 is reported separately and is not averaged into a fictitious higher-path estimator. Exact solutions are used only after selection for evaluation and for the pre-frozen B6 calibration/benchmark characterization.

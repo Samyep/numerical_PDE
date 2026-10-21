@@ -177,9 +177,13 @@ def frozen_protocol() -> dict[str, Any]:
             "from labels, optimization, checkpoint selection, and stopping"
         ),
     }
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
-    payload["protocol_sha256"] = sha256(canonical).hexdigest()
-    return payload
+    # Return the same JSON-native representation that is persisted to disk.
+    # JSON stringifies the integer keys in B6_FIXED_SELECTIONS; normalizing
+    # here keeps a freshly loaded manifest exactly equal to this protocol.
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    normalized = json.loads(canonical)
+    normalized["protocol_sha256"] = sha256(canonical.encode()).hexdigest()
+    return normalized
 
 
 def write_json_atomic(path: Path, payload: Any) -> None:

@@ -285,7 +285,7 @@ def calibrate(device_name: str = "cuda") -> dict[str, Any]:
         selections[str(d)] = selection
     table = RESULTS_DIR / "b6_calibration.csv"
     with table.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     payload = {

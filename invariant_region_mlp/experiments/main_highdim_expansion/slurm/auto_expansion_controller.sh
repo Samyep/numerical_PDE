@@ -21,7 +21,7 @@ timestamp() { date -u +%FT%TZ; }
 
 old_controller_active() {
   ps -u "$USER" -o args= | grep -E \
-    '/source/invariant_region_mlp/experiments/tangent_actor_icml_final_suite/slurm/auto_.*controller\.sh' \
+    'invariant_region_mlp/experiments/tangent_actor_icml_final_suite/slurm/auto_.*controller\.sh' \
     | grep -v grep >/dev/null
 }
 
