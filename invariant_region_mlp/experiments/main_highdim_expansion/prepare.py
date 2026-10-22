@@ -21,11 +21,15 @@ from .benchmarks import (
 from .protocol import (
     BASE_SEED,
     CALIBRATION_PATH,
+    CHECKPOINT_DIR,
     DIMENSIONS,
     INPUT_DIR,
     MANIFEST_PATH,
     PDES,
+    PREDICTION_DIR,
+    RAW_DIR,
     REVISION,
+    STATUS_DIR,
     TEST_STATES,
     ensure_directories,
     frozen_protocol,
@@ -96,6 +100,53 @@ def _verify_existing(manifest: dict[str, Any]) -> None:
                 raise RuntimeError(f"frozen artifact hash drift: {path}")
 
 
+def _portable_regeneration(manifest: dict[str, Any]) -> dict[str, Any] | None:
+    """Allow one fail-closed relocation of a tracked, path-bound manifest.
+
+    Heavy frozen inputs are intentionally not committed.  A fresh checkout can
+    therefore contain the reviewed manifest while its absolute source-machine
+    paths are unavailable.  Regeneration is safe only before this checkout has
+    produced any formal or smoke artifacts, and only when every missing path
+    points to another root with the exact expected input filename set.
+    """
+    if manifest.get("status") != "FROZEN_BEFORE_TRAINING":
+        raise RuntimeError("input manifest has an unexpected status")
+    if manifest.get("protocol") != frozen_protocol():
+        raise RuntimeError("input manifest protocol drift")
+    stored = [
+        Path(item[key])
+        for item in manifest.get("cells", [])
+        for key in ("parameter_file", "test_bank_file")
+    ]
+    missing = [path for path in stored if not path.is_file()]
+    if not missing:
+        return None
+    if len(stored) != len(_expected_paths()):
+        raise RuntimeError("tracked manifest has an unexpected frozen-input grid")
+    expected_names = {path.name for path in _expected_paths()}
+    if {path.name for path in stored} != expected_names:
+        raise RuntimeError("tracked manifest frozen-input filenames do not match the protocol")
+    current_input = INPUT_DIR.resolve()
+    if any(path.resolve(strict=False).parent == current_input for path in missing):
+        raise RuntimeError(f"missing frozen artifact from this checkout: {missing[0]}")
+    if len({path.resolve(strict=False).parent for path in stored}) != 1:
+        raise RuntimeError("tracked manifest mixes frozen-input roots")
+    if any(path.exists() for path in _expected_paths()):
+        raise RuntimeError("partial local frozen inputs exist; refusing portable regeneration")
+    work_roots = (STATUS_DIR, CHECKPOINT_DIR, PREDICTION_DIR, RAW_DIR)
+    if any(
+        root.exists() and any(path.is_file() for path in root.rglob("*"))
+        for root in work_roots
+    ):
+        raise RuntimeError("run artifacts already exist; refusing portable manifest regeneration")
+    return {
+        "reason": "tracked manifest referenced uncommitted inputs on another machine",
+        "previous_input_root": str(stored[0].resolve(strict=False).parent),
+        "new_input_root": str(current_input),
+        "formal_or_smoke_artifacts_present": False,
+    }
+
+
 def prepare() -> dict[str, Any]:
     ensure_directories()
     if not CALIBRATION_PATH.is_file():
@@ -103,10 +154,13 @@ def prepare() -> dict[str, Any]:
     calibration = json.loads(CALIBRATION_PATH.read_text(encoding="utf-8"))
     if calibration.get("status") != "FROZEN_BEFORE_TRAINING":
         raise RuntimeError("B6 calibration was not frozen before training")
+    portable_regeneration = None
     if MANIFEST_PATH.is_file():
         existing = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-        _verify_existing(existing)
-        return existing
+        portable_regeneration = _portable_regeneration(existing)
+        if portable_regeneration is None:
+            _verify_existing(existing)
+            return existing
     if any(path.exists() for path in _expected_paths()):
         raise RuntimeError("partial frozen inputs exist without a manifest; refusing overwrite")
 
@@ -185,6 +239,8 @@ def prepare() -> dict[str, Any]:
         "calibration_file_sha256": file_sha256(CALIBRATION_PATH),
         "cells": cells,
     }
+    if portable_regeneration is not None:
+        manifest["portable_regeneration"] = portable_regeneration
     write_json_atomic(MANIFEST_PATH, manifest)
     return manifest
 
