@@ -507,7 +507,7 @@ def _figures(frame: pd.DataFrame) -> None:
             axis.set_xscale("log"); axis.set_yscale("log")
         else:
             axis.text(0.5, 0.5, "formal cells pending", transform=axis.transAxes, ha="center")
-        axis.set_title(PDE_LABELS[pde]); axis.set_xlabel("Measured GH200 hours / cell")
+        axis.set_title(PDE_LABELS[pde]); axis.set_xlabel("Measured GPU hours / cell")
     axes[0].set_ylabel("Value RMSE")
     fig.legend(handles=handles, loc="upper center", ncol=4, frameon=False)
     fig.tight_layout(rect=(0, 0, 1, 0.91))
@@ -670,8 +670,9 @@ def _report(frame: pd.DataFrame, summary: dict[str, Any], audit: dict[str, Any])
         f"**Execution state:** {summary['suite_status']}",
         f"**Cells:** {counts.get('COMPLETE', 0)} complete, {counts.get('PENDING', 0)} pending, "
         f"{counts.get('OUT_OF_TIME', 0)} out of time, {counts.get('OUT_OF_MEMORY', 0)} OOM, "
-        f"{counts.get('FAILED', 0)} failed.",
-        f"**Expansion allocation:** {float(summary.get('allocated_gpu_hours') or 0):.3f} GH200 hours "
+        f"{counts.get('FAILED', 0)} failed, "
+        f"{counts.get('BUDGET_TRUNCATED', 0)} budget-truncated.",
+        f"**Expansion allocation:** {float(summary.get('allocated_gpu_hours') or 0):.3f} GPU hours "
         f"under the separate 120-hour cap.",
         f"**Artifact audit:** {audit['status']}.",
         "",
@@ -682,7 +683,7 @@ def _report(frame: pd.DataFrame, summary: dict[str, Any], audit: dict[str, Any])
         "",
         "## Current formal results",
         "",
-        "| PDE | d | Method | Status | Value RMSE | Relative L2 | GH200 h |",
+        "| PDE | d | Method | Status | Value RMSE | Relative L2 | GPU h |",
         "|---|---:|---|---|---:|---:|---:|",
     ]
     for row in frame.itertuples(index=False):
@@ -712,7 +713,7 @@ def _report(frame: pd.DataFrame, summary: dict[str, Any], audit: dict[str, Any])
         "",
         "- Frozen training seed: 0; frozen whole-function bank size: 960 per PDE/dimension.",
         "- Dimensions: 20, 50, 100, 200, 400.",
-        "- Per-cell cap: 6 GH200 hours; expansion cap: 120 GH200 hours.",
+        "- Per-cell cap: 6 GPU hours; expansion cap: 120 GPU hours.",
         "- Heavy banks, checkpoints, predictions, and logs remain in the workspace; committed "
         "manifests bind them by SHA-256.",
         "- Baseline classification and source commits are recorded in `baseline_fidelity_audit.md`.",

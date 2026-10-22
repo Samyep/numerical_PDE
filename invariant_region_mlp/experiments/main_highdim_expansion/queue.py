@@ -1,4 +1,4 @@
-"""Build immutable, accuracy-blind queues for four independent GPUs."""
+"""Build immutable, accuracy-blind queues for independent single-GPU cells."""
 
 from __future__ import annotations
 

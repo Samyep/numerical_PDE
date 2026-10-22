@@ -1,7 +1,8 @@
 #!/bin/bash
 set -uo pipefail
 
-SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/icml_two_highdim_expansion
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/common_env.sh"
 TASK_FILE=${1:?usage: run_queue_worker.sh TASK_FILE SLOT}
 SLOT=${2:?usage: run_queue_worker.sh TASK_FILE SLOT}
 HELPER="$SOURCE_ROOT/invariant_region_mlp/experiments/main_highdim_expansion/slurm/run_cell.sh"
@@ -17,12 +18,6 @@ print(max(0,int(datetime.fromisoformat(match.group(1)).timestamp()-datetime.now(
 PY
 }
 
-module load default
-source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
-conda activate base
-cd "$SOURCE_ROOT"
-export PYTHONPATH="$SOURCE_ROOT${PYTHONPATH:+:$PYTHONPATH}"
-
 tail -n +2 "$TASK_FILE" | while IFS=',' read -r slot sequence method pde dimension estimate high_estimate extra; do
   [[ "$slot" == "$SLOT" ]] || continue
   [[ -z "${extra:-}" ]] || { echo "invalid queue row" >&2; continue; }
@@ -30,7 +25,7 @@ tail -n +2 "$TASK_FILE" | while IFS=',' read -r slot sequence method pde dimensi
     python -m invariant_region_mlp.experiments.main_highdim_expansion.status budget \
       --method "$method" --pde "$pde" --dimension "$dimension"
   )
-  case "$prior_status" in COMPLETE|OUT_OF_TIME|OUT_OF_MEMORY|FAILED) continue;; esac
+  case "$prior_status" in COMPLETE|OUT_OF_TIME|OUT_OF_MEMORY|FAILED|BUDGET_TRUNCATED) continue;; esac
   allocation_left=$(allocation_seconds_left) || exit 4
   available=$((allocation_left - 240))
   (( available >= 300 )) || break

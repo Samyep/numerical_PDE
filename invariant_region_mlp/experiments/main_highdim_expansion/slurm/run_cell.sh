@@ -1,9 +1,8 @@
 #!/bin/bash
 set -uo pipefail
 
-SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/icml_two_highdim_expansion
-DPI_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/external/DeepPicardIteration
-DPI_DEPS=/work/nvme/bgvf/ywang151/original_pde_source_audit/dpi_deps
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/common_env.sh"
 CELL_CAP_SECONDS=${CELL_CAP_SECONDS:-21420}
 method=${1:?usage: run_cell.sh METHOD PDE DIMENSION}
 pde=${2:?usage: run_cell.sh METHOD PDE DIMENSION}
@@ -13,21 +12,12 @@ case "$method" in tangent_actor|dpi|pinn_hte|sdgd_pinn) ;; *) exit 2;; esac
 case "$pde" in b6_fullrank|dense_fourier) ;; *) exit 2;; esac
 case "$dimension" in 20|50|100|200|400) ;; *) exit 2;; esac
 
-module load default
-source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
-conda activate base
-cd "$SOURCE_ROOT"
-export PYTHONPATH="$DPI_DEPS:$DPI_ROOT:$SOURCE_ROOT${PYTHONPATH:+:$PYTHONPATH}"
-export NCCL_SOCKET_IFNAME=hsn
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-export WANDB_MODE=offline
-export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-16}
-
 job_id=${SLURM_ARRAY_JOB_ID:-${SLURM_JOB_ID:-local}}
 task_id=${EXPANSION_CELL_TASK_ID:-${SLURM_ARRAY_TASK_ID:-0}}
 tag="${method}__${pde}__d${dimension}"
 cell_out=${CELL_OUT:-$SOURCE_ROOT/invariant_region_mlp/results/main_highdim_expansion/slurm/${job_id}_${task_id}_${tag}.out}
 cell_err=${CELL_ERR:-$SOURCE_ROOT/invariant_region_mlp/results/main_highdim_expansion/slurm/${job_id}_${task_id}_${tag}.err}
+mkdir -p "$(dirname "$cell_out")" "$(dirname "$cell_err")"
 started_utc=$(date -u +%FT%TZ)
 started_epoch=$(date +%s)
 
@@ -36,7 +26,7 @@ read -r prior_status remaining_seconds prior_seconds prior_attempts < <(
     --method "$method" --pde "$pde" --dimension "$dimension"
 )
 case "$prior_status" in
-  COMPLETE|OUT_OF_TIME|OUT_OF_MEMORY|FAILED)
+  COMPLETE|OUT_OF_TIME|OUT_OF_MEMORY|FAILED|BUDGET_TRUNCATED)
     echo "SKIP cell=$tag status=$prior_status"
     exit 0 ;;
 esac
@@ -74,7 +64,7 @@ if [[ $code -eq 0 ]]; then
   status=COMPLETE; notes="runner completed under frozen protocol"
 elif [[ $code -eq 124 ]]; then
   if (( prior_seconds + seconds >= 21420 )); then
-    status=OUT_OF_TIME; notes="cumulative six-GH200-hour cap reached"
+    status=OUT_OF_TIME; notes="cumulative six-GPU-hour cap reached"
   else
     status=CHECKPOINTED; notes="allocation boundary; TA/SDGD resume exactly, DPI/PINN repeated work remains charged"
   fi

@@ -1,4 +1,4 @@
-"""Freeze accuracy-blind runtime estimates from smoke and prior GH200 runs."""
+"""Freeze accuracy-blind runtime estimates from smoke and prior GPU runs."""
 
 from __future__ import annotations
 
@@ -66,7 +66,7 @@ def profile() -> dict[str, Any]:
                 if samples:
                     point = min(6.0, median(samples))
                     high = min(6.0, max(max(samples), point * 1.75))
-                    source = "median and conservative high bound from completed original-suite GH200 cells"
+                    source = "median and conservative high bound from completed original-suite GPU cells"
                 else:
                     point, high = defaults[method]
                     dimension_factor = max(0.6, (d / 100.0) ** 0.35)

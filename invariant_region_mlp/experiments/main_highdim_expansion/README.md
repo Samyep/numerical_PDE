@@ -17,11 +17,21 @@ The execution order is fixed before formal training:
 4. The three fixed source-faithful baseline transfers fill the remaining
    dimensions.
 
-`slurm/auto_expansion_controller.sh` waits until the original seven-PDE suite
-has no controller or Slurm job left, executes `sbatch --test-only` before every
-actual submission, prevents duplicate suite jobs, and enforces both the
-six-GH200-hour cell cap and separate 120-GH200-hour expansion cap.  Accuracy
-never enters task ordering or model selection.
+`slurm/auto_expansion_controller.sh` verifies that no original-suite job is
+active and, by default, treats this checkout as an independent machine.  Set
+`CHECK_OLD_SUITE=1` only on a machine that shares the original-suite queue.  It
+executes `sbatch --test-only` before every actual submission, gives every cell
+its own single-GPU Slurm job, prevents duplicate writers, and enforces both the
+six-GPU-hour cell cap and separate 120-GPU-hour expansion cap.  Accuracy never
+enters task ordering or model selection.
+
+All machine paths are derived from the checkout.  `SOURCE_ROOT`, `DPI_ROOT`,
+`EXPANSION_VENV`, and the module names can be overridden through the
+environment.  `slurm/setup_ice.sh` installs the pinned DPI checkout and its
+dependencies once; `slurm/common_env.sh` is then reused by Stage A and every
+formal cell.  The ICE controller defaults to eight concurrent H100 cells, with
+the account, partition, QOS, GPU type, and concurrency exposed as environment
+variables.
 
 The formal Tangent-Actor row is the reference-free selected Actor evaluated at
 64 Euler steps with inference replicate 0.  Replicate 1 and the 128/256-step

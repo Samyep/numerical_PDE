@@ -1,4 +1,4 @@
-"""Attempt ledger and cumulative six-GH200-hour cell budget."""
+"""Attempt ledger and cumulative six-GPU-hour cell budget."""
 
 from __future__ import annotations
 
@@ -12,7 +12,13 @@ from typing import Any
 from .protocol import CELL_GPU_SECONDS_CAP, DIMENSIONS, METHODS, PDES, SOURCE_ROOT, STATUS_DIR
 
 
-TERMINAL_STATUSES = ("COMPLETE", "OUT_OF_TIME", "OUT_OF_MEMORY", "FAILED")
+TERMINAL_STATUSES = (
+    "COMPLETE",
+    "OUT_OF_TIME",
+    "OUT_OF_MEMORY",
+    "FAILED",
+    "BUDGET_TRUNCATED",
+)
 INTERMEDIATE_STATUSES = ("RUNNING", "CHECKPOINTED")
 
 
@@ -112,7 +118,12 @@ def cell_budget(method: str, pde: str, dimension: int) -> dict[str, Any]:
         status = "RUNNING"
     else:
         status = "PENDING"
-    if used >= CELL_GPU_SECONDS_CAP and status not in {"COMPLETE", "OUT_OF_MEMORY", "FAILED"}:
+    if used >= CELL_GPU_SECONDS_CAP and status not in {
+        "COMPLETE",
+        "OUT_OF_MEMORY",
+        "FAILED",
+        "BUDGET_TRUNCATED",
+    }:
         status = "OUT_OF_TIME"
     return {
         "status": status,
