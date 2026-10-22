@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import csv
 from datetime import datetime, timezone
 import getpass
@@ -11,6 +12,8 @@ import re
 import subprocess
 from typing import Any
 
+import fcntl
+
 from .protocol import GLOBAL_GPU_SECONDS_CAP, RESULTS_DIR, write_json_atomic
 
 
@@ -18,6 +21,19 @@ FIELDS = (
     "JobIDRaw", "JobName%64", "Partition", "State", "ElapsedRaw", "ExitCode",
     "AllocTRES%100", "Submit", "Start", "End",
 )
+
+
+@contextmanager
+def _accounting_lock():
+    """Serialize scheduler snapshots made by independent cell jobs."""
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    path = RESULTS_DIR / ".accounting.lock"
+    with path.open("a+", encoding="utf-8") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 def _gpu_count(value: str) -> int:
@@ -30,7 +46,7 @@ def _billing_units(value: str) -> int:
     return int(match.group(1)) if match else 0
 
 
-def collect(start: str = "2026-10-20") -> dict[str, Any]:
+def _collect_unlocked(start: str) -> dict[str, Any]:
     command = [
         "sacct", "-X", "-S", start, "-u", getpass.getuser(), "-n", "-P",
         "--format=" + ",".join(FIELDS),
@@ -72,10 +88,12 @@ def collect(start: str = "2026-10-20") -> dict[str, Any]:
         "allocated_billing_units", "account_credit_hours", "exit_code", "alloc_tres",
         "submit", "start", "end",
     ]
-    with path.open("w", newline="", encoding="utf-8") as handle:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    with temporary.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=columns, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
+    temporary.replace(path)
     allocated = sum(float(row["allocated_gpu_seconds"]) for row in rows)
     result = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
@@ -91,6 +109,11 @@ def collect(start: str = "2026-10-20") -> dict[str, Any]:
     }
     write_json_atomic(RESULTS_DIR / "resource_accounting.json", result)
     return result
+
+
+def collect(start: str = "2026-10-20") -> dict[str, Any]:
+    with _accounting_lock():
+        return _collect_unlocked(start)
 
 
 def _duration_seconds(value: str) -> int:
