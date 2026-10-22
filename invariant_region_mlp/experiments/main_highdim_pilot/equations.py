@@ -97,6 +97,11 @@ class DenseFourierDriver(ConcaveSemilinearDriver):
         grad_h = self.scale * ((factor * torch.cos(angle)) @ omega)
         return h, grad_h
 
+    def base_drift(self, t: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+        """Forward diffusion drift for the semilinear PDE (zero here)."""
+        del t
+        return torch.zeros_like(x)
+
     def terminal(self, x: torch.Tensor) -> torch.Tensor:
         h, _ = self._h_torch(x)
         return torch.asinh(h)

@@ -186,6 +186,16 @@ def test_benchmark_terminal_gradient_adapter() -> None:
     )
 
 
+def test_dense_benchmark_exposes_zero_forward_drift() -> None:
+    dense = make_dense_fourier(8)
+    state = torch.randn(5, 8, dtype=torch.float64)
+    time = torch.rand(5, dtype=torch.float64)
+    drift = dense.base_drift(time, state)
+    assert drift.shape == state.shape
+    assert drift.dtype == state.dtype
+    assert torch.count_nonzero(drift).item() == 0
+
+
 def test_dense_joint_tangent_coefficients_match_autodiff() -> None:
     driver = make_dense_fourier(7)
     generator = torch.Generator().manual_seed(88)
