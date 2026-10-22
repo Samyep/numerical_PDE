@@ -13,7 +13,8 @@
 #SBATCH --error=invariant_region_mlp/results/main_highdim_expansion/slurm/%x_%j.err
 
 set -euo pipefail
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+SOURCE_ROOT=${SOURCE_ROOT:-${SLURM_SUBMIT_DIR:?submit from the repository root}}
+SCRIPT_DIR=$SOURCE_ROOT/invariant_region_mlp/experiments/main_highdim_expansion/slurm
 source "$SCRIPT_DIR/common_env.sh"
 
 python -m invariant_region_mlp.experiments.main_highdim_expansion.accounting --reserve-job-id "$SLURM_JOB_ID"
