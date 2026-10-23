@@ -48,4 +48,8 @@ PY
   "$HELPER" "$method" "$pde" "$dimension"
   code=$?
   echo "QUEUE_END slot=$SLOT seq=$sequence cell=${method}/${pde}/d${dimension} exit=$code"
+  if [[ $code -eq 75 ]]; then
+    echo "QUEUE_ABORT slot=$SLOT transient_ice_infrastructure_failure" >&2
+    exit 75
+  fi
 done

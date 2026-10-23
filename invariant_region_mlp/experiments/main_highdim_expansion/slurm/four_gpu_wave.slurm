@@ -25,8 +25,7 @@ WORKERS=${WORKERS:-4}
 
 python -m invariant_region_mlp.experiments.main_highdim_expansion.review_gate
 python -m invariant_region_mlp.experiments.main_highdim_expansion.accounting --reserve-job-id "$SLURM_JOB_ID"
-nvidia-smi --query-gpu=index,uuid,name,memory.total --format=csv,noheader
-python -c 'import torch; print("torch.cuda.is_available=", torch.cuda.is_available(), "count=", torch.cuda.device_count())'
+nvidia-smi --query-gpu=index,uuid,name,memory.total --format=csv,noheader || true
 
 worker="$SOURCE_ROOT/invariant_region_mlp/experiments/main_highdim_expansion/slurm/run_queue_worker.sh"
 pids=()
@@ -39,5 +38,17 @@ for ((slot=0; slot<WORKERS; slot++)); do
   pids+=("$!")
 done
 status=0
-for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+for pid in "${pids[@]}"; do
+  if wait "$pid"; then
+    code=0
+  else
+    code=$?
+  fi
+  [[ $code -eq 0 ]] && continue
+  if [[ $code -eq 75 ]]; then
+    status=75
+  elif [[ $status -eq 0 ]]; then
+    status=$code
+  fi
+done
 exit "$status"

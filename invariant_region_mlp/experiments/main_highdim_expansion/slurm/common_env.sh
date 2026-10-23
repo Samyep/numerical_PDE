@@ -21,7 +21,9 @@ if [[ ! -d "$DPI_ROOT/.git" ]]; then
   return 2 2>/dev/null || exit 2
 fi
 
-module purge
+# PACE's login environment can retain dependencies of the default modules.
+# Force the purge; Lmod may still print harmless dependency-reload notices.
+module --force purge
 module load "$PYTHON_MODULE"
 module load "$CUDA_MODULE"
 source "$EXPANSION_VENV/bin/activate"
@@ -29,7 +31,14 @@ source "$EXPANSION_VENV/bin/activate"
 cd "$SOURCE_ROOT"
 export SOURCE_ROOT DPI_ROOT EXPANSION_VENV EXTERNAL_ROOT
 export PYTHONPATH="$DPI_ROOT:$SOURCE_ROOT${PYTHONPATH:+:$PYTHONPATH}"
-export NCCL_SOCKET_IFNAME=${NCCL_SOCKET_IFNAME:-hsn}
+# Do not inherit DeltaAI's HPE-Slingshot `hsn` assumption. These jobs use one
+# GPU each, so NCCL may auto-detect ICE's fabric. A task-specific override is
+# still available when explicitly needed.
+if [[ -n "${EXPANSION_NCCL_SOCKET_IFNAME:-}" ]]; then
+  export NCCL_SOCKET_IFNAME="$EXPANSION_NCCL_SOCKET_IFNAME"
+else
+  unset NCCL_SOCKET_IFNAME
+fi
 export PYTORCH_CUDA_ALLOC_CONF=${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}
 export WANDB_MODE=${WANDB_MODE:-offline}
 export OMP_NUM_THREADS=${OMP_NUM_THREADS:-${SLURM_CPUS_PER_TASK:-8}}

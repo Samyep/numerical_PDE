@@ -4,6 +4,7 @@ set -uo pipefail
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source "$SCRIPT_DIR/common_env.sh"
 CELL_CAP_SECONDS=${CELL_CAP_SECONDS:-21420}
+TEMPORARY_FAILURE_EXIT_CODE=${TEMPORARY_FAILURE_EXIT_CODE:-75}
 method=${1:?usage: run_cell.sh METHOD PDE DIMENSION}
 pde=${2:?usage: run_cell.sh METHOD PDE DIMENSION}
 dimension=${3:?usage: run_cell.sh METHOD PDE DIMENSION}
@@ -44,6 +45,24 @@ record_status() {
     --stdout "$cell_out" --stderr "$cell_err" --notes "$5"
 }
 
+python -m invariant_region_mlp.experiments.main_highdim_expansion.infrastructure \
+  probe --context "cell:$tag" 2> >(tee -a "$cell_err" >&2)
+probe_code=$?
+if [[ $probe_code -ne 0 ]]; then
+  finished_utc=$(date -u +%FT%TZ)
+  seconds=$(( $(date +%s) - started_epoch ))
+  if [[ $probe_code -eq $TEMPORARY_FAILURE_EXIT_CODE ]]; then
+    status=CHECKPOINTED
+    notes="transient ICE accelerator preflight failure; allocation charged and retry allowed"
+  else
+    status=FAILED
+    notes="non-transient accelerator/environment preflight failure"
+  fi
+  record_status "$status" "$finished_utc" "$seconds" "$probe_code" "$notes"
+  echo "END cell=$tag status=$status exit=$probe_code gpu_seconds=$seconds utc=$finished_utc"
+  exit "$probe_code"
+fi
+
 echo "BEGIN cell=$tag utc=$started_utc git=$(git rev-parse HEAD) host=$(hostname) cap=$CELL_CAP_SECONDS"
 python -m invariant_region_mlp.experiments.main_highdim_expansion.review_gate
 gate=$?
@@ -58,6 +77,7 @@ timeout --signal=TERM --kill-after=120 "$CELL_CAP_SECONDS" \
     --method "$method" --pde "$pde" --dimension "$dimension" \
     >"$cell_out" 2>"$cell_err"
 code=$?
+job_exit_code=$code
 finished_utc=$(date -u +%FT%TZ)
 seconds=$(( $(date +%s) - started_epoch ))
 if [[ $code -eq 0 ]]; then
@@ -70,9 +90,14 @@ elif [[ $code -eq 124 ]]; then
   fi
 elif [[ $code -eq 137 ]] || grep -Eiq 'CUDA out of memory|OutOfMemoryError|oom-kill|oom_kill' "$cell_err"; then
   status=OUT_OF_MEMORY; notes="memory failure detected"
+elif python -m invariant_region_mlp.experiments.main_highdim_expansion.infrastructure \
+  classify --stderr "$cell_err" --context "cell:$tag" --record; then
+  status=CHECKPOINTED
+  notes="transient ICE accelerator failure; allocation charged and retry allowed"
+  job_exit_code=$TEMPORARY_FAILURE_EXIT_CODE
 else
   status=FAILED; notes="runner failed; inspect immutable cell logs"
 fi
 record_status "$status" "$finished_utc" "$seconds" "$code" "$notes"
-echo "END cell=$tag status=$status exit=$code gpu_seconds=$seconds utc=$finished_utc"
-exit "$code"
+echo "END cell=$tag status=$status exit=$code job_exit=$job_exit_code gpu_seconds=$seconds utc=$finished_utc"
+exit "$job_exit_code"

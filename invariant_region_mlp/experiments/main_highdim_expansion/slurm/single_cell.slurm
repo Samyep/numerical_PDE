@@ -21,10 +21,8 @@ method=${METHOD:?submit with METHOD}
 pde=${PDE:?submit with PDE}
 dimension=${DIMENSION:?submit with DIMENSION}
 
-python -m invariant_region_mlp.experiments.main_highdim_expansion.review_gate
 python -m invariant_region_mlp.experiments.main_highdim_expansion.accounting \
   --reserve-job-id "$SLURM_JOB_ID"
-nvidia-smi --query-gpu=index,uuid,name,memory.total,driver_version --format=csv,noheader
-python -c 'import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available(), torch.cuda.get_device_name(0))'
+nvidia-smi --query-gpu=index,uuid,name,memory.total,driver_version --format=csv,noheader || true
 
 exec "$SCRIPT_DIR/run_cell.sh" "$method" "$pde" "$dimension"

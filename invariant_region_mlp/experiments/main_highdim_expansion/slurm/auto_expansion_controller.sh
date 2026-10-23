@@ -22,8 +22,13 @@ MEMORY_PER_CELL=${MEMORY_PER_CELL:-96G}
 ANCHOR_WALL=${ANCHOR_WALL:-06:10:00}
 ACTOR_WALL=${ACTOR_WALL:-02:00:00}
 BASELINE_WALL=${BASELINE_WALL:-06:10:00}
+STAGE_A_MAX_ATTEMPTS=${STAGE_A_MAX_ATTEMPTS:-4}
+AUTO_QUARANTINE_NODES=${AUTO_QUARANTINE_NODES:-1}
+EXPANSION_EXCLUDE_NODES=${EXPANSION_EXCLUDE_NODES:-}
 
 [[ "$WORKERS" =~ ^[1-9][0-9]*$ ]]
+[[ "$STAGE_A_MAX_ATTEMPTS" =~ ^[1-9][0-9]*$ ]]
+[[ "$AUTO_QUARANTINE_NODES" =~ ^[01]$ ]]
 mkdir -p "$QUEUE_DIR" "$RESULTS_DIR/slurm"
 
 exec 9>"$RESULTS_DIR/controller.lock"
@@ -62,7 +67,16 @@ wait_for_old_suite() {
 }
 
 expansion_jobs() {
-  squeue -h -u "$USER" -o '%i|%j|%T' | grep -E '\|icml_exp_' || true
+  squeue -h -u "$USER" -o '%i|%j|%T' | grep -E '\|(icml_exp_|icml_retry_)' || true
+}
+
+excluded_nodes() {
+  if [[ "$AUTO_QUARANTINE_NODES" == 1 ]]; then
+    python -m invariant_region_mlp.experiments.main_highdim_expansion.infrastructure \
+      excluded-nodes --extra "$EXPANSION_EXCLUDE_NODES"
+  else
+    printf '%s\n' "$EXPANSION_EXCLUDE_NODES"
+  fi
 }
 
 assert_no_expansion_jobs() {
@@ -163,17 +177,32 @@ PY
 
 submit_stage_a() {
   assert_no_expansion_jobs
-  sbatch --test-only "$STAGE_A" >&2
-  local job state
-  job=$(sbatch --parsable "$STAGE_A")
-  echo "$job" > "$RESULTS_DIR/STAGE_A_JOB_ID.txt"
-  echo "$(timestamp) submitted stage_a job=$job"
-  wait_for_jobs "$job"
-  state=$(sacct -X -n -P -j "$job" -o State | sed '/^$/d' | head -n1 | cut -d'|' -f1)
-  [[ "$state" == COMPLETED* ]] || return 7
-  [[ -f "$RESULTS_DIR/stage_a_complete.json" ]] || return 8
-  python -m invariant_region_mlp.experiments.main_highdim_expansion.review_gate
-  refresh
+  local attempt job state exit_code exclude
+  local -a resources
+  for ((attempt=1; attempt<=STAGE_A_MAX_ATTEMPTS; attempt++)); do
+    exclude=$(excluded_nodes)
+    resources=()
+    [[ -z "$exclude" ]] || resources+=(--exclude="$exclude")
+    sbatch --test-only "${resources[@]}" "$STAGE_A" >&2
+    job=$(sbatch --parsable "${resources[@]}" "$STAGE_A")
+    echo "$job" > "$RESULTS_DIR/STAGE_A_JOB_ID.txt"
+    echo "$(timestamp) submitted stage_a attempt=$attempt job=$job exclude=${exclude:-none}"
+    wait_for_jobs "$job"
+    state=$(sacct -X -n -P -j "$job" -o State | sed '/^$/d' | head -n1 | cut -d'|' -f1)
+    exit_code=$(sacct -X -n -P -j "$job" -o ExitCode | sed '/^$/d' | head -n1 | cut -d'|' -f1)
+    if [[ "$state" == COMPLETED* ]]; then
+      [[ -f "$RESULTS_DIR/stage_a_complete.json" ]] || return 8
+      python -m invariant_region_mlp.experiments.main_highdim_expansion.review_gate
+      refresh
+      return 0
+    fi
+    if [[ "$exit_code" == 75:* && $attempt -lt $STAGE_A_MAX_ATTEMPTS ]]; then
+      echo "$(timestamp) retrying stage_a after transient ICE infrastructure failure job=$job"
+      continue
+    fi
+    echo "stage_a failed job=$job state=$state exit_code=$exit_code" >&2
+    return 7
+  done
 }
 
 method_abbreviation() {
@@ -196,7 +225,7 @@ pde_abbreviation() {
 
 submit_cell() {
   local method=$1 pde=$2 dimension=$3 wall=$4 cap=$5 stage=$6
-  local method_short pde_short job_name export_vars job active
+  local method_short pde_short job_name export_vars job active exclude
   method_short=$(method_abbreviation "$method")
   pde_short=$(pde_abbreviation "$pde")
   job_name="icml_exp_${method_short}_${pde_short}_d${dimension}"
@@ -212,9 +241,11 @@ submit_cell() {
     --mem="$MEMORY_PER_CELL" --gres="gpu:$GPU_TYPE:1" --time="$wall"
     --job-name="$job_name" --export="$export_vars"
   )
+  exclude=$(excluded_nodes)
+  [[ -z "$exclude" ]] || resources+=(--exclude="$exclude")
   sbatch --test-only "${resources[@]}" "$CELL_SCRIPT" >&2
   job=$(sbatch --parsable "${resources[@]}" "$CELL_SCRIPT")
-  echo "$(timestamp) submitted stage=$stage job=$job cell=$method/$pde/d$dimension wall=$wall cap=$cap" >&2
+  echo "$(timestamp) submitted stage=$stage job=$job cell=$method/$pde/d$dimension wall=$wall cap=$cap exclude=${exclude:-none}" >&2
   printf '%s\n' "$job"
 }
 

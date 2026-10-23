@@ -21,6 +21,13 @@ FIELDS = (
     "JobIDRaw", "JobName%64", "Partition", "State", "ElapsedRaw", "ExitCode",
     "AllocTRES%100", "Submit", "Start", "End",
 )
+TRACKED_JOB_PREFIXES = ("icml_exp_", "icml_retry_")
+
+
+def tracked_job_name(value: str) -> bool:
+    """Include formal jobs and auditable manual infrastructure retries."""
+
+    return str(value).startswith(TRACKED_JOB_PREFIXES)
 
 
 @contextmanager
@@ -56,7 +63,7 @@ def _collect_unlocked(start: str) -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
     for line in output.splitlines():
         raw = dict(zip(names, line.split("|"), strict=False))
-        if not str(raw.get("JobName", "")).startswith("icml_exp_"):
+        if not tracked_job_name(str(raw.get("JobName", ""))):
             continue
         elapsed = int(float(raw.get("ElapsedRaw") or 0))
         gpus = _gpu_count(str(raw.get("AllocTRES") or ""))
@@ -99,6 +106,7 @@ def _collect_unlocked(start: str) -> dict[str, Any]:
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "query_start": start,
         "job_name_prefix": "icml_exp_",
+        "job_name_prefixes": list(TRACKED_JOB_PREFIXES),
         "jobs": len(rows),
         "allocated_gpu_seconds": allocated,
         "allocated_gpu_hours": allocated / 3600.0,

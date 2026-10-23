@@ -24,6 +24,11 @@ from .protocol import (
     TEST_STATES,
     frozen_protocol,
 )
+from .infrastructure import (
+    is_transient_accelerator_error,
+    merged_excluded_nodes,
+    quarantined_nodes,
+)
 
 
 def _laplacian(value: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
@@ -194,6 +199,54 @@ def test_dense_benchmark_exposes_zero_forward_drift() -> None:
     assert drift.shape == state.shape
     assert drift.dtype == state.dtype
     assert torch.count_nonzero(drift).item() == 0
+
+
+def test_ice_device_unavailable_is_retryable_but_scientific_failures_are_not() -> None:
+    observed = (
+        "torch.AcceleratorError: CUDA error: CUDA-capable device(s) is/are "
+        "busy or unavailable\nSearch for cudaErrorDevicesUnavailable"
+    )
+    assert is_transient_accelerator_error(observed)
+    assert is_transient_accelerator_error("CUDA driver initialization failed")
+    assert not is_transient_accelerator_error("torch.cuda.OutOfMemoryError: CUDA out of memory")
+    assert not is_transient_accelerator_error(
+        "AttributeError: DenseFourierDriver has no attribute base_drift"
+    )
+
+
+def test_ice_quarantine_uses_only_audited_transient_events(tmp_path) -> None:
+    (tmp_path / "transient.json").write_text(
+        json.dumps(
+            {
+                "node": "ice-node-2",
+                "status": "TRANSIENT_INFRASTRUCTURE_FAILURE",
+                "transient": True,
+                "quarantine_node": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "application.json").write_text(
+        json.dumps(
+            {
+                "node": "ice-node-1",
+                "status": "APPLICATION_FAILURE",
+                "transient": False,
+                "quarantine_node": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "unaudited.json").write_text(
+        json.dumps({"node": "ice-node-4", "quarantine_node": True}),
+        encoding="utf-8",
+    )
+    (tmp_path / "broken.json").write_text("not-json", encoding="utf-8")
+    assert quarantined_nodes(tmp_path) == ("ice-node-2",)
+    assert merged_excluded_nodes("ice-node-3,ice-node-2", tmp_path) == (
+        "ice-node-2",
+        "ice-node-3",
+    )
 
 
 def test_dense_joint_tangent_coefficients_match_autodiff() -> None:

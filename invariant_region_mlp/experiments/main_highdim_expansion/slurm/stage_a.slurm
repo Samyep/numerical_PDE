@@ -18,8 +18,9 @@ SCRIPT_DIR=$SOURCE_ROOT/invariant_region_mlp/experiments/main_highdim_expansion/
 source "$SCRIPT_DIR/common_env.sh"
 
 python -m invariant_region_mlp.experiments.main_highdim_expansion.accounting --reserve-job-id "$SLURM_JOB_ID"
-nvidia-smi --query-gpu=index,uuid,name,memory.total,driver_version --format=csv,noheader
-python -c 'import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))'
+nvidia-smi --query-gpu=index,uuid,name,memory.total,driver_version --format=csv,noheader || true
+python -m invariant_region_mlp.experiments.main_highdim_expansion.infrastructure \
+  probe --context stage_a
 python -m invariant_region_mlp.experiments.main_highdim_expansion.machine_info
 
 python -m invariant_region_mlp.experiments.main_highdim_expansion.calibrate --device cuda

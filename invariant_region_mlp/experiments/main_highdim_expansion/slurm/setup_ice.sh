@@ -10,7 +10,7 @@ PYTHON_MODULE=${PYTHON_MODULE:-python/3.11.9}
 CUDA_MODULE=${CUDA_MODULE:-cuda/13.0.1}
 DPI_COMMIT=e8616c2f531c9f95299b246a13c1180b8f02822a
 
-module purge
+module --force purge
 module load "$PYTHON_MODULE"
 module load "$CUDA_MODULE"
 

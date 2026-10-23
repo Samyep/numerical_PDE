@@ -14,6 +14,7 @@ from .status import cell_budget
 
 
 ESTIMATE_PATH = RESULTS_DIR / "runtime_estimates.json"
+ACTIVE_JOB_PREFIXES = ("icml_exp_", "icml_retry_")
 STAGES = {
     "anchor": lambda method, pde, d: d == 100,
     "actor_scaling": lambda method, pde, d: method == "tangent_actor" and d != 100,
@@ -28,7 +29,11 @@ def _active_jobs() -> list[str]:
         capture_output=True,
         text=True,
     ).stdout
-    return [line for line in output.splitlines() if "|icml_exp_" in line]
+    return [
+        line
+        for line in output.splitlines()
+        if any(f"|{prefix}" in line for prefix in ACTIVE_JOB_PREFIXES)
+    ]
 
 
 def _estimates() -> dict[tuple[str, str, int], tuple[float, float]]:

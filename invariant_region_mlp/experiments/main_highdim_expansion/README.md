@@ -33,6 +33,22 @@ formal cell.  The ICE controller defaults to eight concurrent H100 cells, with
 the account, partition, QOS, GPU type, and concurrency exposed as environment
 variables.
 
+ICE allocations run a real CUDA arithmetic-and-synchronization preflight before
+formal work. A narrowly classified `cudaErrorDevicesUnavailable`/driver-startup
+failure is recorded as an immutable infrastructure event, charged to resource
+accounting, and leaves the cell `CHECKPOINTED` so it can be retried. The
+controller quarantines the affected Slurm node for the remainder of the run.
+Application exceptions, numerical failures, CUDA OOM, and protocol-gate failures
+remain terminal and are never converted into retries. Set
+`AUTO_QUARANTINE_NODES=0` to disable automatic quarantine or provide a
+comma-separated static list through `EXPANSION_EXCLUDE_NODES`.
+
+These ICE controls do not change the frozen scientific protocol: parameter and
+test banks, seeds, architectures, optimizer budgets, cell/global GPU-hour caps,
+selection rules, and evaluation metrics are unchanged. Failed and retry
+allocations—including jobs named `icml_retry_*`—remain in the 120-GPU-hour
+accounting ledger.
+
 The formal Tangent-Actor row is the reference-free selected Actor evaluated at
 64 Euler steps with inference replicate 0.  Replicate 1 and the 128/256-step
 audits remain separate records.  Exact solutions are unavailable to training,
