@@ -111,38 +111,82 @@ def _allen_reference(d: int, t: np.ndarray, x: np.ndarray) -> tuple[np.ndarray, 
     # The radial solver coordinate is s=||x||^2.  The fixed 20-unit buffer is
     # stricter than the protocol's eight-unit/four-diffusion-SD minimum.
     base_s_max = max(40.0, math.ceil((float(radius2.max()) + 20.0) / 10.0) * 10.0)
-    expanded_s_max = math.ceil(1.25 * base_s_max / 10.0) * 10.0
+    # First converge the far boundary at a fixed fine discretization.  More
+    # than one 25% expansion is allowed and was explicitly preregistered.
+    domain_levels: list[dict[str, Any]] = []
+    previous_s_max = base_s_max
+    previous_cfg = AllenRadialConfig(
+        s_max=previous_s_max, ds=0.05, dt=5e-5, dimension=d, horizon=0.3,
+    )
+    previous_value = _allen_solve(previous_cfg, t, radius2)
+    domain_levels.append({"name": "domain_0", **asdict(previous_cfg)})
+    domain_difference = np.full_like(previous_value, np.inf)
+    accepted_s_max = previous_s_max
+    accepted_previous_s_max = previous_s_max
+    for domain_index in range(1, 7):
+        next_s_max = math.ceil(1.25 * previous_s_max / 10.0) * 10.0
+        next_cfg = AllenRadialConfig(
+            s_max=next_s_max, ds=0.05, dt=5e-5, dimension=d, horizon=0.3,
+        )
+        next_value = _allen_solve(next_cfg, t, radius2)
+        domain_difference = np.abs(next_value - previous_value)
+        domain_levels.append({
+            "name": f"domain_{domain_index}",
+            **asdict(next_cfg),
+            "maximum_change_from_previous": float(domain_difference.max()),
+        })
+        accepted_previous_s_max = previous_s_max
+        accepted_s_max = next_s_max
+        if float(domain_difference.max()) <= 2e-5:
+            break
+        previous_s_max, previous_value = next_s_max, next_value
+    else:
+        raise RuntimeError(f"Allen-Cahn domain convergence failed d={d}")
+
+    # Cancel the first-order radial drift discretization with two independent
+    # Richardson estimates.  If their difference is still too large, add one
+    # more halved level before applying the frozen threshold.
     coarse_cfg = AllenRadialConfig(
-        s_max=base_s_max, ds=0.1, dt=1e-4, dimension=d, horizon=0.3,
+        s_max=accepted_s_max, ds=0.1, dt=1e-4, dimension=d, horizon=0.3,
     )
     fine_cfg = AllenRadialConfig(
-        s_max=base_s_max, ds=0.05, dt=5e-5, dimension=d, horizon=0.3,
+        s_max=accepted_s_max, ds=0.05, dt=5e-5, dimension=d, horizon=0.3,
     )
-    expanded_cfg = AllenRadialConfig(
-        s_max=expanded_s_max, ds=0.05, dt=5e-5, dimension=d, horizon=0.3,
+    superfine_cfg = AllenRadialConfig(
+        s_max=accepted_s_max, ds=0.025, dt=2.5e-5, dimension=d, horizon=0.3,
     )
     coarse = _allen_solve(coarse_cfg, t, radius2)
     fine = _allen_solve(fine_cfg, t, radius2)
-    expanded = _allen_solve(expanded_cfg, t, radius2)
-    refinement = np.abs(fine - coarse)
-    boundary = np.abs(expanded - fine)
-    used_superfine = bool(max(float(refinement.max()), float(boundary.max())) > 2e-5)
-    levels: list[dict[str, Any]] = [
+    superfine = _allen_solve(superfine_cfg, t, radius2)
+    extrapolated_coarse = 2.0 * fine - coarse
+    extrapolated_fine = 2.0 * superfine - fine
+    discretization = np.abs(extrapolated_fine - extrapolated_coarse)
+    refinement_levels: list[dict[str, Any]] = [
         {"name": "coarse", **asdict(coarse_cfg)},
         {"name": "fine", **asdict(fine_cfg)},
-        {"name": "expanded_domain", **asdict(expanded_cfg)},
+        {"name": "superfine", **asdict(superfine_cfg)},
     ]
-    if used_superfine:
-        superfine_cfg = AllenRadialConfig(
-            s_max=expanded_s_max, ds=0.025, dt=2.5e-5, dimension=d, horizon=0.3,
+    final = extrapolated_fine
+    if float(discretization.max()) > 2e-5:
+        ultra_cfg = AllenRadialConfig(
+            s_max=accepted_s_max, ds=0.0125, dt=1.25e-5,
+            dimension=d, horizon=0.3,
         )
-        superfine = _allen_solve(superfine_cfg, t, radius2)
-        levels.append({"name": "superfine", **asdict(superfine_cfg)})
-        final = superfine
-        uncertainty = np.maximum(np.abs(superfine - expanded), boundary)
-    else:
-        final = expanded
-        uncertainty = np.maximum(refinement, boundary)
+        ultra = _allen_solve(ultra_cfg, t, radius2)
+        refinement_levels.append({"name": "ultra", **asdict(ultra_cfg)})
+        extrapolated_ultra = 2.0 * ultra - superfine
+        discretization = np.abs(extrapolated_ultra - extrapolated_fine)
+        final = extrapolated_ultra
+
+    previous_domain_superfine_cfg = AllenRadialConfig(
+        s_max=accepted_previous_s_max, ds=0.025, dt=2.5e-5,
+        dimension=d, horizon=0.3,
+    )
+    previous_domain_superfine = _allen_solve(
+        previous_domain_superfine_cfg, t, radius2
+    )
+    boundary = np.abs(superfine - previous_domain_superfine)
+    uncertainty = np.maximum(discretization, boundary)
     maximum = float(np.max(uncertainty))
     if maximum > 2e-5:
         raise RuntimeError(f"Allen-Cahn reference convergence failed d={d}: {maximum:.3e}")
@@ -150,9 +194,11 @@ def _allen_reference(d: int, t: np.ndarray, x: np.ndarray) -> tuple[np.ndarray, 
         "kind": "radial Strang-reaction / Crank-Nicolson convergence audit",
         "coordinate": "s=||x||^2",
         "maximum_query_s": float(radius2.max()),
-        "levels": levels,
-        "used_superfine": used_superfine,
-        "maximum_coarse_fine_difference": float(refinement.max()),
+        "domain_levels": domain_levels,
+        "refinement_levels": refinement_levels,
+        "richardson_order": 1,
+        "maximum_coarse_fine_difference": float(np.abs(fine - coarse).max()),
+        "maximum_richardson_difference": float(discretization.max()),
         "maximum_domain_difference": float(boundary.max()),
         "maximum_uncertainty": maximum,
         "threshold": 2e-5,
@@ -261,7 +307,7 @@ def prepare() -> dict[str, Any]:
                         f"frozen parameter mismatch {pde} d={d}: {generated_hash} != {expected_hash}"
                     )
                 parameter_record.update({
-                    "file": str(parameter_file.relative_to(RESULTS_DIR)),
+                    "file": parameter_file.relative_to(RESULTS_DIR).as_posix(),
                     "file_sha256": file_sha256(parameter_file),
                     "array_sha256": generated_hash,
                     "source_array_sha256": expected_hash,
@@ -293,7 +339,9 @@ def prepare() -> dict[str, Any]:
     parameter_payload = {
         "revision": REVISION,
         "status": "FROZEN_BEFORE_PILOT_OR_FORMAL_TRAINING",
-        "source_manifest": str(SOURCE_EXPANSION_RESULTS / "parameter_and_test_bank_manifest.json"),
+        "source_manifest": (
+            SOURCE_EXPANSION_RESULTS / "parameter_and_test_bank_manifest.json"
+        ).relative_to(RESULTS_DIR.parents[1]).as_posix(),
         "rows": parameter_rows,
     }
     reference_payload = {
