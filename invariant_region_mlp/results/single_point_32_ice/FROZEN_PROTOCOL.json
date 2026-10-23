@@ -1,0 +1,172 @@
+{
+  "actor_updates": 4,
+  "b6_selections": {
+    "100": {
+      "beta": 1.5,
+      "gamma": 1.0
+    },
+    "20": {
+      "beta": 1.0,
+      "gamma": 1.0
+    },
+    "200": {
+      "beta": 2.0,
+      "gamma": 1.0
+    },
+    "400": {
+      "beta": 2.0,
+      "gamma": 1.0
+    },
+    "50": {
+      "beta": 1.5,
+      "gamma": 1.0
+    }
+  },
+  "base_commit": "027240a72fe3028b4308275e5ec8f06722b79c33",
+  "branch": "ir-mlp-icml-single-point-32-ice",
+  "deep_bsde": {
+    "batch_size": 64,
+    "checkpoint_interval": 100,
+    "intervals": 20,
+    "validation_size": 256
+  },
+  "dimensions": [
+    20,
+    50,
+    100,
+    200,
+    400
+  ],
+  "fh_mlp": {
+    "configurations": [
+      [
+        2,
+        16
+      ],
+      [
+        2,
+        32
+      ],
+      [
+        3,
+        8
+      ],
+      [
+        3,
+        12
+      ],
+      [
+        3,
+        16
+      ],
+      [
+        3,
+        24
+      ]
+    ],
+    "main_configuration": [
+      3,
+      16
+    ],
+    "replicates": 10
+  },
+  "gradient_actor": {
+    "activation": "silu",
+    "batch_size": 512,
+    "checkpoint_interval": 250,
+    "depth": 4,
+    "gradient_clip": 10.0,
+    "label_estimator": "mcv",
+    "label_time_steps": 32,
+    "learning_rate": 0.00015,
+    "optimizer_steps": 5000,
+    "parent_batch": 8,
+    "path_chunk": 32,
+    "paths_per_label": 128,
+    "training_distribution": "function",
+    "training_points": 8192,
+    "validation_points": 512,
+    "width": 384
+  },
+  "ground_truth_policy": "evaluation and reference validation only; forbidden from training, checkpoint selection, stopping, and solver-budget selection",
+  "joint_actor": {
+    "batch_size": 512,
+    "checkpoint_interval": 250,
+    "depth": 4,
+    "gradient_clip": 10.0,
+    "label_time_steps": 32,
+    "learning_rate": 0.00015,
+    "optimizer_steps": 5000,
+    "parent_batch": 8,
+    "path_chunk": 32,
+    "paths_per_label": 128,
+    "training_points": 8192,
+    "validation_points": 512,
+    "width": 384
+  },
+  "methods": [
+    "tangent_actor",
+    "fh_mlp_standard",
+    "deep_bsde"
+  ],
+  "pdes": [
+    "hjb_log",
+    "allen_cahn",
+    "b6_fullrank",
+    "dense_fourier"
+  ],
+  "protocol_sha256": "402271a8ca9c7660a790580d0aa8615f8bc6544716a167d32e1fc4ab4ee05814",
+  "query_count": 32,
+  "query_seeds": {
+    "allen_cahn": {
+      "100": 4074736349,
+      "20": 1716816384,
+      "200": 1881011736,
+      "400": 255990953,
+      "50": 259137838
+    },
+    "b6_fullrank": {
+      "100": 1737294624,
+      "20": 214171249,
+      "200": 2575111948,
+      "400": 3771049365,
+      "50": 697137073
+    },
+    "dense_fourier": {
+      "100": 2884838781,
+      "20": 3392201883,
+      "200": 2659431886,
+      "400": 2229501467,
+      "50": 1193042412
+    },
+    "hjb_log": {
+      "100": 1898610954,
+      "20": 1014295083,
+      "200": 2768728099,
+      "400": 1832156210,
+      "50": 1870289811
+    }
+  },
+  "revision": "single_point_32_ice_v1",
+  "source_commits": {
+    "base_and_highdim_results": "027240a72fe3028b4308275e5ec8f06722b79c33",
+    "dense_fourier_pilot": "3d3d4c80f0b29af39e7d509a143812a1f5a702f0",
+    "mature_whole_function_suite": "136e892ba6ffd5fcf33d5d3dc618828584675f44",
+    "strong_baselines": "66495efb3510ab99514942ed7f9ee62259b2d21d",
+    "validated_b6": "281977883e0a5ce4f05895878680b582620461be"
+  },
+  "ta_evaluation": {
+    "audit_euler_steps": [
+      128,
+      256
+    ],
+    "inference_replicates": 4,
+    "paths": 1024,
+    "primary_euler_steps": 64
+  },
+  "training_seeds": [
+    0,
+    1,
+    2
+  ]
+}

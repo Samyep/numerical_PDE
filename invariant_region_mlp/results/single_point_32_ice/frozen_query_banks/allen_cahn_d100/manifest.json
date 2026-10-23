@@ -1,0 +1,94 @@
+{
+  "canonical_input_sha256": "905e61abd24f9df000d1867cb4a7ec87937210c54ea58c519dc23087ff617621",
+  "canonical_reference_sha256": "4fc599fa5465ac2a300c9b36925b2a51838ac8e157c5a18fdfb202de74da2035",
+  "dimension": 100,
+  "distribution": "N(0,I_d)",
+  "dtype": "float64",
+  "maximum_reference_uncertainty": 2.767823243324946e-06,
+  "origin_row": 0,
+  "pde": "allen_cahn",
+  "reference": {
+    "coordinate": "s=||x||^2",
+    "domain_levels": [
+      {
+        "dimension": 100,
+        "ds": 0.05,
+        "dt": 5e-05,
+        "horizon": 0.3,
+        "name": "domain_0",
+        "s_max": 160.0
+      },
+      {
+        "dimension": 100,
+        "ds": 0.05,
+        "dt": 5e-05,
+        "horizon": 0.3,
+        "maximum_change_from_previous": 0.003255525440679606,
+        "name": "domain_1",
+        "s_max": 200.0
+      },
+      {
+        "dimension": 100,
+        "ds": 0.05,
+        "dt": 5e-05,
+        "horizon": 0.3,
+        "maximum_change_from_previous": 0.0005298235309705024,
+        "name": "domain_2",
+        "s_max": 250.0
+      },
+      {
+        "dimension": 100,
+        "ds": 0.05,
+        "dt": 5e-05,
+        "horizon": 0.3,
+        "maximum_change_from_previous": 2.803850447482409e-06,
+        "name": "domain_3",
+        "s_max": 320.0
+      }
+    ],
+    "kind": "radial Strang-reaction / Crank-Nicolson convergence audit",
+    "maximum_coarse_fine_difference": 3.87004060560317e-05,
+    "maximum_domain_difference": 2.767823243324946e-06,
+    "maximum_query_s": 139.39378685903205,
+    "maximum_richardson_difference": 8.14492180575832e-08,
+    "maximum_uncertainty": 2.767823243324946e-06,
+    "passed": true,
+    "refinement_levels": [
+      {
+        "dimension": 100,
+        "ds": 0.1,
+        "dt": 0.0001,
+        "horizon": 0.3,
+        "name": "coarse",
+        "s_max": 320.0
+      },
+      {
+        "dimension": 100,
+        "ds": 0.05,
+        "dt": 5e-05,
+        "horizon": 0.3,
+        "name": "fine",
+        "s_max": 320.0
+      },
+      {
+        "dimension": 100,
+        "ds": 0.025,
+        "dt": 2.5e-05,
+        "horizon": 0.3,
+        "name": "superfine",
+        "s_max": 320.0
+      }
+    ],
+    "richardson_order": 1,
+    "threshold": 2e-05
+  },
+  "reference_sha256": "ef44f55cad0956639e5ef50eded67fd6746df75573891b194186ade69a531923",
+  "reference_uncertainty_sha256": "25d9bbbc0615b590e81e1e9e99b556ab0b002cdfce8462094b87e5d387328e49",
+  "seed": 4074736349,
+  "shape": [
+    32,
+    100
+  ],
+  "t_sha256": "c6a169b1b165e9f7992b0dacf8a6cf985ba4f6840b6b1a522db96245b2580f1f",
+  "x_sha256": "b382d81be554067d7b387f3c9f4c8574ace8dec29b4214666c0fd1c42e8b9074"
+}

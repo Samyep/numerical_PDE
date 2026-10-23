@@ -1,0 +1,85 @@
+{
+  "canonical_input_sha256": "37470339b4d78611d1ecdd65c51991ebf9a6d0848997826861261b6b0d97a1bd",
+  "canonical_reference_sha256": "cd50d65167c4643a76da207fb8613bda69ca83d2766d013f5d5e68e60660e9bd",
+  "dimension": 20,
+  "distribution": "N(0,I_d)",
+  "dtype": "float64",
+  "maximum_reference_uncertainty": 1.9262303504463674e-06,
+  "origin_row": 0,
+  "pde": "allen_cahn",
+  "reference": {
+    "coordinate": "s=||x||^2",
+    "domain_levels": [
+      {
+        "dimension": 20,
+        "ds": 0.05,
+        "dt": 5e-05,
+        "horizon": 0.3,
+        "name": "domain_0",
+        "s_max": 60.0
+      },
+      {
+        "dimension": 20,
+        "ds": 0.05,
+        "dt": 5e-05,
+        "horizon": 0.3,
+        "maximum_change_from_previous": 8.523649256934884e-05,
+        "name": "domain_1",
+        "s_max": 80.0
+      },
+      {
+        "dimension": 20,
+        "ds": 0.05,
+        "dt": 5e-05,
+        "horizon": 0.3,
+        "maximum_change_from_previous": 2.6486861527674765e-07,
+        "name": "domain_2",
+        "s_max": 100.0
+      }
+    ],
+    "kind": "radial Strang-reaction / Crank-Nicolson convergence audit",
+    "maximum_coarse_fine_difference": 0.0004305228695728469,
+    "maximum_domain_difference": 2.604657580312919e-07,
+    "maximum_query_s": 30.686591885334202,
+    "maximum_richardson_difference": 1.9262303504463674e-06,
+    "maximum_uncertainty": 1.9262303504463674e-06,
+    "passed": true,
+    "refinement_levels": [
+      {
+        "dimension": 20,
+        "ds": 0.1,
+        "dt": 0.0001,
+        "horizon": 0.3,
+        "name": "coarse",
+        "s_max": 100.0
+      },
+      {
+        "dimension": 20,
+        "ds": 0.05,
+        "dt": 5e-05,
+        "horizon": 0.3,
+        "name": "fine",
+        "s_max": 100.0
+      },
+      {
+        "dimension": 20,
+        "ds": 0.025,
+        "dt": 2.5e-05,
+        "horizon": 0.3,
+        "name": "superfine",
+        "s_max": 100.0
+      }
+    ],
+    "richardson_order": 1,
+    "threshold": 2e-05
+  },
+  "reference_sha256": "0ce1ecb26e368c86210548699ea7203115bc956d0bf2ab05672ee96e47e682d6",
+  "reference_uncertainty_sha256": "07eaeda5103e3347e7482ca5525ddc4ced132441853bfcd475b1dfbfcc1b059d",
+  "seed": 1716816384,
+  "shape": [
+    32,
+    20
+  ],
+  "t_sha256": "c6a169b1b165e9f7992b0dacf8a6cf985ba4f6840b6b1a522db96245b2580f1f",
+  "x_sha256": "f9193d7ff67e8ae42e5a8cf8e272d88e191f0497aa166d0cf6aef7598d640ed8"
+}
