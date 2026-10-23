@@ -1,0 +1,245 @@
+{
+  "checks": {
+    "allen_value_actor_mcv": {
+      "martingale_mean": -0.0032161757803805813,
+      "martingale_standard_error": 0.0024785979864895913,
+      "mean_z_score": -1.2975786303028563,
+      "nonfinite_count": 0,
+      "passed": true,
+      "pathwise_identity_max_error": 0.0
+    },
+    "deep_bsde_native_anchors": [
+      {
+        "dimension": 100,
+        "max_x_rollout_difference": 0.0,
+        "max_y_rollout_difference": 0.0,
+        "passed": true,
+        "pde": "hjb_log",
+        "x0": "zero"
+      },
+      {
+        "dimension": 100,
+        "max_x_rollout_difference": 0.0,
+        "max_y_rollout_difference": 0.0,
+        "passed": true,
+        "pde": "allen_cahn",
+        "x0": "zero"
+      }
+    ],
+    "deep_bsde_resume": {
+      "device": "cuda",
+      "generator_continuation_bitwise_equal": true,
+      "maximum_parameter_difference": 0.0,
+      "passed": true,
+      "threshold": 1e-12
+    },
+    "fh_mlp_joint": {
+      "driver_depends_on_value": true,
+      "driver_quadratic_gradient_scaling": true,
+      "passed": true,
+      "state_finite": true,
+      "stats": {
+        "driver_evaluations": 4,
+        "nonfinite_count": 0,
+        "recursive_calls": 2,
+        "recursive_states": 5,
+        "terminal_samples": 32,
+        "transition_samples": 4,
+        "value_projection_count": 0
+      },
+      "untruncated_bismut_denominator": true
+    },
+    "no_formal_artifacts_before_gate": {
+      "count": 0,
+      "passed": true
+    },
+    "parameters": {
+      "cells": 20,
+      "manifest_sha256": "a6929e0e6edbb1255a40fd931d7a392d74c98cc23f30fc94195b7aada18a50d9",
+      "passed": true
+    },
+    "query_isolation": {
+      "passed": true,
+      "rows": [
+        {
+          "dimension": 20,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "hjb_log",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 50,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "hjb_log",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 100,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "hjb_log",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 200,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "hjb_log",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 400,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "hjb_log",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 20,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "allen_cahn",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 50,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "allen_cahn",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 100,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "allen_cahn",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 200,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "allen_cahn",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 400,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "allen_cahn",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 20,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "b6_fullrank",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 50,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "b6_fullrank",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 100,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "b6_fullrank",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 200,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "b6_fullrank",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 400,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "b6_fullrank",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 20,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "dense_fourier",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 50,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "dense_fourier",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 100,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "dense_fourier",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 200,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "dense_fourier",
+          "training_validation_selection_rows_checked": 100224
+        },
+        {
+          "dimension": 400,
+          "exact_query_overlap_count": 0,
+          "passed": true,
+          "pde": "dense_fourier",
+          "training_validation_selection_rows_checked": 100224
+        }
+      ]
+    },
+    "reference_revalidation": {
+      "cells": 20,
+      "manifest_sha256": "48bef8fa694ae11dde184bb44f3af0284ac45985ff74cd79391ba9f01d001f8f",
+      "maximum_frozen_vs_recomputed_reference_difference": 8.881784197001252e-16,
+      "maximum_frozen_vs_recomputed_uncertainty_difference": 8.881784197001252e-16,
+      "passed": true
+    },
+    "references": {
+      "cells": 20,
+      "manifest_sha256": "d21086c22821ef19cdb32763a47632f048931399a53586808c0649ac5ad923ec",
+      "passed": true
+    }
+  },
+  "code_sha256": {
+    "benchmarks.py": "7c919bc1e212485d2bb3b8ae767514fda33fab1b746837a45f91bf524af87810",
+    "deep_bsde.py": "f6ba85d75ecb9caea603873351e9d2f4ccae52a1e262e6dd5f0f6671fe52bb99",
+    "fh_mlp.py": "e22d2b698e14df954c36dec7d46e0da8caf86bf42099a91dad6300cdfe0314e2",
+    "preflight.py": "a4f034bd7039b1a3e6a2369b714492bfb81093c5b3acfc5a7f4bf586848f38f0",
+    "prepare.py": "20178d48c67307b497a729445b1910601c8856eed14f7ecfac725852c63717a0",
+    "protocol.py": "95e2af228ac5e1151aed0428d78355ec42a78a168baced8d2831d5b75fe438b5",
+    "tangent_actor.py": "9b8506934b52d18e72870a914026f59996a966b88d4204d356501bd0ce850d16"
+  },
+  "device": "cuda",
+  "elapsed_seconds": 111.34107912005857,
+  "environment": {
+    "cuda_available": true,
+    "cuda_runtime": "13.0",
+    "gpu_name": "NVIDIA H100 80GB HBM3",
+    "numpy": "2.4.6",
+    "platform": "Linux-5.14.0-687.49.1.el9_8.x86_64-x86_64-with-glibc2.34",
+    "python": "3.11.9 (main, Dec 19 2024, 14:44:47) [GCC 11.4.1 20231218 (Red Hat 11.4.1-3)]",
+    "scipy": "1.17.1",
+    "torch": "2.11.0+cu130"
+  },
+  "mathematical_checks_pass": true,
+  "method_fidelity_audit_sha256": "2e45db79b9b6bae34d13818de5df5897110d8f826b00b335a7f9724869b57bd6",
+  "overall_pass": true,
+  "revision": "single_point_32_ice_v1",
+  "status": "VALIDATED"
+}

@@ -1,0 +1,29 @@
+Lmod Warning:
+-------------------------------------------------------------------------------
+The following dependent module(s) are not currently loaded:
+libxml2/2.10.3-74cdfsk (required by: gettext/0.22.5-ojoqw7w), xz/5.2.5-y72uqzs
+(required by: tar/1.30-7aefvn4, gettext/0.22.5-ojoqw7w, python/3.11.9)
+-------------------------------------------------------------------------------
+
+
+
+
+The following have been reloaded with a version change:
+  1) libxml2/2.10.3-74cdfsk => libxml2/2.13.5-xvypeyo
+  2) xz/5.2.5-y72uqzs => xz/5.6.3-u3gckxx
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/storage/ice1/4/8/ywang4280/ir-mlp-icml-single-point-32-ice-worktree/invariant_region_mlp/experiments/single_point_32_ice/preflight.py", line 417, in <module>
+    main()
+  File "/storage/ice1/4/8/ywang4280/ir-mlp-icml-single-point-32-ice-worktree/invariant_region_mlp/experiments/single_point_32_ice/preflight.py", line 407, in main
+    result = run(device, generate_inputs=not args.skip_prepare)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/storage/ice1/4/8/ywang4280/ir-mlp-icml-single-point-32-ice-worktree/invariant_region_mlp/experiments/single_point_32_ice/preflight.py", line 320, in run
+    prepare()
+  File "/storage/ice1/4/8/ywang4280/ir-mlp-icml-single-point-32-ice-worktree/invariant_region_mlp/experiments/single_point_32_ice/prepare.py", line 292, in prepare
+    _save_npy_immutable(root / "reference_uncertainty.npy", uncertainty)
+  File "/storage/ice1/4/8/ywang4280/ir-mlp-icml-single-point-32-ice-worktree/invariant_region_mlp/experiments/single_point_32_ice/prepare.py", line 56, in _save_npy_immutable
+    raise RuntimeError(f"frozen array mismatch: {path}")
+RuntimeError: frozen array mismatch: /storage/ice1/4/8/ywang4280/ir-mlp-icml-single-point-32-ice-worktree/invariant_region_mlp/results/single_point_32_ice/frozen_query_banks/hjb_log_d20/reference_uncertainty.npy

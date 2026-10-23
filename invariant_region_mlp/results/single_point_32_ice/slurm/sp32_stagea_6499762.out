@@ -1,0 +1,45 @@
+---------------------------------------
+Begin Slurm Prolog: Oct-23-2026 13:12:57
+Job ID:    6499762
+User ID:   ywang4280
+Account:   isye
+Job name:  sp32_stagea
+Partition: ice-gpu
+QOS:       coe-ice
+---------------------------------------
+0, GPU-3a8b375d-a238-92f1-286b-d038d26ee9d8, NVIDIA H100 80GB HBM3, 81559 MiB, 615.71.09
+.............                                                            [100%]
+13 passed in 3.39s
+{"elapsed_seconds": 111.34107912005857, "mathematical_checks_pass": true, "overall_pass": true, "status": "VALIDATED"}
+hjb_log_d20_smoke_s0 a1 label=1.0s fit=2.4s val=1.09663
+hjb_log_d20_smoke_s0 a2 label=0.1s fit=0.0s val=0.977321
+hjb_log_d20_smoke_s0 a3 label=0.1s fit=0.0s val=0.960048
+hjb_log_d20_smoke_s0 a4 label=0.1s fit=0.0s val=0.874786
+{"nonfinite_count": null, "rmse": null, "run_id": "hjb_log_d20_smoke_s0", "selected_actor": null, "status": "pilot_complete"}
+{"nonfinite_count": 0, "rmse": 0.10654438060333767, "run_id": "ta__hjb_log__d20__s0__rep00__steps4__pilot", "selected_actor": "a0", "status": "pilot_complete"}
+{"nonfinite_count": null, "rmse": null, "run_id": "allen_cahn_d20_smoke_s0", "selected_actor": null, "status": "pilot_complete"}
+{"nonfinite_count": 0, "rmse": 0.008356089165574973, "run_id": "ta__allen_cahn__d20__s0__rep00__steps4__pilot", "selected_actor": "a0", "status": "pilot_complete"}
+b6_fullrank_d20_mature_s0 a1 labels=1.3s fit=0.2s validation=0.000715989 fallback=False
+{"nonfinite_count": null, "rmse": null, "run_id": "b6_fullrank_d20_mature_s0", "selected_actor": null, "status": "pilot_complete"}
+{"nonfinite_count": 0, "rmse": 0.02602711264590328, "run_id": "ta__b6_fullrank__d20__s0__rep00__steps4__pilot", "selected_actor": "a1", "status": "pilot_complete"}
+dense_fourier_d20_mature_s0 a1 labels=0.5s fit=0.1s validation=0.122414
+{"nonfinite_count": null, "rmse": null, "run_id": "dense_fourier_d20_mature_s0", "selected_actor": null, "status": "pilot_complete"}
+{"nonfinite_count": 0, "rmse": 0.15011145090251066, "run_id": "ta__dense_fourier__d20__s0__rep00__steps4__pilot", "selected_actor": "a1", "status": "pilot_complete"}
+deep_bsde__hjb_log__d20__q00__s0__pilot updates=1/4 validation=4.28233 y0=0.911721776
+deep_bsde__hjb_log__d20__q00__s0__pilot updates=2/4 validation=4.24244 y0=0.921665616
+deep_bsde__hjb_log__d20__q00__s0__pilot updates=3/4 validation=4.20782 y0=0.93163076
+deep_bsde__hjb_log__d20__q00__s0__pilot updates=4/4 validation=4.16996 y0=0.941534669
+{"absolute_error": 1.979480066258156, "completed_updates": 4, "reported_y0": 0.9415346694844141, "run_id": "deep_bsde__hjb_log__d20__q00__s0__pilot", "status": "pilot_complete"}
+{"finite_count": 4, "inference_seconds": 0.21464285696856678, "nonfinite_count": 0, "run_id": "fh_mlp_standard__dense_fourier__d20__n2_M16__r00__pilot", "status": "pilot_complete"}
+---------------------------------------
+Begin Slurm Epilog: Oct-23-2026 13:16:07
+Job ID:        6499762
+User ID:       ywang4280
+Account:       isye
+Job name:      sp32_stagea
+Resources:     cpu=8,gres/gpu:h100=1,mem=96G,node=1
+Rsrc Used:     cput=00:25:20,vmem=0,walltime=00:03:10,mem=1425800K,energy_used=0
+Partition:     ice-gpu
+QOS:           coe-ice
+Nodes:         atl1-1-03-013-3-0
+---------------------------------------
