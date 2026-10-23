@@ -29,6 +29,10 @@ from .amended_dispatch import (
     build_bundle_manifest,
 )
 from .deep_bsde import FixedInitialDeepBSDE
+from .consolidated_dispatch import (
+    DISPATCH_REVISION,
+    build_consolidated_manifest,
+)
 from .fh_mlp import AuditedFullHistoryMLP
 from .orchestration import build_manifest, load_manifest, manifest_path, write_manifest
 from .prepare import (
@@ -275,6 +279,23 @@ def test_amended_tangent_actor_metric_uses_four_mc_repeats() -> None:
     assert scaling.loc[0, "status"] == "COMPLETE"
     assert scaling.loc[0, "expected_repeats"] == 4
     assert scaling.loc[0, "observations"] == 128
+
+
+def test_consolidated_dispatch_halves_allocations_without_dropping_tasks() -> None:
+    source = build_manifest("C", 100)
+    consolidated = build_consolidated_manifest(source)
+    assert consolidated["dispatch_revision"] == DISPATCH_REVISION
+    assert consolidated["selected_task_count"] == 628
+    assert consolidated["bundle_count"] == 20
+    bundles = consolidated["bundles"]
+    assert sum(row["method"] == "tangent_actor" for row in bundles) == 4
+    assert sum(row["method"] == "deep_bsde" for row in bundles) == 12
+    assert sum(row["method"] == "fh_mlp_standard" for row in bundles) == 4
+    assert {
+        len(row["task_ids"])
+        for row in bundles
+        if row["method"] == "fh_mlp_standard"
+    } == {60}
 
 
 def test_rmse_32_r_uses_every_point_and_repeat() -> None:

@@ -295,6 +295,9 @@ def audit_bundle_manifest(
     overall = all(bool(check["passed"]) for check in checks.values())
     result = {
         "revision": AMENDMENT_REVISION,
+        "dispatch_revision": payload.get(
+            "dispatch_revision", AMENDMENT_REVISION
+        ),
         "source_revision": source["revision"],
         "stage": "C",
         "dimension": int(payload["dimension"]),
