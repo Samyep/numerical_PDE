@@ -88,6 +88,20 @@ def _finite(value: Any) -> Any:
     return number if math.isfinite(number) else None
 
 
+def _json_safe(value: Any) -> Any:
+    """Map non-finite tabular placeholders to JSON null without changing data."""
+
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, np.generic):
+        return _json_safe(value.item())
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
 def _manifest_cells() -> dict[tuple[str, int], dict[str, Any]]:
     payload = _read_json(RESULTS_DIR / "parameter_and_test_bank_manifest.json") or {}
     return {
@@ -652,7 +666,11 @@ def _summary(frame: pd.DataFrame, audit: dict[str, Any], accounting: dict[str, A
         "tangent_actor_lowest_rmse_settings": float(wins.get("tangent_actor", 0.0)),
         "wins": dict(wins),
         "group_results": group_results,
-        "dense_a0_a1_a4": dense_primary.to_dict("records") if not dense_primary.empty else [],
+        "dense_a0_a1_a4": (
+            _json_safe(dense_primary.to_dict("records"))
+            if not dense_primary.empty
+            else []
+        ),
         "allocated_gpu_hours": accounting.get("allocated_gpu_hours"),
         "account_credit_hours": accounting.get("account_credit_hours"),
         "budget_cap_gpu_hours": 120.0,
