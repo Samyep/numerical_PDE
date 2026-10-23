@@ -70,4 +70,3 @@ BSDE preserve their point-solver identities. Accuracy is compared on identical
 frozen points. Compute accounting therefore reports both per-query inference
 and full training/allocation cost rather than pretending the methods have the
 same amortization model.
-

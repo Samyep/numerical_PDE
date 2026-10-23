@@ -54,4 +54,3 @@ write_json_atomic(RESULTS_DIR / "stage_a_complete.json", {
     "job_id": os.environ["SLURM_JOB_ID"],
 })
 PY
-

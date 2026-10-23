@@ -10,4 +10,3 @@ EXTERNAL_ROOT=${EXTERNAL_ROOT:-$STORAGE_PARENT/external}
 export SOURCE_ROOT ORIGINAL_ICE_REPO EXPANSION_VENV EXTERNAL_ROOT
 
 source "$SOURCE_ROOT/invariant_region_mlp/experiments/main_highdim_expansion/slurm/common_env.sh"
-
