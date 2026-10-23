@@ -88,6 +88,14 @@ def _save_json_immutable(path: Path, payload: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+def _parameter_manifest_semantic(payload: dict[str, Any]) -> dict[str, Any]:
+    """Ignore only the provenance file's checkout-dependent newline hash."""
+    normalized = json.loads(json.dumps(payload))
+    for row in normalized.get("rows", []):
+        row.pop("source_manifest_sha256", None)
+    return normalized
+
+
 def _query_bank(pde: str, d: int) -> tuple[np.ndarray, np.ndarray]:
     seed = int(QUERY_SEEDS[pde][d])
     rng = np.random.Generator(np.random.PCG64(seed))
@@ -451,7 +459,19 @@ def prepare() -> dict[str, Any]:
         "overall_pass": all(row["reference"]["passed"] for row in reference_rows),
         "banks": reference_rows,
     }
-    parameter_payload = _save_json_immutable(PARAMETER_MANIFEST, parameter_payload)
+    if PARAMETER_MANIFEST.is_file():
+        frozen_parameters = json.loads(
+            PARAMETER_MANIFEST.read_text(encoding="utf-8")
+        )
+        if _parameter_manifest_semantic(
+            frozen_parameters
+        ) != _parameter_manifest_semantic(parameter_payload):
+            raise RuntimeError(
+                f"frozen parameter manifest semantic mismatch: {PARAMETER_MANIFEST}"
+            )
+        parameter_payload = frozen_parameters
+    else:
+        write_json_atomic(PARAMETER_MANIFEST, parameter_payload)
     reference_payload = _save_json_immutable(
         REFERENCE_VALIDATION, reference_payload
     )

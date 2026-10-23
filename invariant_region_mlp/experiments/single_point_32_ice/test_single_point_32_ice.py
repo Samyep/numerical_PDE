@@ -26,7 +26,11 @@ from .aggregate import aggregate_metrics
 from .deep_bsde import FixedInitialDeepBSDE
 from .fh_mlp import AuditedFullHistoryMLP
 from .orchestration import build_manifest, load_manifest, manifest_path, write_manifest
-from .prepare import _query_bank, _save_npy_immutable
+from .prepare import (
+    _parameter_manifest_semantic,
+    _query_bank,
+    _save_npy_immutable,
+)
 from .protocol import DIMENSIONS, PDES, QUERY_SEEDS, REVISION, frozen_protocol
 from .tangent_actor import _value_mcv_rollout_chunk
 
@@ -261,4 +265,18 @@ def test_numeric_reference_revalidation_preserves_frozen_bytes(
             frozen + 1e-4,
             absolute_tolerance=1e-10,
         )
+
+
+def test_parameter_manifest_ignores_only_checkout_newline_provenance_hash() -> None:
+    first = {
+        "revision": REVISION,
+        "rows": [{"array_sha256": "same", "source_manifest_sha256": "crlf"}],
+    }
+    second = {
+        "revision": REVISION,
+        "rows": [{"array_sha256": "same", "source_manifest_sha256": "lf"}],
+    }
+    assert _parameter_manifest_semantic(first) == _parameter_manifest_semantic(second)
+    second["rows"][0]["array_sha256"] = "changed"
+    assert _parameter_manifest_semantic(first) != _parameter_manifest_semantic(second)
 
