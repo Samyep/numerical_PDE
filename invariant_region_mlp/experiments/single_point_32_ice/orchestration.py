@@ -95,20 +95,23 @@ def _ta_weight(pde: str, d: int, pilot: bool) -> float:
         "b6_fullrank": 0.6,
         "dense_fourier": 1.2,
     }[pde]
-    return family * (1.0 + d / 800.0) * 15.0
+    return round(family * (1.0 + d / 800.0) * 15.0, 9)
 
 
 def _deep_weight(pde: str, d: int, pilot: bool) -> float:
     if pilot:
         return 0.15
     iterations = 2.0 if pde == "allen_cahn" else 1.0
-    return iterations * (1.0 + d / 250.0)
+    return round(iterations * (1.0 + d / 250.0), 9)
 
 
 def _fh_weight(pde: str, d: int, n: int, M: int, pilot: bool) -> float:
     family = 1.5 if pde in {"hjb_log", "b6_fullrank", "dense_fourier"} else 1.0
     point_factor = 4 if pilot else QUERY_COUNT
-    return family * point_factor * (M ** n) * (1.0 + d / 800.0) / 5000.0
+    return round(
+        family * point_factor * (M ** n) * (1.0 + d / 800.0) / 5000.0,
+        9,
+    )
 
 
 def stage_b_tasks() -> list[dict[str, Any]]:
@@ -209,7 +212,7 @@ def assign_slots(tasks: list[dict[str, Any]], slots: int = SLOTS) -> list[dict[s
         task["slot"] = slot
         task["sequence"] = sequences[slot]
         sequences[slot] += 1
-        loads[slot] += float(task["weight"])
+        loads[slot] = round(loads[slot] + float(task["weight"]), 9)
         assigned.append(task)
     return sorted(assigned, key=lambda row: (row["slot"], row["sequence"]))
 
@@ -238,11 +241,11 @@ def build_manifest(stage: str, dimension: int | None, slots: int = SLOTS) -> dic
             sum(row["slot"] == slot for row in assigned) for slot in range(slots)
         ],
         "slot_weights": [
-            sum(
+            round(sum(
                 float(row["weight"])
                 for row in assigned
                 if row["slot"] == slot
-            )
+            ), 9)
             for slot in range(slots)
         ],
         "ordering": "accuracy-blind deterministic LPT with task-id tie break",
