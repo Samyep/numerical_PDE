@@ -29,6 +29,7 @@ from .protocol import (
     QUERY_COUNT,
     RESULTS_DIR,
     REVISION,
+    REFERENCE_REVALIDATION,
     SOURCE_ROOT,
     STAGE_A_AUDIT,
     STAGE_B_AUDIT,
@@ -933,6 +934,9 @@ def artifact_audit(
             "passed": _json(RESULTS_DIR / "reference_validation.json").get(
                 "overall_pass"
             ) is True,
+        },
+        "reference_revalidation": {
+            "passed": _json(REFERENCE_REVALIDATION).get("overall_pass") is True,
         },
         "stage_a": {
             "passed": (

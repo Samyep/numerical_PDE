@@ -34,6 +34,7 @@ from .protocol import (
     PDES,
     QUERY_COUNT,
     QUERY_SEEDS,
+    REFERENCE_REVALIDATION,
     REFERENCE_VALIDATION,
     RESULTS_DIR,
     REVISION,
@@ -48,17 +49,43 @@ from .protocol import (
 )
 
 
-def _save_npy_immutable(path: Path, value: np.ndarray) -> None:
+def _save_npy_immutable(
+    path: Path, value: np.ndarray, *, absolute_tolerance: float = 0.0
+) -> np.ndarray:
     value = np.asarray(value)
     if path.is_file():
         existing = np.load(path, allow_pickle=False)
-        if existing.dtype != value.dtype or existing.shape != value.shape or not np.array_equal(existing, value):
-            raise RuntimeError(f"frozen array mismatch: {path}")
-        return
+        if existing.dtype != value.dtype or existing.shape != value.shape:
+            raise RuntimeError(f"frozen array metadata mismatch: {path}")
+        if np.array_equal(existing, value):
+            return existing
+        difference = float(np.max(np.abs(existing - value)))
+        if (
+            absolute_tolerance > 0.0
+            and np.all(np.isfinite(existing))
+            and np.all(np.isfinite(value))
+            and difference <= absolute_tolerance
+        ):
+            return existing
+        raise RuntimeError(
+            f"frozen array mismatch: {path}; max_abs_difference={difference:.6e}; "
+            f"allowed={absolute_tolerance:.6e}"
+        )
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".tmp.npy")
     np.save(temporary, value, allow_pickle=False)
     temporary.replace(path)
+    return value
+
+
+def _save_json_immutable(path: Path, payload: dict[str, Any]) -> dict[str, Any]:
+    if path.is_file():
+        existing = json.loads(path.read_text(encoding="utf-8"))
+        if existing != payload:
+            raise RuntimeError(f"frozen JSON mismatch: {path}")
+        return existing
+    write_json_atomic(path, payload)
+    return payload
 
 
 def _query_bank(pde: str, d: int) -> tuple[np.ndarray, np.ndarray]:
@@ -273,10 +300,11 @@ def _source_parameter_rows() -> dict[tuple[str, int], dict[str, Any]]:
 
 def prepare() -> dict[str, Any]:
     ensure_directories()
-    write_json_atomic(FROZEN_PROTOCOL_JSON, frozen_protocol())
+    _save_json_immutable(FROZEN_PROTOCOL_JSON, frozen_protocol())
     source_rows = _source_parameter_rows()
     parameter_rows: list[dict[str, Any]] = []
     reference_rows: list[dict[str, Any]] = []
+    revalidation_rows: list[dict[str, Any]] = []
     for pde in PDES:
         for d in DIMENSIONS:
             root = query_path(pde, d)
@@ -286,10 +314,52 @@ def prepare() -> dict[str, Any]:
                 raise AssertionError((pde, d, reference.shape, uncertainty.shape))
             if not np.all(np.isfinite(reference)) or not np.all(np.isfinite(uncertainty)):
                 raise FloatingPointError(f"nonfinite reference for {pde} d={d}")
-            _save_npy_immutable(root / "t.npy", t)
-            _save_npy_immutable(root / "x.npy", x)
-            _save_npy_immutable(root / "reference.npy", reference)
-            _save_npy_immutable(root / "reference_uncertainty.npy", uncertainty)
+            t = _save_npy_immutable(root / "t.npy", t)
+            x = _save_npy_immutable(root / "x.npy", x)
+            threshold = float(audit["threshold"])
+            recomputed_reference = reference
+            recomputed_uncertainty = uncertainty
+            reference = _save_npy_immutable(
+                root / "reference.npy", reference,
+                absolute_tolerance=threshold,
+            )
+            uncertainty = _save_npy_immutable(
+                root / "reference_uncertainty.npy", uncertainty,
+                absolute_tolerance=threshold,
+            )
+            reference_difference = float(
+                np.max(np.abs(reference - recomputed_reference))
+            )
+            uncertainty_difference = float(
+                np.max(np.abs(uncertainty - recomputed_uncertainty))
+            )
+            revalidation_passed = bool(
+                audit["passed"]
+                and reference_difference <= threshold
+                and float(np.max(recomputed_uncertainty)) <= threshold
+                and float(np.max(uncertainty)) <= threshold
+            )
+            revalidation_rows.append({
+                "pde": pde,
+                "dimension": d,
+                "threshold": threshold,
+                "frozen_reference_sha256": file_sha256(root / "reference.npy"),
+                "frozen_uncertainty_sha256": file_sha256(
+                    root / "reference_uncertainty.npy"
+                ),
+                "frozen_vs_recomputed_reference_max_abs": reference_difference,
+                "frozen_vs_recomputed_uncertainty_max_abs": uncertainty_difference,
+                "frozen_maximum_uncertainty": float(np.max(uncertainty)),
+                "recomputed_maximum_uncertainty": float(
+                    np.max(recomputed_uncertainty)
+                ),
+                "recomputed_audit": audit,
+                "passed": revalidation_passed,
+            })
+            if not revalidation_passed:
+                raise RuntimeError(
+                    f"cross-platform reference revalidation failed {pde} d={d}"
+                )
             arrays = _parameter_arrays(pde, d)
             parameter_record: dict[str, Any] = {
                 "pde": pde,
@@ -301,6 +371,15 @@ def prepare() -> dict[str, Any]:
                 if not parameter_file.is_file():
                     write_npz_atomic(parameter_file, **arrays)
                 generated_hash = array_sha256(*arrays.values())
+                with np.load(parameter_file, allow_pickle=False) as stored:
+                    stored_hash = array_sha256(
+                        *(stored[key] for key in stored.files)
+                    )
+                if stored_hash != generated_hash:
+                    raise RuntimeError(
+                        f"stored parameter mismatch {pde} d={d}: "
+                        f"{stored_hash} != {generated_hash}"
+                    )
                 expected_hash = source_rows[(pde, d)]["parameter_array_sha256"]
                 if generated_hash != expected_hash:
                     raise RuntimeError(
@@ -334,7 +413,29 @@ def prepare() -> dict[str, Any]:
                 "reference": audit,
                 "maximum_reference_uncertainty": float(np.max(uncertainty)),
             }
-            write_json_atomic(root / "manifest.json", bank_record)
+            bank_manifest = root / "manifest.json"
+            if bank_manifest.is_file():
+                frozen_bank = json.loads(bank_manifest.read_text(encoding="utf-8"))
+                frozen_static = {
+                    key: value for key, value in frozen_bank.items()
+                    if key != "reference"
+                }
+                candidate_static = {
+                    key: value for key, value in bank_record.items()
+                    if key != "reference"
+                }
+                if frozen_static != candidate_static:
+                    raise RuntimeError(f"frozen query manifest mismatch: {bank_manifest}")
+                if (
+                    frozen_bank.get("reference", {}).get("passed") is not True
+                    or float(frozen_bank["reference"]["threshold"]) != threshold
+                ):
+                    raise RuntimeError(
+                        f"invalid frozen reference audit: {bank_manifest}"
+                    )
+                bank_record = frozen_bank
+            else:
+                write_json_atomic(bank_manifest, bank_record)
             reference_rows.append(bank_record)
     parameter_payload = {
         "revision": REVISION,
@@ -350,11 +451,33 @@ def prepare() -> dict[str, Any]:
         "overall_pass": all(row["reference"]["passed"] for row in reference_rows),
         "banks": reference_rows,
     }
-    write_json_atomic(PARAMETER_MANIFEST, parameter_payload)
-    write_json_atomic(REFERENCE_VALIDATION, reference_payload)
+    parameter_payload = _save_json_immutable(PARAMETER_MANIFEST, parameter_payload)
+    reference_payload = _save_json_immutable(
+        REFERENCE_VALIDATION, reference_payload
+    )
+    revalidation_payload = {
+        "revision": REVISION,
+        "status": "VALIDATED" if all(
+            row["passed"] for row in revalidation_rows
+        ) else "FAILED",
+        "overall_pass": all(row["passed"] for row in revalidation_rows),
+        "policy": (
+            "query banks and parameter arrays are bitwise immutable; independently "
+            "recomputed numerical references may differ across math libraries only "
+            "within the preregistered per-PDE convergence threshold"
+        ),
+        "banks": revalidation_rows,
+    }
+    write_json_atomic(REFERENCE_REVALIDATION, revalidation_payload)
     if not reference_payload["overall_pass"]:
         raise RuntimeError("reference validation failed")
-    return {"parameters": parameter_payload, "references": reference_payload}
+    if not revalidation_payload["overall_pass"]:
+        raise RuntimeError("cross-platform reference revalidation failed")
+    return {
+        "parameters": parameter_payload,
+        "references": reference_payload,
+        "revalidation": revalidation_payload,
+    }
 
 
 def main() -> None:

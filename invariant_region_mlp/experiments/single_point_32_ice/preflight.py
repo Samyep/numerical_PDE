@@ -46,6 +46,7 @@ from .protocol import (
     PDES,
     QUERY_COUNT,
     RAW_DIR,
+    REFERENCE_REVALIDATION,
     REFERENCE_VALIDATION,
     REVISION,
     SOURCE_ROOT,
@@ -319,6 +320,9 @@ def run(device: torch.device, *, generate_inputs: bool = True) -> dict[str, Any]
     if generate_inputs:
         prepare()
     reference = json.loads(REFERENCE_VALIDATION.read_text(encoding="utf-8"))
+    revalidation = json.loads(
+        REFERENCE_REVALIDATION.read_text(encoding="utf-8")
+    )
     parameters = json.loads(PARAMETER_MANIFEST.read_text(encoding="utf-8"))
     formal_root = RAW_DIR / "formal"
     formal_artifacts = list(formal_root.rglob("*")) if formal_root.exists() else []
@@ -327,6 +331,19 @@ def run(device: torch.device, *, generate_inputs: bool = True) -> dict[str, Any]
             "passed": reference.get("overall_pass") is True,
             "cells": len(reference.get("banks", [])),
             "manifest_sha256": file_sha256(REFERENCE_VALIDATION),
+        },
+        "reference_revalidation": {
+            "passed": revalidation.get("overall_pass") is True,
+            "cells": len(revalidation.get("banks", [])),
+            "manifest_sha256": file_sha256(REFERENCE_REVALIDATION),
+            "maximum_frozen_vs_recomputed_reference_difference": max(
+                float(row["frozen_vs_recomputed_reference_max_abs"])
+                for row in revalidation.get("banks", [])
+            ),
+            "maximum_frozen_vs_recomputed_uncertainty_difference": max(
+                float(row["frozen_vs_recomputed_uncertainty_max_abs"])
+                for row in revalidation.get("banks", [])
+            ),
         },
         "parameters": {
             "passed": all(
@@ -352,6 +369,7 @@ def run(device: torch.device, *, generate_inputs: bool = True) -> dict[str, Any]
     anchors_pass = all(item["passed"] for item in checks["deep_bsde_native_anchors"])
     overall = bool(
         checks["references"]["passed"]
+        and checks["reference_revalidation"]["passed"]
         and checks["parameters"]["passed"]
         and checks["query_isolation"]["passed"]
         and anchors_pass

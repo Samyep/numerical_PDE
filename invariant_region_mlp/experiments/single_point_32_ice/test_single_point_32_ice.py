@@ -7,6 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 import torch
 
 from invariant_region_mlp.experiments.original_pde_benchmark_comparison.deep_bsde_port import (
@@ -25,7 +26,7 @@ from .aggregate import aggregate_metrics
 from .deep_bsde import FixedInitialDeepBSDE
 from .fh_mlp import AuditedFullHistoryMLP
 from .orchestration import build_manifest, load_manifest, manifest_path, write_manifest
-from .prepare import _query_bank
+from .prepare import _query_bank, _save_npy_immutable
 from .protocol import DIMENSIONS, PDES, QUERY_SEEDS, REVISION, frozen_protocol
 from .tangent_actor import _value_mcv_rollout_chunk
 
@@ -238,4 +239,26 @@ def test_rmse_32_r_uses_every_point_and_repeat() -> None:
     assert scaling.loc[0, "rmse_32_R"] == 1.0
     assert scaling.loc[0, "rmse_random_31_R"] == 1.0
     assert scaling.loc[0, "origin_error_rms_over_repeats"] == 1.0
+
+
+def test_numeric_reference_revalidation_preserves_frozen_bytes(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "reference.npy"
+    frozen = np.asarray([1.0, 2.0], dtype=np.float64)
+    _save_npy_immutable(path, frozen)
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    returned = _save_npy_immutable(
+        path,
+        frozen + np.asarray([1e-12, -1e-12]),
+        absolute_tolerance=1e-10,
+    )
+    assert np.array_equal(returned, frozen)
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == digest
+    with pytest.raises(RuntimeError, match="max_abs_difference"):
+        _save_npy_immutable(
+            path,
+            frozen + 1e-4,
+            absolute_tolerance=1e-10,
+        )
 

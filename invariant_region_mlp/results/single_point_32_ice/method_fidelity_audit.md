@@ -63,6 +63,19 @@ must remain a separately named secondary variant.
   be emitted as `adapted_transfer` and cannot overwrite the faithful result.
 - Exact solution values are loaded only after the fixed training schedule ends.
 
+## Frozen-reference revalidation
+
+- Query coordinates and B6/Dense parameter arrays remain bitwise immutable.
+- The committed reference arrays remain the sole formal truth and are never
+  rewritten by a different host. Each host independently reruns the frozen
+  convergence calculation and records its maximum difference from those arrays
+  in `reference_revalidation.json`.
+- Cross-platform floating-point differences are accepted only when both the
+  independent calculation and its difference from the frozen array remain
+  inside the PDE-specific threshold fixed before training (HJB `5e-8`,
+  Allen--Cahn `2e-5`, analytic P3/P4 `2e-12`). Derived uncertainty estimates
+  are not required to be bitwise identical across BLAS/SciPy builds.
+
 ## Comparison boundary
 
 Tangent-Actor amortizes one global training run over 32 queries; FH-MLP and Deep
