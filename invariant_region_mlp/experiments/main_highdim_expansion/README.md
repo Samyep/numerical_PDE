@@ -33,6 +33,10 @@ formal cell.  The ICE controller defaults to eight concurrent H100 cells, with
 the account, partition, QOS, GPU type, and concurrency exposed as environment
 variables.
 
+Restarting the controller after a partial run validates and reuses an existing
+completed Stage A rather than regenerating the frozen inputs. Completed formal
+cells are likewise omitted from subsequent queues.
+
 ICE allocations run a real CUDA arithmetic-and-synchronization preflight before
 formal work. A narrowly classified `cudaErrorDevicesUnavailable`/driver-startup
 failure is recorded as an immutable infrastructure event, charged to resource

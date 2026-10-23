@@ -177,6 +177,16 @@ PY
 
 submit_stage_a() {
   assert_no_expansion_jobs
+  if [[ -f "$RESULTS_DIR/stage_a_complete.json" ]]; then
+    echo "$(timestamp) validating previously completed stage_a"
+    if ! python -m invariant_region_mlp.experiments.main_highdim_expansion.review_gate; then
+      echo "existing stage_a artifacts failed the review gate; refusing to regenerate frozen inputs" >&2
+      return 8
+    fi
+    refresh
+    echo "$(timestamp) reused previously completed stage_a"
+    return 0
+  fi
   local attempt job state exit_code exclude
   local -a resources
   for ((attempt=1; attempt<=STAGE_A_MAX_ATTEMPTS; attempt++)); do
