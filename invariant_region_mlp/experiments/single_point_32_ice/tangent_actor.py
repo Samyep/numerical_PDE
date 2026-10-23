@@ -49,6 +49,7 @@ from .protocol import (
     file_sha256,
     query_path,
     require_stage_a,
+    require_stage_b,
     stable_seed,
     write_json_atomic,
     write_npz_atomic,
@@ -546,6 +547,8 @@ def train(
     if not pilot and seed not in TRAINING_SEEDS:
         raise ValueError(seed)
     require_stage_a()
+    if not pilot:
+        require_stage_b()
     ensure_directories()
     if pde == "hjb_log":
         impl = _configure_standard(pilot)
@@ -620,8 +623,18 @@ def evaluate(
     if not pilot and not 0 <= replicate < TA_INFERENCE_REPLICATES:
         raise ValueError(replicate)
     require_stage_a()
+    if not pilot:
+        require_stage_b()
     steps = int(time_steps or (4 if pilot else TA_PRIMARY_EULER_STEPS))
     paths = 8 if pilot else TA_EVALUATION_PATHS
+    tag = "pilot" if pilot else "formal"
+    result_id = f"ta__{pde}__d{d}__s{seed}__rep{replicate:02d}__steps{steps}__{tag}"
+    output_path = RAW_DIR / tag / "tangent_actor_evaluations" / f"{result_id}.json"
+    if output_path.is_file():
+        existing = json.loads(output_path.read_text(encoding="utf-8"))
+        prediction_file = Path(existing.get("prediction_file", ""))
+        if existing.get("status") in {"complete", "pilot_complete"} and prediction_file.is_file():
+            return existing
     if pde in {"hjb_log", "allen_cahn"}:
         impl = _configure_standard(pilot)
         selected_data = _selected_standard(impl, pde, d, seed, device, pilot)
@@ -671,8 +684,6 @@ def evaluate(
     pair_variance = np.asarray(output[f"{estimator}_pair_variance"], dtype=np.float64)
     # Truth remains unavailable until Actor selection and inference are complete.
     reference = np.load(query_path(pde, d) / "reference.npy", allow_pickle=False)[:len(t)]
-    tag = "pilot" if pilot else "formal"
-    result_id = f"ta__{pde}__d{d}__s{seed}__rep{replicate:02d}__steps{steps}__{tag}"
     prediction_path = PREDICTION_DIR / tag / "tangent_actor" / f"{result_id}.npz"
     write_npz_atomic(
         prediction_path,
@@ -711,7 +722,6 @@ def evaluate(
         "inference_metadata": metadata,
         "ground_truth_used_for_training_or_selection": False,
     }
-    output_path = RAW_DIR / tag / "tangent_actor_evaluations" / f"{result_id}.json"
     write_json_atomic(output_path, record)
     return record
 

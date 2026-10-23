@@ -39,6 +39,7 @@ from .protocol import (
     file_sha256,
     query_path,
     require_stage_a,
+    require_stage_b,
     stable_seed,
     write_json_atomic,
     write_npz_atomic,
@@ -135,6 +136,8 @@ def execute(
     if not pilot and seed not in TRAINING_SEEDS:
         raise ValueError(seed)
     require_stage_a()
+    if not pilot:
+        require_stage_b()
     ensure_directories()
     run_id, output, resume, final = _paths(pde, d, point, seed, pilot=pilot)
     if output.is_file():

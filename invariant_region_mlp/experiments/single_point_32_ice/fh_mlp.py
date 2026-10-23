@@ -32,6 +32,7 @@ from .protocol import (
     ensure_directories,
     query_path,
     require_stage_a,
+    require_stage_b,
     stable_seed,
     write_json_atomic,
     write_npz_atomic,
@@ -132,6 +133,8 @@ def execute(
     if not 0 <= replicate < FH_REPLICATES and not pilot:
         raise ValueError(replicate)
     require_stage_a()
+    if not pilot:
+        require_stage_b()
     ensure_directories()
     tag = "pilot" if pilot else "formal"
     run_id = f"fh_mlp_standard__{pde}__d{d}__n{n}_M{M}__r{replicate:02d}__{tag}"

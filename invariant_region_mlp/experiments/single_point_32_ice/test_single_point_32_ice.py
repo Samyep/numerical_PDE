@@ -3,8 +3,10 @@ from __future__ import annotations
 from dataclasses import replace
 import hashlib
 import math
+from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import torch
 
 from invariant_region_mlp.experiments.original_pde_benchmark_comparison.deep_bsde_port import (
@@ -19,8 +21,10 @@ from invariant_region_mlp.experiments.original_pde_benchmark_comparison.tangent_
 )
 
 from .benchmarks import make_benchmark
+from .aggregate import aggregate_metrics
 from .deep_bsde import FixedInitialDeepBSDE
 from .fh_mlp import AuditedFullHistoryMLP
+from .orchestration import build_manifest, load_manifest, manifest_path, write_manifest
 from .prepare import _query_bank
 from .protocol import DIMENSIONS, PDES, QUERY_SEEDS, REVISION, frozen_protocol
 from .tangent_actor import _value_mcv_rollout_chunk
@@ -186,4 +190,52 @@ def test_value_actor_autograd_mcv_is_a_predictable_zero_mean_control() -> None:
     standard_error = values.std(unbiased=True) / math.sqrt(len(values))
     assert abs(float(values.mean())) <= 6.0 * float(standard_error) + 1e-12
     assert diagnostics["nonfinite_count"] == 0
+
+
+def test_frozen_four_gpu_task_manifests_are_complete_and_unique(
+    tmp_path: Path,
+) -> None:
+    pilot = build_manifest("B", 100)
+    assert pilot["task_count"] == 44
+    assert sum(pilot["slot_task_counts"]) == 44
+    assert len({row["task_id"] for row in pilot["tasks"]}) == 44
+
+    formal = build_manifest("C", 20)
+    assert formal["task_count"] == 636
+    assert sum(formal["slot_task_counts"]) == 636
+    assert len({row["task_id"] for row in formal["tasks"]}) == 636
+    assert sum(row["method"] == "tangent_actor" for row in formal["tasks"]) == 12
+    assert sum(row["method"] == "deep_bsde" for row in formal["tasks"]) == 384
+    assert sum(row["method"] == "fh_mlp_standard" for row in formal["tasks"]) == 240
+    assert max(formal["slot_weights"]) / min(formal["slot_weights"]) < 1.01
+
+    path = tmp_path / "manifest.json"
+    write_manifest(path, formal)
+    assert load_manifest(path) == formal
+    assert load_manifest(manifest_path("B", 100))["task_count"] == 44
+    for dimension in DIMENSIONS:
+        assert load_manifest(manifest_path("C", dimension))["task_count"] == 636
+
+
+def test_rmse_32_r_uses_every_point_and_repeat() -> None:
+    rows = []
+    for seed in range(3):
+        for point in range(32):
+            rows.append({
+                "method": "Deep BSDE",
+                "pde": "hjb_log",
+                "dimension": 20,
+                "point": point,
+                "repeat_id": f"s{seed}",
+                "prediction": 1.0,
+                "reference": 0.0,
+                "error": 1.0,
+            })
+    scaling, pointwise = aggregate_metrics(pd.DataFrame(rows))
+    assert len(pointwise) == 32
+    assert scaling.loc[0, "status"] == "COMPLETE"
+    assert scaling.loc[0, "observations"] == 96
+    assert scaling.loc[0, "rmse_32_R"] == 1.0
+    assert scaling.loc[0, "rmse_random_31_R"] == 1.0
+    assert scaling.loc[0, "origin_error_rms_over_repeats"] == 1.0
 

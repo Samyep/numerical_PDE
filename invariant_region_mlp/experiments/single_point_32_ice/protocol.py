@@ -117,11 +117,13 @@ STATUS_DIR = RESULTS_DIR / "task_status"
 LOG_DIR = RESULTS_DIR / "slurm"
 FIGURE_DIR = RESULTS_DIR / "figures"
 TABLE_DIR = RESULTS_DIR / "tables"
+QUEUE_DIR = RESULTS_DIR / "dispatch_queues"
 FROZEN_PROTOCOL_JSON = RESULTS_DIR / "FROZEN_PROTOCOL.json"
 PARAMETER_MANIFEST = RESULTS_DIR / "parameter_manifest.json"
 REFERENCE_VALIDATION = RESULTS_DIR / "reference_validation.json"
 EXECUTION_STATUS = RESULTS_DIR / "execution_status.json"
 STAGE_A_AUDIT = RESULTS_DIR / "stage_a_audit.json"
+STAGE_B_AUDIT = RESULTS_DIR / "stage_b_audit.json"
 METHOD_FIDELITY_AUDIT = RESULTS_DIR / "method_fidelity_audit.md"
 
 
@@ -170,6 +172,7 @@ def ensure_directories() -> None:
     for path in (
         RESULTS_DIR, QUERY_DIR, PARAMETER_DIR, PREDICTION_DIR, CHECKPOINT_DIR,
         CACHE_DIR, RAW_DIR, STATUS_DIR, LOG_DIR, FIGURE_DIR, TABLE_DIR,
+        QUEUE_DIR,
     ):
         path.mkdir(parents=True, exist_ok=True)
 
@@ -193,6 +196,17 @@ def require_stage_a() -> dict[str, Any]:
     payload = json.loads(STAGE_A_AUDIT.read_text(encoding="utf-8"))
     if payload.get("status") != "VALIDATED" or payload.get("overall_pass") is not True:
         raise RuntimeError("Stage-A CUDA mathematical preflight has not passed")
+    return payload
+
+
+def require_stage_b() -> dict[str, Any]:
+    """Require the nonformal 100D end-to-end pilot before formal dispatch."""
+    require_stage_a()
+    if not STAGE_B_AUDIT.is_file():
+        raise RuntimeError(f"missing Stage-B audit: {STAGE_B_AUDIT}")
+    payload = json.loads(STAGE_B_AUDIT.read_text(encoding="utf-8"))
+    if payload.get("status") != "VALIDATED" or payload.get("overall_pass") is not True:
+        raise RuntimeError("Stage-B representative pilot has not passed")
     return payload
 
 
@@ -262,6 +276,7 @@ def frozen_protocol() -> dict[str, Any]:
 __all__ = [name for name in globals() if name.isupper()] + [
     "array_sha256", "deep_bsde_configuration", "ensure_directories",
     "file_sha256", "frozen_protocol", "load_query_bank", "query_path", "require_stage_a",
+    "require_stage_b",
     "stable_seed", "write_json_atomic", "write_npz_atomic",
 ]
 
