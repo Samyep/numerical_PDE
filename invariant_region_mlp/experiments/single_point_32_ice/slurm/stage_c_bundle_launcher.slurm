@@ -1,0 +1,111 @@
+#!/bin/bash
+#SBATCH --job-name=sp32_launch_v2
+#SBATCH --account=isye
+#SBATCH --partition=ice-cpu
+#SBATCH --qos=coe-ice
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=00:10:00
+#SBATCH --output=invariant_region_mlp/results/single_point_32_ice/slurm/%x_%j.out
+#SBATCH --error=invariant_region_mlp/results/single_point_32_ice/slurm/%x_%j.err
+
+set -euo pipefail
+
+SOURCE_ROOT=${SOURCE_ROOT:-${SLURM_SUBMIT_DIR:?submit from the experiment checkout root}}
+SCRIPT_DIR=$SOURCE_ROOT/invariant_region_mlp/experiments/single_point_32_ice/slurm
+source "$SCRIPT_DIR/common_env.sh"
+
+dimension=${SP32_DIMENSION:?missing SP32_DIMENSION}
+code_sha=${SP32_CODE_SHA:?missing SP32_CODE_SHA}
+case "$dimension" in
+  20|50|100|200|400) ;;
+  *) echo "invalid Stage-C dimension: $dimension" >&2; exit 2 ;;
+esac
+
+actual_sha=$(git -C "$SOURCE_ROOT" rev-parse HEAD)
+[[ "$actual_sha" == "$code_sha" ]] || {
+  echo "checkout moved during amended run: expected $code_sha, found $actual_sha" >&2
+  exit 3
+}
+
+RESULTS_DIR=$SOURCE_ROOT/invariant_region_mlp/results/single_point_32_ice
+manifest=$RESULTS_DIR/dispatch_bundles/stage_c_d${dimension}.json
+[[ -f "$manifest" ]] || {
+  echo "missing amended bundle manifest: $manifest" >&2
+  exit 4
+}
+
+pending=$(python -m invariant_region_mlp.experiments.single_point_32_ice.amended_dispatch \
+  pending-spec --manifest "$manifest")
+
+worker=$SCRIPT_DIR/stage_c_bundle_worker.slurm
+auditor=$SCRIPT_DIR/audit_bundle_stage.slurm
+launcher=$SCRIPT_DIR/stage_c_bundle_launcher.slurm
+if [[ -n "$pending" ]]; then
+  workers=$(sbatch --parsable --array="${pending}%4" \
+    --job-name="sp32_v2_d${dimension}" \
+    --export="ALL,SOURCE_ROOT=$SOURCE_ROOT,BUNDLE_MANIFEST=$manifest" "$worker")
+  workers=${workers%%;*}
+  audit_dependency="--dependency=afterok:$workers"
+else
+  workers=
+  audit_dependency=
+fi
+
+# shellcheck disable=SC2086
+audit_job=$(sbatch --parsable $audit_dependency \
+  --job-name="sp32_audit_v2_d${dimension}" \
+  --export="ALL,SOURCE_ROOT=$SOURCE_ROOT,BUNDLE_MANIFEST=$manifest" "$auditor")
+audit_job=${audit_job%%;*}
+
+case "$dimension" in
+  20) next_dimension=50 ;;
+  50) next_dimension=100 ;;
+  100) next_dimension=200 ;;
+  200) next_dimension=400 ;;
+  400) next_dimension= ;;
+esac
+
+if [[ -n "$next_dimension" ]]; then
+  continuation=$(sbatch --parsable --dependency="afterok:$audit_job" \
+    --job-name="sp32_launch_v2_d${next_dimension}" \
+    --export="ALL,SOURCE_ROOT=$SOURCE_ROOT,SP32_DIMENSION=$next_dimension,SP32_CODE_SHA=$code_sha" \
+    "$launcher")
+else
+  continuation=$(sbatch --parsable --dependency="afterok:$audit_job" \
+    --job-name=sp32_de_v2 --export="ALL,SOURCE_ROOT=$SOURCE_ROOT" \
+    "$SCRIPT_DIR/stage_de.slurm")
+fi
+continuation=${continuation%%;*}
+
+mkdir -p "$RESULTS_DIR/scheduler_events"
+event_file=$RESULTS_DIR/scheduler_events/amended_d${dimension}.json
+python - "$event_file" "$dimension" "$pending" "${workers:-}" \
+  "$audit_job" "$continuation" "$code_sha" <<'PY'
+import json
+import os
+from pathlib import Path
+import sys
+from datetime import datetime, timezone
+
+output, dimension, pending, workers, audit_job, continuation, code_sha = sys.argv[1:]
+payload = {
+    "revision": "single_point_32_ice_v2_ta_seed0_bundled",
+    "recorded_utc": datetime.now(timezone.utc).isoformat(),
+    "launcher_job_id": os.environ.get("SLURM_JOB_ID"),
+    "dimension": int(dimension),
+    "pending_bundle_indices": [int(v) for v in pending.split(",") if v],
+    "worker_array_job_id": workers or None,
+    "audit_job_id": audit_job,
+    "continuation_job_id": continuation,
+    "code_sha": code_sha,
+}
+path = Path(output)
+temporary = path.with_suffix(path.suffix + f".{os.getpid()}.tmp")
+temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+os.replace(temporary, path)
+PY
+
+echo "dimension=$dimension pending=${pending:-none} workers=${workers:-none} audit=$audit_job continuation=$continuation"

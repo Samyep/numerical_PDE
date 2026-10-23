@@ -23,6 +23,11 @@ from invariant_region_mlp.experiments.original_pde_benchmark_comparison.tangent_
 
 from .benchmarks import make_benchmark
 from .aggregate import aggregate_metrics
+from .amended_dispatch import (
+    AMENDMENT_REVISION,
+    PRIMARY_TA_TRAINING_SEEDS,
+    build_bundle_manifest,
+)
 from .deep_bsde import FixedInitialDeepBSDE
 from .fh_mlp import AuditedFullHistoryMLP
 from .orchestration import build_manifest, load_manifest, manifest_path, write_manifest
@@ -220,6 +225,56 @@ def test_frozen_four_gpu_task_manifests_are_complete_and_unique(
     assert load_manifest(manifest_path("B", 100))["task_count"] == 44
     for dimension in DIMENSIONS:
         assert load_manifest(manifest_path("C", dimension))["task_count"] == 636
+
+
+def test_amended_dispatch_uses_one_ta_seed_and_natural_cell_bundles() -> None:
+    source = build_manifest("C", 20)
+    amended = build_bundle_manifest(source)
+    assert amended["amendment_revision"] == AMENDMENT_REVISION
+    assert amended["primary_tangent_actor_training_seeds"] == list(
+        PRIMARY_TA_TRAINING_SEEDS
+    )
+    assert amended["selected_task_count"] == 628
+    assert amended["bundle_count"] == 40
+    bundles = amended["bundles"]
+    assert sum(row["method"] == "tangent_actor" for row in bundles) == 4
+    assert sum(row["method"] == "deep_bsde" for row in bundles) == 12
+    assert sum(row["method"] == "fh_mlp_standard" for row in bundles) == 24
+    assert {
+        len(row["task_ids"])
+        for row in bundles
+        if row["method"] == "tangent_actor"
+    } == {1}
+    assert {
+        len(row["task_ids"])
+        for row in bundles
+        if row["method"] == "deep_bsde"
+    } == {32}
+    assert {
+        len(row["task_ids"])
+        for row in bundles
+        if row["method"] == "fh_mlp_standard"
+    } == {10}
+
+
+def test_amended_tangent_actor_metric_uses_four_mc_repeats() -> None:
+    rows = []
+    for replicate in range(4):
+        for point in range(32):
+            rows.append({
+                "method": "Tangent-Actor",
+                "pde": "hjb_log",
+                "dimension": 20,
+                "point": point,
+                "repeat_id": f"s0_mc{replicate}",
+                "prediction": 1.0,
+                "reference": 0.0,
+                "error": 1.0,
+            })
+    scaling, _ = aggregate_metrics(pd.DataFrame(rows))
+    assert scaling.loc[0, "status"] == "COMPLETE"
+    assert scaling.loc[0, "expected_repeats"] == 4
+    assert scaling.loc[0, "observations"] == 128
 
 
 def test_rmse_32_r_uses_every_point_and_repeat() -> None:

@@ -22,6 +22,11 @@ from .orchestration import (
     load_manifest,
     manifest_path,
 )
+from .amended_dispatch import (
+    AMENDMENT_PATH,
+    AMENDMENT_REVISION,
+    PRIMARY_TA_TRAINING_SEEDS,
+)
 from .protocol import (
     DIMENSIONS,
     FH_MAIN_CONFIGURATION,
@@ -106,7 +111,11 @@ def _formal_manifests() -> list[dict[str, Any]]:
     manifests = []
     for dimension in DIMENSIONS:
         audit_path = DIMENSION_AUDIT_DIR / f"d{dimension}.json"
-        if not audit_path.is_file() or _json(audit_path).get("status") != "VALIDATED":
+        audit = _json(audit_path) if audit_path.is_file() else {}
+        if (
+            audit.get("status") != "VALIDATED"
+            or audit.get("revision") != AMENDMENT_REVISION
+        ):
             raise RuntimeError(f"missing validated dimension audit: {audit_path}")
         manifests.append(load_manifest(manifest_path("C", dimension)))
     return manifests
@@ -124,6 +133,11 @@ def collect_raw_results() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.
             method = task["method"]
             pde = task["pde"]
             dimension = int(task["dimension"])
+            if (
+                method == "tangent_actor"
+                and int(task["seed"]) not in PRIMARY_TA_TRAINING_SEEDS
+            ):
+                continue
             if method == "tangent_actor":
                 raw_root = RESULTS_DIR / "raw" / "formal" / "tangent_actor_evaluations"
                 for record_path in sorted(raw_root.glob(
@@ -319,7 +333,7 @@ def main_rows(
         "s" + ta_main["training_seed"].astype(str)
         + "_mc" + ta_main["inference_replicate"].astype(str)
     )
-    ta_main["randomness"] = "training_seed_and_fk_mc"
+    ta_main["randomness"] = "fk_mc_single_training_seed"
     deep_main = deep.copy()
     deep_main["repeat_id"] = "s" + deep_main["training_seed"].astype(str)
     deep_main["randomness"] = "training_seed"
@@ -368,7 +382,7 @@ def _metric_row(key: tuple[str, int, str], frame: pd.DataFrame) -> dict[str, Any
         if len(local) == QUERY_COUNT and np.all(np.isfinite(local_error)):
             repeat_rmses.append(float(np.sqrt(np.mean(local_error**2))))
     expected_repeats = {
-        "Tangent-Actor": 12,
+        "Tangent-Actor": 4,
         "FH-MLP": 10,
         "Deep BSDE": 3,
     }[method]
@@ -496,16 +510,22 @@ def randomness_decomposition(
                 & (ta["dimension"] == dimension)
                 & (ta["time_steps"] == TA_PRIMARY_EULER_STEPS)
             ]
-            seed_means = source.groupby(
-                ["point", "training_seed"], sort=True
-            )["prediction"].mean()
-            between = float(seed_means.groupby("point").var(ddof=1).mean())
             within = float(
                 source.groupby(["point", "training_seed"])["prediction"]
                 .var(ddof=1)
                 .mean()
             )
-            component = "training_seed_between_plus_fk_mc_within"
+            if source["training_seed"].nunique() > 1:
+                seed_means = source.groupby(
+                    ["point", "training_seed"], sort=True
+                )["prediction"].mean()
+                between = float(
+                    seed_means.groupby("point").var(ddof=1).mean()
+                )
+                component = "training_seed_between_plus_fk_mc_within"
+            else:
+                between = np.nan
+                component = "fk_mc_within_single_training_seed"
         elif method == "Deep BSDE":
             between = float(np.nanmean(total_variances))
             component = "training_seed"
@@ -954,12 +974,18 @@ def artifact_audit(
             "passed": all(
                 value.get("status") == "VALIDATED"
                 and value.get("overall_pass") is True
+                and value.get("revision") == AMENDMENT_REVISION
                 for value in dimension_audits.values()
             ),
         },
+        "protocol_amendment": {
+            "passed": AMENDMENT_PATH.is_file(),
+            "path": _relative(AMENDMENT_PATH),
+            "revision": AMENDMENT_REVISION,
+        },
         "raw_row_counts": {
             "passed": (
-                len(ta) == 20 * 3 * 6 * QUERY_COUNT
+                len(ta) == 20 * 1 * 6 * QUERY_COUNT
                 and len(deep) == 20 * QUERY_COUNT * 3
                 and len(fh) == 20 * 6 * 10 * QUERY_COUNT
             ),
@@ -969,7 +995,7 @@ def artifact_audit(
                 "fh_mlp": len(fh),
             },
             "expected": {
-                "tangent_actor": 20 * 3 * 6 * QUERY_COUNT,
+                "tangent_actor": 20 * 1 * 6 * QUERY_COUNT,
                 "deep_bsde": 20 * QUERY_COUNT * 3,
                 "fh_mlp": 20 * 6 * 10 * QUERY_COUNT,
             },
@@ -991,7 +1017,8 @@ def artifact_audit(
     }
     overall = all(bool(value["passed"]) for value in checks.values())
     return {
-        "revision": REVISION,
+        "revision": AMENDMENT_REVISION,
+        "source_revision": REVISION,
         "checked_utc": _utc_now(),
         "algorithm_hashes": algorithm_hashes(),
         "checks": checks,
@@ -1076,7 +1103,8 @@ def build_summary(
     frontier = [pde for _, pde in sorted(spreads, reverse=True)[:2]]
 
     return {
-        "revision": REVISION,
+        "revision": AMENDMENT_REVISION,
+        "source_revision": REVISION,
         "generated_utc": _utc_now(),
         "complete_pde_dimension_cells": 20,
         "method_cell_outcomes": int(len(scaling)),
@@ -1109,8 +1137,9 @@ def build_summary(
                 if len(finite_ta_fraction) else None
             ),
             "interpretation": (
-                "between-training-seed and within-seed FK inference components "
-                "are separated on the same frozen points"
+                "the amended primary protocol uses one fresh Actor training "
+                "seed per cell; only within-Actor FK inference variability is "
+                "estimated from four independent MCV replicates"
             ),
         },
         "suggested_future_accuracy_compute_pdes": frontier,
@@ -1144,11 +1173,14 @@ def write_report(
     lines = [
         "# ICML Single-Point 32 ICE Report",
         "",
-        f"Revision: {REVISION}",
+        f"Revision: {AMENDMENT_REVISION} (source protocol: {REVISION})",
         "",
         "This report compares fresh Tangent-Actor plus MCV training, standard "
         "full-history MLP, and independent single-initial-state Deep BSDE on "
         "the same 640 frozen time-zero queries.",
+        "Tangent-Actor uses one fresh training seed per PDE-dimension cell and "
+        "four independent MCV inference replicates, as documented in the "
+        "2026-10-23 protocol amendment.",
         "",
         "## Main RMSE over points and formal repeats",
         "",
@@ -1199,9 +1231,10 @@ def write_report(
         "parameters. Their rows therefore measure effective-dimensional "
         "difficulty rather than a changed low-dimensional surrogate.",
         "",
-        "6. For Tangent-Actor, randomness_decomposition.csv separates variation "
-        "between fresh Actor trainings from within-Actor FK Monte Carlo noise. "
-        "The median inferred MC fraction is "
+        "6. For Tangent-Actor, randomness_decomposition.csv reports "
+        "within-Actor FK Monte Carlo noise for the single fresh training run. "
+        "Between-training-seed variance is intentionally not estimated by the "
+        "amended primary protocol. The median inferred MC fraction is "
         f"{_format_metric(summary['tangent_actor_randomness']['median_mc_fraction_of_decomposed_variance'])}.",
         "",
         "7. The accuracy-spread rule identifies "
@@ -1218,7 +1251,8 @@ def write_report(
         "",
         f"Final artifact audit: {artifact_status}.",
         "",
-        "All query hashes, references, task manifests, algorithm hashes, raw "
+        "All query hashes, references, source and amended dispatch manifests, "
+        "algorithm hashes, raw "
         "predictions, formal repeats, and Slurm/task timing records are checked "
         "by artifact_audit.json. Numerical failures and incomplete artifacts are "
         "reported rather than replaced or omitted.",
@@ -1252,7 +1286,8 @@ def execution_status(scaling: pd.DataFrame) -> dict[str, Any]:
             })
     overall = all(cell["status"] == "COMPLETE" for cell in cells)
     return {
-        "revision": REVISION,
+        "revision": AMENDMENT_REVISION,
+        "source_revision": REVISION,
         "updated_utc": _utc_now(),
         "stage_a": _json(STAGE_A_AUDIT).get("status"),
         "stage_b": _json(STAGE_B_AUDIT).get("status"),
