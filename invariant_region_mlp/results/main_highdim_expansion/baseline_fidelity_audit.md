@@ -9,7 +9,7 @@ DPI, PINN-HTE, and SDGD-PINN are **faithful method transfers** to the two new PD
 - Exact solutions are opened for frozen post-training evaluation only.
 - Smoke runs are non-result artifacts and are excluded from every table and figure.
 
-Completed transferred cells: 0 / 30.
+Completed transferred cells: 30 / 30.
 
 | Method | Source commit | Classification |
 |---|---|---|
