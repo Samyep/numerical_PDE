@@ -43,10 +43,18 @@ pending=$(python -m invariant_region_mlp.experiments.single_point_32_ice.consoli
 worker=$SCRIPT_DIR/stage_c_consolidated_worker.slurm
 auditor=$SCRIPT_DIR/audit_consolidated_stage.slurm
 launcher=$SCRIPT_DIR/stage_c_consolidated_launcher.slurm
+exclude_nodes=${SP32_EXCLUDE_NODES:-}
 if [[ -n "$pending" ]]; then
-  workers=$(sbatch --parsable --array="${pending}%4" \
-    --job-name="sp32_v3_d${dimension}" \
-    --export="ALL,SOURCE_ROOT=$SOURCE_ROOT,BUNDLE_MANIFEST=$manifest" "$worker")
+  worker_options=(
+    --parsable
+    --array="${pending}%4"
+    --job-name="sp32_v3_d${dimension}"
+    --export="ALL,SOURCE_ROOT=$SOURCE_ROOT,BUNDLE_MANIFEST=$manifest"
+  )
+  if [[ -n "$exclude_nodes" ]]; then
+    worker_options+=(--exclude="$exclude_nodes")
+  fi
+  workers=$(sbatch "${worker_options[@]}" "$worker")
   workers=${workers%%;*}
   audit_dependency="--dependency=afterok:$workers"
 else
@@ -80,14 +88,23 @@ continuation=${continuation%%;*}
 mkdir -p "$RESULTS_DIR/scheduler_events"
 event_file=$RESULTS_DIR/scheduler_events/consolidated_d${dimension}.json
 python - "$event_file" "$dimension" "$pending" "${workers:-}" \
-  "$audit_job" "$continuation" "$code_sha" <<'PY'
+  "$audit_job" "$continuation" "$code_sha" "$exclude_nodes" <<'PY'
 import json
 import os
 from pathlib import Path
 import sys
 from datetime import datetime, timezone
 
-output, dimension, pending, workers, audit_job, continuation, code_sha = sys.argv[1:]
+(
+    output,
+    dimension,
+    pending,
+    workers,
+    audit_job,
+    continuation,
+    code_sha,
+    exclude_nodes,
+) = sys.argv[1:]
 payload = {
     "protocol_revision": "single_point_32_ice_v2_ta_seed0_bundled",
     "dispatch_revision": "single_point_32_ice_dispatch_v3_fh_by_pde",
@@ -99,6 +116,7 @@ payload = {
     "audit_job_id": audit_job,
     "continuation_job_id": continuation,
     "code_sha": code_sha,
+    "excluded_nodes": [value for value in exclude_nodes.split(",") if value],
 }
 path = Path(output)
 temporary = path.with_suffix(path.suffix + f".{os.getpid()}.tmp")
@@ -106,4 +124,4 @@ temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encod
 os.replace(temporary, path)
 PY
 
-echo "dimension=$dimension pending=${pending:-none} workers=${workers:-none} audit=$audit_job continuation=$continuation"
+echo "dimension=$dimension pending=${pending:-none} workers=${workers:-none} audit=$audit_job continuation=$continuation excluded=${exclude_nodes:-none}"
