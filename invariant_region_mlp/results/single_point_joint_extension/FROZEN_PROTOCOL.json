@@ -1,0 +1,117 @@
+{
+  "actor_updates": 4,
+  "base_commit": "32ef8b074",
+  "base_seed": 20261232,
+  "branch": "ir-mlp-icml-joint-pde",
+  "deep_bsde": {
+    "batch_size": 64,
+    "checkpoint_interval": 100,
+    "intervals": 20,
+    "validation_size": 256
+  },
+  "dimensions": [
+    20,
+    50,
+    100,
+    200,
+    400
+  ],
+  "fh_mlp": {
+    "configurations": [
+      [
+        2,
+        16
+      ],
+      [
+        2,
+        32
+      ],
+      [
+        3,
+        8
+      ],
+      [
+        3,
+        12
+      ],
+      [
+        3,
+        16
+      ],
+      [
+        3,
+        24
+      ]
+    ],
+    "main_configuration": [
+      3,
+      16
+    ],
+    "replicates": 10
+  },
+  "ground_truth_policy": "evaluation and validation only; forbidden from labels, fitting, stopping, checkpoint selection, and method-budget selection",
+  "joint_actor": {
+    "batch_size": 512,
+    "checkpoint_interval": 250,
+    "depth": 4,
+    "gradient_clip": 10.0,
+    "label_time_steps": 32,
+    "learning_rate": 0.00015,
+    "optimizer_steps": 5000,
+    "parent_batch": 8,
+    "path_chunk": 32,
+    "paths_per_label": 128,
+    "training_points": 8192,
+    "validation_points": 512,
+    "width": 384
+  },
+  "judgments": {
+    "J-1": "TA lowest RMSE in at least 4 of 5 dimensions",
+    "J-2": "TA <= 0.5 * FH(n=3,M=16) in at least 4 of 5 dimensions",
+    "J-3": "TA <= 0.5 * Deep BSDE in at least 3 of 5 dimensions",
+    "J-4": "TA RMSE(d=400)/RMSE(d=20) <= 3.0"
+  },
+  "methods": [
+    "tangent_actor",
+    "fh_mlp_standard",
+    "deep_bsde"
+  ],
+  "parameter_construction": {
+    "law": "sign-canonicalized thin QR of d x 2 N(0,1)",
+    "seed_sequence": "[20261232, d, 17]",
+    "v": "beta_1"
+  },
+  "pde": "joint_nonseparable",
+  "preregistration_commit": "0f1485703",
+  "primary_ta_training_seeds": [
+    0
+  ],
+  "protocol_sha256": "ce9edd6c0e549365440e670d397edd7de657ac6877332f1eed607d13817363cd",
+  "query_construction": {
+    "origin_row": 0,
+    "remaining_law": "N(0,I_d)",
+    "seed_sequence": "[20261232, d, 32]"
+  },
+  "query_count": 32,
+  "reference": {
+    "audit_dt_max": 0.00025,
+    "audit_grid": 128,
+    "pde_residual_rmse_max": 2e-06,
+    "primary_dt_max": 0.000125,
+    "primary_grid": 256,
+    "terminal_interpolation_max_abs_max": 0.0001,
+    "value_refinement_max_abs_max": 0.0002,
+    "value_refinement_rmse_max": 5e-05
+  },
+  "revision": "single_point_joint_nonseparable_v1",
+  "ta_evaluation": {
+    "inference_replicates": 4,
+    "paths": 1024,
+    "primary_euler_steps": 64
+  },
+  "training_seeds": [
+    0,
+    1,
+    2
+  ]
+}
