@@ -18,7 +18,7 @@ def test_empty_whole_function_grid_has_140_pending_cells(monkeypatch) -> None:
     assert set(frame["dimension"]) == {20, 50, 100, 200, 400}
     assert set(frame["method"]) == {"tangent_actor", "dpi", "pinn_hte", "sdgd_pinn"}
     assert set(frame["status"]) == {"PENDING"}
-    assert frame[["value_rmse", "value_relative_l2"]].isna().all().all()
+    assert frame[["value_rmse", "value_relative_l2", "value_rmae"]].isna().all().all()
     assert attempts == []
 
 
@@ -43,6 +43,7 @@ def test_complete_ledger_waits_for_canonical_aggregation(monkeypatch) -> None:
     ].iloc[0]
     assert row["status"] == "PENDING"
     assert pd.isna(row["value_rmse"])
+    assert pd.isna(row["value_rmae"])
 
 
 def test_stage1_pilot_covers_both_dimensions_and_all_methods() -> None:

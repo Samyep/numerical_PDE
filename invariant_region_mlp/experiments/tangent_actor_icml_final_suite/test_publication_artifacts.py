@@ -67,7 +67,7 @@ def test_dimension_scaling_excludes_native_anchor_outside_frozen_grid() -> None:
     common = {
         "pde": "hjb_log", "method": "sdgd_pinn",
         "method_status": "native_official", "seed": 0,
-        "value_rmse": 0.05, "value_relative_l2": 0.009,
+        "value_rmse": 0.05, "value_relative_l2": 0.009, "value_rmae": 0.008,
         "total_seconds": 100.0,
     }
     rows = _dimension_scaling([

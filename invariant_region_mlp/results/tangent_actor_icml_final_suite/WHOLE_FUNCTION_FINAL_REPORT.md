@@ -1,18 +1,20 @@
 # Tangent-Actor whole-function benchmark
 
-**Integrity audit:** PASS. **Execution:** in_progress. Generated 2026-10-21T22:53:28.898784+00:00.
+**Integrity audit:** PASS. **Execution:** in_progress. Generated 2026-10-24T00:07:16.392474+00:00.
 
 This benchmark contains the predeclared 7 PDE x 5 dimension x 4 method grid. Every training seed is 0. Deep BSDE is excluded because it is a separate single-point task.
 
+RMAE is the relative L1 error `sum(abs(prediction - truth)) / sum(abs(truth))`, computed from the same frozen pointwise arrays as RMSE. It is not a mean pointwise percentage error, so isolated truth values near zero do not cause singular terms.
+
 ## Execution coverage
 
-- COMPLETE: 113
+- COMPLETE: 123
 - OUT_OF_TIME: 0
 - OUT_OF_MEMORY: 0
 - FAILED: 0
-- PENDING: 27
-- New measured GPU time: 67.371 GH200 hours (120-hour cap).
-- Slurm account charge: 134.790 credit-hours.
+- PENDING: 17
+- New measured GPU time: 82.843 GH200 hours (120-hour cap).
+- Slurm account charge: 165.735 credit-hours.
 
 Incomplete cells have blank accuracy fields and are absent from all numerical curves.
 Cell time is summed from completed attempts, including checkpoint resumes and failed attempts. Suite allocation time also includes reserved idle capacity, so the two totals need not agree.
@@ -25,9 +27,10 @@ The independent repair review and the content-hash audit both pass all seven 100
 
 ## Strictly complete rankings
 
-All four methods are complete in 18 PDE/dimension settings. Tangent-Actor has the smallest Value RMSE in 18/18 of them.
+All four methods are complete in 24 PDE/dimension settings. Tangent-Actor has the smallest Value RMSE in 24/24 of them.
 
 - Allen-Cahn, d=20: tangent_actor (0.001026) < dpi (0.00145) < pinn_hte (0.001718) < sdgd_pinn (0.01187)
+- Allen-Cahn, d=50: tangent_actor (0.0004286) < pinn_hte (0.001309) < dpi (0.001436) < sdgd_pinn (0.006123)
 - Allen-Cahn, d=100: tangent_actor (0.0001734) < pinn_hte (0.000948) < dpi (0.001067) < sdgd_pinn (0.002692)
 - Allen-Cahn, d=400: tangent_actor (2.153e-05) < pinn_hte (0.0004262) < dpi (0.0004546) < sdgd_pinn (0.000616)
 - HJB-Log, d=20: tangent_actor (0.0009483) < sdgd_pinn (0.006094) < pinn_hte (0.0131) < dpi (0.01486)
@@ -38,12 +41,17 @@ All four methods are complete in 18 PDE/dimension settings. Tangent-Actor has th
 - Jointly concave value-gradient PDE, d=50: tangent_actor (0.0003246) < dpi (0.0009667) < pinn_hte (0.002799) < sdgd_pinn (0.01795)
 - Jointly concave value-gradient PDE, d=100: tangent_actor (0.0003231) < dpi (0.002142) < pinn_hte (0.003226) < sdgd_pinn (0.02333)
 - Jointly convex value-gradient PDE, d=20: tangent_actor (0.0002138) < dpi (0.0007283) < pinn_hte (0.001622) < sdgd_pinn (0.01326)
+- Jointly convex value-gradient PDE, d=50: tangent_actor (0.0002068) < dpi (0.000971) < pinn_hte (0.002682) < sdgd_pinn (0.01498)
 - Jointly convex value-gradient PDE, d=100: tangent_actor (0.0002116) < dpi (0.001857) < pinn_hte (0.003267) < sdgd_pinn (0.01278)
 - Hutzenthaler-Nguyen MLP failure example, d=20: tangent_actor (0.004033) < dpi (0.005611) < pinn_hte (0.006659) < sdgd_pinn (0.03903)
+- Hutzenthaler-Nguyen MLP failure example, d=50: tangent_actor (0.005136) < pinn_hte (0.005682) < dpi (0.0081) < sdgd_pinn (0.06622)
 - Hutzenthaler-Nguyen MLP failure example, d=100: tangent_actor (0.006662) < dpi (0.01002) < pinn_hte (0.03994) < sdgd_pinn (0.06687)
 - Hutzenthaler-Nguyen MLP failure example, d=400: tangent_actor (0.009286) < pinn_hte (0.0101) < dpi (0.01823) < sdgd_pinn (0.244)
+- Nonconvex-nonconcave coupled PDE, d=20: tangent_actor (0.0008125) < dpi (0.001078) < pinn_hte (0.007094) < sdgd_pinn (0.01268)
+- Nonconvex-nonconcave coupled PDE, d=50: tangent_actor (0.0008367) < dpi (0.001075) < pinn_hte (0.00427) < sdgd_pinn (0.01368)
 - Nonconvex-nonconcave coupled PDE, d=100: tangent_actor (0.0008041) < dpi (0.001699) < pinn_hte (0.003068) < sdgd_pinn (0.008877)
 - OU/GMM HJB, d=20: tangent_actor (0.06178) < pinn_hte (0.6489) < dpi (1.572) < sdgd_pinn (9.932)
+- OU/GMM HJB, d=50: tangent_actor (0.1357) < dpi (3.056) < pinn_hte (4.325) < sdgd_pinn (27.12)
 - OU/GMM HJB, d=100: tangent_actor (0.2198) < dpi (17.66) < pinn_hte (38.67) < sdgd_pinn (62.48)
 
 ## Measured compute by method
@@ -52,14 +60,14 @@ The total below is measured cell GPU time. Training, selection, and inference co
 
 | Method | Complete cells | Cell GPU h | Training h | Selection h | Inference h |
 |---|---:|---:|---:|---:|---:|
-| Tangent-Actor + MCV | 23 | 14.006 | 9.947 | 0.389 | 0.870 |
-| DPI | 28 | 6.360 | 6.172 | 0.000 | 0.000 |
+| Tangent-Actor + MCV | 28 | 16.277 | 12.061 | 0.481 | 1.081 |
+| DPI | 30 | 8.636 | 8.374 | 0.000 | 0.000 |
 | PINN-HTE | 34 | 5.501 | 5.310 | 0.000 | 0.000 |
-| SDGD-PINN | 28 | 59.830 | 58.040 | 0.000 | 0.000 |
+| SDGD-PINN | 31 | 70.671 | 62.767 | 0.000 | 0.000 |
 
 ## Stability and capped runs
 
-All 113 completed rows have finite primary metrics, and the audit found no reported nonfinite outputs. Checkpoint resumes are charged to the same six-hour cell budget. A cell is marked OUT_OF_TIME only after its cumulative attempts reach that cap; capped checkpoints never enter the complete ranking.
+All 123 completed rows have finite primary metrics, and the audit found no reported nonfinite outputs. Checkpoint resumes are charged to the same six-hour cell budget. A cell is marked OUT_OF_TIME only after its cumulative attempts reach that cap; capped checkpoints never enter the complete ranking.
 
 No cell has yet ended as OUT_OF_TIME, OUT_OF_MEMORY, or FAILED.
 

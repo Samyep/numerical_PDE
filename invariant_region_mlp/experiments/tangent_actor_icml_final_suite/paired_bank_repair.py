@@ -24,6 +24,8 @@ from typing import Any, Iterable
 
 import numpy as np
 
+from .value_metrics import VALUE_METRIC_NAMES, value_metric_payload
+
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 SOURCE_ROOT = PACKAGE_DIR.parents[2]
@@ -264,15 +266,7 @@ def _embedded_truth(arrays: dict[str, np.ndarray]) -> np.ndarray | None:
 
 
 def _metric_payload(prediction: np.ndarray, truth: np.ndarray) -> dict[str, float]:
-    error = prediction - truth
-    return {
-        "value_rmse": float(np.sqrt(np.mean(np.square(error)))),
-        "value_relative_l2": float(
-            np.linalg.norm(error) / max(np.linalg.norm(truth), np.finfo(float).tiny)
-        ),
-        "value_bias": float(np.mean(error)),
-        "value_mae": float(np.mean(np.abs(error))),
-    }
+    return value_metric_payload(prediction, truth)
 
 
 def _tag(value: Any) -> str:
@@ -342,7 +336,7 @@ def repair_rows(
         )
         metrics = _metric_payload(prediction, truth)
         original_metrics = {}
-        for name in ("value_rmse", "value_relative_l2", "value_bias", "value_mae"):
+        for name in VALUE_METRIC_NAMES:
             preserved = row.get(f"raw_{name}")
             original_metrics[name] = (
                 preserved if preserved not in (None, "") else row.get(name)
@@ -378,6 +372,7 @@ def repair_rows(
             "raw_value_relative_l2": original_metrics["value_relative_l2"],
             "raw_value_bias": original_metrics["value_bias"],
             "raw_value_mae": original_metrics["value_mae"],
+            "raw_value_rmae": original_metrics["value_rmae"],
             "reference_uncertainty": REFERENCE_UNCERTAINTY[pde],
             "paired_bank_audit_status": "PASS",
             "metric_provenance": "offline recomputation from frozen prediction on canonical bank",

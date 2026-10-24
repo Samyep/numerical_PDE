@@ -18,8 +18,9 @@ from matplotlib.lines import Line2D
 import numpy as np
 import pandas as pd
 
-from .paired_bank_repair import array_sha256, file_sha256
+from .paired_bank_repair import array_sha256, file_sha256, source_prediction
 from .protocol import PDES, RESULTS_DIR, SOURCE_COMMITS
+from .value_metrics import VALUE_METRIC_NAMES, value_metric_payload
 from .whole_function_status import DIMENSIONS, METHODS, attempts, key
 from .whole_function_job_accounting import collect as collect_job_accounting
 
@@ -138,6 +139,7 @@ def build_results_frame() -> tuple[pd.DataFrame, list[dict[str, Any]]]:
                 }
                 copied = (
                     "value_rmse", "value_relative_l2", "value_bias", "value_mae",
+                    "value_rmae", "steps", "paths", "estimator",
                     "states", "test_bank", "test_bank_sha256", "test_bank_array_sha256",
                     "test_bank_file_sha256", "reference", "reference_uncertainty",
                     "reference_array_sha256", "reference_source", "prediction_file",
@@ -150,7 +152,7 @@ def build_results_frame() -> tuple[pd.DataFrame, list[dict[str, Any]]]:
                 for name in copied:
                     row[name] = source.get(name) if source is not None else None
                 if status != "COMPLETE":
-                    for name in ("value_rmse", "value_relative_l2", "value_bias", "value_mae"):
+                    for name in VALUE_METRIC_NAMES:
                         row[name] = None
                 rows.append(row)
     frame = pd.DataFrame(rows)
@@ -179,11 +181,15 @@ def _actual_artifact_hashes(row: pd.Series) -> dict[str, Any]:
             else:
                 raise KeyError("missing t/x arrays")
             truth = np.asarray(data["truth"]).reshape(-1)
+            prediction = source_prediction(row.to_dict(), path)
+            metrics = value_metric_payload(prediction, truth)
         return {
-            "valid": bool(len(t) == len(x) == len(truth) and np.isfinite(t).all()
-                          and np.isfinite(x).all() and np.isfinite(truth).all()),
+            "valid": bool(len(t) == len(x) == len(truth) == len(prediction)
+                          and np.isfinite(t).all() and np.isfinite(x).all()
+                          and np.isfinite(truth).all() and np.isfinite(prediction).all()),
             "states": len(t), "bank": array_sha256(t, x),
             "reference": array_sha256(truth), "file": file_sha256(path),
+            "metrics": metrics,
         }
     except Exception as exc:
         return {"valid": False, "error": repr(exc)}
@@ -194,12 +200,20 @@ def audit(frame: pd.DataFrame, attempt_rows: list[dict[str, Any]]) -> dict[str, 
     artifact_checks: list[dict[str, Any]] = []
     for _, row in completed.iterrows():
         actual = _actual_artifact_hashes(row)
+        metrics_match = all(
+            math.isclose(
+                float(row[name]), float(actual.get("metrics", {}).get(name)),
+                rel_tol=1e-12, abs_tol=1e-14,
+            )
+            for name in VALUE_METRIC_NAMES
+        ) if actual.get("valid") else False
         passed = bool(
             actual.get("valid")
             and int(actual.get("states", -1)) == int(row["states"])
             and actual.get("bank") == row["test_bank_array_sha256"]
             and actual.get("reference") == row["reference_array_sha256"]
             and actual.get("file") == row["prediction_file_sha256"]
+            and metrics_match
         )
         artifact_checks.append({
             "pde": row["pde"], "dimension": int(row["dimension"]),
@@ -226,7 +240,7 @@ def audit(frame: pd.DataFrame, attempt_rows: list[dict[str, Any]]) -> dict[str, 
     )
     job_accounting = collect_job_accounting()
     new_gpu_seconds = float(job_accounting["allocated_gpu_seconds"])
-    complete_metrics = completed[["value_rmse", "value_relative_l2"]].apply(
+    complete_metrics = completed[list(VALUE_METRIC_NAMES)].apply(
         pd.to_numeric, errors="coerce",
     ).to_numpy(float)
     terminal = frame[frame["status"] != "COMPLETE"]
@@ -239,7 +253,7 @@ def audit(frame: pd.DataFrame, attempt_rows: list[dict[str, Any]]) -> dict[str, 
         "seed_zero_only": set(frame["seed"]) == {0},
         "complete_metrics_finite": bool(np.isfinite(complete_metrics).all()),
         "incomplete_cells_have_no_accuracy": bool(
-            terminal[["value_rmse", "value_relative_l2"]].isna().all().all()
+            terminal[list(VALUE_METRIC_NAMES)].isna().all().all()
         ),
         "prediction_artifacts_match_reported_hashes": all(
             item["status"] == "PASS" for item in artifact_checks
@@ -400,7 +414,11 @@ def _latex(frame: pd.DataFrame) -> Path:
             for method in METHODS:
                 row = indexed.loc[(pde, dimension, method)]
                 if row["status"] == "COMPLETE":
-                    cells.append(rf"\shortstack{{{row['value_relative_l2']:.3g} rel.\\{row['value_rmse']:.3g} RMSE}}")
+                    cells.append(
+                        rf"\shortstack{{{row['value_rmse']:.3g} RMSE\\"
+                        rf"{row['value_rmae']:.3g} RMAE\\"
+                        rf"{row['value_relative_l2']:.3g} rel. $L^2$}}"
+                    )
                 else:
                     cells.append(str(row["status"]).replace("_", r"\_"))
             label = PDE_LABELS[pde].replace("&", r"\&") if index == 0 else ""
@@ -463,6 +481,10 @@ def _report(frame: pd.DataFrame, audit_payload: dict[str, Any]) -> Path:
         "",
         "This benchmark contains the predeclared 7 PDE x 5 dimension x 4 method grid. "
         "Every training seed is 0. Deep BSDE is excluded because it is a separate single-point task.",
+        "",
+        "RMAE is the relative L1 error `sum(abs(prediction - truth)) / sum(abs(truth))`, "
+        "computed from the same frozen pointwise arrays as RMSE. It is not a mean pointwise "
+        "percentage error, so isolated truth values near zero do not cause singular terms.",
         "",
         "## Execution coverage",
         "",
@@ -602,6 +624,7 @@ def build() -> dict[str, Any]:
     figures = []
     figures += _scaling_figure(frame, "value_rmse", "whole_function_accuracy_comparison", "Value RMSE")
     figures += _scaling_figure(frame, "value_relative_l2", "whole_function_dimension_scaling", "Value relative $L^2$")
+    figures += _scaling_figure(frame, "value_rmae", "whole_function_rmae_scaling", "Value RMAE (relative $L^1$)")
     figures += _compute_figure(frame, audit_payload)
     table = _latex(frame)
     report = _report(frame, audit_payload)

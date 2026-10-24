@@ -19,7 +19,9 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from .paired_bank_repair import source_prediction
 from .protocol import RESULTS_DIR, SOURCE_COMMITS, dimensions_for
+from .value_metrics import VALUE_METRIC_NAMES, value_metric_payload
 
 
 PACKAGE_DIR = Path(__file__).resolve().parent
@@ -156,8 +158,9 @@ def _base_row(**overrides: Any) -> dict[str, Any]:
         "source_prediction_file": None, "source_prediction_file_sha256": None,
         "reference_uncertainty": None, "value_rmse": None,
         "value_relative_l2": None, "value_bias": None, "value_mae": None,
+        "value_rmae": None,
         "raw_value_rmse": None, "raw_value_relative_l2": None,
-        "raw_value_bias": None, "raw_value_mae": None,
+        "raw_value_bias": None, "raw_value_mae": None, "raw_value_rmae": None,
         "gradient_component_rmse": None, "gradient_vector_rmse": None,
         "gradient_relative_l2": None, "actor_value_rmse": None,
         "actor_gradient_vector_rmse": None, "mc_rmse_contribution": None,
@@ -563,6 +566,47 @@ def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     frame.sort_values(sort, na_position="last").to_csv(path, index=False)
 
 
+def _attach_value_rmae(
+    rows: list[dict[str, Any]], *, strict: bool,
+) -> int:
+    """Recompute RMAE from the same frozen arrays used by each reported RMSE."""
+    attached = 0
+    for row in rows:
+        try:
+            reported_rmse = float(row.get("value_rmse"))
+        except (TypeError, ValueError):
+            continue
+        if not np.isfinite(reported_rmse):
+            continue
+        try:
+            prediction_path = Path(str(row["prediction_file"]))
+            if not prediction_path.is_absolute():
+                prediction_path = SOURCE_ROOT / prediction_path
+            with np.load(prediction_path, allow_pickle=False) as data:
+                truth = np.asarray(data["truth"], dtype=np.float64).reshape(-1)
+            prediction = source_prediction(row, prediction_path)
+            metrics = value_metric_payload(prediction, truth)
+            if not np.isclose(
+                metrics["value_rmse"], reported_rmse, rtol=1e-10, atol=1e-12,
+            ):
+                raise RuntimeError(
+                    f"artifact RMSE {metrics['value_rmse']} != reported {reported_rmse}"
+                )
+            # Normalize all value metrics to the exact same frozen arrays.
+            # Several legacy SDGD rows omitted MAE even though their immutable
+            # prediction artifacts contain everything needed to compute it.
+            for name in VALUE_METRIC_NAMES:
+                row[name] = metrics[name]
+            attached += 1
+        except Exception as exc:
+            if strict:
+                raise RuntimeError(
+                    "cannot recompute RMAE for "
+                    f"{row.get('pde')}/{row.get('method')}/d{row.get('dimension')}: {exc}"
+                ) from exc
+    return attached
+
+
 def _dimension_scaling(main: list[dict[str, Any]]) -> list[dict[str, Any]]:
     grouped: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
     for row in main:
@@ -576,6 +620,7 @@ def _dimension_scaling(main: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for (pde, d, method, status), rows in grouped.items():
         errors = np.asarray([row["value_rmse"] for row in rows], dtype=float)
         relative = np.asarray([row["value_relative_l2"] for row in rows], dtype=float)
+        rmae = np.asarray([row["value_rmae"] for row in rows], dtype=float)
         costs = np.asarray([row["total_seconds"] for row in rows if row.get("total_seconds") is not None], dtype=float)
         output.append({
             "pde": pde, "dimension": d, "method": method,
@@ -585,6 +630,8 @@ def _dimension_scaling(main: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "value_rmse_sample_std": float(errors.std(ddof=1)) if len(errors) > 1 else None,
             "value_relative_l2_mean": float(relative.mean()),
             "value_relative_l2_sample_std": float(relative.std(ddof=1)) if len(relative) > 1 else None,
+            "value_rmae_mean": float(rmae.mean()),
+            "value_rmae_sample_std": float(rmae.std(ddof=1)) if len(rmae) > 1 else None,
             "total_seconds_mean": float(costs.mean()) if len(costs) else None,
         })
     return output
@@ -613,6 +660,7 @@ def _ablation_rows(frontier: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "steps": row["steps"], "paths": row["paths"],
                 "value_rmse": row["value_rmse"],
                 "value_relative_l2": row["value_relative_l2"],
+                "value_rmae": row.get("value_rmae"),
                 "mc_rmse_contribution": row["mc_rmse_contribution"],
                 "variance_reduction": row["variance_reduction"],
                 "actor_value_rmse": row["actor_value_rmse"],
@@ -878,6 +926,7 @@ def aggregate() -> dict[str, Any]:
     # reference array without retraining or checkpoint reselection.
     from .paired_bank_repair import repair_rows
     repair_rows(main, scope="main", write_audit=True)
+    main_rmae_rows = _attach_value_rmae(main, strict=True)
     excluded = []
     # Compare against the final de-duplicated rows, not every candidate.  This
     # keeps superseded-but-valid primary runs visible in the historical export
@@ -911,6 +960,8 @@ def aggregate() -> dict[str, Any]:
         ("pde", "dimension", "method", "seed", "steps", "paths", "estimator"),
     )]
     repair_rows(frontier, scope="frontier", write_audit=False)
+    frontier_rmae_rows = _attach_value_rmae(frontier, strict=True)
+    _attach_value_rmae(excluded, strict=False)
     scaling = _dimension_scaling(main)
     ablations = _ablation_rows(frontier)
     _write_csv(RESULTS_DIR / "MAIN_RESULTS.csv", main)
@@ -935,6 +986,8 @@ def aggregate() -> dict[str, Any]:
         "ablation_rows": len(ablations),
         "historical_and_nonprimary_rows": len(excluded),
         "review_100d_rows": len(review_rows),
+        "main_rmae_rows": main_rmae_rows,
+        "frontier_rmae_rows": frontier_rmae_rows,
         "completed_method_cells": sum(
             item["execution_status"].startswith("completed")
             for item in manifest["method_cells"]

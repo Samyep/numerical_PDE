@@ -467,8 +467,12 @@ def _metric_cell(rows: pd.DataFrame) -> str:
         return "--"
     rmse = rows["value_rmse_mean"].iloc[0]
     rel = rows["value_relative_l2_mean"].iloc[0]
+    rmae = rows["value_rmae_mean"].iloc[0]
     seeds = int(rows["seeds"].iloc[0])
-    return rf"\shortstack{{{rel:.3g} rel.\\{rmse:.3g} RMSE\\$n={seeds}$}}"
+    return (
+        rf"\shortstack{{{rmse:.3g} RMSE\\{rmae:.3g} RMAE\\"
+        rf"{rel:.3g} rel. $L^2$\\$n={seeds}$}}"
+    )
 
 
 def table_main() -> Path:
@@ -687,7 +691,9 @@ def build_artifact_audit(artifacts: Iterable[Path]) -> Path:
             main.duplicated(["pde", "dimension", "method", "seed"]).sum()
         ) == 0,
         "main_metrics_finite": bool(
-            np.isfinite(main[["value_rmse", "value_relative_l2"]].to_numpy(dtype=float)).all()
+            np.isfinite(
+                main[["value_rmse", "value_relative_l2", "value_rmae"]].to_numpy(dtype=float)
+            ).all()
         ),
         "native_errors_finite": bool(
             np.isfinite(native["absolute_error"].to_numpy(dtype=float)).all()

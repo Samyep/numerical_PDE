@@ -11,19 +11,23 @@ from .paired_bank_repair import (
     file_sha256,
     verify_canonical_prediction,
 )
+from .value_metrics import value_metric_payload
 
 
 def _write_prediction(path: Path, t: np.ndarray, x: np.ndarray) -> dict[str, float]:
     truth = np.array([0.25, 0.75], dtype=np.float64)
     prediction = np.array([0.20, 0.90], dtype=np.float64)
     np.savez_compressed(path, t=t, x=x, truth=truth, prediction=prediction)
-    error = prediction - truth
-    return {
-        "value_rmse": float(np.sqrt(np.mean(error**2))),
-        "value_relative_l2": float(np.linalg.norm(error) / np.linalg.norm(truth)),
-        "value_bias": float(np.mean(error)),
-        "value_mae": float(np.mean(np.abs(error))),
-    }
+    return value_metric_payload(prediction, truth)
+
+
+def test_rmae_is_relative_l1_not_mean_percentage_error(tmp_path: Path) -> None:
+    t = np.array([0.0, 0.5], dtype=np.float64)
+    x = np.array([[1.0], [2.0]], dtype=np.float64)
+    metrics = _write_prediction(tmp_path / "prediction.npz", t, x)
+
+    assert np.isclose(metrics["value_mae"], 0.1)
+    assert np.isclose(metrics["value_rmae"], 0.2)
 
 
 def test_numerical_array_hash_is_independent_of_npz_container(tmp_path: Path) -> None:

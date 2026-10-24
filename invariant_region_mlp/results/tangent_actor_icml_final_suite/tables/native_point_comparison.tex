@@ -2,40 +2,135 @@
 \toprule
 PDE & $d$ & Method & Status & Seeds & Abs. error (seed 0) & Cost (s) \\
 \midrule
+Allen–Cahn & 20 & DPI & faithful\_transfer & 1 & 0.000746 & 474 \\
+Allen–Cahn & 20 & PINN-HTE & faithful\_transfer & 1 & 0.000416 & 297 \\
+Allen–Cahn & 20 & SDGD-PINN & faithful\_transfer & 1 & 0.000972 & 5.66e+03 \\
+Allen–Cahn & 20 & Tangent-Actor & final\_method & 1 & 0.00194 & 606 \\
+Allen–Cahn & 50 & DPI & faithful\_transfer & 1 & 0.00248 & 333 \\
+Allen–Cahn & 50 & PINN-HTE & faithful\_transfer & 1 & 5.06e-06 & 314 \\
+Allen–Cahn & 50 & SDGD-PINN & faithful\_transfer & 1 & 7.41e-05 & 6.03e+03 \\
+Allen–Cahn & 50 & Tangent-Actor & final\_method & 1 & 0.000841 & 568 \\
 Allen–Cahn & 100 & Deep BSDE & native\_official & 1 & 0.000372 & 130 \\
 Allen–Cahn & 100 & DPI & faithful\_transfer & 1 & 0.00236 & 415 \\
 Allen–Cahn & 100 & PINN-HTE & faithful\_transfer & 1 & 0.000262 & 281 \\
 Allen–Cahn & 100 & SDGD-PINN & faithful\_transfer & 1 & 0.00024 & 5.8e+03 \\
 Allen–Cahn & 100 & Tangent-Actor & final\_method & 1 & 4.46e-05 & 662 \\
+Allen–Cahn & 200 & DPI & faithful\_transfer & 1 & 0.00388 & 544 \\
+Allen–Cahn & 200 & PINN-HTE & faithful\_transfer & 1 & 0.00472 & 293 \\
+Allen–Cahn & 200 & SDGD-PINN & faithful\_transfer & 1 & 0.0051 & 5.64e+03 \\
+Allen–Cahn & 400 & DPI & faithful\_transfer & 1 & 0.0176 & 434 \\
+Allen–Cahn & 400 & PINN-HTE & faithful\_transfer & 1 & 0.0184 & 322 \\
+Allen–Cahn & 400 & SDGD-PINN & faithful\_transfer & 1 & 0.0184 & 5.96e+03 \\
+Allen–Cahn & 400 & Tangent-Actor & final\_method & 1 & 0.0183 & 752 \\
+HJB–Log & 20 & DPI & faithful\_transfer & 1 & 0.0215 & 338 \\
+HJB–Log & 20 & PINN-HTE & faithful\_transfer & 1 & 0.0133 & 354 \\
+HJB–Log & 20 & SDGD-PINN & faithful\_transfer & 1 & 0.0834 & 8.38e+03 \\
+HJB–Log & 20 & Tangent-Actor & final\_method & 1 & 0.0211 & 1.06e+03 \\
+HJB–Log & 50 & DPI & faithful\_transfer & 1 & 0.0965 & 337 \\
+HJB–Log & 50 & PINN-HTE & faithful\_transfer & 1 & 0.0263 & 321 \\
+HJB–Log & 50 & SDGD-PINN & faithful\_transfer & 1 & 1.07 & 9.68e+03 \\
+HJB–Log & 50 & Tangent-Actor & final\_method & 1 & 0.0361 & 1.16e+03 \\
 HJB–Log & 100 & Deep BSDE & native\_official & 1 & 0.0103 & 66.8 \\
 HJB–Log & 100 & DPI & faithful\_transfer & 1 & 0.0806 & 448 \\
 HJB–Log & 100 & PINN-HTE & faithful\_transfer & 1 & 0.0711 & 304 \\
 HJB–Log & 100 & SDGD-PINN & faithful\_transfer & 1 & 2.08 & 1.21e+04 \\
 HJB–Log & 100 & Tangent-Actor & final\_method & 1 & 0.00329 & 1.02e+03 \\
+HJB–Log & 200 & DPI & faithful\_transfer & 1 & 0.117 & 430 \\
+HJB–Log & 200 & PINN-HTE & faithful\_transfer & 1 & 0.229 & 358 \\
 HJB–Log & 250 & SDGD-PINN & native\_official & 1 & 3.14 & 1.23e+04 \\
+HJB–Log & 400 & DPI & faithful\_transfer & 1 & 0.211 & 462 \\
+HJB–Log & 400 & PINN-HTE & faithful\_transfer & 1 & 0.326 & 351 \\
+HJB–Log & 400 & SDGD-PINN & faithful\_transfer & 1 & 3.72 & 1.19e+04 \\
+HJB–Log & 400 & Tangent-Actor & final\_method & 1 & 0.00214 & 1.11e+03 \\
+Joint concave & 20 & DPI & faithful\_transfer & 1 & 0.00078 & 1.16e+03 \\
+Joint concave & 20 & PINN-HTE & faithful\_transfer & 1 & 0.00349 & 510 \\
+Joint concave & 20 & SDGD-PINN & faithful\_transfer & 1 & 0.0016 & 5.53e+03 \\
+Joint concave & 20 & Tangent-Actor & final\_method & 1 & 0.000313 & 1.93e+03 \\
+Joint concave & 50 & DPI & faithful\_transfer & 1 & 0.00045 & 1.21e+03 \\
+Joint concave & 50 & PINN-HTE & faithful\_transfer & 1 & 0.00141 & 499 \\
+Joint concave & 50 & SDGD-PINN & faithful\_transfer & 1 & 0.00395 & 5.63e+03 \\
+Joint concave & 50 & Tangent-Actor & final\_method & 1 & 0.000298 & 1.74e+03 \\
 Joint concave & 100 & Deep BSDE & faithful\_transfer & 1 & 0.000381 & 60.7 \\
 Joint concave & 100 & DPI & faithful\_transfer & 1 & 0.00142 & 1.24e+03 \\
 Joint concave & 100 & PINN-HTE & faithful\_transfer & 1 & 0.00347 & 507 \\
 Joint concave & 100 & SDGD-PINN & faithful\_transfer & 1 & 0.000692 & 5.4e+03 \\
 Joint concave & 100 & Tangent-Actor & final\_method & 1 & 0.00056 & 1.9e+03 \\
+Joint concave & 200 & DPI & faithful\_transfer & 1 & 0.000693 & 1.23e+03 \\
+Joint concave & 200 & PINN-HTE & faithful\_transfer & 1 & 0.000187 & 554 \\
+Joint concave & 400 & PINN-HTE & faithful\_transfer & 1 & 0.00098 & 536 \\
+Joint concave & 400 & SDGD-PINN & faithful\_transfer & 1 & 0.000576 & 5.3e+03 \\
+Joint concave & 400 & Tangent-Actor & final\_method & 1 & 0.00166 & 549 \\
+Joint convex & 20 & DPI & faithful\_transfer & 1 & 0.000172 & 1.15e+03 \\
+Joint convex & 20 & PINN-HTE & faithful\_transfer & 1 & 0.000676 & 512 \\
+Joint convex & 20 & SDGD-PINN & faithful\_transfer & 1 & 0.000989 & 6.19e+03 \\
+Joint convex & 20 & Tangent-Actor & adapted & 1 & 0.000154 & 2.13e+03 \\
+Joint convex & 50 & DPI & faithful\_transfer & 1 & 5.17e-05 & 1.19e+03 \\
+Joint convex & 50 & PINN-HTE & faithful\_transfer & 1 & 0.00185 & 512 \\
+Joint convex & 50 & SDGD-PINN & faithful\_transfer & 1 & 0.00137 & 6.24e+03 \\
+Joint convex & 50 & Tangent-Actor & adapted & 1 & 0.000196 & 1.03e+03 \\
 Joint convex & 100 & Deep BSDE & faithful\_transfer & 1 & 0.00125 & 67.2 \\
 Joint convex & 100 & DPI & faithful\_transfer & 1 & 0.00161 & 1.23e+03 \\
 Joint convex & 100 & PINN-HTE & faithful\_transfer & 1 & 0.000222 & 500 \\
 Joint convex & 100 & SDGD-PINN & faithful\_transfer & 1 & 0.000227 & 5.49e+03 \\
 Joint convex & 100 & Tangent-Actor & adapted & 1 & 0.000328 & 1.99e+03 \\
+Joint convex & 200 & DPI & faithful\_transfer & 1 & 0.00211 & 1.24e+03 \\
+Joint convex & 200 & PINN-HTE & faithful\_transfer & 1 & 0.000389 & 513 \\
+Joint convex & 400 & PINN-HTE & faithful\_transfer & 1 & 0.00191 & 564 \\
+Joint convex & 400 & SDGD-PINN & faithful\_transfer & 1 & 0.00022 & 6e+03 \\
+Joint convex & 400 & Tangent-Actor & adapted & 1 & 0.00204 & 1.97e+03 \\
+MLP failure & 20 & DPI & adapted & 1 & 0.00523 & 306 \\
+MLP failure & 20 & PINN-HTE & adapted & 1 & 0.00606 & 326 \\
+MLP failure & 20 & SDGD-PINN & adapted & 1 & 0.0131 & 6.76e+03 \\
+MLP failure & 20 & Tangent-Actor & adapted & 1 & 0.000395 & 1.77e+03 \\
+MLP failure & 50 & DPI & adapted & 1 & 0.000697 & 364 \\
+MLP failure & 50 & PINN-HTE & adapted & 1 & 0.00173 & 349 \\
+MLP failure & 50 & SDGD-PINN & adapted & 1 & 0.0386 & 6.07e+03 \\
+MLP failure & 50 & Tangent-Actor & adapted & 1 & 0.00509 & 1.49e+03 \\
 MLP failure & 100 & Deep BSDE & adapted & 1 & 0.0665 & 56.9 \\
 MLP failure & 100 & DPI & adapted & 1 & 0.00384 & 261 \\
 MLP failure & 100 & PINN-HTE & adapted & 1 & 0.0539 & 317 \\
 MLP failure & 100 & SDGD-PINN & adapted & 1 & 0.0667 & 5.62e+03 \\
 MLP failure & 100 & Tangent-Actor & adapted & 1 & 0.0104 & 1.5e+03 \\
+MLP failure & 200 & DPI & adapted & 1 & 0.00392 & 325 \\
+MLP failure & 200 & PINN-HTE & adapted & 1 & 0.0081 & 341 \\
+MLP failure & 200 & SDGD-PINN & adapted & 1 & 0.0495 & 5.71e+03 \\
+MLP failure & 400 & DPI & adapted & 1 & 0.00406 & 375 \\
+MLP failure & 400 & PINN-HTE & adapted & 1 & 0.0047 & 309 \\
+MLP failure & 400 & SDGD-PINN & adapted & 1 & 0.105 & 5.83e+03 \\
+MLP failure & 400 & Tangent-Actor & adapted & 1 & 0.0305 & 574 \\
+Nonconvex coupled & 20 & DPI & faithful\_transfer & 1 & 0.000444 & 3.97e+03 \\
+Nonconvex coupled & 20 & PINN-HTE & faithful\_transfer & 1 & 0.00739 & 1.16e+03 \\
+Nonconvex coupled & 20 & SDGD-PINN & faithful\_transfer & 1 & 0.00141 & 6.45e+03 \\
+Nonconvex coupled & 20 & Tangent-Actor & final\_method & 1 & 0.00182 & 2.51e+03 \\
+Nonconvex coupled & 50 & DPI & faithful\_transfer & 1 & 0.000249 & 3.96e+03 \\
+Nonconvex coupled & 50 & PINN-HTE & faithful\_transfer & 1 & 0.00271 & 1.15e+03 \\
+Nonconvex coupled & 50 & SDGD-PINN & faithful\_transfer & 1 & 0.000334 & 5.92e+03 \\
+Nonconvex coupled & 50 & Tangent-Actor & final\_method & 1 & 0.00162 & 1.22e+03 \\
 Nonconvex coupled & 100 & Deep BSDE & faithful\_transfer & 1 & 0.00218 & 73.9 \\
 Nonconvex coupled & 100 & DPI & faithful\_transfer & 1 & 0.000269 & 4.01e+03 \\
 Nonconvex coupled & 100 & PINN-HTE & faithful\_transfer & 1 & 0.00262 & 1.24e+03 \\
 Nonconvex coupled & 100 & SDGD-PINN & faithful\_transfer & 1 & 0.000771 & 6.28e+03 \\
+Nonconvex coupled & 200 & PINN-HTE & faithful\_transfer & 1 & 0.00307 & 1.17e+03 \\
+Nonconvex coupled & 200 & SDGD-PINN & faithful\_transfer & 1 & 0.000161 & 5.67e+03 \\
+Nonconvex coupled & 400 & SDGD-PINN & faithful\_transfer & 1 & 0.000692 & 5.69e+03 \\
+Nonconvex coupled & 400 & Tangent-Actor & final\_method & 1 & 0.0052 & 2.57e+03 \\
+OU/GMM HJB & 20 & DPI & faithful\_transfer & 1 & 7.19 & 678 \\
+OU/GMM HJB & 20 & PINN-HTE & faithful\_transfer & 1 & 12.8 & 936 \\
+OU/GMM HJB & 20 & SDGD-PINN & faithful\_transfer & 1 & 0.0193 & 9.63e+03 \\
+OU/GMM HJB & 20 & Tangent-Actor & final\_method & 1 & 0.0709 & 1.52e+03 \\
+OU/GMM HJB & 50 & DPI & faithful\_transfer & 1 & 60.4 & 615 \\
+OU/GMM HJB & 50 & PINN-HTE & faithful\_transfer & 1 & 38.1 & 968 \\
+OU/GMM HJB & 50 & SDGD-PINN & faithful\_transfer & 1 & 0.522 & 1.05e+04 \\
+OU/GMM HJB & 50 & Tangent-Actor & final\_method & 1 & 0.198 & 1.51e+03 \\
 OU/GMM HJB & 100 & Deep BSDE & faithful\_transfer & 1 & 71.1 & 57.4 \\
 OU/GMM HJB & 100 & DPI & native\_official & 1 & 144 & 628 \\
 OU/GMM HJB & 100 & PINN-HTE & native\_official & 1 & 148 & 767 \\
 OU/GMM HJB & 100 & SDGD-PINN & faithful\_transfer & 1 & 0.191 & 1.47e+04 \\
 OU/GMM HJB & 100 & Tangent-Actor & final\_method & 1 & 0.254 & 1.57e+03 \\
+OU/GMM HJB & 200 & DPI & faithful\_transfer & 1 & 260 & 800 \\
+OU/GMM HJB & 200 & PINN-HTE & faithful\_transfer & 1 & 243 & 847 \\
+OU/GMM HJB & 400 & PINN-HTE & faithful\_transfer & 1 & 473 & 833 \\
+OU/GMM HJB & 400 & SDGD-PINN & faithful\_transfer & 1 & 102 & 1.42e+04 \\
+OU/GMM HJB & 400 & Tangent-Actor & final\_method & 1 & 7.1 & 1.51e+03 \\
 \bottomrule
 \end{tabular}

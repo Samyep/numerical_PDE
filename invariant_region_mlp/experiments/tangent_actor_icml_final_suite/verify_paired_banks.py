@@ -29,12 +29,10 @@ from .paired_bank_repair import (
     source_prediction,
     verify_canonical_prediction,
 )
+from .value_metrics import VALUE_METRIC_NAMES, value_metric_payload
 
 
 SOURCE_ROOT = Path(__file__).resolve().parents[2]
-METRIC_NAMES = ("value_rmse", "value_relative_l2", "value_bias", "value_mae")
-
-
 def _absolute(value: str) -> Path:
     path = Path(value)
     return path if path.is_absolute() else SOURCE_ROOT / path
@@ -44,15 +42,7 @@ def _metrics(path: Path) -> dict[str, float]:
     with np.load(path, allow_pickle=False) as data:
         truth = np.asarray(data["truth"], dtype=np.float64).reshape(-1)
         prediction = np.asarray(data["prediction"], dtype=np.float64).reshape(-1)
-    error = prediction - truth
-    return {
-        "value_rmse": float(np.sqrt(np.mean(np.square(error)))),
-        "value_relative_l2": float(
-            np.linalg.norm(error) / max(np.linalg.norm(truth), np.finfo(float).tiny)
-        ),
-        "value_bias": float(np.mean(error)),
-        "value_mae": float(np.mean(np.abs(error))),
-    }
+    return value_metric_payload(prediction, truth)
 
 
 def _canonical_arrays(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -113,7 +103,7 @@ def audit(main_results: Path, dimension: int = 100) -> dict[str, Any]:
                 if not matches:
                     errors.append(f"{name}: CSV={expected!r}, actual={observed!r}")
 
-            for name in METRIC_NAMES:
+            for name in VALUE_METRIC_NAMES:
                 if name not in calculated or not _close(row.get(name), calculated.get(name)):
                     errors.append(
                         f"{name}: CSV={row.get(name)!r}, recomputed={calculated.get(name)!r}"
