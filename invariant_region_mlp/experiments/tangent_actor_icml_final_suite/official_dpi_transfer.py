@@ -16,7 +16,9 @@ import math
 import os
 from pathlib import Path
 import random
+import re
 import shutil
+import tempfile
 import time
 from types import SimpleNamespace
 from typing import Any
@@ -398,6 +400,134 @@ def _restore_rng(state: dict[str, Any]) -> None:
         torch.cuda.set_rng_state_all(state["cuda"])
 
 
+def _atomic_torch_save(payload: dict[str, Any], path: Path) -> None:
+    """Commit a round-boundary state without exposing a partial file."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp.{os.getpid()}")
+    try:
+        torch.save(payload, temporary)
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _load_dpi_resume_state(
+    path: Path, *, run_id: str, exp_dir: Path, cfg,
+) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    payload = torch.load(path, map_location="cpu", weights_only=False)
+    iteration = int(payload.get("iteration", 0))
+    if iteration <= 0 or iteration > int(cfg.PICARD.N):
+        raise RuntimeError(f"invalid DPI resume iteration {iteration} in {path}")
+    if payload.get("run_id", run_id) != run_id:
+        raise RuntimeError(f"DPI resume run mismatch in {path}")
+    checkpoint = exp_dir / f"model_{iteration}.ckpt"
+    if not checkpoint.exists():
+        raise RuntimeError(
+            f"DPI resume state references missing round checkpoint {checkpoint}"
+        )
+    if (
+        iteration > int(cfg.DATA.MEMORY.REUSE)
+        and "previous_dataset_size_args" not in payload
+    ):
+        raise RuntimeError(
+            "DPI resume state predates exact dataset-size restoration; "
+            "refusing an inexact continuation"
+        )
+    payload["checkpoint"] = checkpoint
+    return payload
+
+
+def _archive_uncommitted_dpi_rounds(exp_dir: Path, committed: int) -> list[str]:
+    """Move artifacts newer than the atomic resume marker out of the run."""
+    candidates: list[Path] = []
+    for item in exp_dir.iterdir():
+        match = re.fullmatch(r"model_(\d+)\.ckpt", item.name)
+        if match and int(match.group(1)) > committed:
+            candidates.append(item)
+            continue
+        match = re.fullmatch(r"pl_iter_(\d+)", item.name)
+        if match and int(match.group(1)) > committed:
+            candidates.append(item)
+    if not candidates:
+        return []
+    archive = exp_dir / "resume_orphans" / f"from_round_{committed}_{time.time_ns()}"
+    archive.mkdir(parents=True, exist_ok=False)
+    moved = []
+    for item in candidates:
+        destination = archive / item.name
+        item.rename(destination)
+        moved.append(str(destination))
+    return moved
+
+
+def _construct_resumed_dpi_runner(PicardRunner, cfg, state: dict[str, Any]):
+    """Construct upstream state without letting FORCE erase prior rounds."""
+    exp_dir = Path(cfg.NAME)
+    _archive_uncommitted_dpi_rounds(exp_dir, int(state["iteration"]))
+    with tempfile.TemporaryDirectory(prefix="dpi_resume_bootstrap_", dir=WORK_DIR) as root:
+        bootstrap_cfg = cfg.clone()
+        bootstrap_cfg.defrost()
+        bootstrap_cfg.NAME = str(Path(root) / "run")
+        bootstrap_cfg.FORCE = True
+        bootstrap_cfg.freeze()
+        runner = PicardRunner(bootstrap_cfg)
+        runner.writer.close()
+
+    import tensorboardX
+
+    runner.cfg = cfg
+    runner.exp_dir = exp_dir
+    runner.writer = tensorboardX.SummaryWriter(
+        log_dir=os.path.join(cfg.LOGGING.TENSORBOARD_DIR, cfg.NAME)
+    )
+    runner.i = int(state["iteration"])
+    runner.previous_dataset_size_args = state.get("previous_dataset_size_args")
+    previous = runner.get_solution()
+    checkpoint = torch.load(state["checkpoint"], weights_only=False)
+    previous.load_state_dict(checkpoint["state_dict"])
+    runner.u_current = previous
+    runner.u_history = [previous]
+    _restore_rng(state["rng"])
+    return runner
+
+
+def _run_picard_with_round_checkpoints(
+    runner,
+    *,
+    state_path: Path,
+    run_id: str,
+    invocation_started: float,
+    prior_training_seconds: float = 0.0,
+    resume_count: int = 0,
+    max_rounds: int | None = None,
+) -> None:
+    if runner.cfg.PICARD.FORMULA == "TwoLayer":
+        raise RuntimeError("round-boundary resume is not implemented for TwoLayer DPI")
+    original_run_one = runner.run_one
+    rounds_run = 0
+    while runner.i < runner.N and (max_rounds is None or rounds_run < max_rounds):
+        outcome = original_run_one()
+        if not outcome:
+            print("Interrupted...Other processes is terminating...  ")
+            break
+        runner.u_history.append(runner.u_current)
+        rounds_run += 1
+        _atomic_torch_save({
+            "schema_version": 2,
+            "run_id": run_id,
+            "iteration": int(runner.i),
+            "rng": _rng_state(),
+            "previous_dataset_size_args": runner.previous_dataset_size_args,
+            "training_seconds": (
+                float(prior_training_seconds)
+                + float(time.perf_counter() - invocation_started)
+            ),
+            "resume_count": int(resume_count),
+        }, state_path)
+
+
 def _patch_upstream(capture: Path) -> None:
     import lightning.pytorch as pl
     from lightning.pytorch.callbacks import RichProgressBar
@@ -537,23 +667,39 @@ def execute(
     started = time.perf_counter()
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats(); torch.cuda.synchronize()
+    rng_path = CHECKPOINT_DIR / f"{run_id}_rng.pt"
+    resume_state = (
+        _load_dpi_resume_state(
+            rng_path, run_id=run_id, exp_dir=exp_dir, cfg=cfg,
+        )
+        if method == "dpi" else None
+    )
+    resumed_from_iteration = int(resume_state["iteration"]) if resume_state else 0
+    prior_training_seconds = (
+        float(resume_state.get("training_seconds", 0.0)) if resume_state else 0.0
+    )
+    resume_count = int(resume_state.get("resume_count", 0)) + (1 if resume_state else 0)
     try:
-        runner = PicardRunner(cfg)
-        original_run_one = runner.run_one
-        rng_path = CHECKPOINT_DIR / f"{run_id}_rng.pt"
-
-        def run_one_with_rng_checkpoint():
-            outcome = original_run_one()
-            torch.save({"iteration": runner.i, "rng": _rng_state()}, rng_path)
-            return outcome
-
-        runner.run_one = run_one_with_rng_checkpoint
-        runner.run()
+        runner = (
+            _construct_resumed_dpi_runner(PicardRunner, cfg, resume_state)
+            if resume_state else PicardRunner(cfg)
+        )
+        if method == "dpi":
+            _run_picard_with_round_checkpoints(
+                runner,
+                state_path=rng_path,
+                run_id=run_id,
+                invocation_started=started,
+                prior_training_seconds=prior_training_seconds,
+                resume_count=resume_count,
+            )
+        else:
+            runner.run()
     finally:
         os.chdir(old)
     if torch.cuda.is_available():
         torch.cuda.synchronize()
-    training_seconds = time.perf_counter() - started
+    training_seconds = prior_training_seconds + time.perf_counter() - started
     checkpoint = exp_dir / f"model_{cfg.PICARD.N}.ckpt" if method == "dpi" else capture
     if not checkpoint.exists():
         raise FileNotFoundError(checkpoint)
@@ -634,6 +780,13 @@ def execute(
         "value_bias": float(np.mean(error)), "value_mae": float(np.mean(np.abs(error))),
         "training_seconds": training_seconds, "inference_seconds": inference_seconds,
         "total_seconds": training_seconds + inference_seconds,
+        "round_boundary_resume": {
+            "enabled": method == "dpi",
+            "resumed_from_iteration": resumed_from_iteration,
+            "resume_count": resume_count,
+            "state_path": str(rng_path) if method == "dpi" else None,
+            "algorithmic_settings_changed": False,
+        },
         "peak_gpu_bytes": int(torch.cuda.max_memory_allocated()) if torch.cuda.is_available() else None,
         "parameter_count": sum(item.numel() for item in model.parameters()),
         "prediction_file": str(prediction_path),

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from pathlib import Path
 import sys
+from types import SimpleNamespace
 
 import numpy as np
 import torch
@@ -139,6 +140,63 @@ def test_dpi_and_pinn_profiles_are_selected_before_metrics() -> None:
     )
     assert list(smoke.NETWORK.NEURONS) == [16, 16]
     assert len(smoke.NETWORK.NEURONS) == len(smoke.NETWORK.ACTIVATIONS)
+
+
+def test_dpi_round_boundary_state_is_atomic_and_validated(tmp_path) -> None:
+    from .official_dpi_transfer import (
+        _load_dpi_resume_state, _run_picard_with_round_checkpoints,
+    )
+
+    class FakeRunner:
+        def __init__(self) -> None:
+            self.cfg = SimpleNamespace(PICARD=SimpleNamespace(FORMULA=None))
+            self.i = 0
+            self.N = 3
+            self.u_current = None
+            self.u_history = []
+            self.previous_dataset_size_args = None
+
+        def run_one(self) -> bool:
+            self.i += 1
+            self.u_current = self.i
+            self.previous_dataset_size_args = {"round": self.i}
+            torch.rand(1)
+            return True
+
+    state_path = tmp_path / "round_state.pt"
+    runner = FakeRunner()
+    _run_picard_with_round_checkpoints(
+        runner, state_path=state_path, run_id="test_run",
+        invocation_started=0.0, max_rounds=2,
+    )
+    payload = torch.load(state_path, map_location="cpu", weights_only=False)
+    assert payload["schema_version"] == 2
+    assert payload["iteration"] == 2
+    assert payload["previous_dataset_size_args"] == {"round": 2}
+    assert not list(tmp_path.glob(".round_state.pt.tmp.*"))
+
+    (tmp_path / "model_2.ckpt").touch()
+    cfg = SimpleNamespace(
+        PICARD=SimpleNamespace(N=3),
+        DATA=SimpleNamespace(MEMORY=SimpleNamespace(REUSE=1)),
+    )
+    loaded = _load_dpi_resume_state(
+        state_path, run_id="test_run", exp_dir=tmp_path, cfg=cfg,
+    )
+    assert loaded is not None and loaded["iteration"] == 2
+
+
+def test_dpi_resume_archives_only_uncommitted_rounds(tmp_path) -> None:
+    from .official_dpi_transfer import _archive_uncommitted_dpi_rounds
+
+    (tmp_path / "model_3.ckpt").touch()
+    (tmp_path / "model_4.ckpt").touch()
+    (tmp_path / "pl_iter_4").mkdir()
+    moved = _archive_uncommitted_dpi_rounds(tmp_path, committed=3)
+    assert (tmp_path / "model_3.ckpt").exists()
+    assert not (tmp_path / "model_4.ckpt").exists()
+    assert not (tmp_path / "pl_iter_4").exists()
+    assert {Path(item).name for item in moved} == {"model_4.ckpt", "pl_iter_4"}
 
 
 def test_sdgd_profiles_match_the_two_published_training_protocols() -> None:

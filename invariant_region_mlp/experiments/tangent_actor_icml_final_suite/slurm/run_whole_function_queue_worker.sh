@@ -50,11 +50,10 @@ tail -n +2 "$TASK_FILE" | while IFS=',' read -r slot sequence method pde dimensi
   fi
   cap=$cell_remaining
   (( cap > available )) && cap=$available
-  # DPI and PINN do not expose a trustworthy mid-run continuation.  Start
-  # them only when this wave can supply the frozen pre-run high estimate plus
-  # one minute, in addition to the four-minute allocation margin above.  Long
-  # nonresumable cells are deferred to a long allocation.
-  if [[ "$method" == "dpi" || "$method" == "pinn_hte" ]]; then
+  # PINN-HTE remains a single nonresumable training call.  DPI is resumable at
+  # exact Picard-round boundaries: its wrapper atomically commits the model,
+  # RNG stream, and dataset-size state after every completed round.
+  if [[ "$method" == "pinn_hte" ]]; then
     required=$(python - "$high_estimate" <<'PY'
 import math
 import sys
