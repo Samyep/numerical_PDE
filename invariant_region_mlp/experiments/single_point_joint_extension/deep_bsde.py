@@ -47,14 +47,20 @@ def _json_safe(value: Any) -> Any:
     return value
 
 
-def _write_deep_record(path, payload: Any) -> None:
-    """Persist a failed Deep-BSDE run as data instead of raising on NaN."""
+def _safe_deep_record(payload: Any) -> Any:
+    """Make a Deep-BSDE record JSON-safe and classify terminal nonfinites."""
     safe = _json_safe(payload)
     if isinstance(payload, dict) and "reported_y0" in payload:
         estimate = payload.get("reported_y0")
         if not isinstance(estimate, (int, float)) or not math.isfinite(float(estimate)):
             safe["status"] = "numerical_failure"
             safe["failure_reason"] = "nonfinite_prediction"
+    return safe
+
+
+def _write_deep_record(path, payload: Any) -> None:
+    """Persist a failed Deep-BSDE run as data instead of raising on NaN."""
+    safe = _safe_deep_record(payload)
     write_json_atomic(path, safe)
 
 
@@ -90,6 +96,16 @@ def execute(
     stop_after_updates: int | None = None,
 ):
     _configure()
+    tag = "pilot" if pilot else "formal"
+    run_id = (
+        f"deep_bsde__{PDE}__d{int(dimension)}__q{int(point):02d}__"
+        f"s{int(seed)}__{tag}"
+    )
+    output = RAW_DIR / tag / "deep_bsde" / f"{run_id}.json"
+    if output.is_file():
+        existing = json.loads(output.read_text(encoding="utf-8"))
+        if existing.get("status") == "numerical_failure":
+            return existing
     # The frozen runner loads every checkpoint tensor with ``map_location``.
     # PyTorch requires a Generator state to be a CPU ByteTensor even when the
     # generator itself is CUDA-backed.  Preserve every RNG byte while fixing
@@ -104,7 +120,7 @@ def execute(
 
     torch.load = load_with_cpu_generator_state
     try:
-        return _frozen.execute(
+        result = _frozen.execute(
             PDE,
             int(dimension),
             int(point),
@@ -113,6 +129,7 @@ def execute(
             pilot=pilot,
             stop_after_updates=stop_after_updates,
         )
+        return _safe_deep_record(result)
     finally:
         torch.load = original_torch_load
 

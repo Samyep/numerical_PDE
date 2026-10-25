@@ -151,14 +151,27 @@ def _fh_cell(dimension: int, n: int, M: int) -> tuple[dict, list[dict]]:
 def _deep(dimension: int) -> tuple[dict, list[dict]]:
     predictions, references, rows = [], [], []
     truth = load_query_bank(dimension)[2]
+    failure_points = []
     for seed in TRAINING_SEEDS:
+        seed_failed = False
         for point in range(QUERY_COUNT):
             run_id = f"deep_bsde__{PDE}__d{dimension}__q{point:02d}__s{seed}__formal"
-            record = _json(RAW_DIR / "formal" / "deep_bsde" / f"{run_id}.json")
+            record_path = RAW_DIR / "formal" / "deep_bsde" / f"{run_id}.json"
+            if not record_path.is_file():
+                raise RuntimeError(
+                    f"missing Deep-BSDE record before terminal failure: {record_path}"
+                )
+            record = _json(record_path)
             reported = record.get("reported_y0")
             predictions.append(np.nan if reported is None else reported)
             references.append(truth[point])
             rows.append(record)
+            if record.get("status") == "numerical_failure" or reported is None:
+                failure_points.append({"seed": seed, "point": point})
+                seed_failed = True
+                break
+        if not seed_failed and point + 1 != QUERY_COUNT:
+            raise RuntimeError(f"incomplete Deep-BSDE seed {seed} at d={dimension}")
     metric = _metrics(np.asarray(predictions), np.asarray(references))
     metric.update({
         "pde": PDE,
@@ -166,6 +179,9 @@ def _deep(dimension: int) -> tuple[dict, list[dict]]:
         "method": "Deep BSDE",
         "configuration": "20 intervals, 2000 updates",
         "formal_repeats": len(TRAINING_SEEDS),
+        "attempted_runs": len(rows),
+        "planned_runs": len(TRAINING_SEEDS) * QUERY_COUNT,
+        "failure_points": failure_points,
         "gpu_seconds": float(sum(row["training_seconds"] for row in rows)),
         "peak_gpu_bytes": max(row["peak_gpu_bytes"] or 0 for row in rows),
     })
@@ -366,6 +382,16 @@ def _write_report(summary: dict, fh_rows: list[dict], audit: dict) -> None:
             if row["dimension"] == dimension and row["method"] == "Deep BSDE"
         ).get("numerical_failure")
     ]
+    deep_failure_details = []
+    for dimension in deep_failures:
+        row = next(
+            item for item in summary["metrics"]
+            if item["dimension"] == dimension and item["method"] == "Deep BSDE"
+        )
+        deep_failure_details.append(
+            f"d={dimension}: first failures {row['failure_points']}; "
+            f"attempted {row['attempted_runs']}/{row['planned_runs']} runs"
+        )
     lines.extend((
         "", "## Reference and provenance", "",
         f"- Reference gate: **{reference['status']}**; 256² vs 128² value RMSE "
@@ -383,7 +409,10 @@ def _write_report(summary: dict, fh_rows: list[dict], audit: dict) -> None:
         (
             "Deep BSDE produced nonfinite predictions and is recorded as a numerical "
             f"failure at dimensions `{deep_failures}`. These cells are excluded from "
-            "the finite-RMSE count for J-3; no replacement configuration was run."
+            "the finite-RMSE count for J-3; no replacement configuration was run. "
+            "After every preregistered seed in a cell had produced a nonfinite result, "
+            "the remaining queries in that failed cell were not attempted. Details: "
+            + "; ".join(deep_failure_details)
             if deep_failures else
             "No numerical failures or protocol deviations were recorded."
         ),

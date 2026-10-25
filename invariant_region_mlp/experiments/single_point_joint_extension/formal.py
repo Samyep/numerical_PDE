@@ -80,9 +80,16 @@ def run(index: int, device: torch.device) -> dict:
             completed += 1
     elif method == "deep_bsde":
         seed = int(task["seed"])
+        failures = []
         for point in range(QUERY_COUNT):
-            deep_execute(dimension, point, seed, device)
+            record = deep_execute(dimension, point, seed, device)
             completed += 1
+            if record.get("status") == "numerical_failure":
+                failures.append({
+                    "point": point,
+                    "reason": record.get("failure_reason", "nonfinite_prediction"),
+                })
+                break
     else:
         raise KeyError(method)
     result = {
@@ -90,9 +97,14 @@ def run(index: int, device: torch.device) -> dict:
         "task_id": task_id,
         "status": "complete",
         "completed_runs": completed,
+        "planned_runs": QUERY_COUNT if method == "deep_bsde" else completed,
         "elapsed_seconds": time.perf_counter() - started,
         "finished_utc": datetime.now(timezone.utc).isoformat(),
     }
+    if method == "deep_bsde" and failures:
+        result["outcome"] = "numerical_failure"
+        result["failures"] = failures
+        result["remaining_runs_not_attempted"] = QUERY_COUNT - completed
     write_json_atomic(output, result)
     return result
 
