@@ -29,6 +29,7 @@ from .infrastructure import (
     merged_excluded_nodes,
     quarantined_nodes,
 )
+from .metrics import value_metrics_from_prediction_file
 
 
 def _laplacian(value: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
@@ -39,6 +40,22 @@ def _laplacian(value: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
             gradient[:, index].sum(), x, create_graph=True
         )[0][:, index]
     return result
+
+
+def test_saved_prediction_metrics_include_rmae_for_both_artifact_schemas(tmp_path) -> None:
+    truth = np.array([1.0, -2.0, 3.0], dtype=np.float64)
+    estimate = np.array([2.0, -1.0, 1.0], dtype=np.float64)
+    error = estimate - truth
+    expected = {
+        "value_rmse": float(np.sqrt(np.mean(error**2))),
+        "value_relative_l2": float(np.linalg.norm(error) / np.linalg.norm(truth)),
+        "value_rmae": float(np.abs(error).sum() / np.abs(truth).sum()),
+    }
+    for prediction_key in ("prediction", "mcv"):
+        path = tmp_path / f"{prediction_key}.npz"
+        np.savez(path, **{prediction_key: estimate, "truth": truth})
+        observed = value_metrics_from_prediction_file(path)
+        assert observed == expected
 
 
 def test_protocol_is_the_requested_frozen_grid() -> None:

@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 
 from .accounting import collect as collect_accounting
+from .metrics import value_metrics_from_prediction_file
 from .prepare import file_sha256
 from .protocol import (
     ACTOR_UPDATES,
@@ -168,6 +169,20 @@ def _prediction_fields(payload: dict[str, Any]) -> tuple[str | None, str | None]
     return (str(path) if path else None, str(digest) if digest else None)
 
 
+def _resolved_artifact_path(raw_path: Any) -> Path | None:
+    if raw_path is None or pd.isna(raw_path):
+        return None
+    path = Path(str(raw_path))
+    return path if path.is_absolute() else SOURCE_ROOT / path
+
+
+def _value_metrics_from_prediction_file(raw_path: Any) -> dict[str, float]:
+    path = _resolved_artifact_path(raw_path)
+    if path is None:
+        raise FileNotFoundError(path)
+    return value_metrics_from_prediction_file(path)
+
+
 def _ta_row(
     pde: str,
     dimension: int,
@@ -195,6 +210,7 @@ def _ta_row(
     if not primary or not training or training.get("status") != "complete":
         return None, extra
     prediction, prediction_hash = _prediction_fields(primary)
+    derived = _value_metrics_from_prediction_file(prediction)
     timing = training.get("timing", {})
     training_seconds = float(timing.get("phase_total_seconds") or 0.0)
     selection_seconds = float(timing.get("reference_free_selection_seconds") or 0.0)
@@ -203,6 +219,7 @@ def _ta_row(
         "value_relative_l2": primary.get("relative_l2"),
         "value_bias": primary.get("bias"),
         "value_mae": primary.get("mae"),
+        "value_rmae": derived["value_rmae"],
         "gradient_vector_rmse": primary.get("gradient_vector_rmse")
         or primary.get("actor_gradient_vector_rmse"),
         "gradient_relative_l2": primary.get("gradient_relative_l2"),
@@ -243,6 +260,7 @@ def _baseline_row(
     if not payload or payload.get("status") != "complete":
         return None
     prediction, prediction_hash = _prediction_fields(payload)
+    derived = _value_metrics_from_prediction_file(prediction)
     training_seconds = (
         payload.get("training_seconds")
         if method != "sdgd_pinn"
@@ -254,6 +272,7 @@ def _baseline_row(
         "value_relative_l2": payload.get("value_relative_l2"),
         "value_bias": payload.get("value_bias"),
         "value_mae": payload.get("value_mae"),
+        "value_rmae": derived["value_rmae"],
         "gradient_vector_rmse": payload.get("gradient_vector_rmse"),
         "gradient_relative_l2": payload.get("gradient_relative_l2"),
         "actor_value_rmse": None,
@@ -334,7 +353,7 @@ def build_main_frame() -> pd.DataFrame:
                         base["cell_gpu_hours"] = internal / 3600.0
                 else:
                     for name in (
-                        "value_rmse", "value_relative_l2", "value_bias", "value_mae",
+                        "value_rmse", "value_relative_l2", "value_bias", "value_mae", "value_rmae",
                         "gradient_vector_rmse", "gradient_relative_l2", "actor_value_rmse",
                         "mc_rmse_contribution", "variance_reduction", "weight_ess_fraction",
                         "steps", "paths", "prediction_file", "prediction_file_sha256",
@@ -553,7 +572,7 @@ def _latex(frame: pd.DataFrame) -> None:
 
 def _combined(frame: pd.DataFrame) -> None:
     selected = frame[[
-        "pde", "dimension", "method", "status", "value_rmse", "value_relative_l2",
+        "pde", "dimension", "method", "status", "value_rmse", "value_relative_l2", "value_rmae",
         "cell_gpu_hours", "classification", "test_bank_array_sha256",
     ]].copy()
     selected.insert(0, "suite", "two_highdim_expansion")
@@ -583,15 +602,50 @@ def _artifact_check(row: pd.Series) -> dict[str, Any]:
         ("prediction", "prediction_file", "prediction_file_sha256"),
     ):
         raw_path, expected = row.get(path_name), row.get(hash_name)
-        path = Path(str(raw_path)) if pd.notna(raw_path) else None
-        if path is not None and not path.is_absolute():
-            path = SOURCE_ROOT / path
+        path = _resolved_artifact_path(raw_path)
         actual = file_sha256(path) if path is not None and path.is_file() else None
         checks[f"{label}_path"] = str(path) if path is not None else None
         checks[f"{label}_expected_sha256"] = expected if pd.notna(expected) else None
         checks[f"{label}_actual_sha256"] = actual
         checks[f"{label}_passed"] = bool(actual and pd.notna(expected) and actual == expected)
-    checks["passed"] = bool(checks["bank_passed"] and checks["prediction_passed"])
+    bank_path = _resolved_artifact_path(row.get("test_bank_file"))
+    prediction_path = _resolved_artifact_path(row.get("prediction_file"))
+    metric_checks_passed = False
+    truth_matches_bank = False
+    prediction_shape: list[int] | None = None
+    try:
+        derived = _value_metrics_from_prediction_file(prediction_path)
+        with np.load(prediction_path, allow_pickle=False) as prediction_payload:
+            prediction_truth = np.asarray(prediction_payload["truth"], dtype=np.float64)
+            prediction_key = "prediction" if "prediction" in prediction_payload.files else "mcv"
+            prediction_shape = list(np.asarray(prediction_payload[prediction_key]).shape)
+        with np.load(bank_path, allow_pickle=False) as bank_payload:
+            bank_truth = np.asarray(bank_payload["truth_u"], dtype=np.float64)
+        truth_matches_bank = bool(
+            prediction_truth.shape == bank_truth.shape
+            and np.array_equal(prediction_truth, bank_truth)
+        )
+        metric_checks = {
+            name: bool(
+                pd.notna(row.get(name))
+                and np.isclose(float(row[name]), value, rtol=1e-12, atol=1e-15)
+            )
+            for name, value in derived.items()
+        }
+        checks["recomputed_metrics"] = derived
+        checks["metric_checks"] = metric_checks
+        metric_checks_passed = all(metric_checks.values())
+    except (FileNotFoundError, KeyError, OSError, ValueError, TypeError) as error:
+        checks["metric_error"] = repr(error)
+    checks["prediction_shape"] = prediction_shape
+    checks["truth_matches_frozen_bank"] = truth_matches_bank
+    checks["metrics_recomputed_match"] = metric_checks_passed
+    checks["passed"] = bool(
+        checks["bank_passed"]
+        and checks["prediction_passed"]
+        and truth_matches_bank
+        and metric_checks_passed
+    )
     return checks
 
 
@@ -612,8 +666,16 @@ def _audit(frame: pd.DataFrame) -> dict[str, Any]:
     checks = {
         "exactly_40_unique_cells": len(frame) == 40 and not frame.duplicated(["pde", "dimension", "method"]).any(),
         "seed_zero_only": set(frame["seed"]) == {0},
-        "complete_metrics_finite": bool(np.isfinite(pd.to_numeric(completed["value_rmse"], errors="coerce")).all()),
-        "incomplete_cells_have_no_accuracy": bool(incomplete[["value_rmse", "value_relative_l2"]].isna().all().all()),
+        "complete_metrics_finite": bool(
+            np.isfinite(
+                completed[["value_rmse", "value_relative_l2", "value_rmae"]]
+                .apply(pd.to_numeric, errors="coerce")
+                .to_numpy()
+            ).all()
+        ),
+        "incomplete_cells_have_no_accuracy": bool(
+            incomplete[["value_rmse", "value_relative_l2", "value_rmae"]].isna().all().all()
+        ),
         "same_bank_and_reference_within_completed_groups": all(row["passed"] for row in group_pairing),
         "completed_artifact_hashes_match": all(row["passed"] for row in artifact_checks),
         "baselines_marked_faithful_transfer": bool((classifications == "faithful_transfer").all()),
@@ -701,15 +763,16 @@ def _report(frame: pd.DataFrame, summary: dict[str, Any], audit: dict[str, Any])
         "",
         "## Current formal results",
         "",
-        "| PDE | d | Method | Status | Value RMSE | Relative L2 | GPU h |",
-        "|---|---:|---|---|---:|---:|---:|",
+        "| PDE | d | Method | Status | Value RMSE | Relative L2 | rMAE | GPU h |",
+        "|---|---:|---|---|---:|---:|---:|---:|",
     ]
     for row in frame.itertuples(index=False):
         rmse = f"{row.value_rmse:.6g}" if row.status == "COMPLETE" else "—"
         rel = f"{row.value_relative_l2:.6g}" if row.status == "COMPLETE" else "—"
+        rmae = f"{row.value_rmae:.6g}" if row.status == "COMPLETE" else "—"
         lines.append(
             f"| {PDE_LABELS[row.pde]} | {row.dimension} | {METHOD_LABELS[row.method]} | "
-            f"{row.status} | {rmse} | {rel} | {row.cell_gpu_hours:.3f} |"
+            f"{row.status} | {rmse} | {rel} | {rmae} | {row.cell_gpu_hours:.3f} |"
         )
     lines.extend([
         "",
