@@ -1,0 +1,142 @@
+{
+  "checks": {
+    "deep_bsde": {
+      "absolute_error": 0.42048084320308554,
+      "amortized_y0": false,
+      "checkpoint": "/storage/ice1/4/8/ywang4280/ir-mlp-icml-joint-pde-worktree/invariant_region_mlp/results/single_point_joint_extension/checkpoints/pilot/deep_bsde/deep_bsde__joint_nonseparable__d100__q00__s0__pilot.pt",
+      "checkpoint_sha256": "280b862899a2777cd11264297fb83aa06d463fc454576cc681519ea0d09c7763",
+      "classification": "faithful_transfer",
+      "completed_updates": 4,
+      "configuration": {
+        "batch_size": 8,
+        "benchmark": "joint_nonseparable_d100",
+        "dtype": "float64",
+        "hidden_widths": [
+          110,
+          110
+        ],
+        "intervals": 20,
+        "iterations": 4,
+        "learning_rate": 0.01,
+        "logging_frequency": 1,
+        "total_time": 0.5,
+        "validation_size": 16,
+        "y_init_range": [
+          0.0,
+          1.0
+        ]
+      },
+      "dimension": 100,
+      "error": -0.42048084320308554,
+      "full_training_cost_charged_per_initial_state": true,
+      "history": [
+        {
+          "completed_updates": 1,
+          "elapsed_seconds": 0.11612442717887461,
+          "nonfinite_count_cumulative": 0,
+          "validation_terminal_clipped_mse": 0.23812606907017048,
+          "y0": 0.19375867589470505
+        },
+        {
+          "completed_updates": 2,
+          "elapsed_seconds": 0.40219431812874973,
+          "nonfinite_count_cumulative": 0,
+          "validation_terminal_clipped_mse": 0.2330413937486419,
+          "y0": 0.2037366363515346
+        },
+        {
+          "completed_updates": 3,
+          "elapsed_seconds": 0.5043552811257541,
+          "nonfinite_count_cumulative": 0,
+          "validation_terminal_clipped_mse": 0.2268325263962347,
+          "y0": 0.2137252392483063
+        },
+        {
+          "completed_updates": 4,
+          "elapsed_seconds": 0.6052049139980227,
+          "nonfinite_count_cumulative": 0,
+          "validation_terminal_clipped_mse": 0.22074938026917015,
+          "y0": 0.22373202180530202
+        }
+      ],
+      "mcv": false,
+      "method": "deep_bsde_official_pytorch_compatibility_port",
+      "native_scalar_y0": true,
+      "nonfinite_count": 0,
+      "parameter_count": 665861,
+      "pde": "joint_nonseparable",
+      "peak_gpu_bytes": 95601664,
+      "point": 0,
+      "prediction_file": "/storage/ice1/4/8/ywang4280/ir-mlp-icml-joint-pde-worktree/invariant_region_mlp/results/single_point_joint_extension/predictions/pilot/deep_bsde/deep_bsde__joint_nonseparable__d100__q00__s0__pilot.npz",
+      "reference": 0.6442128650083876,
+      "reported_y0": 0.22373202180530202,
+      "resume_checkpoint": "/storage/ice1/4/8/ywang4280/ir-mlp-icml-joint-pde-worktree/invariant_region_mlp/results/single_point_joint_extension/checkpoints/pilot/deep_bsde/deep_bsde__joint_nonseparable__d100__q00__s0__pilot_resume.pt",
+      "revision": "single_point_joint_nonseparable_v1",
+      "run_id": "deep_bsde__joint_nonseparable__d100__q00__s0__pilot",
+      "seed": 0,
+      "selection": "fixed final scheduled iterate; no truth used",
+      "status": "pilot_complete",
+      "terminal_aware_features": false,
+      "training_seconds": 0.6744928930420429,
+      "validation_dw_sha256": "195c26eda503c6b67e0bee0792db8af9892589e713ef5d3ddbcab9c3ecab0bbc",
+      "x0_sha256": "9846189928cf638083b1f196f12a839452d5933a056cd10ccd0a13d50687d5df"
+    },
+    "fh_mlp": {
+      "M": 4,
+      "dimension": 100,
+      "driver_gradient_estimator": "untruncated Bismut weight",
+      "dtype": "float64",
+      "finite_count": 4,
+      "ground_truth_used_for_configuration_selection": false,
+      "inference_seconds": 0.25423974986188114,
+      "main_configuration": false,
+      "method": "fh_mlp_standard",
+      "multilevel_coupling": "common evaluation time/state; independent recursive high/low subtrees",
+      "n": 2,
+      "nonfinite_count": 0,
+      "nonlinear_plugin_unbiased_claimed": false,
+      "pde": "joint_nonseparable",
+      "peak_gpu_bytes": 68227072,
+      "point_seconds": [
+        0.24941546190530062,
+        0.001679395092651248,
+        0.0015368671156466007,
+        0.0014916469808667898
+      ],
+      "points": 4,
+      "prediction_file": "/storage/ice1/4/8/ywang4280/ir-mlp-icml-joint-pde-worktree/invariant_region_mlp/results/single_point_joint_extension/predictions/pilot/fh_mlp/fh_mlp_standard__joint_nonseparable__d100__n2_M4__r00__pilot.npz",
+      "prediction_sha256": "c3abc781d9369b281ce2759dabec26c6b26ec7a3444d09df96f09516aec29fb3",
+      "query_input_sha256": "5e099e9d76de4b4419a74676488375816c93d73c58b4f44764ff7e585860a6d1",
+      "replicate": 0,
+      "revision": "single_point_joint_nonseparable_v1",
+      "run_id": "fh_mlp_standard__joint_nonseparable__d100__n2_M4__r00__pilot",
+      "stats": {
+        "driver_evaluations": 16,
+        "nonfinite_count": 0,
+        "recursive_calls": 8,
+        "recursive_states": 20,
+        "terminal_samples": 128,
+        "transition_samples": 16,
+        "value_projection_count": 0
+      },
+      "status": "pilot_complete",
+      "terminal_gradient_estimator": "pathwise sigma*grad(g)",
+      "time_beta_alpha": 0.5,
+      "training_seconds": 0.0
+    },
+    "tangent_actor": {
+      "evaluation_nonfinite_count": 0,
+      "finite": true,
+      "fit_selected_step": 2,
+      "label_nonfinite_count": 0,
+      "label_replay_bitwise_equal": true,
+      "passed": true
+    }
+  },
+  "device": "cuda",
+  "elapsed_seconds": 6.875510066980496,
+  "overall_pass": true,
+  "preflight_sha256": "35d68d8502f21372ed71294476188e47232ba5c4715b0bda5c22b6575cfd6d85",
+  "revision": "single_point_joint_nonseparable_v1",
+  "status": "VALIDATED"
+}

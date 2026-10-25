@@ -1,0 +1,123 @@
+{
+  "checks": {
+    "ambient_reduction": {
+      "driver_reduction_max_abs": 1.7763568394002505e-15,
+      "passed": true,
+      "threshold": 1e-12
+    },
+    "deep_bsde_resume": {
+      "maximum_parameter_difference": 0.0,
+      "passed": true,
+      "second_draw_bitwise_equal": true,
+      "threshold": 1e-12
+    },
+    "fh_draw_tape_replay": {
+      "draw_tape_replay_max_abs": 0.0,
+      "finite": true,
+      "passed": true,
+      "stats_identical": true
+    },
+    "joint_geometry": {
+      "analytic_mixed_derivative": "nabla_z f_y=-v",
+      "maximum_joint_hessian_eigenvalue": -0.0011593042593267544,
+      "minimum_joint_hessian_eigenvalue": -7.157973197078063,
+      "mixed_derivative_norm": 1.0,
+      "passed": true,
+      "states": 1024
+    },
+    "no_formal_outputs_before_gate": {
+      "count": 0,
+      "passed": true
+    },
+    "parameters": {
+      "manifest_sha256": "fc78eba335915a8d283cf3df7e433651a5fcb355f556081894e0eef2a165bbdb",
+      "passed": true
+    },
+    "query_isolation": {
+      "passed": true,
+      "rows": [
+        {
+          "dimension": 20,
+          "exact_overlap_count": 0,
+          "passed": true,
+          "rows_checked": 33408
+        },
+        {
+          "dimension": 50,
+          "exact_overlap_count": 0,
+          "passed": true,
+          "rows_checked": 33408
+        },
+        {
+          "dimension": 100,
+          "exact_overlap_count": 0,
+          "passed": true,
+          "rows_checked": 33408
+        },
+        {
+          "dimension": 200,
+          "exact_overlap_count": 0,
+          "passed": true,
+          "rows_checked": 33408
+        },
+        {
+          "dimension": 400,
+          "exact_overlap_count": 0,
+          "passed": true,
+          "rows_checked": 33408
+        }
+      ]
+    },
+    "reference": {
+      "gates": {
+        "invariant_domain": true,
+        "pde_residual_rmse": true,
+        "terminal_interpolation_max_abs": true,
+        "value_refinement_max_abs": true,
+        "value_refinement_rmse": true
+      },
+      "manifest_sha256": "46ef10212023081f4953ecfdf849a7221af29e6e368369f6116977dcc4911136",
+      "passed": true
+    },
+    "reference_access": {
+      "checks": {
+        "deep_reference_after_completed_schedule": true,
+        "fh_reference_after_solver_loop": true,
+        "ta_training_has_no_test_bank": true,
+        "ta_truth_only_in_evaluation": true
+      },
+      "passed": true
+    },
+    "terminal_and_tangent": {
+      "passed": true,
+      "tangent_coefficients_max_abs": 0.0,
+      "tangent_coefficients_threshold": 1e-11,
+      "terminal_gradient_directional_max_abs": 4.071459488996787e-11,
+      "terminal_gradient_threshold": 2e-10
+    }
+  },
+  "code_sha256": {
+    "benchmark.py": "13139aaffe812a6aafc9a9f01edfdc14145c2634fc228983f8bbec20aa781716",
+    "deep_bsde.py": "b9f2079561c9728095c7698a9f9249c3d0118b6e18aeac0b09658925aa5722d6",
+    "fh_mlp.py": "4fbda420fb9c4655b3b0c22569ce359e0770a08466a8037d6576ad370da41176",
+    "preflight.py": "2728ebcd088518b51154c6b5d1432cc05e5a0e329bf3314d09e5872b7a9a6842",
+    "prepare.py": "347a5c78174f028650c633ac65319018961a3d7334ce78adaca62bd6d1cd0561",
+    "protocol.py": "225caef0e4e8aa39316a0a0c8e613434312aea6a3b6016ae532d84e15086cea6",
+    "tangent_actor.py": "8b6fa66df0408eeeeac63ca1a03e4c56db1021f693e4ebb525b06052cb5d7b4e"
+  },
+  "device": "cuda",
+  "elapsed_seconds": 36.309310749871656,
+  "environment": {
+    "cuda_available": true,
+    "cuda_runtime": "13.0",
+    "gpu_name": "NVIDIA H100 80GB HBM3",
+    "numpy": "2.4.6",
+    "platform": "Linux-5.14.0-687.49.1.el9_8.x86_64-x86_64-with-glibc2.34",
+    "python": "3.11.9 (main, Dec 19 2024, 14:44:47) [GCC 11.4.1 20231218 (Red Hat 11.4.1-3)]",
+    "torch": "2.11.0+cu130"
+  },
+  "mathematical_checks_pass": true,
+  "overall_pass": true,
+  "revision": "single_point_joint_nonseparable_v1",
+  "status": "VALIDATED"
+}
