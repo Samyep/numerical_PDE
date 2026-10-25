@@ -9,7 +9,7 @@ import torch
 
 from .aggregate import _metrics
 from .benchmark import frozen_basis, make_benchmark
-from .deep_bsde import _write_deep_record
+from .deep_bsde import _write_deep_record, execute as deep_execute
 from .protocol import DIMENSIONS, QUERY_COUNT, frozen_protocol, load_query_bank
 
 
@@ -77,3 +77,35 @@ def test_nonfinite_predictions_make_metric_a_numerical_failure() -> None:
     assert metric["numerical_failure"] is True
     assert metric["nonfinite_count"] == 1
     assert metric["rmse"] is None
+
+
+def test_resume_adapter_moves_only_generator_state_to_cpu(monkeypatch) -> None:
+    generator_state = torch.arange(8, dtype=torch.uint8)
+    model_tensor = torch.ones(2, dtype=torch.float64)
+    observed = {}
+
+    def fake_load(*args, **kwargs):
+        del args, kwargs
+        return {"train_generator": generator_state, "model": model_tensor}
+
+    def fake_execute(*args, **kwargs):
+        del args, kwargs
+        loaded = torch.load("unused")
+        observed.update(loaded)
+        return {"status": "checkpointed"}
+
+    monkeypatch.setattr(torch, "load", fake_load)
+    monkeypatch.setattr(
+        "invariant_region_mlp.experiments.single_point_joint_extension.deep_bsde._configure",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "invariant_region_mlp.experiments.single_point_joint_extension.deep_bsde._frozen.execute",
+        fake_execute,
+    )
+    result = deep_execute(20, 0, 0, torch.device("cpu"), stop_after_updates=1)
+    assert result["status"] == "checkpointed"
+    assert observed["train_generator"].device.type == "cpu"
+    assert observed["train_generator"].data_ptr() == generator_state.data_ptr()
+    assert observed["model"].data_ptr() == model_tensor.data_ptr()
+    assert torch.load is fake_load

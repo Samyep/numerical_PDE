@@ -90,15 +90,31 @@ def execute(
     stop_after_updates: int | None = None,
 ):
     _configure()
-    return _frozen.execute(
-        PDE,
-        int(dimension),
-        int(point),
-        int(seed),
-        device,
-        pilot=pilot,
-        stop_after_updates=stop_after_updates,
-    )
+    # The frozen runner loads every checkpoint tensor with ``map_location``.
+    # PyTorch requires a Generator state to be a CPU ByteTensor even when the
+    # generator itself is CUDA-backed.  Preserve every RNG byte while fixing
+    # only that device mismatch in this isolated adapter.
+    original_torch_load = torch.load
+
+    def load_with_cpu_generator_state(*args, **kwargs):
+        state = original_torch_load(*args, **kwargs)
+        if isinstance(state, dict) and isinstance(state.get("train_generator"), torch.Tensor):
+            state["train_generator"] = state["train_generator"].cpu()
+        return state
+
+    torch.load = load_with_cpu_generator_state
+    try:
+        return _frozen.execute(
+            PDE,
+            int(dimension),
+            int(point),
+            int(seed),
+            device,
+            pilot=pilot,
+            stop_after_updates=stop_after_updates,
+        )
+    finally:
+        torch.load = original_torch_load
 
 
 def main() -> None:
