@@ -109,6 +109,10 @@ def test_resume_adapter_moves_only_generator_state_to_cpu(monkeypatch) -> None:
         lambda: None,
     )
     monkeypatch.setattr(
+        "invariant_region_mlp.experiments.single_point_joint_extension.deep_bsde._recover_completed_nonfinite",
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
         "invariant_region_mlp.experiments.single_point_joint_extension.deep_bsde._frozen.execute",
         fake_execute,
     )
