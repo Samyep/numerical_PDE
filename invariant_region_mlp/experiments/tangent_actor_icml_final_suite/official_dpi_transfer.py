@@ -439,6 +439,19 @@ def _load_dpi_resume_state(
     return payload
 
 
+def _resume_metadata(
+    state: dict[str, Any] | None,
+) -> tuple[int, float, int]:
+    """Return counters for either a fresh invocation or an exact resume."""
+    if state is None:
+        return 0, 0.0, 0
+    return (
+        int(state["iteration"]),
+        float(state.get("training_seconds", 0.0)),
+        int(state.get("resume_count", 0)) + 1,
+    )
+
+
 def _archive_uncommitted_dpi_rounds(exp_dir: Path, committed: int) -> list[str]:
     """Move artifacts newer than the atomic resume marker out of the run."""
     candidates: list[Path] = []
@@ -674,11 +687,9 @@ def execute(
         )
         if method == "dpi" else None
     )
-    resumed_from_iteration = int(resume_state["iteration"]) if resume_state else 0
-    prior_training_seconds = (
-        float(resume_state.get("training_seconds", 0.0)) if resume_state else 0.0
+    resumed_from_iteration, prior_training_seconds, resume_count = _resume_metadata(
+        resume_state
     )
-    resume_count = int(resume_state.get("resume_count", 0)) + (1 if resume_state else 0)
     try:
         runner = (
             _construct_resumed_dpi_runner(PicardRunner, cfg, resume_state)

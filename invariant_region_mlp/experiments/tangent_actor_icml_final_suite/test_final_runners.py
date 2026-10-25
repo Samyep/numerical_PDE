@@ -186,6 +186,17 @@ def test_dpi_round_boundary_state_is_atomic_and_validated(tmp_path) -> None:
     assert loaded is not None and loaded["iteration"] == 2
 
 
+def test_dpi_resume_metadata_handles_fresh_and_resumed_runs() -> None:
+    from .official_dpi_transfer import _resume_metadata
+
+    assert _resume_metadata(None) == (0, 0.0, 0)
+    assert _resume_metadata({
+        "iteration": 3,
+        "training_seconds": 12.5,
+        "resume_count": 1,
+    }) == (3, 12.5, 2)
+
+
 def test_dpi_resume_archives_only_uncommitted_rounds(tmp_path) -> None:
     from .official_dpi_transfer import _archive_uncommitted_dpi_rounds
 
