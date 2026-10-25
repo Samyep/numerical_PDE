@@ -7,6 +7,7 @@ import json
 import numpy as np
 import torch
 
+from . import deep_bsde as deep_bsde_module
 from .aggregate import _metrics
 from .benchmark import frozen_basis, make_benchmark
 from .deep_bsde import _safe_deep_record, _write_deep_record, execute as deep_execute
@@ -104,18 +105,11 @@ def test_resume_adapter_moves_only_generator_state_to_cpu(monkeypatch) -> None:
         return {"status": "checkpointed"}
 
     monkeypatch.setattr(torch, "load", fake_load)
+    monkeypatch.setattr(deep_bsde_module, "_configure", lambda: None)
     monkeypatch.setattr(
-        "invariant_region_mlp.experiments.single_point_joint_extension.deep_bsde._configure",
-        lambda: None,
+        deep_bsde_module, "_recover_completed_nonfinite", lambda *args, **kwargs: None
     )
-    monkeypatch.setattr(
-        "invariant_region_mlp.experiments.single_point_joint_extension.deep_bsde._recover_completed_nonfinite",
-        lambda *args, **kwargs: None,
-    )
-    monkeypatch.setattr(
-        "invariant_region_mlp.experiments.single_point_joint_extension.deep_bsde._frozen.execute",
-        fake_execute,
-    )
+    monkeypatch.setattr(deep_bsde_module._frozen, "execute", fake_execute)
     result = deep_execute(20, 0, 0, torch.device("cpu"), stop_after_updates=1)
     assert result["status"] == "checkpointed"
     assert observed["train_generator"].device.type == "cpu"
