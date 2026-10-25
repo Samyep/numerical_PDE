@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import torch
 
+from .aggregate import _metrics
 from .benchmark import frozen_basis, make_benchmark
+from .deep_bsde import _write_deep_record
 from .protocol import DIMENSIONS, QUERY_COUNT, frozen_protocol, load_query_bank
 
 
@@ -51,3 +55,25 @@ def test_protocol_identifies_frozen_preregistration() -> None:
     assert protocol["preregistration_commit"] == "0f1485703"
     assert protocol["query_count"] == 32
     assert protocol["pde"] == "joint_nonseparable"
+
+
+def test_nonfinite_deep_bsde_result_is_recorded_as_failure(tmp_path) -> None:
+    output = tmp_path / "failed.json"
+    _write_deep_record(output, {
+        "method": "deep_bsde_official_pytorch_compatibility_port",
+        "status": "complete",
+        "reported_y0": float("nan"),
+        "history": [{"validation": float("inf")}],
+    })
+    record = json.loads(output.read_text(encoding="utf-8"))
+    assert record["status"] == "numerical_failure"
+    assert record["failure_reason"] == "nonfinite_prediction"
+    assert record["reported_y0"] is None
+    assert record["history"][0]["validation"] is None
+
+
+def test_nonfinite_predictions_make_metric_a_numerical_failure() -> None:
+    metric = _metrics(np.asarray([0.0, np.nan]), np.asarray([0.0, 1.0]))
+    assert metric["numerical_failure"] is True
+    assert metric["nonfinite_count"] == 1
+    assert metric["rmse"] is None

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+from typing import Any
 
 import torch
 
@@ -34,6 +36,28 @@ from .protocol import (
 FixedInitialDeepBSDE = _frozen.FixedInitialDeepBSDE
 
 
+def _json_safe(value: Any) -> Any:
+    """Replace non-finite scalar diagnostics without hiding numerical failure."""
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
+def _write_deep_record(path, payload: Any) -> None:
+    """Persist a failed Deep-BSDE run as data instead of raising on NaN."""
+    safe = _json_safe(payload)
+    if isinstance(payload, dict) and "reported_y0" in payload:
+        estimate = payload.get("reported_y0")
+        if not isinstance(estimate, (int, float)) or not math.isfinite(float(estimate)):
+            safe["status"] = "numerical_failure"
+            safe["failure_reason"] = "nonfinite_prediction"
+    write_json_atomic(path, safe)
+
+
 def _configure() -> None:
     _frozen.make_benchmark = lambda pde, d: make_benchmark(d)
     _frozen.CHECKPOINT_DIR = CHECKPOINT_DIR
@@ -52,7 +76,7 @@ def _configure() -> None:
     _frozen.require_stage_a = require_preflight
     _frozen.require_stage_b = require_smoke
     _frozen.stable_seed = stable_seed
-    _frozen.write_json_atomic = write_json_atomic
+    _frozen.write_json_atomic = _write_deep_record
     _frozen.write_npz_atomic = write_npz_atomic
 
 

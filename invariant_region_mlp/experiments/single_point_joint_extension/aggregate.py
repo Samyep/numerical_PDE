@@ -70,17 +70,29 @@ def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     temporary.replace(path)
 
 
-def _metrics(prediction: np.ndarray, reference: np.ndarray) -> dict[str, float]:
+def _metrics(prediction: np.ndarray, reference: np.ndarray) -> dict[str, Any]:
     prediction = np.asarray(prediction, dtype=np.float64).reshape(-1)
     reference = np.asarray(reference, dtype=np.float64).reshape(-1)
+    nonfinite_count = int(np.sum(~np.isfinite(prediction)))
+    if nonfinite_count:
+        return {
+            "rmse": None,
+            "relative_l2": None,
+            "bias": None,
+            "mae": None,
+            "nonfinite_count": nonfinite_count,
+            "samples": len(prediction),
+            "numerical_failure": True,
+        }
     error = prediction - reference
     return {
         "rmse": float(np.sqrt(np.mean(np.square(error)))),
         "relative_l2": float(np.linalg.norm(error) / np.linalg.norm(reference)),
         "bias": float(np.mean(error)),
         "mae": float(np.mean(np.abs(error))),
-        "nonfinite_count": int(np.sum(~np.isfinite(prediction))),
+        "nonfinite_count": 0,
         "samples": len(prediction),
+        "numerical_failure": False,
     }
 
 
@@ -143,7 +155,8 @@ def _deep(dimension: int) -> tuple[dict, list[dict]]:
         for point in range(QUERY_COUNT):
             run_id = f"deep_bsde__{PDE}__d{dimension}__q{point:02d}__s{seed}__formal"
             record = _json(RAW_DIR / "formal" / "deep_bsde" / f"{run_id}.json")
-            predictions.append(record["reported_y0"])
+            reported = record.get("reported_y0")
+            predictions.append(np.nan if reported is None else reported)
             references.append(truth[point])
             rows.append(record)
     metric = _metrics(np.asarray(predictions), np.asarray(references))
@@ -165,7 +178,13 @@ def _figure(rows: list[dict]) -> None:
     markers = {"Tangent-Actor": "o", "Full-History MLP": "s", "Deep BSDE": "^"}
     fig, ax = plt.subplots(figsize=(6.4, 3.8))
     for method in colors:
-        subset = sorted((row for row in rows if row["method"] == method), key=lambda row: row["dimension"])
+        subset = sorted(
+            (
+                row for row in rows
+                if row["method"] == method and row.get("rmse") is not None
+            ),
+            key=lambda row: row["dimension"],
+        )
         ax.plot(
             [row["dimension"] for row in subset],
             [row["rmse"] for row in subset],
@@ -235,17 +254,22 @@ def run() -> dict[str, Any]:
         dimension: {row["method"]: row for row in main_rows if row["dimension"] == dimension}
         for dimension in DIMENSIONS
     }
+    def rank_value(row: dict) -> float:
+        value = row.get("rmse")
+        return math.inf if value is None or not math.isfinite(float(value)) else float(value)
+
     lowest = [
         dimension for dimension, methods in by_dimension.items()
-        if methods["Tangent-Actor"]["rmse"] == min(row["rmse"] for row in methods.values())
+        if rank_value(methods["Tangent-Actor"]) == min(rank_value(row) for row in methods.values())
     ]
     half_fh = [
         dimension for dimension, methods in by_dimension.items()
-        if methods["Tangent-Actor"]["rmse"] <= 0.5 * methods["Full-History MLP"]["rmse"]
+        if rank_value(methods["Tangent-Actor"]) <= 0.5 * rank_value(methods["Full-History MLP"])
     ]
     half_deep = [
         dimension for dimension, methods in by_dimension.items()
-        if methods["Tangent-Actor"]["rmse"] <= 0.5 * methods["Deep BSDE"]["rmse"]
+        if methods["Deep BSDE"].get("rmse") is not None
+        and rank_value(methods["Tangent-Actor"]) <= 0.5 * rank_value(methods["Deep BSDE"])
     ]
     ratio = by_dimension[400]["Tangent-Actor"]["rmse"] / by_dimension[20]["Tangent-Actor"]["rmse"]
     verdicts = {
@@ -293,8 +317,8 @@ def run() -> dict[str, Any]:
     return summary
 
 
-def _f(value: float) -> str:
-    return f"{value:.6g}"
+def _f(value: float | None) -> str:
+    return "NUMERICAL FAILURE" if value is None else f"{value:.6g}"
 
 
 def _write_report(summary: dict, fh_rows: list[dict], audit: dict) -> None:
@@ -325,13 +349,23 @@ def _write_report(summary: dict, fh_rows: list[dict], audit: dict) -> None:
     ))
     for dimension in DIMENSIONS:
         methods = {row["method"]: row for row in summary["metrics"] if row["dimension"] == dimension}
-        best = min(methods, key=lambda method: methods[method]["rmse"])
+        best = min(
+            methods,
+            key=lambda method: math.inf if methods[method]["rmse"] is None else methods[method]["rmse"],
+        )
         lines.append(
             f"| {dimension} | {_f(methods['Tangent-Actor']['rmse'])} | "
             f"{_f(methods['Full-History MLP']['rmse'])} | "
             f"{_f(methods['Deep BSDE']['rmse'])} | {best} |"
         )
     reference = summary["reference_validation"]
+    deep_failures = [
+        dimension for dimension in DIMENSIONS
+        if next(
+            row for row in summary["metrics"]
+            if row["dimension"] == dimension and row["method"] == "Deep BSDE"
+        ).get("numerical_failure")
+    ]
     lines.extend((
         "", "## Reference and provenance", "",
         f"- Reference gate: **{reference['status']}**; 256² vs 128² value RMSE "
@@ -346,7 +380,13 @@ def _write_report(summary: dict, fh_rows: list[dict], audit: dict) -> None:
         f"All `{len(fh_rows)}` dimension/configuration rows are in "
         "`results/single_point_joint_extension/fh_grid.csv`; no truth-based cell was selected.",
         "", "## Deviations and failures", "",
-        "None recorded by the mechanical artifact audit.",
+        (
+            "Deep BSDE produced nonfinite predictions and is recorded as a numerical "
+            f"failure at dimensions `{deep_failures}`. These cells are excluded from "
+            "the finite-RMSE count for J-3; no replacement configuration was run."
+            if deep_failures else
+            "No numerical failures or protocol deviations were recorded."
+        ),
         "",
     ))
     REPORT.parent.mkdir(parents=True, exist_ok=True)
