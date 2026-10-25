@@ -74,7 +74,9 @@ def _terminal_status(items: list[dict[str, Any]]) -> tuple[str, bool]:
         return "PENDING", running
     terminal.sort(key=lambda item: (str(item.get("finished_utc") or ""), str(item.get("status_file") or "")))
     value = str(terminal[-1].get("status") or "FAILED")
-    return value if value in {"COMPLETE", "OUT_OF_TIME", "OUT_OF_MEMORY", "FAILED"} else "FAILED", running
+    return value if value in {
+        "COMPLETE", "OUT_OF_TIME", "OUT_OF_MEMORY", "FAILED", "PENDING",
+    } else "FAILED", running
 
 
 def _historical_gpu_seconds(source: dict[str, Any] | None) -> float:

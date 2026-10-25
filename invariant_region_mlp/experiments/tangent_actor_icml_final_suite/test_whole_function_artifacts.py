@@ -79,6 +79,20 @@ def test_checkpointed_allocation_is_pending_until_cumulative_cap(
     assert artifacts._terminal_status([payload]) == ("PENDING", False)
 
 
+def test_explicit_retry_record_supersedes_a_failed_attempt() -> None:
+    from .whole_function_artifacts import _terminal_status
+
+    failed = {
+        "status": "FAILED", "finished_utc": "2026-10-25T20:55:39Z",
+        "status_file": "failed.json",
+    }
+    retry = {
+        "status": "PENDING", "finished_utc": "2026-10-25T21:38:55Z",
+        "status_file": "retry.json",
+    }
+    assert _terminal_status([failed, retry]) == ("PENDING", False)
+
+
 def test_attempt_keeps_git_head_from_start(tmp_path: Path, monkeypatch) -> None:
     from . import whole_function_status as status
 
