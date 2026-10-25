@@ -30,6 +30,34 @@ Tangent-Actor uses one fresh training seed per PDE-dimension cell and four indep
 | dense_fourier | 200 | 8.688e-03 | 1.427e-01 | 7.519e-02 |
 | dense_fourier | 400 | 1.399e-02 | 2.933e-01 | 7.908e-02 |
 
+## Relative MAE for the two newly added PDEs
+
+For the 40 frozen Tangent-Actor inference runs on B6 Full-Rank and Dense
+Fourier (2 PDEs x 5 dimensions x 4 independent inference replicates), we
+additionally report
+`rMAE = sum |prediction - reference| / sum |reference|`. Each run uses the
+same 32 frozen queries as its RMSE. The table below pools the four formal
+replicates in each PDE-dimension cell; all 40 per-run values are retained in
+`results/single_point_32_ice/b6_dense_ta_40_run_metrics.csv`.
+
+| PDE | d | RMSE | rMAE |
+|---|---:|---:|---:|
+| b6_fullrank | 20 | 7.126e-04 | 7.844e-04 |
+| b6_fullrank | 50 | 1.419e-03 | 8.759e-04 |
+| b6_fullrank | 100 | 1.591e-03 | 9.041e-04 |
+| b6_fullrank | 200 | 4.168e-03 | 1.331e-03 |
+| b6_fullrank | 400 | 3.630e-03 | 1.254e-03 |
+| dense_fourier | 20 | 4.253e-03 | 6.063e-03 |
+| dense_fourier | 50 | 4.320e-03 | 7.251e-03 |
+| dense_fourier | 100 | 3.717e-03 | 2.333e-03 |
+| dense_fourier | 200 | 8.688e-03 | 1.979e-02 |
+| dense_fourier | 400 | 1.399e-02 | 3.147e-02 |
+
+The complete pooled table is
+`results/single_point_32_ice/b6_dense_ta_aggregate_metrics.csv`; the
+derivation audit is
+`results/single_point_32_ice/b6_dense_ta_rmae_audit.json`.
+
 ## Required conclusions
 
 1. The complete dimension trends are given in the table above and in figure1_accuracy_vs_dimension.pdf. A failed numerical outcome is never ranked using a finite-only subset.

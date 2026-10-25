@@ -1,0 +1,23 @@
+{
+  "checks": {
+    "all_metrics_finite": true,
+    "expected_point_rows": 1280,
+    "expected_runs": 40,
+    "observed_point_rows": 1280,
+    "observed_runs": 40,
+    "query_count_per_run": 32
+  },
+  "definition": "sum(abs(prediction-reference)) / sum(abs(reference))",
+  "generated_utc": "2026-10-25T18:39:51.407039+00:00",
+  "outputs": {
+    "invariant_region_mlp/results/single_point_32_ice/b6_dense_ta_40_run_metrics.csv": "ba6bcbb2129888b5948f1c0f32f1f53947be9bd9bf1d6884ba7f6f3204ad206d",
+    "invariant_region_mlp/results/single_point_32_ice/b6_dense_ta_aggregate_metrics.csv": "98039703a0b6b967381d67cdc723ab39dfc0e4c846d0f1f6cf5ec2ef0f7e4ee7"
+  },
+  "scope": [
+    "b6_fullrank",
+    "dense_fourier"
+  ],
+  "source": "invariant_region_mlp/results/single_point_32_ice/ta_results.csv",
+  "source_sha256": "a3275b8fdc2fd3857b3e3bc60be118e46cfb0e318a4366f5daa2e8599b688421",
+  "status": "VALIDATED"
+}
