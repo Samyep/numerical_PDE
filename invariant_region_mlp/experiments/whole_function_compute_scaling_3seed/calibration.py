@@ -324,12 +324,19 @@ def build_manifest() -> dict[str, Any]:
         if status not in {"TRAINED_NO_TRUTH", "COMPLETE"}:
             missing_supplemental.append(spec)
     if missing_supplemental:
+        registry: dict[str, dict[str, Any]] = {}
+        if supplemental_path.is_file():
+            for payload in json.loads(supplemental_path.read_text(encoding="utf-8")):
+                registry[str(payload["run_id"])] = payload
+        for spec in missing_supplemental:
+            registry[spec.run_id] = spec.payload()
         write_json_atomic(
-            supplemental_path, [spec.payload() for spec in missing_supplemental]
+            supplemental_path, [registry[key] for key in sorted(registry)]
         )
         return {
             "status": "SUPPLEMENTAL_TIMING_REQUIRED",
             "supplemental_specs": [spec.payload() for spec in missing_supplemental],
+            "supplemental_registry_size": len(registry),
             "path": str(supplemental_path),
         }
 
