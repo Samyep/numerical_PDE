@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 import platform
 import time
+from types import MethodType
 
 import numpy as np
 import torch
@@ -83,48 +84,57 @@ def run() -> dict:
     cfg, _source, _overrides, _profile = _configuration("dpi", "dense_fourier", "C0")
     cfg = cfg.clone()
     cfg.defrost()
-    audit_work = WORK_DIR / "diagnostic_dense_dpi_rng_replay_freq8_s0"
+    audit_work = WORK_DIR / "diagnostic_dense_dpi_rng_replay_epoch_hook_s0"
     if audit_work.exists():
         raise FileExistsError(
             f"refusing to overwrite an incomplete diagnostic work directory: {audit_work}"
         )
     cfg.NAME = str(audit_work)
     cfg.FORCE = True
-    cfg.EVAL.FREQ = 8
+    # Keep validation disabled.  Re-enabling the upstream reporting loop adds
+    # 1,280 Lightning validation loops and confounds the RNG test with a large,
+    # software-version-dependent control-flow cost.  The equivalent RNG draw
+    # is installed below at the same boundary between training epochs.
+    cfg.EVAL.FREQ = None
     cfg.PICARD.N = 80
     cfg.freeze()
 
     capture = DIAGNOSTIC_DIR / "unused_pinn_capture.pt"
     runner = _fresh_runner(cfg, capture)
 
-    # The upstream EvalCallback calls equation.sample_x(t) once on 10,000
-    # states, using the global Torch RNG, before deterministic network/truth
-    # calculations.  Replaying just that call preserves the historical random
-    # draw tape without opening nonterminal truth during training.
-    from picard.utils import EvalCallback
+    # The historical upstream EvalCallback ran once after each group of eight
+    # training batches.  There are eight batches per epoch, so this is one draw
+    # between consecutive epochs.  Replaying just equation.sample_x(t) in an
+    # epoch-end hook preserves the global Torch draw tape without opening
+    # nonterminal truth or constructing Lightning validation loops.
+    import lightning.pytorch as pl
 
     callback_counter = {"calls": 0}
 
-    def rng_only_init(self, eval_cfg, equation, writer, iter=0, output_dim=1):
-        self.n_points = int(eval_cfg.L2_N_POINTS)
-        self.batch_size = eval_cfg.BATCH_SIZE
-        self.equation = equation
-        self.writer = writer
-        self.iter = iter
-        self.output_dim = output_dim
+    class RngReplayAtEpochEnd(pl.Callback):
+        def __init__(self, equation):
+            super().__init__()
+            self.equation = equation
 
-    def rng_only_validation_start(self, trainer, pl_module):
-        del trainer
-        self.equation = self.equation.to(device=pl_module.device)
-        t = torch.linspace(
-            0.0, self.equation.T, self.n_points, device=pl_module.device
-        ).reshape(self.n_points, 1)
-        with torch.no_grad():
-            self.equation.sample_x(t)
-        callback_counter["calls"] += 1
+        def on_train_epoch_end(self, trainer, pl_module):
+            del trainer
+            self.equation = self.equation.to(device=pl_module.device)
+            t = torch.linspace(
+                0.0, self.equation.T, 10_000, device=pl_module.device
+            ).reshape(10_000, 1)
+            with torch.no_grad():
+                self.equation.sample_x(t)
+            callback_counter["calls"] += 1
 
-    EvalCallback.__init__ = rng_only_init
-    EvalCallback.on_validation_epoch_start = rng_only_validation_start
+    base_callbacks = runner.get_reporting_callbacks
+
+    def callbacks_with_rng_replay(self):
+        del self
+        callbacks, kwargs = base_callbacks()
+        callbacks.append(RngReplayAtEpochEnd(runner.equation))
+        return callbacks, kwargs
+
+    runner.get_reporting_callbacks = MethodType(callbacks_with_rng_replay, runner)
 
     synchronize(device)
     if torch.cuda.is_available():
@@ -176,9 +186,10 @@ def run() -> dict:
         "epochs_per_picard": 16,
         "historical_eval_frequency": 8,
         "frontier_eval_frequency": None,
-        "diagnostic_eval_frequency": 8,
+        "diagnostic_eval_frequency": None,
         "exact_nonterminal_truth_callback_enabled": False,
         "rng_only_callback_replay_enabled": True,
+        "rng_replay_schedule": "one 10000-state sample_x draw after each training epoch",
         "rng_only_callback_calls": callback_counter["calls"],
         "expected_rng_only_callback_calls": 80 * 16,
         "ground_truth_used_for_model_selection_or_stopping": False,
@@ -205,8 +216,9 @@ def run() -> dict:
         "replay_config": str(audit_work / "config.yaml"),
         "replay_config_sha256": file_sha256(audit_work / "config.yaml"),
         "semantic_config_difference_from_frontier_C0": {
-            "EVAL.FREQ": {"frontier": None, "historical_and_replay": 8},
+            "EVAL.FREQ": {"frontier_and_replay": None, "historical": 8},
             "NAME": "output-directory-only",
+            "diagnostic_instrumentation": "epoch-end RNG-only draw replay",
         },
         "peak_gpu_bytes": int(torch.cuda.max_memory_allocated()),
         "slurm_job_id": os.environ.get("SLURM_JOB_ID"),
