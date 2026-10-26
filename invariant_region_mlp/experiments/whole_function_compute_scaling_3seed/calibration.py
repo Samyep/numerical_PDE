@@ -223,6 +223,14 @@ def build_manifest() -> dict[str, Any]:
     if not preflight_path.is_file():
         raise RuntimeError("missing timing preflight manifest")
     preflight = json.loads(preflight_path.read_text(encoding="utf-8"))
+    chunk_validation_path = RESULTS_DIR / "dpi_chunking_validation.json"
+    if not chunk_validation_path.is_file():
+        raise RuntimeError("missing DPI chunking validation")
+    chunk_validation = json.loads(
+        chunk_validation_path.read_text(encoding="utf-8")
+    )
+    if chunk_validation.get("status") != "PASS":
+        raise RuntimeError(f"DPI chunking validation failed: {chunk_validation}")
     completed = _completed_specs()
     completed_ids = {spec.run_id for spec, _record in completed}
     missing_initial = [
@@ -407,6 +415,7 @@ def build_manifest() -> dict[str, Any]:
         ).strip(),
         "timing_preflight_revision": preflight.get("checked_out_revision"),
         "timing_preflight_manifest_sha256": file_sha256(preflight_path),
+        "dpi_chunking_validation_sha256": file_sha256(chunk_validation_path),
         "calibration_module_sha256": file_sha256(Path(__file__)),
         "frozen_input_hashes": EXPECTED_INPUTS,
         "preserved_superseded_timing_artifacts": [

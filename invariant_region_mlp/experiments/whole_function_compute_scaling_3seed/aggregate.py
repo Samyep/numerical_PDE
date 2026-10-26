@@ -295,6 +295,15 @@ def _audit(seed_rows: list[dict[str, Any]], summary: list[dict[str, Any]]) -> di
         provenance_failures.append({"failure": "missing resource accounting"})
     elif resource.get("within_90_h100_gpu_hour_cap") is not True:
         provenance_failures.append({"failure": "90 H100 GPU-hour cap exceeded"})
+    chunk_validation_path = RESULTS_DIR / "dpi_chunking_validation.json"
+    if not chunk_validation_path.is_file():
+        provenance_failures.append({"failure": "missing DPI chunking validation"})
+    else:
+        chunk_validation = json.loads(
+            chunk_validation_path.read_text(encoding="utf-8")
+        )
+        if chunk_validation.get("status") != "PASS":
+            provenance_failures.append({"failure": "DPI chunking validation failed"})
 
     numerical_failures = [
         {
@@ -338,6 +347,11 @@ def _report(summary: list[dict[str, Any]], audit: dict[str, Any]) -> None:
     run_manifest = (
         json.loads(RUN_MANIFEST.read_text(encoding="utf-8"))
         if RUN_MANIFEST.is_file() else {}
+    )
+    chunk_validation_path = RESULTS_DIR / "dpi_chunking_validation.json"
+    chunk_validation = (
+        json.loads(chunk_validation_path.read_text(encoding="utf-8"))
+        if chunk_validation_path.is_file() else {}
     )
     lines = [
         "# Three-seed hyperparameter-specific accuracy--compute scaling",
@@ -403,6 +417,11 @@ def _report(summary: list[dict[str, Any]], audit: dict[str, Any]) -> None:
     else:
         lines.append("- None.")
     lines += [
+        "", "## DPI large-sample chunking validation", "",
+        f"Status: **{chunk_validation.get('status', 'MISSING')}**; all nominal samples used: "
+        f"`{chunk_validation.get('all_nominal_samples_used', False)}`; one-chunk maximum absolute difference "
+        f"`{chunk_validation.get('single_chunk_max_abs', 'NA')}`; true multi-chunk maximum absolute difference "
+        f"`{chunk_validation.get('multi_chunk_max_abs', 'NA')}`.",
         "", "## Dense Fourier DPI provenance", "",
         "The preceding study's historical C0 consistency check remains FAIL. Its RNG-only diagnostic explained 96.72% of the discrepancy but was not bitwise. This study disables the historical exact-solution callback (`EVAL.FREQ=null`) and averages new truth-gated runs over seeds 0, 1, and 2.",
         "", "## Provenance", "",
@@ -413,6 +432,7 @@ def _report(summary: list[dict[str, Any]], audit: dict[str, Any]) -> None:
         f"Seed metrics SHA-256: `{file_sha256(RESULTS_DIR / 'seed_metrics.csv')}`.",
         f"Scaling summary SHA-256: `{file_sha256(RESULTS_DIR / 'scaling_summary.csv')}`.",
         f"Figure PDF SHA-256: `{file_sha256(FIGURE_DIR / 'two_pde_three_seed_scaling.pdf')}`.",
+        f"DPI chunking validation SHA-256: `{file_sha256(RESULTS_DIR / 'dpi_chunking_validation.json') if (RESULTS_DIR / 'dpi_chunking_validation.json').is_file() else 'MISSING'}`.",
     ]
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
