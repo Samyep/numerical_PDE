@@ -147,6 +147,7 @@ Audit failures and recorded deviations:
 
 - Final artifact audit: no failures.
 - Scheduler history retained and counted: CANCELLED=5, FAILED=58, TIMEOUT=3.
+- The FAILED and CANCELLED scheduler rows are calibration/preflight attempts (mostly zero- or few-second startup failures on subsequently excluded nodes, plus curtailed calibration arrays); they do not represent missing formal runs.
 - Formal deviation: the three B6 PINN-HTE C2 runs at batch size 16384 timed out at 70:12, then completed with the identical numerical configuration after only the Slurm wall-time limit was raised; both attempts are included in resource accounting.
 - Timing-calibration deviation: points beyond the intended 25--35 minute endpoint are retained (b6_fullrank/pinn_hte/C2=50.8 min, b6_fullrank/pinn_hte/C2=100.7 min).
 - A pre-fix artifact audit failed because the evaluator skipped pre-registered DPI C0 checkpoints at 80/160/320. The FAIL record is preserved in `artifact_audit_pre_dpi_c0_evaluation_fix.json`; the evaluator-only fix did not retrain models, and the six C0 trajectories were re-evaluated in Slurm job 6619464.
@@ -168,5 +169,5 @@ Checked-out training revision: `425f8245a4b8a4c66696934a18917a615052006f`.
 Frozen input hashes: `{"b6_fullrank": {"parameter_file_sha256": "21b508c30ad63de912979cc9c85ecda0d81aedab1357c88a40e04692495972a4", "test_bank_file_sha256": "6ee6c56ca3d4f413764f28865cb8c00823ea2881ebc90f2643ff4a36fe878730", "test_input_sha256": "0ee05fff7ce16f30d0d31563f60df7db3eb23a9c46bbe7bc9be8eb3dbee1311b", "truth_value_sha256": "6262db7f6b7ee2c41cb6011dadb7288226157533488f708be7d6ea6773f2e13a"}, "dense_fourier": {"parameter_file_sha256": "042588d7c3cc8175cc7b9344284725443650837f72008806c668d35b9a005307", "test_bank_file_sha256": "998fde8b2c0556de4b8fa9a55dec5e489224828cf74e5f3b36f77cb1a8e2c011", "test_input_sha256": "d409296128f48c5ae00c5de2c6ddd998768c01dff18a89c385245a50ff581b70", "truth_value_sha256": "3b33ea36e21595b5c20e5d91097d1fadfcbf3f7884c0328f20579e69995fc816"}}`.
 Seed metrics SHA-256: `d93d5e5472d6103b5ded2228c60b35ebec15170d92b57100f3b65d0ca3a151e9`.
 Scaling summary SHA-256: `fab0b32170ffa92fc0e0842f29f35bea864b62bba3fc078e6d56ca045377b853`.
-Figure PDF SHA-256: `5d7f0d35b9c05e925f61f06c06c3f8f8461f7889589464b6249319b5b978c3be`.
+Figure PDF SHA-256: `4be9d6c0ad9c3719b60ec933939843de35c258d56d9a54291c4dfca8201ac7f7`.
 DPI chunking validation SHA-256: `bba17d298ab8a271925ef446442dc5ed76c5404d46c09a903227ebc05a3a9b00`.
