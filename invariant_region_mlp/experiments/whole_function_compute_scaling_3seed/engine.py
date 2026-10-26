@@ -49,6 +49,7 @@ from .protocol import (
 CHECKED_OUT_REVISION = subprocess.check_output(
     ["git", "rev-parse", "HEAD"], cwd=SOURCE_ROOT, text=True
 ).strip()
+DPI_INTEGRAL_CHUNK_SIZE = 8192
 
 
 def _scheduler_metadata() -> dict[str, Any]:
@@ -58,6 +59,62 @@ def _scheduler_metadata() -> dict[str, Any]:
         "slurm_array_task_id": os.environ.get("SLURM_ARRAY_TASK_ID"),
         "slurm_node_list": os.environ.get("SLURM_JOB_NODELIST"),
     }
+
+
+def _chunked_dpi_integral_with_gradients(self, tx: torch.Tensor) -> torch.Tensor:
+    """Estimator-preserving sample-axis chunking for large DPI integrals.
+
+    This is the upstream formula accumulated as an unnormalised sample sum.
+    Only the allocation shape changes; the nominal number of Monte Carlo
+    draws and the final sample mean do not.
+    """
+
+    from picard.data import (
+        OUProcessEquation,
+        SimpleDiffusionEquation,
+        get_f,
+    )
+
+    assert isinstance(self.equation, (SimpleDiffusionEquation, OUProcessEquation))
+    n_total = int(self.n_estimate_integral)
+    n_batch = tx.size(0)
+    accumulated: torch.Tensor | None = None
+    completed = 0
+    while completed < n_total:
+        n_estimate = min(DPI_INTEGRAL_CHUNK_SIZE, n_total - completed)
+        t, s, xs, _sxs, dw = self.generate_sx_for_integral(
+            tx, n_estimate, return_dW=True
+        )
+        if self.hessian_approximation_ctx is not None:
+            assert self.hessian_approximation_config.method == "SDGD"
+            v = self.hessian_approximation_config.kwargs["v"]
+            indices = torch.randint(
+                0, xs.size(1), (xs.size(0), v), device=xs.device
+            )
+            self.hessian_approximation_ctx["indices"] = indices
+
+        xs.requires_grad_()
+        f = get_f(
+            self.equation, self.solution, xs, s,
+            self.hessian_approximation_ctx, baseline_repeat=None,
+        )
+        x_baseline = tx[:, 1:]
+        x_baseline.requires_grad_()
+        t_baseline = tx[:, 0:1]
+        f_baseline = get_f(
+            self.equation, self.solution, x_baseline, t_baseline,
+            self.hessian_approximation_ctx, baseline_repeat=n_estimate,
+        )
+        ys = dw / torch.sqrt(s - t) / self.equation.alpha_sqrt
+        eys = torch.cat([torch.ones_like(s), ys], dim=-1)
+        integral = (self.T - t) * (f - f_baseline) * eys
+        integral[:, 0:1] = integral[:, 0:1] + f_baseline * (self.T - t)
+        chunk_sum = integral.view(n_batch, n_estimate, -1).sum(dim=1)
+        accumulated = chunk_sum if accumulated is None else accumulated + chunk_sum
+        completed += n_estimate
+    if accumulated is None:
+        raise RuntimeError("DPI integral estimator requested zero samples")
+    return accumulated / n_total
 
 
 def run_dir(spec: RunSpec) -> Path:
@@ -134,6 +191,15 @@ def _patched(spec: RunSpec) -> Iterator[None]:
     set_value(ta, "TA_EVALUATION_STEPS", TA_EVALUATION_STEPS)
     set_value(ta, "TA_INFERENCE_REPLICATES", TA_INFERENCE_REPLICATES)
 
+    if spec.method == "dpi":
+        base._external_root()
+        from picard.data import OnlineDataGenerator
+        set_value(
+            OnlineDataGenerator,
+            "estimate_integral_with_gradients",
+            _chunked_dpi_integral_with_gradients,
+        )
+
     # C0 normally reuses a historical seed-0 trajectory.  This study requires
     # fresh runs for all three seeds and configurations, so present an empty,
     # configuration-compatible history to the unchanged trainer.
@@ -173,6 +239,10 @@ def _annotate_record(spec: RunSpec, record: dict[str, Any]) -> dict[str, Any]:
         "run_id": spec.run_id,
         "truth_loaded": False,
         "terminal_checkpoint_only_for_sensitivity": spec.sweep != "C0",
+        "dpi_integral_chunk_size": (
+            DPI_INTEGRAL_CHUNK_SIZE if spec.method == "dpi" else None
+        ),
+        "dpi_integral_estimator_preserving_chunking": spec.method == "dpi",
         "training_scheduler": _scheduler_metadata(),
         "randomness": {
             "training_seed": int(spec.seed),
