@@ -11,6 +11,7 @@ from contextlib import contextmanager
 from dataclasses import asdict
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import time
@@ -48,6 +49,15 @@ from .protocol import (
 CHECKED_OUT_REVISION = subprocess.check_output(
     ["git", "rev-parse", "HEAD"], cwd=SOURCE_ROOT, text=True
 ).strip()
+
+
+def _scheduler_metadata() -> dict[str, Any]:
+    return {
+        "slurm_job_id": os.environ.get("SLURM_JOB_ID"),
+        "slurm_array_job_id": os.environ.get("SLURM_ARRAY_JOB_ID"),
+        "slurm_array_task_id": os.environ.get("SLURM_ARRAY_TASK_ID"),
+        "slurm_node_list": os.environ.get("SLURM_JOB_NODELIST"),
+    }
 
 
 def run_dir(spec: RunSpec) -> Path:
@@ -163,6 +173,7 @@ def _annotate_record(spec: RunSpec, record: dict[str, Any]) -> dict[str, Any]:
         "run_id": spec.run_id,
         "truth_loaded": False,
         "terminal_checkpoint_only_for_sensitivity": spec.sweep != "C0",
+        "training_scheduler": _scheduler_metadata(),
         "randomness": {
             "training_seed": int(spec.seed),
             "initialization_key_sha256": initialization_key,
@@ -323,6 +334,8 @@ def train_spec(spec: RunSpec, device: torch.device) -> dict[str, Any]:
     failure = root / "failure.json"
     try:
         with _patched(spec):
+            if device.type == "cuda":
+                torch.cuda.reset_peak_memory_stats(device)
             if spec.method == "tangent_actor":
                 result = ta.train(spec.pde, "C0", device)
             elif spec.method == "dpi":
@@ -331,6 +344,10 @@ def train_spec(spec: RunSpec, device: torch.device) -> dict[str, Any]:
                 result = _train_pinn(spec, device)
             else:
                 raise KeyError(spec.method)
+            if device.type == "cuda":
+                result.setdefault(
+                    "peak_gpu_bytes", int(torch.cuda.max_memory_allocated(device))
+                )
             result = _annotate_record(spec, result)
         if failure.exists():
             failure.unlink()
@@ -378,6 +395,8 @@ def evaluate_spec(spec: RunSpec, device: torch.device) -> list[dict[str, Any]]:
     filtered["status"] = "TRAINED_NO_TRUTH"
 
     with _patched(spec):
+        if device.type == "cuda":
+            torch.cuda.reset_peak_memory_stats(device)
         gate = run_dir(spec) / "status" / "all_training_complete.json"
         write_json_atomic(gate, {
             "status": "GLOBAL_FORMAL_TRAINING_COMPLETE_TRUTH_GATE_OPEN",
@@ -396,6 +415,11 @@ def evaluate_spec(spec: RunSpec, device: torch.device) -> list[dict[str, Any]]:
             restored["truth_opened_only_after_global_training_stop"] = True
             write_json_atomic(record_file, restored)
 
+        evaluation_peak_gpu_bytes = (
+            int(torch.cuda.max_memory_allocated(device))
+            if device.type == "cuda" else None
+        )
+
     for row in rows:
         if spec.sweep == "C0":
             point_value = int(row["algorithm_iteration"])
@@ -410,6 +434,10 @@ def evaluate_spec(spec: RunSpec, device: torch.device) -> list[dict[str, Any]]:
             "training_seed": int(spec.seed),
             "training_seconds": float(row["training_seconds"]),
             "main_axis_seconds": float(row["training_seconds"]),
+            "training_peak_gpu_bytes": record.get("peak_gpu_bytes"),
+            "evaluation_peak_gpu_bytes": evaluation_peak_gpu_bytes,
+            "training_scheduler": record.get("training_scheduler", {}),
+            "evaluation_scheduler": _scheduler_metadata(),
         })
         metric_path = Path(row["prediction_file"]).with_suffix(".json")
         write_json_atomic(metric_path, row)

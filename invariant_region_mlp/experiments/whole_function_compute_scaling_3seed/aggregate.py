@@ -88,6 +88,16 @@ def seed_metrics() -> list[dict[str, Any]]:
             "bias": float(np.mean([float(row["bias"]) for row in rows])),
             "inference_seconds": float(np.sum([float(row["inference_seconds"]) for row in rows])),
             "inference_replicates": len(rows),
+            "training_peak_gpu_bytes": rows[0].get("training_peak_gpu_bytes"),
+            "evaluation_peak_gpu_bytes": max(
+                int(row.get("evaluation_peak_gpu_bytes") or 0) for row in rows
+            ),
+            "training_scheduler": json.dumps(
+                rows[0].get("training_scheduler", {}), sort_keys=True
+            ),
+            "evaluation_schedulers": json.dumps(
+                [row.get("evaluation_scheduler", {}) for row in rows], sort_keys=True
+            ),
             "prediction_files": json.dumps([row["prediction_file"] for row in rows]),
             "prediction_sha256s": json.dumps([row["prediction_sha256"] for row in rows]),
             "checkpoint": rows[0]["checkpoint"],
@@ -110,12 +120,24 @@ def scaling_summary(seed_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             raise RuntimeError(f"{key}: expected seeds {TRAINING_SEEDS}, got {seeds}")
         times = np.asarray([float(row["training_seconds"]) for row in rows])
         rmses = np.asarray([float(row["rmse"]) for row in rows])
+        inference_times = np.asarray([float(row["inference_seconds"]) for row in rows])
         output.append({
             "pde": pde, "method": method, "sweep": sweep,
             "parameter_name": rows[0]["parameter_name"],
             "parameter_value": value, "training_seed_count": len(rows),
             "mean_training_seconds": float(times.mean()),
             "std_training_seconds": float(times.std(ddof=1)),
+            "mean_inference_seconds": float(inference_times.mean()),
+            "std_inference_seconds": float(inference_times.std(ddof=1)),
+            "mean_training_peak_gpu_bytes": float(np.mean([
+                float(row.get("training_peak_gpu_bytes") or 0) for row in rows
+            ])),
+            "max_training_peak_gpu_bytes": int(max(
+                int(row.get("training_peak_gpu_bytes") or 0) for row in rows
+            )),
+            "max_evaluation_peak_gpu_bytes": int(max(
+                int(row.get("evaluation_peak_gpu_bytes") or 0) for row in rows
+            )),
             "mean_rmse": float(rmses.mean()),
             "std_rmse": float(rmses.std(ddof=1)),
             "mean_relative_l2": float(np.mean([float(row["relative_l2"]) for row in rows])),
