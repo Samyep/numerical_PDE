@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+import pytest
+
+from .calibration import (
+    _monotone_anchors,
+    _nearest_distinct,
+    _predict_piecewise_log_linear,
+)
 from .protocol import (
     CALIBRATION_ANCHORS,
     METHODS,
@@ -39,3 +46,17 @@ def test_formal_seeds_are_frozen() -> None:
     assert set(CALIBRATION_ANCHORS) == {
         (method, sweep) for method in METHODS for sweep in SWEEPS
     }
+
+
+def test_calibration_model_is_monotone_piecewise_log_linear() -> None:
+    anchors = _monotone_anchors([(8, 80.0), (2, 20.0), (4, 15.0)])
+    assert anchors == [(2, 20.0), (4, 20.0), (8, 80.0)]
+    assert _predict_piecewise_log_linear(anchors, 4) == pytest.approx(20.0)
+    assert _predict_piecewise_log_linear(anchors, 6) == pytest.approx(45.0)
+    assert _predict_piecewise_log_linear([(2, 20.0)], 8) == pytest.approx(80.0)
+
+
+def test_budget_reduction_selects_distinct_targets() -> None:
+    values = [1, 2, 3, 4, 5]
+    predictions = {1: 300.0, 2: 600.0, 3: 900.0, 4: 1200.0, 5: 1800.0}
+    assert _nearest_distinct(values, predictions, (300.0, 900.0, 1800.0)) == [1, 3, 5]

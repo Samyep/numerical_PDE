@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import json
 import math
 from pathlib import Path
+import subprocess
 from typing import Any
 
 from invariant_region_mlp.experiments.whole_function_compute_frontier.common import (
@@ -19,11 +20,14 @@ from .protocol import (
     CALIBRATION_ANCHORS,
     CALIBRATION_MANIFEST,
     CANDIDATE_LADDERS,
+    EXPECTED_INPUTS,
     FORMAL_PROJECTED_CAP_SECONDS,
     METHODS,
     PARAMETER_NAMES,
     PDES,
+    PREREGISTRATION_COMMIT,
     RESULTS_DIR,
+    SOURCE_ROOT,
     SWEEPS,
     RunSpec,
     calibration_specs,
@@ -54,18 +58,54 @@ def _completed_specs() -> list[tuple[RunSpec, dict[str, Any]]]:
     return completed
 
 
-def _fit(anchors: list[tuple[int, float]]) -> tuple[float, float]:
-    anchors = sorted(anchors)
-    if len(anchors) == 1:
-        p, seconds = anchors[0]
-        return 0.0, seconds / p
-    p0, t0 = anchors[0]
-    p1, t1 = anchors[-1]
-    raw_slope = (t1 - t0) / max(p1 - p0, 1)
-    minimum_slope = 0.05 * min(t0 / p0, t1 / p1)
-    slope = max(raw_slope, minimum_slope, 1e-9)
-    intercept = max(0.0, min(t0 - slope * p0, t1 - slope * p1))
-    return intercept, slope
+def _monotone_anchors(anchors: list[tuple[int, float]]) -> list[tuple[int, float]]:
+    """Sort anchors and replace downward timing noise by a cumulative maximum."""
+
+    ordered = sorted((int(value), float(seconds)) for value, seconds in anchors)
+    result: list[tuple[int, float]] = []
+    running = 0.0
+    for value, seconds in ordered:
+        if value <= 0 or seconds <= 0:
+            raise ValueError(f"invalid timing anchor: {(value, seconds)}")
+        running = max(running, seconds)
+        result.append((value, running))
+    return result
+
+
+def _log_slope(left: tuple[int, float], right: tuple[int, float]) -> float:
+    x0, y0 = left
+    x1, y1 = right
+    if x1 <= x0:
+        raise ValueError(f"timing parameters must be distinct: {left}, {right}")
+    return max(0.0, math.log(y1 / y0) / math.log(x1 / x0))
+
+
+def _predict_piecewise_log_linear(
+    anchors: list[tuple[int, float]], value: int
+) -> float:
+    """Interpolate/extrapolate in log(parameter)--log(time) coordinates."""
+
+    points = _monotone_anchors(anchors)
+    if value <= 0:
+        raise ValueError(f"parameter must be positive: {value}")
+    if len(points) == 1:
+        # With one timing anchor, work-proportional scaling is the unique
+        # preregistered-information-only extrapolation used for C0.
+        p0, t0 = points[0]
+        return t0 * value / p0
+
+    if value <= points[0][0]:
+        left, right = points[0], points[1]
+    elif value >= points[-1][0]:
+        left, right = points[-2], points[-1]
+    else:
+        left, right = points[0], points[1]
+        for candidate_left, candidate_right in zip(points, points[1:]):
+            if candidate_left[0] <= value <= candidate_right[0]:
+                left, right = candidate_left, candidate_right
+                break
+    slope = _log_slope(left, right)
+    return left[1] * math.exp(slope * math.log(value / left[0]))
 
 
 def _round_insert(method: str, sweep: str, value: float) -> int:
@@ -80,20 +120,71 @@ def _round_insert(method: str, sweep: str, value: float) -> int:
 
 def _predicted_candidates(
     method: str, sweep: str, anchors: list[tuple[int, float]]
-) -> tuple[list[int], dict[int, float], tuple[float, float]]:
-    intercept, slope = _fit(anchors)
-    candidates = list(CANDIDATE_LADDERS[(method, sweep)])
-    while intercept + slope * candidates[-1] < 1500.0:
+) -> tuple[list[int], dict[int, float], list[tuple[int, float]], int | None]:
+    monotone = _monotone_anchors(anchors)
+    candidates = sorted({
+        *CANDIDATE_LADDERS[(method, sweep)],
+        *(value for value, _seconds in monotone),
+    })
+    predictions = {
+        value: _predict_piecewise_log_linear(monotone, value)
+        for value in candidates
+    }
+    extension_count = 0
+    while predictions[candidates[-1]] < 1500.0:
         candidates.append(candidates[-1] * 2)
-    predictions = {value: intercept + slope * value for value in candidates}
+        predictions[candidates[-1]] = _predict_piecewise_log_linear(
+            monotone, candidates[-1]
+        )
+        extension_count += 1
+        if extension_count > 30:
+            raise RuntimeError(
+                f"timing model does not reach 25 minutes for {(method, sweep)}"
+            )
     valid_end = [value for value in candidates if 1500.0 <= predictions[value] <= 2100.0]
+    inserted: int | None = None
     if not valid_end:
-        inserted = _round_insert(method, sweep, (1800.0 - intercept) / slope)
+        below = [value for value in candidates if predictions[value] < 1500.0]
+        above = [value for value in candidates if predictions[value] > 2100.0]
+        if not below or not above:
+            raise RuntimeError(
+                f"cannot bracket the 25--35 minute window for {(method, sweep)}"
+            )
+        lower = max(below)
+        upper = min(above)
+        inserted = _round_insert(method, sweep, math.sqrt(lower * upper))
+        if inserted <= lower:
+            inserted = lower + 1
+        if inserted >= upper:
+            inserted = upper - 1
         if inserted not in candidates:
             candidates.append(inserted)
             candidates.sort()
-        predictions[inserted] = intercept + slope * inserted
-    return candidates, predictions, (intercept, slope)
+        predictions[inserted] = _predict_piecewise_log_linear(monotone, inserted)
+    return candidates, predictions, monotone, inserted
+
+
+def _projected_seconds(lines: list[dict[str, Any]]) -> float:
+    return sum(
+        3.0 * (
+            max(float(v) for v in line["predicted_seconds"].values())
+            if line["sweep"] == "C0"
+            else sum(float(v) for v in line["predicted_seconds"].values())
+        )
+        for line in lines
+    )
+
+
+def _nearest_distinct(
+    values: list[int], predictions: dict[int, float], targets: tuple[float, ...]
+) -> list[int]:
+    selected: list[int] = []
+    for target in targets:
+        ordered = sorted(values, key=lambda value: (abs(predictions[value] - target), value))
+        choice = next((value for value in ordered if value not in selected), None)
+        if choice is not None:
+            selected.append(choice)
+    return sorted(selected)
 
 
 def _supplemental_spec(
@@ -155,9 +246,19 @@ def build_manifest() -> dict[str, Any]:
              float(row["training_seconds"]) * float(row["spec"].calibration_scale))
             for row in rows
         )
-        candidates, predictions, fit = _predicted_candidates(method, sweep, anchors)
+        candidates, predictions, monotone_anchors, inserted = _predicted_candidates(
+            method, sweep, anchors
+        )
         ends = [v for v in candidates if 1500.0 <= predictions[v] <= 2100.0]
-        end = min(ends, key=lambda value: abs(predictions[value] - 1800.0))
+        # A geometric intermediate must be measured before its timing can be
+        # trusted.  Its provisional prediction need not itself land inside the
+        # window when the bracketing jump is very large.
+        end = (
+            min(ends, key=lambda value: abs(predictions[value] - 1800.0))
+            if ends else inserted
+        )
+        if end is None:
+            raise RuntimeError(f"no calibrated endpoint for {key}")
         measured_values = {int(row["spec"].parameter_value) for row in rows}
         if end not in measured_values and end not in CANDIDATE_LADDERS[(method, sweep)]:
             supplemental.append(_supplemental_spec(pde, method, sweep, end))
@@ -181,7 +282,12 @@ def build_manifest() -> dict[str, Any]:
             "parameter_name": PARAMETER_NAMES[(method, sweep)],
             "parameter_values": selected,
             "predicted_seconds": {str(v): predictions[v] for v in selected},
-            "fit_intercept_seconds": fit[0], "fit_slope_seconds_per_unit": fit[1],
+            "time_model": "monotone_piecewise_log_linear",
+            "monotone_scaled_anchors": [
+                {"parameter_value": value, "scaled_formal_seconds": seconds}
+                for value, seconds in monotone_anchors
+            ],
+            "geometric_intermediate": inserted,
             "calibration_anchors": [
                 {
                     "parameter_value": int(row["spec"].parameter_value),
@@ -200,9 +306,18 @@ def build_manifest() -> dict[str, Any]:
         }
 
     supplemental_path = RESULTS_DIR / "calibration_supplemental_specs.json"
-    missing_supplemental = [
-        spec for spec in supplemental if not trajectory_path(spec).is_file()
-    ]
+    missing_supplemental = []
+    for spec in supplemental:
+        path = trajectory_path(spec)
+        if not path.is_file():
+            missing_supplemental.append(spec)
+            continue
+        try:
+            status = json.loads(path.read_text(encoding="utf-8")).get("status")
+        except (OSError, json.JSONDecodeError):
+            status = None
+        if status not in {"TRAINED_NO_TRUTH", "COMPLETE"}:
+            missing_supplemental.append(spec)
     if missing_supplemental:
         write_json_atomic(
             supplemental_path, [spec.payload() for spec in missing_supplemental]
@@ -214,34 +329,46 @@ def build_manifest() -> dict[str, Any]:
         }
 
     lines = [provisional[key] for key in sorted(provisional)]
-    projected = 0.0
-    for line in lines:
-        predictions = {int(k): float(v) for k, v in line["predicted_seconds"].items()}
-        if line["sweep"] == "C0":
-            projected += 3.0 * predictions[max(line["parameter_values"])]
-        else:
-            projected += 3.0 * sum(predictions[v] for v in line["parameter_values"])
+    projected = _projected_seconds(lines)
 
     if projected > FORMAL_PROJECTED_CAP_SECONDS:
+        original_values: dict[tuple[str, str, str], list[int]] = {}
+        original_predictions: dict[tuple[str, str, str], dict[int, float]] = {}
         for line in lines:
             if line["sweep"] == "C0" or len(line["parameter_values"]) <= 3:
                 continue
-            values = line["parameter_values"]
+            key = (line["pde"], line["method"], line["sweep"])
+            values = list(line["parameter_values"])
+            original_values[key] = values
             predictions = {int(k): float(v) for k, v in line["predicted_seconds"].items()}
-            keep = sorted({
-                min(values, key=lambda value: abs(predictions[value] - target))
-                for target in (300.0, 900.0, 1800.0)
-            })
+            original_predictions[key] = predictions
+            keep = _nearest_distinct(values, predictions, (300.0, 900.0, 1800.0))
             line["parameter_values"] = keep
             line["predicted_seconds"] = {str(v): predictions[v] for v in keep}
-        projected = sum(
-            3.0 * (
-                max(float(v) for v in line["predicted_seconds"].values())
-                if line["sweep"] == "C0"
-                else sum(float(v) for v in line["predicted_seconds"].values())
-            )
-            for line in lines
-        )
+        projected = _projected_seconds(lines)
+
+        # Add the candidates nearest 10 and 20 minutes in deterministic
+        # lexical round-robin order while respecting the frozen cap.
+        for target in (600.0, 1200.0):
+            for line in sorted(lines, key=lambda row: (row["pde"], row["method"], row["sweep"])):
+                key = (line["pde"], line["method"], line["sweep"])
+                if line["sweep"] == "C0" or key not in original_values:
+                    continue
+                all_values = original_values[key]
+                all_predictions = original_predictions[key]
+                remaining = [v for v in all_values if v not in line["parameter_values"]]
+                if not remaining:
+                    continue
+                value = min(remaining, key=lambda v: (abs(all_predictions[v] - target), v))
+                added = 3.0 * all_predictions[value]
+                if projected + added <= FORMAL_PROJECTED_CAP_SECONDS:
+                    line["parameter_values"] = sorted(line["parameter_values"] + [value])
+                    line["predicted_seconds"][str(value)] = all_predictions[value]
+                    line["predicted_seconds"] = {
+                        str(v): line["predicted_seconds"][str(v)]
+                        for v in line["parameter_values"]
+                    }
+                    projected += added
     if projected > FORMAL_PROJECTED_CAP_SECONDS:
         raise RuntimeError(
             f"minimum three-point design projects to {projected / 3600:.2f} GPU-hours"
@@ -250,6 +377,12 @@ def build_manifest() -> dict[str, Any]:
     payload = {
         "status": "FROZEN_BEFORE_FORMAL_TRAINING",
         "created_utc": datetime.now(timezone.utc).isoformat(),
+        "preregistration_commit": PREREGISTRATION_COMMIT,
+        "implementation_revision": subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=SOURCE_ROOT, text=True
+        ).strip(),
+        "calibration_module_sha256": file_sha256(Path(__file__)),
+        "frozen_input_hashes": EXPECTED_INPUTS,
         "selection_used_accuracy": False,
         "target_seconds": list(TARGET_SECONDS),
         "projected_formal_gpu_seconds": projected,
