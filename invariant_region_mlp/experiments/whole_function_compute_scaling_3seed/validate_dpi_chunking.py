@@ -51,9 +51,9 @@ def main() -> None:
 
     # For an actual multi-chunk call, replace only the Brownian draw routine by
     # a deterministic indexed tape.  The upstream one-shot sum and chunked sum
-    # then consume exactly the same 2,500 contributions, so their outputs must
+    # then consume exactly the same 10,000 contributions, so their outputs must
     # agree up to reduction-order roundoff.
-    generator.n_estimate_integral = 2500
+    generator.n_estimate_integral = 10000
     calls: list[int] = []
 
     def deterministic_tape(self, points, count, return_dW=False):
@@ -92,6 +92,8 @@ def main() -> None:
     large_max_abs = float((reference_large - chunked_large).abs().max())
     if sum(chunked_calls) != generator.n_estimate_integral:
         raise AssertionError(f"sample-count drift: {chunked_calls}")
+    if len(chunked_calls) <= 1:
+        raise AssertionError(f"multi-chunk path was not exercised: {chunked_calls}")
     if large_max_abs > 2e-11:
         raise AssertionError(f"multi-chunk mismatch: {large_max_abs}")
 
