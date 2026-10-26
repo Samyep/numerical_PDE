@@ -330,9 +330,30 @@ def _fidelity(
                    "pass": len(trajectories) == 18,
                    "protocol_sha256": protocol["protocol_sha256"]})
     submitted = RESULTS_DIR / "submitted_jobs.json"
-    submitted_text = submitted.read_text(encoding="utf-8").lower() if submitted.is_file() else ""
+    submitted_payload: dict[str, Any] = {}
+    if submitted.is_file():
+        submitted_payload = json.loads(submitted.read_text(encoding="utf-8"))
+    submitted_jobs = submitted_payload.get("jobs", {})
+    manifest_says_no_sdgd = submitted_payload.get("no_sdgd_jobs") is True
+    submitted_job_mentions_sdgd = any(
+        "sdgd" in str(key).lower() or "sdgd" in str(value).lower()
+        for key, value in submitted_jobs.items()
+    )
+    accounted_job_mentions_sdgd = any(
+        "sdgd" in str(row.get("job_name", "")).lower()
+        for row in accounting
+    )
     checks.append({"id": 10, "name": "no new SDGD-PINN job submitted",
-                   "pass": "sdgd" not in submitted_text})
+                   "pass": (
+                       manifest_says_no_sdgd
+                       and not submitted_job_mentions_sdgd
+                       and not accounted_job_mentions_sdgd
+                   ),
+                   "details": {
+                       "manifest_no_sdgd_jobs": manifest_says_no_sdgd,
+                       "submitted_job_mentions_sdgd": submitted_job_mentions_sdgd,
+                       "accounted_job_mentions_sdgd": accounted_job_mentions_sdgd,
+                   }})
     return {
         "revision": REVISION,
         "completed_utc": datetime.now(timezone.utc).isoformat(),
