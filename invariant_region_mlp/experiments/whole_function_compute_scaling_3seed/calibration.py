@@ -117,8 +117,19 @@ def _supplemental_spec(
 
 
 def build_manifest() -> dict[str, Any]:
+    completed = _completed_specs()
+    completed_ids = {spec.run_id for spec, _record in completed}
+    missing_initial = [
+        spec.run_id for spec in calibration_specs()
+        if spec.run_id not in completed_ids
+    ]
+    if missing_initial:
+        raise RuntimeError(
+            f"missing {len(missing_initial)} preregistered calibration anchors: "
+            f"{missing_initial}"
+        )
     grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
-    for spec, record in _completed_specs():
+    for spec, record in completed:
         grouped[(spec.pde, spec.method, spec.sweep)].append({
             "spec": spec,
             "training_seconds": float(record["training_seconds"]),
