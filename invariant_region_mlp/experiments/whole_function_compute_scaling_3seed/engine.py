@@ -77,11 +77,14 @@ def _chunked_dpi_integral_with_gradients(self, tx: torch.Tensor) -> torch.Tensor
 
     assert isinstance(self.equation, (SimpleDiffusionEquation, OUProcessEquation))
     n_total = int(self.n_estimate_integral)
+    chunk_size = (
+        n_total if n_total <= 8192 else DPI_INTEGRAL_CHUNK_SIZE
+    )
     n_batch = tx.size(0)
     accumulated: torch.Tensor | None = None
     completed = 0
     while completed < n_total:
-        n_estimate = min(DPI_INTEGRAL_CHUNK_SIZE, n_total - completed)
+        n_estimate = min(chunk_size, n_total - completed)
         t, s, xs, _sxs, dw = self.generate_sx_for_integral(
             tx, n_estimate, return_dW=True
         )
