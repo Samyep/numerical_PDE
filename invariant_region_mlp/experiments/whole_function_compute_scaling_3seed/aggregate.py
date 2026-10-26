@@ -30,7 +30,9 @@ from .protocol import (
     FIGURE_DIR,
     REPORT_PATH,
     RESULTS_DIR,
+    RUN_MANIFEST,
     RUNS_DIR,
+    STATUS_DIR,
     TA_INFERENCE_REPLICATES,
     TRAINING_SEEDS,
     formal_specs,
@@ -188,6 +190,11 @@ def _audit(seed_rows: list[dict[str, Any]], summary: list[dict[str, Any]]) -> di
             trajectory_failures.append({"run_id": spec.run_id, "failure": record.get("status")})
         if record.get("ground_truth_used_for_training_selection_or_stopping") is not False:
             trajectory_failures.append({"run_id": spec.run_id, "failure": "truth-policy flag"})
+        randomness = record.get("randomness", {})
+        if int(randomness.get("training_seed", -1)) != int(spec.seed):
+            trajectory_failures.append({"run_id": spec.run_id, "failure": "training-seed metadata"})
+        if len(str(randomness.get("initialization_key_sha256", ""))) != 64:
+            trajectory_failures.append({"run_id": spec.run_id, "failure": "initialization fingerprint"})
         if spec.method in {"dpi", "pinn_hte"}:
             expanded = record["configuration"]["expanded_config"]
             if "FREQ: null" not in expanded:
@@ -207,12 +214,65 @@ def _audit(seed_rows: list[dict[str, Any]], summary: list[dict[str, Any]]) -> di
                     artifact_failures.append({"run_id": row["run_id"], "failure": "test-input hash"})
                 if array_sha256(np.asarray(payload["truth"])) != EXPECTED_INPUTS[row["pde"]]["truth_value_sha256"]:
                     artifact_failures.append({"run_id": row["run_id"], "failure": "truth hash"})
+    observed_runs = {row["run_id"] for row in seed_rows}
+    if observed_runs != expected_runs:
+        artifact_failures.append({
+            "failure": "formal run-set mismatch",
+            "missing": sorted(expected_runs - observed_runs),
+            "unexpected": sorted(observed_runs - expected_runs),
+        })
+    expected_points = {
+        (spec.pde, spec.method, spec.sweep, int(value))
+        for spec in specs
+        for value in (
+            spec.checkpoint_values if spec.sweep == "C0"
+            else (spec.parameter_value,)
+        )
+    }
+    observed_points = {
+        (row["pde"], row["method"], row["sweep"], int(row["parameter_value"]))
+        for row in summary
+    }
+    if observed_points != expected_points:
+        artifact_failures.append({
+            "failure": "summary point-set mismatch",
+            "missing": sorted(expected_points - observed_points),
+            "unexpected": sorted(observed_points - expected_points),
+        })
+
+    provenance_failures = []
+    gate_path = STATUS_DIR / "formal_training_complete.json"
+    if not RUN_MANIFEST.is_file():
+        provenance_failures.append({"failure": "missing run_manifest.json"})
+    if not gate_path.is_file():
+        provenance_failures.append({"failure": "missing global truth-gate record"})
+    if RUN_MANIFEST.is_file() and gate_path.is_file():
+        gate = json.loads(gate_path.read_text(encoding="utf-8"))
+        if gate.get("run_manifest_sha256") != file_sha256(RUN_MANIFEST):
+            provenance_failures.append({"failure": "run-manifest gate hash mismatch"})
+    resource_path = RESULTS_DIR / "resource_accounting.json"
+    resource = (
+        json.loads(resource_path.read_text(encoding="utf-8"))
+        if resource_path.is_file() else None
+    )
+    if resource is None:
+        provenance_failures.append({"failure": "missing resource accounting"})
+    elif resource.get("within_90_h100_gpu_hour_cap") is not True:
+        provenance_failures.append({"failure": "90 H100 GPU-hour cap exceeded"})
+
     payload = {
-        "overall_pass": not trajectory_failures and not artifact_failures,
+        "overall_pass": (
+            not trajectory_failures
+            and not artifact_failures
+            and not provenance_failures
+        ),
         "expected_formal_runs": len(expected_runs),
-        "observed_formal_runs": len({row["run_id"] for row in seed_rows}),
+        "observed_formal_runs": len(observed_runs),
+        "expected_summary_points": len(expected_points),
+        "observed_summary_points": len(observed_points),
         "trajectory_failures": trajectory_failures,
         "artifact_failures": artifact_failures,
+        "provenance_failures": provenance_failures,
         "summary_points": len(summary),
         "aggregation_is_mean_of_per_seed_rmse_not_prediction_ensemble": True,
         "running_minimum_or_test_selected_envelope_used": False,
@@ -224,10 +284,29 @@ def _audit(seed_rows: list[dict[str, Any]], summary: list[dict[str, Any]]) -> di
 
 def _report(summary: list[dict[str, Any]], audit: dict[str, Any]) -> None:
     calibration = json.loads(CALIBRATION_MANIFEST.read_text(encoding="utf-8"))
+    resource_path = RESULTS_DIR / "resource_accounting.json"
+    resource = (
+        json.loads(resource_path.read_text(encoding="utf-8"))
+        if resource_path.is_file() else None
+    )
+    run_manifest = (
+        json.loads(RUN_MANIFEST.read_text(encoding="utf-8"))
+        if RUN_MANIFEST.is_file() else {}
+    )
     lines = [
         "# Three-seed hyperparameter-specific accuracy--compute scaling",
         "",
-        f"Artifact audit: **{'PASS' if audit['overall_pass'] else 'FAIL'}**. ",
+        "## Completeness and audit",
+        "",
+        "| Check | Result |",
+        "|---|---:|",
+        f"| Artifact audit | **{'PASS' if audit['overall_pass'] else 'FAIL'}** |",
+        f"| Formal runs | {audit['observed_formal_runs']} / {audit['expected_formal_runs']} |",
+        f"| Aggregated curve points | {audit['observed_summary_points']} / {audit['expected_summary_points']} |",
+        "| Training seeds per point | 3 (0, 1, 2) |",
+        f"| Frozen calibration grid | {calibration.get('status', 'MISSING')} |",
+        f"| Resource cap | {('PASS' if resource and resource.get('within_90_h100_gpu_hour_cap') else 'FAIL / NOT COLLECTED')} |",
+        "",
         "Each point is the mean of three separately computed per-seed RMSE values; error bars are their sample standard deviation. Predictions are not ensembled.",
         "",
         "## Main results",
@@ -243,12 +322,49 @@ def _report(summary: list[dict[str, Any]], audit: dict[str, Any]) -> None:
     lines += [
         "", "## Interpretation boundary", "",
         "These are one-parameter scaling curves, not globally optimized Pareto frontiers. C0 points are checkpoints from one trajectory per seed; C1/C2 points are independent fresh runs. No running minimum, smoothing, interpolation, or test-selected envelope is used.",
-        "", "## Timing calibration", "",
+        "", "## Timing calibration and frozen grids", "",
         f"Calibration used no accuracy and projected {float(calibration['projected_formal_gpu_hours']):.2f} formal H100 GPU-hours before formal training.",
+        "",
+        "| PDE | Method | Sweep | Frozen parameter values |",
+        "|---|---|---|---|",
+    ]
+    for row in calibration.get("selected_lines", []):
+        lines.append(
+            f"| {row['pde']} | {row['method']} | {row['sweep']} | "
+            f"{', '.join(str(v) for v in row['parameter_values'])} |"
+        )
+    lines += [
+        "", "## Resource accounting and failures", "",
+    ]
+    if resource:
+        lines += [
+            f"Total allocated H100 time (including calibration failures and retries): **{float(resource['allocated_gpu_hours']):.3f} GPU-hours**.",
+            "",
+            f"Scheduler rows not marked COMPLETED: {len(resource.get('failed_or_cancelled_rows', []))}.",
+        ]
+    else:
+        lines.append("Resource accounting was not collected; this is an audit failure.")
+    failures = (
+        audit.get("trajectory_failures", [])
+        + audit.get("artifact_failures", [])
+        + audit.get("provenance_failures", [])
+    )
+    lines += ["", "Audit failures/deviations:", ""]
+    if failures:
+        lines.extend(f"- `{json.dumps(item, sort_keys=True)}`" for item in failures)
+    else:
+        lines.append("- None.")
+    lines += [
         "", "## Dense Fourier DPI provenance", "",
         "The preceding study's historical C0 consistency check remains FAIL. Its RNG-only diagnostic explained 96.72% of the discrepancy but was not bitwise. This study disables the historical exact-solution callback (`EVAL.FREQ=null`) and averages new truth-gated runs over seeds 0, 1, and 2.",
         "", "## Provenance", "",
         f"Calibration manifest SHA-256: `{audit['calibration_manifest_sha256']}`.",
+        f"Run manifest SHA-256: `{file_sha256(RUN_MANIFEST) if RUN_MANIFEST.is_file() else 'MISSING'}`.",
+        f"Checked-out training revision: `{run_manifest.get('checked_out_revision', 'MISSING')}`.",
+        f"Frozen input hashes: `{json.dumps(calibration.get('frozen_input_hashes', {}), sort_keys=True)}`.",
+        f"Seed metrics SHA-256: `{file_sha256(RESULTS_DIR / 'seed_metrics.csv')}`.",
+        f"Scaling summary SHA-256: `{file_sha256(RESULTS_DIR / 'scaling_summary.csv')}`.",
+        f"Figure PDF SHA-256: `{file_sha256(FIGURE_DIR / 'two_pde_three_seed_scaling.pdf')}`.",
     ]
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")

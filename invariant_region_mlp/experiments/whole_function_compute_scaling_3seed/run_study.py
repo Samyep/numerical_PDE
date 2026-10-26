@@ -91,6 +91,7 @@ def _supplemental_specs():
 def training_complete() -> dict:
     specs = formal_specs()
     incomplete = []
+    completed = []
     for spec in specs:
         path = trajectory_path(spec)
         if not path.is_file():
@@ -99,12 +100,34 @@ def training_complete() -> dict:
         status = json.loads(path.read_text(encoding="utf-8")).get("status")
         if status not in {"TRAINED_NO_TRUTH", "COMPLETE"}:
             incomplete.append({"run_id": spec.run_id, "reason": status})
+        else:
+            completed.append({
+                "run_id": spec.run_id,
+                "spec": spec.payload(),
+                "trajectory": str(path),
+                "trajectory_sha256_before_truth_gate": file_sha256(path),
+            })
     if incomplete:
         raise RuntimeError(f"formal training incomplete: {incomplete}")
+    run_manifest = {
+        "status": "ALL_FORMAL_TRAINING_COMPLETE_BEFORE_TEST_TRUTH",
+        "created_utc": datetime.now(timezone.utc).isoformat(),
+        "checked_out_revision": subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=SOURCE_ROOT, text=True
+        ).strip(),
+        "calibration_manifest": str(CALIBRATION_MANIFEST),
+        "calibration_manifest_sha256": file_sha256(CALIBRATION_MANIFEST),
+        "formal_run_count": len(specs),
+        "formal_runs": completed,
+        "truth_used_for_training_grid_selection_or_stopping": False,
+    }
+    write_json_atomic(RUN_MANIFEST, run_manifest)
     payload = {
         "status": "ALL_FORMAL_TRAINING_COMPLETE_TEST_EVALUATION_ALLOWED",
         "opened_utc": datetime.now(timezone.utc).isoformat(),
         "formal_run_count": len(specs),
+        "run_manifest": str(RUN_MANIFEST),
+        "run_manifest_sha256": file_sha256(RUN_MANIFEST),
         "runs": [
             {"run_id": spec.run_id, "trajectory_sha256": file_sha256(trajectory_path(spec))}
             for spec in specs

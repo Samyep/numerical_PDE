@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import asdict
+import hashlib
 import json
 from pathlib import Path
 import time
@@ -133,12 +134,38 @@ def _patched(spec: RunSpec) -> Iterator[None]:
 
 
 def _annotate_record(spec: RunSpec, record: dict[str, Any]) -> dict[str, Any]:
+    initialization_payload = {
+        "revision": REVISION,
+        "pde": spec.pde,
+        "method": spec.method,
+        "sweep": spec.sweep,
+        "parameter_name": spec.parameter_name,
+        "parameter_value": int(spec.parameter_value),
+        "training_seed": int(spec.seed),
+        "settings": spec.settings,
+    }
+    initialization_key = hashlib.sha256(
+        json.dumps(
+            initialization_payload, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+    ).hexdigest()
     record.update({
         "study_revision": REVISION,
         "study_spec": spec.payload(),
         "run_id": spec.run_id,
         "truth_loaded": False,
         "terminal_checkpoint_only_for_sensitivity": spec.sweep != "C0",
+        "randomness": {
+            "training_seed": int(spec.seed),
+            "initialization_key_sha256": initialization_key,
+            "initialization_key_kind": (
+                "sha256_of_revision_method_pde_sweep_parameter_seed_and_settings"
+            ),
+            "seeded_python_numpy_torch": spec.method in {"dpi", "pinn_hte"},
+            "ta_component_seeds_derive_from_seeded_canonical_run_id": (
+                spec.method == "tangent_actor"
+            ),
+        },
     })
     write_json_atomic(trajectory_path(spec), record)
     return record
