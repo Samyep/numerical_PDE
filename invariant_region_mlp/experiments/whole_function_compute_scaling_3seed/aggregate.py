@@ -90,6 +90,7 @@ def seed_metrics() -> list[dict[str, Any]]:
             "relmae": float(np.mean([float(row["relmae"]) for row in rows])),
             "mae": float(np.mean([float(row["mae"]) for row in rows])),
             "bias": float(np.mean([float(row["bias"]) for row in rows])),
+            "nonfinite_count": int(sum(int(row.get("nonfinite_count", 0)) for row in rows)),
             "inference_seconds": float(np.sum([float(row["inference_seconds"]) for row in rows])),
             "inference_replicates": len(rows),
             "training_peak_gpu_bytes": rows[0].get("training_peak_gpu_bytes"),
@@ -155,6 +156,9 @@ def scaling_summary(seed_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "mean_inference_replicate_rmse_std": float(np.mean([
                 float(row["inference_replicate_rmse_std"]) for row in rows
             ])),
+            "total_nonfinite_count": int(sum(
+                int(row.get("nonfinite_count", 0)) for row in rows
+            )),
             "seed_rmses": json.dumps(rmses.tolist()),
             "seed_training_seconds": json.dumps(times.tolist()),
         })
@@ -292,11 +296,20 @@ def _audit(seed_rows: list[dict[str, Any]], summary: list[dict[str, Any]]) -> di
     elif resource.get("within_90_h100_gpu_hour_cap") is not True:
         provenance_failures.append({"failure": "90 H100 GPU-hour cap exceeded"})
 
+    numerical_failures = [
+        {
+            "pde": row["pde"], "method": row["method"],
+            "sweep": row["sweep"], "parameter_value": row["parameter_value"],
+            "total_nonfinite_count": row["total_nonfinite_count"],
+        }
+        for row in summary if int(row.get("total_nonfinite_count", 0)) > 0
+    ]
     payload = {
         "overall_pass": (
             not trajectory_failures
             and not artifact_failures
             and not provenance_failures
+            and not numerical_failures
         ),
         "expected_formal_runs": len(expected_runs),
         "observed_formal_runs": len(observed_runs),
@@ -305,6 +318,7 @@ def _audit(seed_rows: list[dict[str, Any]], summary: list[dict[str, Any]]) -> di
         "trajectory_failures": trajectory_failures,
         "artifact_failures": artifact_failures,
         "provenance_failures": provenance_failures,
+        "numerical_failures": numerical_failures,
         "summary_points": len(summary),
         "aggregation_is_mean_of_per_seed_rmse_not_prediction_ensemble": True,
         "running_minimum_or_test_selected_envelope_used": False,
@@ -381,6 +395,7 @@ def _report(summary: list[dict[str, Any]], audit: dict[str, Any]) -> None:
         audit.get("trajectory_failures", [])
         + audit.get("artifact_failures", [])
         + audit.get("provenance_failures", [])
+        + audit.get("numerical_failures", [])
     )
     lines += ["", "Audit failures/deviations:", ""]
     if failures:
