@@ -12,6 +12,10 @@ from .protocol import RESULTS_DIR
 
 
 def collect(start: str) -> int:
+    # Job names are experiment-specific, so widening an ISO timestamp to its
+    # calendar day safely includes preflight failures/retries that preceded the
+    # formal dependency chain without capturing unrelated work.
+    start = start.split("T", 1)[0]
     command = [
         "sacct", "-u", getpass.getuser(), "-S", start, "-X", "-n", "-P",
         "-o", "JobIDRaw,JobName,Partition,Account,QOS,AllocTRES,Elapsed,State,ExitCode",
