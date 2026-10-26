@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from types import MethodType
+from types import MethodType, SimpleNamespace
 
 import torch
 
@@ -32,6 +32,7 @@ def main() -> None:
     generator = OnlineDataGenerator(
         equation, solution, N=2, i=1, device="cpu",
         n_estimate_terminal=4, n_estimate_integral=16,
+        hessian_approximation=SimpleNamespace(method=None, kwargs={}),
     )
     tx = torch.tensor([[0.15, -0.2, 0.3], [0.55, 0.1, -0.4]])
     original = OnlineDataGenerator.estimate_integral_with_gradients
