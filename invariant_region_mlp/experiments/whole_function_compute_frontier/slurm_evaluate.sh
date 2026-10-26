@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=ice-gpu
+#SBATCH --partition=coe-gpu
 #SBATCH --account=isye
 #SBATCH --qos=coe-ice
 #SBATCH --gres=gpu:h100:1
