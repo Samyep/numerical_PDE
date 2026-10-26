@@ -211,6 +211,10 @@ def _supplemental_spec(
 
 
 def build_manifest() -> dict[str, Any]:
+    preflight_path = RESULTS_DIR / "preflight_manifest.json"
+    if not preflight_path.is_file():
+        raise RuntimeError("missing timing preflight manifest")
+    preflight = json.loads(preflight_path.read_text(encoding="utf-8"))
     completed = _completed_specs()
     completed_ids = {spec.run_id for spec, _record in completed}
     missing_initial = [
@@ -393,6 +397,8 @@ def build_manifest() -> dict[str, Any]:
         "implementation_revision": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=SOURCE_ROOT, text=True
         ).strip(),
+        "timing_preflight_revision": preflight.get("checked_out_revision"),
+        "timing_preflight_manifest_sha256": file_sha256(preflight_path),
         "calibration_module_sha256": file_sha256(Path(__file__)),
         "frozen_input_hashes": EXPECTED_INPUTS,
         "selection_used_accuracy": False,

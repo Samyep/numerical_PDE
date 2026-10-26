@@ -12,6 +12,7 @@ from dataclasses import asdict
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 import time
 from typing import Any, Iterator
 
@@ -35,12 +36,18 @@ from .protocol import (
     FORMAL_JOB_SAFETY_SECONDS,
     REVISION,
     RUNS_DIR,
+    SOURCE_ROOT,
     TA_EVALUATION_PATHS,
     TA_EVALUATION_STEPS,
     TA_INFERENCE_REPLICATES,
     RunSpec,
     ensure_directories,
 )
+
+
+CHECKED_OUT_REVISION = subprocess.check_output(
+    ["git", "rev-parse", "HEAD"], cwd=SOURCE_ROOT, text=True
+).strip()
 
 
 def run_dir(spec: RunSpec) -> Path:
@@ -151,6 +158,7 @@ def _annotate_record(spec: RunSpec, record: dict[str, Any]) -> dict[str, Any]:
     ).hexdigest()
     record.update({
         "study_revision": REVISION,
+        "checked_out_revision": CHECKED_OUT_REVISION,
         "study_spec": spec.payload(),
         "run_id": spec.run_id,
         "truth_loaded": False,
