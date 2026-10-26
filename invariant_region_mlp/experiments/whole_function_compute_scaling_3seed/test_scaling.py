@@ -7,6 +7,7 @@ from .calibration import (
     _nearest_distinct,
     _predicted_candidates,
     _predict_piecewise_log_linear,
+    _supplemental_spec,
 )
 from .protocol import (
     CALIBRATION_ANCHORS,
@@ -70,3 +71,10 @@ def test_slow_ladder_requests_one_measured_doubling() -> None:
     assert inserted == 131072
     assert candidates[-1] == inserted
     assert reason == "ladder_below_25_double"
+
+
+def test_c0_supplement_executes_the_target_work() -> None:
+    spec = _supplemental_spec("b6_fullrank", "dpi", "C0", 450)
+    assert spec.settings["picard_iterations"] == 450
+    assert spec.checkpoint_values == (450,)
+    assert spec.calibration_scale == 1.0

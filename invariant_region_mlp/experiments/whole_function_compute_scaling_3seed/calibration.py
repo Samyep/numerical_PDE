@@ -193,15 +193,22 @@ def _nearest_distinct(
 def _supplemental_spec(
     pde: str, method: str, sweep: str, value: int
 ) -> RunSpec:
-    shortened_work = int(CALIBRATION_ANCHORS[(method, sweep)][0][1])
-    scale = float(CALIBRATION_ANCHORS[(method, sweep)][0][2])
     settings = settings_for(method, sweep, value)
-    if method == "tangent_actor":
-        settings["actor_updates"] = shortened_work
-    elif method == "dpi":
-        settings["picard_iterations"] = shortened_work
+    if sweep == "C0":
+        # C0's varied parameter is the work amount itself.  A supplemental
+        # endpoint therefore has to execute that exact work amount; a short
+        # surrogate would merely repeat the original anchor.
+        shortened_work = int(value)
+        scale = 1.0
     else:
-        settings["training_epochs"] = shortened_work
+        shortened_work = int(CALIBRATION_ANCHORS[(method, sweep)][0][1])
+        scale = float(CALIBRATION_ANCHORS[(method, sweep)][0][2])
+        if method == "tangent_actor":
+            settings["actor_updates"] = shortened_work
+        elif method == "dpi":
+            settings["picard_iterations"] = shortened_work
+        else:
+            settings["training_epochs"] = shortened_work
     return RunSpec(
         phase="calibration", pde=pde, method=method, sweep=sweep,
         parameter_name=PARAMETER_NAMES[(method, sweep)],
