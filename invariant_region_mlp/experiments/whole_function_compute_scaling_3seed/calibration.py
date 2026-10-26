@@ -18,6 +18,7 @@ from invariant_region_mlp.experiments.whole_function_compute_frontier.common imp
 from .engine import trajectory_path
 from .protocol import (
     CALIBRATION_ANCHORS,
+    CALIBRATION_DIR,
     CALIBRATION_MANIFEST,
     CANDIDATE_LADDERS,
     EXPECTED_INPUTS,
@@ -408,6 +409,23 @@ def build_manifest() -> dict[str, Any]:
         "timing_preflight_manifest_sha256": file_sha256(preflight_path),
         "calibration_module_sha256": file_sha256(Path(__file__)),
         "frozen_input_hashes": EXPECTED_INPUTS,
+        "preserved_superseded_timing_artifacts": [
+            {"path": str(path), "sha256": file_sha256(path)}
+            for path in sorted(
+                (CALIBRATION_DIR / "archived_pre_final_chunk").glob(
+                    "*/raw/trajectories/*.json"
+                )
+            )
+        ],
+        "preserved_calibration_failure_artifacts": [
+            {"path": str(path), "sha256": file_sha256(path)}
+            for path in sorted([
+                *CALIBRATION_DIR.glob("runs/*/failure_attempts/*.json"),
+                *CALIBRATION_DIR.glob(
+                    "archived_pre_final_chunk/*/failure_attempts/*.json"
+                ),
+            ])
+        ],
         "selection_used_accuracy": False,
         "target_seconds": list(TARGET_SECONDS),
         "projected_formal_gpu_seconds": projected,
