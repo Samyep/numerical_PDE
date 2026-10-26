@@ -33,6 +33,7 @@ def main() -> None:
         equation, solution, N=2, i=1, device="cpu",
         n_estimate_terminal=4, n_estimate_integral=16,
         hessian_approximation=SimpleNamespace(method=None, kwargs={}),
+        estimate_terminal="", estimate_integral="",
     )
     tx = torch.tensor([[0.15, -0.2, 0.3], [0.55, 0.1, -0.4]])
     original = OnlineDataGenerator.estimate_integral_with_gradients
