@@ -402,6 +402,18 @@ def train_spec(spec: RunSpec, device: torch.device) -> dict[str, Any]:
     root.mkdir(parents=True, exist_ok=True)
     write_json_atomic(root / "spec.json", spec.payload())
     failure = root / "failure.json"
+
+    def archive_failure() -> None:
+        if not failure.is_file():
+            return
+        archive_dir = root / "failure_attempts"
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        attempt = os.environ.get("SLURM_JOB_ID") or str(time.time_ns())
+        destination = archive_dir / f"attempt_{attempt}.json"
+        if destination.exists():
+            destination = archive_dir / f"attempt_{attempt}_{time.time_ns()}.json"
+        failure.replace(destination)
+
     try:
         with _patched(spec):
             if device.type == "cuda":
@@ -419,17 +431,23 @@ def train_spec(spec: RunSpec, device: torch.device) -> dict[str, Any]:
                     "peak_gpu_bytes", int(torch.cuda.max_memory_allocated(device))
                 )
             result = _annotate_record(spec, result)
-        if failure.exists():
-            failure.unlink()
+        archive_failure()
         return result
     except Exception as error:
-        write_json_atomic(failure, {
+        payload = {
             "run_id": spec.run_id,
             "spec": spec.payload(),
             "error_type": type(error).__name__,
             "error": repr(error),
             "status": "FAILED",
-        })
+            "scheduler": _scheduler_metadata(),
+            "checked_out_revision": CHECKED_OUT_REVISION,
+        }
+        write_json_atomic(failure, payload)
+        archive_dir = root / "failure_attempts"
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        attempt = os.environ.get("SLURM_JOB_ID") or str(time.time_ns())
+        write_json_atomic(archive_dir / f"attempt_{attempt}.json", payload)
         raise
 
 
