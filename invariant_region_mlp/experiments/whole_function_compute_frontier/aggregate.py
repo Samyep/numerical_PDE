@@ -11,6 +11,8 @@ from typing import Any
 
 import numpy as np
 
+from invariant_region_mlp.experiments.main_highdim_expansion.benchmarks import array_sha256
+
 from .common import file_sha256, write_json_atomic
 from .prepare import historical_results_root
 from .protocol import (
@@ -482,14 +484,56 @@ def _fidelity(
     protocol_failures = []
     for row in trajectories:
         expected_grid = protocol["configuration_grid"][row["method"]][row["configuration_id"]]
-        if row.get("configuration", {}).get("frontier_changes") != expected_grid:
+        snapshot = row.get("configuration", {})
+        if row["method"] == "tangent_actor":
+            # TA records the effective mature configuration directly, whereas
+            # the imported baselines wrap their changed fields under
+            # ``frontier_changes``.  Compare the frozen numerical knobs in the
+            # representation actually emitted by each runner.
+            mismatch = any(
+                snapshot.get(key) != expected_grid[key]
+                for key in ("paths_per_label", "optimizer_steps")
+            )
+        else:
+            mismatch = snapshot.get("frontier_changes") != expected_grid
+        if mismatch:
             protocol_failures.append(row["trajectory_id"])
-    input_hash_failures = [
-        f"{row['trajectory_id']}:{row['checkpoint_id']}"
-        for row in metrics
-        if row.get("test_input_sha256") != protocol["expected_inputs"][row["pde"]]["test_input_sha256"]
-        or row.get("truth_value_sha256") != protocol["expected_inputs"][row["pde"]]["truth_value_sha256"]
-    ]
+    input_hash_failures = []
+    direct_hash_rows = 0
+    embedded_array_hash_rows = 0
+    for row in metrics:
+        expected = protocol["expected_inputs"][row["pde"]]
+        direct = (
+            row.get("test_input_sha256") == expected["test_input_sha256"]
+            and row.get("truth_value_sha256") == expected["truth_value_sha256"]
+        )
+        if direct:
+            direct_hash_rows += 1
+            continue
+        embedded_valid = (
+            row.get("test_bank_sha256") == expected["test_bank_file_sha256"]
+        )
+        for path_text in str(row.get("prediction_files", "")).split(";"):
+            path = Path(path_text)
+            if not path.is_file():
+                embedded_valid = False
+                break
+            with np.load(path, allow_pickle=False) as payload:
+                if not {"t", "x", "truth"}.issubset(payload.files):
+                    embedded_valid = False
+                    break
+                embedded_valid = embedded_valid and (
+                    array_sha256(np.asarray(payload["t"]), np.asarray(payload["x"]))
+                    == expected["test_input_sha256"]
+                    and array_sha256(np.asarray(payload["truth"]))
+                    == expected["truth_value_sha256"]
+                )
+        if embedded_valid:
+            embedded_array_hash_rows += 1
+        else:
+            input_hash_failures.append(
+                f"{row['trajectory_id']}:{row['checkpoint_id']}"
+            )
     checks.append({
         "id": 9, "name": "common frozen protocols and input hashes on both PDEs",
         "pass": (
@@ -502,6 +546,8 @@ def _fidelity(
             "unexpected_cells": sorted(observed_cells - expected_cells),
             "configuration_snapshot_failures": protocol_failures,
             "input_hash_failures": input_hash_failures,
+            "direct_input_hash_rows": direct_hash_rows,
+            "embedded_prediction_array_hash_rows": embedded_array_hash_rows,
         },
     })
     submitted = RESULTS_DIR / "submitted_jobs.json"
