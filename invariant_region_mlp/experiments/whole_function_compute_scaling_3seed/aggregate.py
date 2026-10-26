@@ -78,6 +78,10 @@ def seed_metrics() -> list[dict[str, Any]]:
             "parameter_name": rows[0]["parameter_name"],
             "parameter_value": value, "training_seed": seed,
             "training_seconds": float(rows[0]["training_seconds"]),
+            "selection_seconds": float(rows[0].get("selection_seconds", 0.0)),
+            "training_and_selection_seconds": float(
+                rows[0].get("training_and_selection_seconds", rows[0]["training_seconds"])
+            ),
             "rmse": float(rmse.mean()),
             "inference_replicate_rmse_std": (
                 float(rmse.std(ddof=1)) if len(rmse) > 1 else 0.0
@@ -121,12 +125,18 @@ def scaling_summary(seed_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         times = np.asarray([float(row["training_seconds"]) for row in rows])
         rmses = np.asarray([float(row["rmse"]) for row in rows])
         inference_times = np.asarray([float(row["inference_seconds"]) for row in rows])
+        selection_times = np.asarray([float(row["selection_seconds"]) for row in rows])
+        total_method_times = np.asarray([
+            float(row["training_and_selection_seconds"]) for row in rows
+        ])
         output.append({
             "pde": pde, "method": method, "sweep": sweep,
             "parameter_name": rows[0]["parameter_name"],
             "parameter_value": value, "training_seed_count": len(rows),
             "mean_training_seconds": float(times.mean()),
             "std_training_seconds": float(times.std(ddof=1)),
+            "mean_selection_seconds": float(selection_times.mean()),
+            "mean_training_and_selection_seconds": float(total_method_times.mean()),
             "mean_inference_seconds": float(inference_times.mean()),
             "std_inference_seconds": float(inference_times.std(ddof=1)),
             "mean_training_peak_gpu_bytes": float(np.mean([
@@ -344,6 +354,7 @@ def _report(summary: list[dict[str, Any]], audit: dict[str, Any]) -> None:
     lines += [
         "", "## Interpretation boundary", "",
         "These are one-parameter scaling curves, not globally optimized Pareto frontiers. C0 points are checkpoints from one trajectory per seed; C1/C2 points are independent fresh runs. No running minimum, smoothing, interpolation, or test-selected envelope is used.",
+        "The plotted x-axis is synchronized active training time, as frozen. Reference-free TA selector time, inference time, scheduler wall time, and allocated GPU time are retained separately rather than silently folded into that axis.",
         "", "## Timing calibration and frozen grids", "",
         f"Calibration used no accuracy and projected {float(calibration['projected_formal_gpu_hours']):.2f} formal H100 GPU-hours before formal training.",
         "",

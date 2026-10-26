@@ -432,8 +432,10 @@ def evaluate_spec(spec: RunSpec, device: torch.device) -> list[dict[str, Any]]:
             "parameter_name": spec.parameter_name,
             "parameter_value": point_value,
             "training_seed": int(spec.seed),
-            "training_seconds": float(row["training_seconds"]),
-            "main_axis_seconds": float(row["training_seconds"]),
+            "active_training_seconds": float(row["training_seconds"]),
+            "training_and_selection_seconds": float(
+                row.get("main_axis_seconds", row["training_seconds"])
+            ),
             "training_peak_gpu_bytes": record.get("peak_gpu_bytes"),
             "evaluation_peak_gpu_bytes": evaluation_peak_gpu_bytes,
             "training_scheduler": record.get("training_scheduler", {}),
