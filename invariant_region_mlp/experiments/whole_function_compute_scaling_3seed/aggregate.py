@@ -473,6 +473,14 @@ def _report(summary: list[dict[str, Any]], audit: dict[str, Any]) -> None:
             )
             + "."
         )
+        if state_counts.get("FAILED", 0) or state_counts.get("CANCELLED", 0):
+            lines.append(
+                "- The FAILED and CANCELLED scheduler rows are calibration/"
+                "preflight attempts (mostly zero- or few-second startup "
+                "failures on subsequently excluded nodes, plus curtailed "
+                "calibration arrays); they do not represent missing formal "
+                "runs."
+            )
         formal_timeouts = [
             row for row in noncompleted
             if row.get("state") == "TIMEOUT"
