@@ -317,6 +317,9 @@ def train(pde: str, configuration: str, device: torch.device) -> dict[str, Any]:
     while len(phases) < maximum_updates:
         completed = len(phases)
         training_seconds = float(sum(float(row["phase_seconds"]) for row in phases))
+        if configuration != "C0" and training_seconds >= 30 * 60:
+            stop_reason = "active_training_cap_at_actor_boundary"
+            break
         if completed >= requested_updates:
             metrics = [float(row["normalized_total_inconsistency"]) for row in selectors[1:]]
             if plateau_reached(training_seconds, metrics):

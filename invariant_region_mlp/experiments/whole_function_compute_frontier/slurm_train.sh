@@ -7,7 +7,7 @@
 #SBATCH --mem=96G
 #SBATCH --time=01:15:00
 set -euo pipefail
-source "$(dirname "$0")/slurm_env.sh"
+source "${WCF_SCRIPT_DIR:-${SLURM_SUBMIT_DIR}/invariant_region_mlp/experiments/whole_function_compute_frontier}/slurm_env.sh"
 
 stage="${1:?stage must be c0 or sensitivity}"
 if [[ "${stage}" == "c0" ]]; then

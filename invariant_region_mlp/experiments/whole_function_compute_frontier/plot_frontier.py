@@ -115,7 +115,8 @@ def _joint(rows: list[dict]) -> None:
     star = plt.Line2D([], [], marker="*", linestyle="None", color="gray",
                       markeredgecolor="black", markersize=9, label="Original-budget output")
     fig.legend(handles + [star], labels + ["Original-budget output"],
-               loc="outside lower center", ncol=4, frameon=False, fontsize=8)
+               loc="lower center", bbox_to_anchor=(0.5, -0.08),
+               ncol=4, frameon=False, fontsize=8)
     fig.savefig(FIGURE_DIR / "two_pde_accuracy_compute.pdf", bbox_inches="tight")
     fig.savefig(FIGURE_DIR / "two_pde_accuracy_compute.png", dpi=260, bbox_inches="tight")
     plt.close(fig)
@@ -126,7 +127,8 @@ def _configuration_ablation(rows: list[dict]) -> None:
     for ax, pde in zip(axes, PDES):
         _panel(ax, rows, pde, legend=False)
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="outside lower center", ncol=3, frameon=False, fontsize=8)
+    fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, -0.08),
+               ncol=3, frameon=False, fontsize=8)
     fig.savefig(FIGURE_DIR / "configuration_ablation.pdf", bbox_inches="tight")
     plt.close(fig)
 
@@ -136,7 +138,8 @@ def _total_cost(rows: list[dict]) -> None:
     for ax, pde in zip(axes, PDES):
         _panel(ax, rows, pde, total_cost=True)
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="outside lower center", ncol=3, frameon=False, fontsize=8)
+    fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, -0.08),
+               ncol=3, frameon=False, fontsize=8)
     fig.savefig(FIGURE_DIR / "accuracy_vs_total_cost.pdf", bbox_inches="tight")
     plt.close(fig)
 
