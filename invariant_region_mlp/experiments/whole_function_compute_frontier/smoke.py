@@ -20,8 +20,9 @@ def _ta_smoke(pde: str, device: torch.device) -> list[dict]:
     for configuration in CONFIGURATIONS:
         config = ta_configs(pde, configuration)
         benchmark, actor = _initial_and_benchmark(pde, config, device)
-        t = torch.zeros(2, dtype=torch.float64, device=device)
-        x = torch.zeros(2, 100, dtype=torch.float64, device=device)
+        dtype = next(actor.parameters()).dtype
+        t = torch.zeros(2, dtype=dtype, device=device)
+        x = torch.zeros(2, 100, dtype=dtype, device=device)
         with torch.no_grad():
             output = actor.predict(t, x)
         tensors = [item for item in output if item is not None]
