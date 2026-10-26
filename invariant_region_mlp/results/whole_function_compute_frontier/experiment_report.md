@@ -82,7 +82,8 @@ Each row is the last genuinely trained checkpoint of that trajectory; this table
 
 - Non-result smoke preflight: **PASS**.
 - Artifact/fidelity audit: **FAIL**.
-- Allocated GPU time: **7.669 H100 GPU-hours**.
+- Allocated GPU time including post-freeze diagnostics: **8.157 H100 GPU-hours**.
+- Post-freeze diagnostic allocation: **0.488 H100 GPU-hours** across 3 attempts.
 - Active measured training time: **5.786 GPU-hours**.
 - 18-GPU-hour cap respected: **True**.
 - Protocol SHA-256: `54a76a89c475f1c5ef11b1ba8279eb82ad78e2a53d0def320a2dcbabe73e1422`.
@@ -96,7 +97,21 @@ Each row is the last genuinely trained checkpoint of that trajectory; this table
 ### Dense Fourier DPI targeted consistency diagnosis
 
 The expanded C0 YAML was compared byte-for-byte at the semantic level. Apart from the output directory, the only numerical difference is `EVAL.FREQ: 8` historically versus `EVAL.FREQ: null` in this study. The historical upstream callback samples 10,000 nonterminal states with the global Torch RNG and evaluates the exact solution during training. It therefore both adds substantial diagnostic work to the historical elapsed time and advances the same RNG stream later used for stochastic Picard training. The new run disabled that callback to enforce the frozen truth gate. Thus the 80-round models are not expected to be bitwise or numerically identical, and the old 10.56-minute and new 5.07-minute figures use different work definitions.
-A callback-enabled post-freeze replay has not been completed; the original consistency check remains FAIL.
+The post-freeze replay reproduces only the historical callback's global-RNG draws, without evaluating nonterminal truth during training. It is diagnostic only and is excluded from every frontier curve.
+
+| Quantity | Value |
+|---|---:|
+| Historical 80-round RMSE | 0.0646384146 |
+| Truth-gated frontier 80-round RMSE | 0.115137165 |
+| RNG-only replay RMSE | 0.0662925394 |
+| Relative RMSE difference | 2.559% |
+| Reduction of the historical-RMSE discrepancy | 96.72% |
+| Historical training time | 10.561 min |
+| RNG-only replay time (diagnostic instrumentation; not comparable) | 16.582 min |
+| RNG replay callback calls | 1280 |
+| Prediction-array RMSE (replay vs historical) | 0.085279304 |
+
+The endpoint RMSE moves from a 78.12% discrepancy to 2.56%, reducing the discrepancy by 96.72%. This is strong evidence that callback-induced RNG advancement explains most of the failed consistency check. It is not a bitwise reproduction: the prediction arrays still differ, and there is only one training seed. Check 6 therefore remains FAIL rather than being waived.
 
 ## Limitations
 
