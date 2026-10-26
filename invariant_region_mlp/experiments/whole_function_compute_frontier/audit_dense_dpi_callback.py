@@ -1,9 +1,12 @@
-"""Post-freeze diagnostic replay of the historical Dense-Fourier DPI callback.
+"""Post-freeze RNG replay of the historical Dense-Fourier DPI callback.
 
-This is deliberately not a frontier trajectory.  It reenables the pinned
-upstream exact-solution reporting callback solely to test whether the callback
-explains the failed 80-round historical-consistency check.  Its prediction is
-never merged into ``checkpoint_metrics.csv`` or any paper frontier.
+This is deliberately not a frontier trajectory.  The historical reporting
+callback sampled 10,000 states from the global Torch RNG before evaluating the
+exact solution.  Here we replay only those random draws, at the same callback
+frequency, without evaluating exact truth.  This isolates whether the changed
+RNG trajectory explains the failed 80-round historical-consistency check.  Its
+prediction is never merged into ``checkpoint_metrics.csv`` or any paper
+frontier.
 """
 
 from __future__ import annotations
@@ -80,7 +83,7 @@ def run() -> dict:
     cfg, _source, _overrides, _profile = _configuration("dpi", "dense_fourier", "C0")
     cfg = cfg.clone()
     cfg.defrost()
-    audit_work = WORK_DIR / "diagnostic_dense_dpi_callback_freq8_s0"
+    audit_work = WORK_DIR / "diagnostic_dense_dpi_rng_replay_freq8_s0"
     if audit_work.exists():
         raise FileExistsError(
             f"refusing to overwrite an incomplete diagnostic work directory: {audit_work}"
@@ -92,11 +95,41 @@ def run() -> dict:
     cfg.freeze()
 
     capture = DIAGNOSTIC_DIR / "unused_pinn_capture.pt"
+    runner = _fresh_runner(cfg, capture)
+
+    # The upstream EvalCallback calls equation.sample_x(t) once on 10,000
+    # states, using the global Torch RNG, before deterministic network/truth
+    # calculations.  Replaying just that call preserves the historical random
+    # draw tape without opening nonterminal truth during training.
+    from picard.utils import EvalCallback
+
+    callback_counter = {"calls": 0}
+
+    def rng_only_init(self, eval_cfg, equation, writer, iter=0, output_dim=1):
+        self.n_points = int(eval_cfg.L2_N_POINTS)
+        self.batch_size = eval_cfg.BATCH_SIZE
+        self.equation = equation
+        self.writer = writer
+        self.iter = iter
+        self.output_dim = output_dim
+
+    def rng_only_validation_start(self, trainer, pl_module):
+        del trainer
+        self.equation = self.equation.to(device=pl_module.device)
+        t = torch.linspace(
+            0.0, self.equation.T, self.n_points, device=pl_module.device
+        ).reshape(self.n_points, 1)
+        with torch.no_grad():
+            self.equation.sample_x(t)
+        callback_counter["calls"] += 1
+
+    EvalCallback.__init__ = rng_only_init
+    EvalCallback.on_validation_epoch_start = rng_only_validation_start
+
     synchronize(device)
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
     started = time.perf_counter()
-    runner = _fresh_runner(cfg, capture)
     old_cwd = Path.cwd()
     os.chdir(WORK_DIR)
     try:
@@ -144,9 +177,13 @@ def run() -> dict:
         "historical_eval_frequency": 8,
         "frontier_eval_frequency": None,
         "diagnostic_eval_frequency": 8,
-        "exact_nonterminal_truth_callback_enabled": True,
+        "exact_nonterminal_truth_callback_enabled": False,
+        "rng_only_callback_replay_enabled": True,
+        "rng_only_callback_calls": callback_counter["calls"],
+        "expected_rng_only_callback_calls": 80 * 16,
         "ground_truth_used_for_model_selection_or_stopping": False,
-        "ground_truth_callback_advances_global_torch_rng": True,
+        "nonterminal_ground_truth_used_during_training": False,
+        "historical_ground_truth_callback_advances_global_torch_rng": True,
         "historical_rmse": historical_rmse,
         "replay_rmse": replay_rmse,
         "relative_rmse_difference": abs(replay_rmse - historical_rmse) / abs(historical_rmse),

@@ -256,17 +256,19 @@ def render() -> None:
     ]
     if callback_diagnostic is None:
         lines.append(
-            "A callback-enabled post-freeze replay has not been completed; the original consistency check remains FAIL."
+            "A post-freeze RNG-only callback replay has not been completed; the original consistency check remains FAIL."
         )
     else:
         lines += [
-            "The post-freeze callback-enabled replay is diagnostic only and is excluded from every frontier curve.", "",
+            "The post-freeze replay reproduces only the historical callback's global-RNG draws, without evaluating "
+            "nonterminal truth during training. It is diagnostic only and is excluded from every frontier curve.", "",
             "| Quantity | Value |", "|---|---:|",
             f"| Historical 80-round RMSE | {float(callback_diagnostic['historical_rmse']):.9g} |",
-            f"| Callback-enabled replay RMSE | {float(callback_diagnostic['replay_rmse']):.9g} |",
+            f"| RNG-only replay RMSE | {float(callback_diagnostic['replay_rmse']):.9g} |",
             f"| Relative RMSE difference | {100 * float(callback_diagnostic['relative_rmse_difference']):.3f}% |",
             f"| Historical training time | {float(callback_diagnostic['historical_training_seconds']) / 60:.3f} min |",
-            f"| Replay training time | {float(callback_diagnostic['replay_training_seconds']) / 60:.3f} min |",
+            f"| RNG-only replay training time | {float(callback_diagnostic['replay_training_seconds']) / 60:.3f} min |",
+            f"| RNG replay callback calls | {int(callback_diagnostic['rng_only_callback_calls'])} |",
             f"| Prediction-array RMSE (replay vs historical) | {float(callback_diagnostic['prediction_rmse_vs_historical']):.9g} |",
         ]
     lines += [
