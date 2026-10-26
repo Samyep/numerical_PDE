@@ -1,0 +1,141 @@
+{
+  "classification": "NONRESULT_PREFLIGHT",
+  "completed_utc": "2026-10-26T05:51:57.174790+00:00",
+  "cuda_device": "NVIDIA H100 80GB HBM3",
+  "revision": "whole_function_compute_frontier_v1",
+  "rows": [
+    {
+      "configuration_id": "C0",
+      "finite": true,
+      "method": "tangent_actor",
+      "nonresult": true,
+      "output_shapes": [
+        [
+          2,
+          100
+        ]
+      ],
+      "pde": "b6_fullrank"
+    },
+    {
+      "configuration_id": "C1",
+      "finite": true,
+      "method": "tangent_actor",
+      "nonresult": true,
+      "output_shapes": [
+        [
+          2,
+          100
+        ]
+      ],
+      "pde": "b6_fullrank"
+    },
+    {
+      "configuration_id": "C2",
+      "finite": true,
+      "method": "tangent_actor",
+      "nonresult": true,
+      "output_shapes": [
+        [
+          2,
+          100
+        ]
+      ],
+      "pde": "b6_fullrank"
+    },
+    {
+      "checkpoint_sha256": "18fda3b98405281952648f0ba1b9bab7d179117d90aa37a770e101f6df7a42dc",
+      "configuration_id": "C2",
+      "integral_mc_samples": 8192,
+      "method": "dpi",
+      "nonresult": true,
+      "pde": "b6_fullrank",
+      "seconds": 20.77912056306377,
+      "source_config_sha256": "9264b4367fa2323edfa3202c2ae4bad5ba29efa79d48b88d8727709bffbfa9c7",
+      "status": "PASS"
+    },
+    {
+      "batch_size": 1024,
+      "configuration_id": "C2",
+      "hutchinson_vectors": 16,
+      "loss": 57.042160073348555,
+      "method": "pinn_hte",
+      "nonresult": true,
+      "pde": "b6_fullrank",
+      "source_config_sha256": "db9e18c5dd8e8fb3fe47918cd838f33b6756f4bb772ddf4e35440a0caa722b1a",
+      "status": "PASS"
+    },
+    {
+      "configuration_id": "C0",
+      "finite": true,
+      "method": "tangent_actor",
+      "nonresult": true,
+      "output_shapes": [
+        [
+          2
+        ],
+        [
+          2,
+          100
+        ]
+      ],
+      "pde": "dense_fourier"
+    },
+    {
+      "configuration_id": "C1",
+      "finite": true,
+      "method": "tangent_actor",
+      "nonresult": true,
+      "output_shapes": [
+        [
+          2
+        ],
+        [
+          2,
+          100
+        ]
+      ],
+      "pde": "dense_fourier"
+    },
+    {
+      "configuration_id": "C2",
+      "finite": true,
+      "method": "tangent_actor",
+      "nonresult": true,
+      "output_shapes": [
+        [
+          2
+        ],
+        [
+          2,
+          100
+        ]
+      ],
+      "pde": "dense_fourier"
+    },
+    {
+      "checkpoint_sha256": "4de92e7a87027496891bd05dfb90086d9be1e9efeabdd127a2a485df034090e8",
+      "configuration_id": "C2",
+      "integral_mc_samples": 8192,
+      "method": "dpi",
+      "nonresult": true,
+      "pde": "dense_fourier",
+      "seconds": 1.6106165030505508,
+      "source_config_sha256": "9264b4367fa2323edfa3202c2ae4bad5ba29efa79d48b88d8727709bffbfa9c7",
+      "status": "PASS"
+    },
+    {
+      "batch_size": 1024,
+      "configuration_id": "C2",
+      "hutchinson_vectors": 16,
+      "loss": 15.92710351575063,
+      "method": "pinn_hte",
+      "nonresult": true,
+      "pde": "dense_fourier",
+      "source_config_sha256": "db9e18c5dd8e8fb3fe47918cd838f33b6756f4bb772ddf4e35440a0caa722b1a",
+      "status": "PASS"
+    }
+  ],
+  "status": "PASS",
+  "test_truth_loaded": false
+}

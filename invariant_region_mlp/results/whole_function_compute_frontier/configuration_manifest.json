@@ -1,0 +1,91 @@
+{
+  "base_revision": "d43b45bdcf068f8fb1e09cf2d9a7e1d5bfd5c038",
+  "checked_out_revision": "6cfe13cf857d7d2b65365f22fd74ccb1d731c82d",
+  "configuration_grid": {
+    "dpi": {
+      "C0": {
+        "epochs_per_picard": 16,
+        "integral_mc_samples": 4096,
+        "original_picard_iterations": 80,
+        "picard_iterations_max": 320
+      },
+      "C1": {
+        "epochs_per_picard": 32,
+        "integral_mc_samples": 4096,
+        "original_picard_iterations": 80,
+        "picard_iterations_max": 80
+      },
+      "C2": {
+        "epochs_per_picard": 16,
+        "integral_mc_samples": 8192,
+        "original_picard_iterations": 80,
+        "picard_iterations_max": 80
+      }
+    },
+    "pinn_hte": {
+      "C0": {
+        "batch_size": 512,
+        "hutchinson_vectors": 16,
+        "original_epochs": 30000
+      },
+      "C1": {
+        "batch_size": 512,
+        "hutchinson_vectors": 32,
+        "original_epochs": 30000
+      },
+      "C2": {
+        "batch_size": 1024,
+        "hutchinson_vectors": 16,
+        "original_epochs": 30000
+      }
+    },
+    "tangent_actor": {
+      "C0": {
+        "actor_updates": 4,
+        "continuation_actor_updates_max": 8,
+        "optimizer_steps": 5000,
+        "paths_per_label": 128
+      },
+      "C1": {
+        "actor_updates": 4,
+        "continuation_actor_updates_max": 4,
+        "optimizer_steps": 5000,
+        "paths_per_label": 256
+      },
+      "C2": {
+        "actor_updates": 4,
+        "continuation_actor_updates_max": 4,
+        "optimizer_steps": 10000,
+        "paths_per_label": 128
+      }
+    }
+  },
+  "frozen_inputs": [
+    {
+      "dimension": 100,
+      "parameter_file": "/storage/ice1/4/8/ywang4280/numerical_PDE/invariant_region_mlp/results/main_highdim_expansion/inputs/b6_fullrank_d100_parameters.npz",
+      "parameter_file_sha256": "21b508c30ad63de912979cc9c85ecda0d81aedab1357c88a40e04692495972a4",
+      "pde": "b6_fullrank",
+      "test_bank": "/storage/ice1/4/8/ywang4280/numerical_PDE/invariant_region_mlp/results/main_highdim_expansion/inputs/b6_fullrank_d100_test_bank.npz",
+      "test_bank_file_sha256": "6ee6c56ca3d4f413764f28865cb8c00823ea2881ebc90f2643ff4a36fe878730",
+      "test_input_sha256": "0ee05fff7ce16f30d0d31563f60df7db3eb23a9c46bbe7bc9be8eb3dbee1311b",
+      "truth_value_sha256": "6262db7f6b7ee2c41cb6011dadb7288226157533488f708be7d6ea6773f2e13a"
+    },
+    {
+      "dimension": 100,
+      "parameter_file": "/storage/ice1/4/8/ywang4280/numerical_PDE/invariant_region_mlp/results/main_highdim_expansion/inputs/dense_fourier_d100_parameters.npz",
+      "parameter_file_sha256": "042588d7c3cc8175cc7b9344284725443650837f72008806c668d35b9a005307",
+      "pde": "dense_fourier",
+      "test_bank": "/storage/ice1/4/8/ywang4280/numerical_PDE/invariant_region_mlp/results/main_highdim_expansion/inputs/dense_fourier_d100_test_bank.npz",
+      "test_bank_file_sha256": "998fde8b2c0556de4b8fa9a55dec5e489224828cf74e5f3b36f77cb1a8e2c011",
+      "test_input_sha256": "d409296128f48c5ae00c5de2c6ddd998768c01dff18a89c385245a50ff581b70",
+      "truth_value_sha256": "3b33ea36e21595b5c20e5d91097d1fadfcbf3f7884c0328f20579e69995fc816"
+    }
+  ],
+  "historical_results_root": "/storage/ice1/4/8/ywang4280/numerical_PDE/invariant_region_mlp/results/main_highdim_expansion",
+  "no_sdgd_jobs": true,
+  "protocol_sha256": "54a76a89c475f1c5ef11b1ba8279eb82ad78e2a53d0def320a2dcbabe73e1422",
+  "status": "FROZEN_BEFORE_FORMAL_TRAINING",
+  "test_truth_permitted_only_after_all_18_trajectories_stop": true,
+  "upstream_dpi_revision": "e8616c2f531c9f95299b246a13c1180b8f02822a"
+}

@@ -1,0 +1,162 @@
+{
+  "active_training_cap_seconds": 1800,
+  "base_revision": "d43b45bdcf068f8fb1e09cf2d9a7e1d5bfd5c038",
+  "branch": "ir-mlp-whole-function-compute-frontier",
+  "configuration_grid": {
+    "dpi": {
+      "C0": {
+        "epochs_per_picard": 16,
+        "integral_mc_samples": 4096,
+        "original_picard_iterations": 80,
+        "picard_iterations_max": 320
+      },
+      "C1": {
+        "epochs_per_picard": 32,
+        "integral_mc_samples": 4096,
+        "original_picard_iterations": 80,
+        "picard_iterations_max": 80
+      },
+      "C2": {
+        "epochs_per_picard": 16,
+        "integral_mc_samples": 8192,
+        "original_picard_iterations": 80,
+        "picard_iterations_max": 80
+      }
+    },
+    "pinn_hte": {
+      "C0": {
+        "batch_size": 512,
+        "hutchinson_vectors": 16,
+        "original_epochs": 30000
+      },
+      "C1": {
+        "batch_size": 512,
+        "hutchinson_vectors": 32,
+        "original_epochs": 30000
+      },
+      "C2": {
+        "batch_size": 1024,
+        "hutchinson_vectors": 16,
+        "original_epochs": 30000
+      }
+    },
+    "tangent_actor": {
+      "C0": {
+        "actor_updates": 4,
+        "continuation_actor_updates_max": 8,
+        "optimizer_steps": 5000,
+        "paths_per_label": 128
+      },
+      "C1": {
+        "actor_updates": 4,
+        "continuation_actor_updates_max": 4,
+        "optimizer_steps": 5000,
+        "paths_per_label": 256
+      },
+      "C2": {
+        "actor_updates": 4,
+        "continuation_actor_updates_max": 4,
+        "optimizer_steps": 10000,
+        "paths_per_label": 128
+      }
+    }
+  },
+  "configurations": [
+    "C0",
+    "C1",
+    "C2"
+  ],
+  "dimension": 100,
+  "expected_inputs": {
+    "b6_fullrank": {
+      "parameter_file_sha256": "21b508c30ad63de912979cc9c85ecda0d81aedab1357c88a40e04692495972a4",
+      "test_bank_file_sha256": "6ee6c56ca3d4f413764f28865cb8c00823ea2881ebc90f2643ff4a36fe878730",
+      "test_input_sha256": "0ee05fff7ce16f30d0d31563f60df7db3eb23a9c46bbe7bc9be8eb3dbee1311b",
+      "truth_value_sha256": "6262db7f6b7ee2c41cb6011dadb7288226157533488f708be7d6ea6773f2e13a"
+    },
+    "dense_fourier": {
+      "parameter_file_sha256": "042588d7c3cc8175cc7b9344284725443650837f72008806c668d35b9a005307",
+      "test_bank_file_sha256": "998fde8b2c0556de4b8fa9a55dec5e489224828cf74e5f3b36f77cb1a8e2c011",
+      "test_input_sha256": "d409296128f48c5ae00c5de2c6ddd998768c01dff18a89c385245a50ff581b70",
+      "truth_value_sha256": "3b33ea36e21595b5c20e5d91097d1fadfcbf3f7884c0328f20579e69995fc816"
+    }
+  },
+  "global_gpu_seconds_cap": 64800,
+  "historical_C0_consistency": {
+    "absolute_rmse_tolerance": 0.05,
+    "relative_rmse_tolerance": 0.5,
+    "role": "fidelity audit only; never used for selection or stopping",
+    "rule": "abs(new_rmse-old_rmse) <= max(0.05, 0.50*old_rmse)"
+  },
+  "historical_reuse": {
+    "dpi_C0": "rerun because the historical artifact lacks complete continuation/timing state",
+    "pinn_hte_C0": "rerun because the historical artifact lacks optimizer/RNG continuation state",
+    "tangent_actor_C0": "reuse audited actor checkpoints and phase timings; continuation is actor-boundary exact"
+  },
+  "methods": [
+    "tangent_actor",
+    "dpi",
+    "pinn_hte"
+  ],
+  "pdes": [
+    "b6_fullrank",
+    "dense_fourier"
+  ],
+  "pinn_validation": {
+    "check_interval_epochs": 100,
+    "hutchinson_vectors": 16,
+    "metric": "sqrt(mean(PDE_residual^2) + 10*mean(terminal_error^2))",
+    "seed": 20270117,
+    "states": 256,
+    "uses_nonterminal_truth": false
+  },
+  "plateau_rule": {
+    "dpi": "not applied; no source-compatible independent validation metric",
+    "maximum_relative_improvement": 0.01,
+    "minimum_training_seconds": 900,
+    "pinn_hte_metric": "independent fixed-bank PDE residual plus terminal objective",
+    "tangent_actor_metric": "independent noise-corrected fixed-point inconsistency",
+    "window": 3
+  },
+  "primary_minutes": [
+    5,
+    20
+  ],
+  "protocol_sha256": "54a76a89c475f1c5ef11b1ba8279eb82ad78e2a53d0def320a2dcbabe73e1422",
+  "revision": "whole_function_compute_frontier_v1",
+  "sdgd_policy": "no SDGD-PINN job may be submitted",
+  "ta_evaluation": {
+    "euler_steps": 64,
+    "independent_replicates": 2,
+    "paths": 1024
+  },
+  "target_minutes": [
+    2,
+    5,
+    8,
+    10,
+    15,
+    20,
+    25,
+    30
+  ],
+  "test_states": 960,
+  "timing": {
+    "main_axis": "cumulative synchronized active training plus causal selection",
+    "separate_fields": [
+      "training_seconds",
+      "selection_seconds",
+      "inference_seconds",
+      "allocated_gpu_seconds",
+      "job_wall_seconds"
+    ],
+    "training_includes": {
+      "dpi": "Picard data generation and network fitting",
+      "pinn_hte": "HTE residual, terminal loss, and optimizer update",
+      "tangent_actor": "label generation and actor fitting"
+    }
+  },
+  "training_seed": 0,
+  "truth_policy": "frozen nonterminal truth is opened only after all 18 trajectories have stopped; it is forbidden from training, configuration choice, selection, stopping, and extension",
+  "upstream_dpi_revision": "e8616c2f531c9f95299b246a13c1180b8f02822a"
+}
