@@ -481,8 +481,17 @@ def evaluate_spec(spec: RunSpec, device: torch.device) -> list[dict[str, Any]]:
         raise RuntimeError(f"training is incomplete for {spec.run_id}")
     full_checkpoints = list(record["checkpoints"])
     selected = _selected_checkpoints(spec, record)
+    # The imported evaluator intentionally skips checkpoints that are not
+    # marked for publication.  C0 intermediate checkpoints are non-published
+    # in the frozen training trajectory, but they are pre-registered study
+    # points.  Mark only the temporary evaluation copies as publishable; the
+    # original trajectory (including its publication flags) is restored in
+    # the finally block below.
+    selected_for_evaluation = [
+        {**checkpoint, "publish": True} for checkpoint in selected
+    ]
     filtered = dict(record)
-    filtered["checkpoints"] = selected
+    filtered["checkpoints"] = selected_for_evaluation
     filtered["status"] = "TRAINED_NO_TRUTH"
 
     with _patched(spec):
