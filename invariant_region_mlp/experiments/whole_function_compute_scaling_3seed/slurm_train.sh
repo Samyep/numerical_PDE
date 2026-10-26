@@ -7,7 +7,7 @@
 #SBATCH --mem=96G
 #SBATCH --time=01:10:00
 set -euo pipefail
-script_dir="$(cd "$(dirname "$0")" && pwd)"
+script_dir="${WCS_SCRIPT_DIR:-${SLURM_SUBMIT_DIR}/invariant_region_mlp/experiments/whole_function_compute_scaling_3seed}"
 source "${script_dir}/slurm_env.sh"
 phase="${1:?phase is required}"
 python -m invariant_region_mlp.experiments.whole_function_compute_scaling_3seed.run_study \
