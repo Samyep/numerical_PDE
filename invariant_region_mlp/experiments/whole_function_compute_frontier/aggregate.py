@@ -42,7 +42,7 @@ STANDARD_FIELDS = (
     "is_original_budget",
     "is_final", "checkpoint", "checkpoint_sha256", "prediction_files",
     "prediction_sha256s", "test_bank_sha256", "test_input_sha256",
-    "truth_value_sha256", "method_source_revision", "status",
+    "truth_value_sha256", "method_source_revision", "nonfinite_count", "status",
 )
 
 
@@ -94,6 +94,7 @@ def _aggregate_replicates(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "inference_seconds_mean": float(np.mean([float(row["inference_seconds"]) for row in members])),
             "rmse_sd": float(np.std(rmse_values, ddof=1)) if len(members) > 1 else 0.0,
             "n_inference_replicates": len(members),
+            "nonfinite_count": int(sum(int(row.get("nonfinite_count", 0)) for row in members)),
             "prediction_files": ";".join(str(row["prediction_file"]) for row in members),
             "prediction_sha256s": ";".join(str(row["prediction_sha256"]) for row in members),
             "method_source_revision": (
@@ -315,20 +316,194 @@ def _fidelity(
             consistency.append({
                 "pde": pde, "method": method, "new_rmse": new,
                 "historical_rmse": old, "tolerance": tolerance, "pass": passed,
+                "absolute_difference": (
+                    abs(new - old) if new is not None and old is not None else None
+                ),
+                "relative_difference_to_historical": (
+                    abs(new - old) / abs(old)
+                    if new is not None and old not in (None, 0.0) else None
+                ),
+                "new_rmse_sd_across_inference_replicates": (
+                    float(candidates[0].get("rmse_sd", 0.0))
+                    if len(candidates) == 1 else None
+                ),
+                "new_inference_replicates": (
+                    int(candidates[0].get("n_inference_replicates", 0))
+                    if len(candidates) == 1 else None
+                ),
+                "new_training_plus_selection_seconds": (
+                    float(candidates[0].get("main_axis_seconds", 0.0))
+                    if len(candidates) == 1 else None
+                ),
+                "historical_training_seconds": (
+                    float(old_candidates[0]["training_seconds"])
+                    if len(old_candidates) == 1
+                    and old_candidates[0].get("training_seconds") not in (None, "")
+                    else None
+                ),
+                "uncertainty_scope": (
+                    "inference-only; one training seed in both studies"
+                    if method == "tangent_actor"
+                    else "no replicate uncertainty estimate; one training seed in both studies"
+                ),
             })
     checks.append({"id": 6, "name": "original-budget C0 consistency",
                    "pass": all(row["pass"] for row in consistency), "details": consistency})
-    failures = [row["trajectory_id"] for row in trajectories if row.get("failure")]
-    checks.append({"id": 7, "name": "every numerical failure recorded",
-                   "pass": True, "recorded_failures": failures})
+    recorded_failures = [
+        row["trajectory_id"] for row in trajectories if row.get("failure")
+    ]
+    incomplete_trajectories = [
+        row["trajectory_id"] for row in trajectories
+        if row.get("status") != "COMPLETE"
+    ]
+    trajectory_ids = {str(row["trajectory_id"]) for row in trajectories}
+    missing_metric_trajectories = sorted(
+        trajectory_ids - {str(row["trajectory_id"]) for row in metrics}
+    )
+    nonfinite_metrics = []
+    for row in metrics:
+        label = f"{row['trajectory_id']}:{row['checkpoint_id']}"
+        numeric = ("rmse", "relmae", "relative_l2", "mae", "bias")
+        if int(row.get("nonfinite_count", 0)) > 0 or any(
+            not math.isfinite(float(row[name])) for name in numeric
+        ):
+            nonfinite_metrics.append(label)
+    checks.append({
+        "id": 7,
+        "name": "completion and numerical-failure records agree with predictions",
+        "pass": not (
+            incomplete_trajectories or missing_metric_trajectories or nonfinite_metrics
+        ),
+        "details": {
+            "recorded_failure_payloads": recorded_failures,
+            "incomplete_trajectories": incomplete_trajectories,
+            "trajectories_without_reported_metrics": missing_metric_trajectories,
+            "nonfinite_prediction_or_metric_rows": nonfinite_metrics,
+        },
+    })
     totals = [row for row in accounting if row.get("job_id") == "TOTAL"]
     within = bool(totals and str(totals[0].get("within_18_gpu_hour_cap")).lower() == "true")
-    checks.append({"id": 8, "name": "scheduler accounting reconciled and within cap",
-                   "pass": within, "details": totals})
+    checkpoint_timing_failures = []
+    metric_timing_failures = []
+    checkpoints_by_key: dict[tuple[str, str], dict[str, Any]] = {}
+    for trajectory in trajectories:
+        checkpoints = trajectory.get("checkpoints", [])
+        if checkpoints:
+            last = checkpoints[-1]
+            if not math.isclose(
+                float(trajectory.get("training_seconds", 0.0)),
+                float(last.get("training_seconds", 0.0)), rel_tol=0.0, abs_tol=1e-6,
+            ) or not math.isclose(
+                float(trajectory.get("selection_seconds", 0.0)),
+                float(last.get("selection_seconds", 0.0)), rel_tol=0.0, abs_tol=1e-6,
+            ):
+                checkpoint_timing_failures.append(f"{trajectory['trajectory_id']}:terminal")
+        for checkpoint in checkpoints:
+            expected_main = (
+                float(checkpoint.get("training_seconds", 0.0))
+                + float(checkpoint.get("selection_seconds", 0.0))
+            )
+            if not math.isclose(
+                expected_main, float(checkpoint.get("main_axis_seconds", 0.0)),
+                rel_tol=0.0, abs_tol=1e-6,
+            ):
+                checkpoint_timing_failures.append(
+                    f"{trajectory['trajectory_id']}:{checkpoint['checkpoint_id']}"
+                )
+            checkpoints_by_key[(str(trajectory["trajectory_id"]), str(checkpoint["checkpoint_id"]))] = checkpoint
+    for row in metrics:
+        key = (str(row["trajectory_id"]), str(row["checkpoint_id"]))
+        checkpoint = checkpoints_by_key.get(key)
+        if checkpoint is None or not math.isclose(
+            float(row["main_axis_seconds"]), float(checkpoint["main_axis_seconds"]),
+            rel_tol=0.0, abs_tol=1e-6,
+        ):
+            metric_timing_failures.append(":".join(key))
+    active_from_trajectories = sum(
+        float(row.get("training_seconds", 0.0)) for row in trajectories
+    )
+    active_from_accounting = (
+        float(totals[0].get("active_training_seconds", 0.0)) if totals else None
+    )
+    allocated = (
+        float(totals[0].get("allocated_gpu_seconds", 0.0)) if totals else None
+    )
+    active_reconciled = bool(
+        totals and math.isclose(
+            active_from_trajectories, float(active_from_accounting),
+            rel_tol=0.0, abs_tol=1e-6,
+        )
+    )
+    allocated_covers_active = bool(
+        totals and float(allocated) >= float(active_from_accounting)
+    )
+    live_gpu_jobs = [
+        str(row.get("job_id")) for row in accounting
+        if row.get("job_id") != "TOTAL"
+        and int(row.get("gpu_count") or 0) > 0
+        and str(row.get("state", "")).upper() in {"RUNNING", "PENDING", "CONFIGURING"}
+    ]
+    retry_gpu_seconds = sum(
+        float(row.get("allocated_gpu_seconds") or 0.0) for row in accounting
+        if row.get("job_id") != "TOTAL"
+        and str(row.get("state", "")).upper().startswith(("FAILED", "CANCELLED", "TIMEOUT", "OUT_OF_MEMORY"))
+    )
+    accounting_pass = bool(
+        within and active_reconciled and allocated_covers_active
+        and not checkpoint_timing_failures and not metric_timing_failures
+        and not live_gpu_jobs
+    )
+    checks.append({
+        "id": 8,
+        "name": "checkpoint timing components and scheduler accounting reconcile",
+        "pass": accounting_pass,
+        "details": {
+            "totals": totals,
+            "checkpoint_timing_failures": checkpoint_timing_failures,
+            "metric_timing_failures": metric_timing_failures,
+            "active_seconds_from_trajectories": active_from_trajectories,
+            "active_seconds_from_accounting": active_from_accounting,
+            "active_seconds_reconciled": active_reconciled,
+            "allocated_seconds_cover_active_training": allocated_covers_active,
+            "failed_or_cancelled_retry_gpu_seconds_included": retry_gpu_seconds,
+            "live_gpu_jobs_at_accounting_snapshot": live_gpu_jobs,
+            "within_18_gpu_hour_cap": within,
+        },
+    })
     protocol = protocol_payload()
-    checks.append({"id": 9, "name": "common frozen protocols on both PDEs",
-                   "pass": len(trajectories) == 18,
-                   "protocol_sha256": protocol["protocol_sha256"]})
+    expected_cells = {
+        (pde, method, configuration)
+        for pde in PDES for method in METHODS for configuration in CONFIGURATIONS
+    }
+    observed_cells = {
+        (str(row["pde"]), str(row["method"]), str(row["configuration_id"]))
+        for row in trajectories
+    }
+    protocol_failures = []
+    for row in trajectories:
+        expected_grid = protocol["configuration_grid"][row["method"]][row["configuration_id"]]
+        if row.get("configuration", {}).get("frontier_changes") != expected_grid:
+            protocol_failures.append(row["trajectory_id"])
+    input_hash_failures = [
+        f"{row['trajectory_id']}:{row['checkpoint_id']}"
+        for row in metrics
+        if row.get("test_input_sha256") != protocol["expected_inputs"][row["pde"]]["test_input_sha256"]
+        or row.get("truth_value_sha256") != protocol["expected_inputs"][row["pde"]]["truth_value_sha256"]
+    ]
+    checks.append({
+        "id": 9, "name": "common frozen protocols and input hashes on both PDEs",
+        "pass": (
+            observed_cells == expected_cells
+            and not protocol_failures and not input_hash_failures
+        ),
+        "protocol_sha256": protocol["protocol_sha256"],
+        "details": {
+            "missing_cells": sorted(expected_cells - observed_cells),
+            "unexpected_cells": sorted(observed_cells - expected_cells),
+            "configuration_snapshot_failures": protocol_failures,
+            "input_hash_failures": input_hash_failures,
+        },
+    })
     submitted = RESULTS_DIR / "submitted_jobs.json"
     submitted_payload: dict[str, Any] = {}
     if submitted.is_file():

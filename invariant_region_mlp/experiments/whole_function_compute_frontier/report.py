@@ -79,13 +79,18 @@ def render() -> None:
     audit = json.loads((RESULTS_DIR / "artifact_audit.json").read_text(encoding="utf-8"))
     protocol = json.loads((RESULTS_DIR / "EXPERIMENT_PROTOCOL.json").read_text(encoding="utf-8"))
     smoke = json.loads((RESULTS_DIR / "raw" / "smoke_nonresults.json").read_text(encoding="utf-8"))
+    diagnostic_path = RESULTS_DIR / "diagnostics" / "dense_dpi_callback_replay.json"
+    callback_diagnostic = (
+        json.loads(diagnostic_path.read_text(encoding="utf-8"))
+        if diagnostic_path.is_file() else None
+    )
     totals = [row for row in accounting if row["job_id"] == "TOTAL"]
     total = totals[0] if totals else {}
     lines = [
         "# Two-PDE 100D Accuracy--Compute Frontier", "",
         "## Outcome", "",
         "All entries below are measured checkpoints. No RMSE values were interpolated, smoothed, or repeated to create overlap.", "",
-        "| PDE | Method | Original-budget output | Training + selection (min) | RMSE | RelMAE |",
+        "| PDE | Method | Prespecified C0 checkpoint | Training + selection (min) | RMSE | RelMAE |",
         "|---|---|---:|---:|---:|---:|",
     ]
     for pde in PDES:
@@ -111,7 +116,7 @@ def render() -> None:
             rows, pde, float(interval[0]), float(interval[1])
         )
         lines += [
-            f"- **{LABEL[pde]} original-budget outputs:** Tangent-Actor RMSE "
+            f"- **{LABEL[pde]} prespecified C0 checkpoints:** Tangent-Actor RMSE "
             f"`{ta_rmse:.6g}` is **{dpi_rmse / ta_rmse:.1f}x** lower than DPI and "
             f"**{pinn_rmse / ta_rmse:.1f}x** lower than PINN-HTE. These checkpoints "
             "have their own measured method-specific costs and are not an equal-time comparison.",
@@ -141,6 +146,44 @@ def render() -> None:
                 f"{float(final['rmse']):.5g} ({float(final['main_axis_seconds'])/60:.2f}) | "
                 f"{trajectory['stop_reason']} |"
             )
+    lines += [
+        "", "### Why some curves stop before 30 minutes", "",
+        "Thirty minutes was a maximum active-training window, not a requirement to manufacture a point at 30 minutes. "
+        "The frozen protocol also imposed algorithmic iteration caps and truth-free validation stopping. "
+        "Consequently, an endpoint before 30 minutes is expected when one of those rules fires first.", "",
+        "| PDE | Method | C0 endpoint (min) | Mechanical reason |",
+        "|---|---|---:|---|",
+    ]
+    reason_text = {
+        "maximum_predeclared_actor_updates": "Reached the frozen maximum of 8 actor updates",
+        "maximum_predeclared_picard_iterations": "Reached the frozen maximum of 320 Picard rounds",
+        "predeclared_validation_plateau": "Triggered the frozen truth-free validation plateau rule",
+        "active_training_cap": "Crossed the 30-minute cap at an algorithmic boundary",
+        "active_training_cap_at_actor_boundary": "Crossed the 30-minute cap at a complete actor-update boundary",
+        "configured_actor_updates": "Completed the configured actor updates",
+    }
+    for pde in PDES:
+        for method in ("tangent_actor", "dpi", "pinn_hte"):
+            trajectory = next(
+                row for row in trajectories
+                if row["pde"] == pde and row["method"] == method
+                and row["configuration_id"] == "C0"
+            )
+            endpoint = (
+                float(trajectory["training_seconds"])
+                + float(trajectory["selection_seconds"])
+            ) / 60.0
+            reason = reason_text.get(trajectory["stop_reason"], trajectory["stop_reason"])
+            lines.append(
+                f"| {LABEL[pde]} | {LABEL[method]} | {endpoint:.2f} | {reason} |"
+            )
+    lines += [
+        "",
+        "The main paper figure is restricted to the preregistered 0--30 minute window and contains no "
+        "original-budget star markers. Checkpoints beyond 30 minutes are not deleted: the Dense Fourier "
+        "Tangent-Actor boundary points at 31.46 and 34.54 minutes remain in `checkpoint_metrics.csv` and "
+        "the configuration/total-cost appendix figures. Lines are not extended by carrying their last value forward.",
+    ]
     lines += ["", "## Configuration sensitivity", "",
               "Each row is the last genuinely trained checkpoint of that trajectory; this table is descriptive, not a selection rule.", "",
               "| PDE | Method | Config | Final time (min) | Final RMSE |",
@@ -186,13 +229,46 @@ def render() -> None:
                     if detail.get("pass"):
                         continue
                     difference = abs(float(detail["new_rmse"]) - float(detail["historical_rmse"]))
+                    relative_difference = float(
+                        detail.get(
+                            "relative_difference_to_historical",
+                            difference / abs(float(detail["historical_rmse"])),
+                        )
+                    )
                     lines.append(
                         f"  - {LABEL[detail['pde']]} / {LABEL[detail['method']]}: new original-budget "
                         f"RMSE `{float(detail['new_rmse']):.9g}` versus historical "
                         f"`{float(detail['historical_rmse']):.9g}`; absolute difference "
                         f"`{difference:.9g}` exceeds the frozen tolerance "
-                        f"`{float(detail['tolerance']):.9g}`. The failure is retained without changing the threshold."
+                        f"`{float(detail['tolerance']):.9g}`. Relative to the historical RMSE, the discrepancy is "
+                        f"`{100 * relative_difference:.2f}%`. The failure is retained "
+                        "without changing the threshold; with one training seed, inference uncertainty cannot adjudicate it."
                     )
+    lines += ["", "### Dense Fourier DPI targeted consistency diagnosis", ""]
+    lines += [
+        "The expanded C0 YAML was compared byte-for-byte at the semantic level. Apart from the output directory, "
+        "the only numerical difference is `EVAL.FREQ: 8` historically versus `EVAL.FREQ: null` in this study. "
+        "The historical upstream callback samples 10,000 nonterminal states with the global Torch RNG and evaluates "
+        "the exact solution during training. It therefore both adds substantial diagnostic work to the historical elapsed time and advances "
+        "the same RNG stream later used for stochastic Picard training. The new run disabled that callback to enforce "
+        "the frozen truth gate. Thus the 80-round models are not expected to be bitwise or numerically identical, and "
+        "the old 10.56-minute and new 5.07-minute figures use different work definitions.",
+    ]
+    if callback_diagnostic is None:
+        lines.append(
+            "A callback-enabled post-freeze replay has not been completed; the original consistency check remains FAIL."
+        )
+    else:
+        lines += [
+            "The post-freeze callback-enabled replay is diagnostic only and is excluded from every frontier curve.", "",
+            "| Quantity | Value |", "|---|---:|",
+            f"| Historical 80-round RMSE | {float(callback_diagnostic['historical_rmse']):.9g} |",
+            f"| Callback-enabled replay RMSE | {float(callback_diagnostic['replay_rmse']):.9g} |",
+            f"| Relative RMSE difference | {100 * float(callback_diagnostic['relative_rmse_difference']):.3f}% |",
+            f"| Historical training time | {float(callback_diagnostic['historical_training_seconds']) / 60:.3f} min |",
+            f"| Replay training time | {float(callback_diagnostic['replay_training_seconds']) / 60:.3f} min |",
+            f"| Prediction-array RMSE (replay vs historical) | {float(callback_diagnostic['prediction_rmse_vs_historical']):.9g} |",
+        ]
     lines += [
         "", "## Limitations", "",
         "This is a single-training-seed study (seed 0). Tangent-Actor uses two fixed Monte Carlo inference replicates, but those replicates do not measure training-seed variability. C1/C2 are sensitivity runs, not test-selected hyperparameters. Timing is H100-specific and separates active numerical work from Slurm allocation time. Existing SDGD-PINN fixed-budget results were not rerun and do not appear on these scaling curves.",

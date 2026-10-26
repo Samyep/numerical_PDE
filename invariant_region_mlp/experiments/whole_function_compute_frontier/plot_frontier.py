@@ -42,33 +42,6 @@ def _read() -> list[dict]:
     return rows
 
 
-def _original_marker(ax, subset: list[dict]) -> None:
-    # The paper-default reference is C0.  C1/C2 preserve the same algorithmic
-    # boundary for bookkeeping, but their altered numerical configurations are
-    # sensitivity runs rather than additional "original-budget" outputs.
-    originals = [
-        row for row in subset
-        if row["is_original_budget"] and row["configuration_id"] == "C0"
-    ]
-    for boundary in originals:
-        y = boundary["rmse"]
-        if boundary["method"] == "tangent_actor":
-            selected_id = boundary.get("causal_selected_checkpoint")
-            selected = [
-                row for row in subset
-                if row["method"] == "tangent_actor"
-                and row["configuration_id"] == "C0"
-                and row["checkpoint_id"] == selected_id
-            ]
-            if len(selected) == 1:
-                y = selected[0]["rmse"]
-        ax.scatter(
-            boundary["main_axis_seconds"] / 60.0, y,
-            marker="*", s=115, color=METHOD_COLORS[boundary["method"]],
-            edgecolor="black", linewidth=0.55, zorder=6,
-        )
-
-
 def _x_limit(rows: list[dict], *, total_cost: bool) -> float:
     key = "total_compute_seconds" if total_cost else "main_axis_seconds"
     largest = max((row[key] / 60.0 for row in rows), default=30.0)
@@ -81,6 +54,7 @@ def _x_limit(rows: list[dict], *, total_cost: bool) -> float:
 def _panel(
     ax, rows: list[dict], pde: str, *, total_cost: bool = False,
     legend: bool = False, x_max: float | None = None,
+    restrict_to_x_max: bool = False,
 ) -> None:
     subset = [row for row in rows if row["pde"] == pde]
     x_key = "total_compute_seconds" if total_cost else "main_axis_seconds"
@@ -93,6 +67,12 @@ def _panel(
                 ],
                 key=lambda row: row[x_key],
             )
+            if restrict_to_x_max and x_max is not None:
+                # The main paper panel is the preregistered 0--30 minute
+                # window.  Do not draw a segment toward an algorithmic-boundary
+                # checkpoint beyond 30 minutes, since that would visually
+                # interpolate an unobserved value at the boundary.
+                selected = [row for row in selected if row[x_key] / 60.0 <= x_max]
             if not selected:
                 continue
             label = METHOD_LABELS[method] if configuration == "C0" else f"{METHOD_LABELS[method]} {configuration}"
@@ -106,8 +86,6 @@ def _panel(
                 alpha=1.0 if configuration == "C0" else 0.67,
                 label=label,
             )
-    if not total_cost:
-        _original_marker(ax, subset)
     ax.set_yscale("log")
     ax.set_xlim(0.0, x_max if x_max is not None else _x_limit(subset, total_cost=total_cost))
     ax.set_title(PDE_LABELS[pde])
@@ -120,21 +98,18 @@ def _panel(
 
 def _single(rows: list[dict], pde: str, filename: str) -> None:
     fig, ax = plt.subplots(figsize=(5.15, 3.55), constrained_layout=True)
-    _panel(ax, rows, pde, legend=True)
+    _panel(ax, rows, pde, legend=True, x_max=30.0, restrict_to_x_max=True)
     fig.savefig(FIGURE_DIR / f"{filename}.pdf", bbox_inches="tight")
     plt.close(fig)
 
 
 def _joint(rows: list[dict]) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(9.2, 4.15))
-    x_max = _x_limit(rows, total_cost=False)
+    x_max = 30.0
     for ax, pde in zip(axes, PDES):
-        _panel(ax, rows, pde, x_max=x_max)
+        _panel(ax, rows, pde, x_max=x_max, restrict_to_x_max=True)
     handles, labels = axes[0].get_legend_handles_labels()
-    # Add one semantic entry for the stars without duplicating it per method.
-    star = plt.Line2D([], [], marker="*", linestyle="None", color="gray",
-                      markeredgecolor="black", markersize=9, label="Original-budget output")
-    fig.legend(handles + [star], labels + ["Original-budget output"],
+    fig.legend(handles, labels,
                loc="lower center", bbox_to_anchor=(0.5, 0.015),
                ncol=5, frameon=False, fontsize=8)
     fig.subplots_adjust(left=0.075, right=0.99, top=0.90, bottom=0.26, wspace=0.20)

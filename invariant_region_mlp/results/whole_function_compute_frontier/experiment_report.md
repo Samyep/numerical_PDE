@@ -4,7 +4,7 @@
 
 All entries below are measured checkpoints. No RMSE values were interpolated, smoothed, or repeated to create overlap.
 
-| PDE | Method | Original-budget output | Training + selection (min) | RMSE | RelMAE |
+| PDE | Method | Prespecified C0 checkpoint | Training + selection (min) | RMSE | RelMAE |
 |---|---|---:|---:|---:|---:|
 | B6 Full-Rank HJB | Tangent-Actor | a4 | 11.569 | 0.000731862 | 0.000492141 |
 | B6 Full-Rank HJB | DPI | picard_0080 | 4.769 | 0.124786 | 0.120237 |
@@ -15,9 +15,9 @@ All entries below are measured checkpoints. No RMSE values were interpolated, sm
 
 ## Headline measured comparisons
 
-- **B6 Full-Rank HJB original-budget outputs:** Tangent-Actor RMSE `0.000731862` is **170.5x** lower than DPI and **214.1x** lower than PINN-HTE. These checkpoints have their own measured method-specific costs and are not an equal-time comparison.
+- **B6 Full-Rank HJB prespecified C0 checkpoints:** Tangent-Actor RMSE `0.000731862` is **170.5x** lower than DPI and **214.1x** lower than PINN-HTE. These checkpoints have their own measured method-specific costs and are not an equal-time comparison.
 - **B6 Full-Rank HJB observed C0 overlap (2.04--18.51 min):** the worst measured Tangent-Actor RMSE is `0.00075947`, while the best measured DPI/PINN-HTE RMSE is `0.10075`--a conservative **132.7x** separation using measured checkpoints only (no time interpolation).
-- **Dense Fourier original-budget outputs:** Tangent-Actor RMSE `0.00174699` is **65.9x** lower than DPI and **46.3x** lower than PINN-HTE. These checkpoints have their own measured method-specific costs and are not an equal-time comparison.
+- **Dense Fourier prespecified C0 checkpoints:** Tangent-Actor RMSE `0.00174699` is **65.9x** lower than DPI and **46.3x** lower than PINN-HTE. These checkpoints have their own measured method-specific costs and are not an equal-time comparison.
 - **Dense Fourier observed C0 overlap (2.02--15.13 min):** the worst measured Tangent-Actor RMSE is `0.00177371`, while the best measured DPI/PINN-HTE RMSE is `0.0669744`--a conservative **37.8x** separation using measured checkpoints only (no time interpolation).
 
 ## C0 anytime trajectories
@@ -32,6 +32,21 @@ The primary curves are C0. C1/C2 are sensitivity analyses and are not collapsed 
 | Dense Fourier | Tangent-Actor | 0.0027963 (0.24) | 0.0017146 (34.54) | active_training_cap |
 | Dense Fourier | DPI | 0.11493 (2.02) | 0.053313 (18.91) | maximum_predeclared_picard_iterations |
 | Dense Fourier | PINN-HTE | 1.4289 (0.12) | 0.10433 (15.13) | predeclared_validation_plateau |
+
+### Why some curves stop before 30 minutes
+
+Thirty minutes was a maximum active-training window, not a requirement to manufacture a point at 30 minutes. The frozen protocol also imposed algorithmic iteration caps and truth-free validation stopping. Consequently, an endpoint before 30 minutes is expected when one of those rules fires first.
+
+| PDE | Method | C0 endpoint (min) | Mechanical reason |
+|---|---|---:|---|
+| B6 Full-Rank HJB | Tangent-Actor | 23.19 | Reached the frozen maximum of 8 actor updates |
+| B6 Full-Rank HJB | DPI | 18.51 | Reached the frozen maximum of 320 Picard rounds |
+| B6 Full-Rank HJB | PINN-HTE | 30.22 | Triggered the frozen truth-free validation plateau rule |
+| Dense Fourier | Tangent-Actor | 34.54 | Crossed the 30-minute cap at an algorithmic boundary |
+| Dense Fourier | DPI | 18.91 | Reached the frozen maximum of 320 Picard rounds |
+| Dense Fourier | PINN-HTE | 15.13 | Triggered the frozen truth-free validation plateau rule |
+
+The main paper figure is restricted to the preregistered 0--30 minute window and contains no original-budget star markers. Checkpoints beyond 30 minutes are not deleted: the Dense Fourier Tangent-Actor boundary points at 31.46 and 34.54 minutes remain in `checkpoint_metrics.csv` and the configuration/total-cost appendix figures. Lines are not extended by carrying their last value forward.
 
 ## Configuration sensitivity
 
@@ -76,7 +91,12 @@ Each row is the last genuinely trained checkpoint of that trajectory; this table
 ### Failed audit checks
 
 - **Check 6 -- original-budget C0 consistency: FAIL.**
-  - Dense Fourier / DPI: new original-budget RMSE `0.115137165` versus historical `0.0646384146`; absolute difference `0.0504987502` exceeds the frozen tolerance `0.05`. The failure is retained without changing the threshold.
+  - Dense Fourier / DPI: new original-budget RMSE `0.115137165` versus historical `0.0646384146`; absolute difference `0.0504987502` exceeds the frozen tolerance `0.05`. Relative to the historical RMSE, the discrepancy is `78.12%`. The failure is retained without changing the threshold; with one training seed, inference uncertainty cannot adjudicate it.
+
+### Dense Fourier DPI targeted consistency diagnosis
+
+The expanded C0 YAML was compared byte-for-byte at the semantic level. Apart from the output directory, the only numerical difference is `EVAL.FREQ: 8` historically versus `EVAL.FREQ: null` in this study. The historical upstream callback samples 10,000 nonterminal states with the global Torch RNG and evaluates the exact solution during training. It therefore both adds substantial diagnostic work to the historical elapsed time and advances the same RNG stream later used for stochastic Picard training. The new run disabled that callback to enforce the frozen truth gate. Thus the 80-round models are not expected to be bitwise or numerically identical, and the old 10.56-minute and new 5.07-minute figures use different work definitions.
+A callback-enabled post-freeze replay has not been completed; the original consistency check remains FAIL.
 
 ## Limitations
 
