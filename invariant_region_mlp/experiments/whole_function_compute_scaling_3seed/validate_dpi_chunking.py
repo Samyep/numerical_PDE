@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import math
 from types import MethodType
 
 import torch
@@ -11,8 +10,12 @@ import torch
 from invariant_region_mlp.experiments.whole_function_compute_frontier import (
     baseline_frontier as base,
 )
+from invariant_region_mlp.experiments.whole_function_compute_frontier.common import (
+    write_json_atomic,
+)
 
 from .engine import _chunked_dpi_integral_with_gradients
+from .protocol import RESULTS_DIR
 
 
 def main() -> None:
@@ -90,7 +93,7 @@ def main() -> None:
     if large_max_abs > 2e-11:
         raise AssertionError(f"multi-chunk mismatch: {large_max_abs}")
 
-    print(json.dumps({
+    payload = {
         "status": "PASS",
         "single_chunk_max_abs": small_max_abs,
         "multi_chunk_max_abs": large_max_abs,
@@ -99,7 +102,9 @@ def main() -> None:
         "nominal_samples": int(generator.n_estimate_integral),
         "all_nominal_samples_used": sum(chunked_calls) == generator.n_estimate_integral,
         "finite": bool(torch.isfinite(chunked_large).all()),
-    }, indent=2, sort_keys=True))
+    }
+    write_json_atomic(RESULTS_DIR / "dpi_chunking_validation.json", payload)
+    print(json.dumps(payload, indent=2, sort_keys=True))
 
 
 if __name__ == "__main__":
