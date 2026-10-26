@@ -86,6 +86,10 @@ def render() -> None:
     )
     totals = [row for row in accounting if row["job_id"] == "TOTAL"]
     total = totals[0] if totals else {}
+    diagnostic_jobs = [row for row in accounting if row.get("job_name") == "wcf_dpi_audit"]
+    diagnostic_gpu_seconds = sum(
+        float(row.get("allocated_gpu_seconds") or 0.0) for row in diagnostic_jobs
+    )
     lines = [
         "# Two-PDE 100D Accuracy--Compute Frontier", "",
         "## Outcome", "",
@@ -213,7 +217,8 @@ def render() -> None:
         "", "## Fidelity and accounting", "",
         f"- Non-result smoke preflight: **{smoke['status']}**.",
         f"- Artifact/fidelity audit: **{'PASS' if audit['overall_pass'] else 'FAIL'}**.",
-        f"- Allocated GPU time: **{float(total.get('allocated_gpu_hours') or 0):.3f} H100 GPU-hours**.",
+        f"- Allocated GPU time including post-freeze diagnostics: **{float(total.get('allocated_gpu_hours') or 0):.3f} H100 GPU-hours**.",
+        f"- Post-freeze diagnostic allocation: **{diagnostic_gpu_seconds / 3600:.3f} H100 GPU-hours** across {len(diagnostic_jobs)} attempts.",
         f"- Active measured training time: **{float(total.get('active_training_hours') or 0):.3f} GPU-hours**.",
         f"- 18-GPU-hour cap respected: **{total.get('within_18_gpu_hour_cap')}**.",
         f"- Protocol SHA-256: `{protocol['protocol_sha256']}`.",
@@ -259,17 +264,37 @@ def render() -> None:
             "A post-freeze RNG-only callback replay has not been completed; the original consistency check remains FAIL."
         )
     else:
+        failed_detail = next(
+            detail for item in audit["checks"] if item["id"] == 6
+            for detail in item.get("details", [])
+            if detail["pde"] == "dense_fourier" and detail["method"] == "dpi"
+        )
+        frontier_difference = abs(
+            float(failed_detail["new_rmse"]) - float(failed_detail["historical_rmse"])
+        )
+        replay_difference = abs(
+            float(callback_diagnostic["replay_rmse"])
+            - float(callback_diagnostic["historical_rmse"])
+        )
+        discrepancy_reduction = 1.0 - replay_difference / frontier_difference
         lines += [
             "The post-freeze replay reproduces only the historical callback's global-RNG draws, without evaluating "
             "nonterminal truth during training. It is diagnostic only and is excluded from every frontier curve.", "",
             "| Quantity | Value |", "|---|---:|",
             f"| Historical 80-round RMSE | {float(callback_diagnostic['historical_rmse']):.9g} |",
+            f"| Truth-gated frontier 80-round RMSE | {float(failed_detail['new_rmse']):.9g} |",
             f"| RNG-only replay RMSE | {float(callback_diagnostic['replay_rmse']):.9g} |",
             f"| Relative RMSE difference | {100 * float(callback_diagnostic['relative_rmse_difference']):.3f}% |",
+            f"| Reduction of the historical-RMSE discrepancy | {100 * discrepancy_reduction:.2f}% |",
             f"| Historical training time | {float(callback_diagnostic['historical_training_seconds']) / 60:.3f} min |",
-            f"| RNG-only replay training time | {float(callback_diagnostic['replay_training_seconds']) / 60:.3f} min |",
+            f"| RNG-only replay time (diagnostic instrumentation; not comparable) | {float(callback_diagnostic['replay_training_seconds']) / 60:.3f} min |",
             f"| RNG replay callback calls | {int(callback_diagnostic['rng_only_callback_calls'])} |",
             f"| Prediction-array RMSE (replay vs historical) | {float(callback_diagnostic['prediction_rmse_vs_historical']):.9g} |",
+            "",
+            "The endpoint RMSE moves from a 78.12% discrepancy to 2.56%, reducing the discrepancy by "
+            f"{100 * discrepancy_reduction:.2f}%. This is strong evidence that callback-induced RNG advancement "
+            "explains most of the failed consistency check. It is not a bitwise reproduction: the prediction arrays "
+            "still differ, and there is only one training seed. Check 6 therefore remains FAIL rather than being waived.",
         ]
     lines += [
         "", "## Limitations", "",

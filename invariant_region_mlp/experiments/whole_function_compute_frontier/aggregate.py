@@ -510,10 +510,10 @@ def _fidelity(
         submitted_payload = json.loads(submitted.read_text(encoding="utf-8"))
     submitted_jobs = submitted_payload.get("jobs", {})
     manifest_says_no_sdgd = submitted_payload.get("no_sdgd_jobs") is True
-    submitted_job_mentions_sdgd = any(
-        "sdgd" in str(key).lower() or "sdgd" in str(value).lower()
-        for key, value in submitted_jobs.items()
-    )
+    submitted_job_mentions_sdgd = "sdgd" in json.dumps(
+        {key: value for key, value in submitted_payload.items() if key != "no_sdgd_jobs"},
+        sort_keys=True,
+    ).lower()
     accounted_job_mentions_sdgd = any(
         "sdgd" in str(row.get("job_name", "")).lower()
         for row in accounting
@@ -529,11 +529,40 @@ def _fidelity(
                        "submitted_job_mentions_sdgd": submitted_job_mentions_sdgd,
                        "accounted_job_mentions_sdgd": accounted_job_mentions_sdgd,
                    }})
+    diagnostic_path = RESULTS_DIR / "diagnostics" / "dense_dpi_callback_replay.json"
+    post_freeze_diagnostics: list[dict[str, Any]] = []
+    if diagnostic_path.is_file():
+        diagnostic = json.loads(diagnostic_path.read_text(encoding="utf-8"))
+        prediction_path = Path(diagnostic.get("prediction_file", ""))
+        prediction_hash_valid = bool(
+            prediction_path.is_file()
+            and file_sha256(prediction_path) == diagnostic.get("prediction_sha256")
+        )
+        post_freeze_diagnostics.append({
+            "name": "Dense Fourier DPI historical-callback RNG replay",
+            "classification": diagnostic.get("classification"),
+            "status": diagnostic.get("status"),
+            "historical_rmse": diagnostic.get("historical_rmse"),
+            "frontier_rmse": next(
+                (
+                    row["new_rmse"] for row in consistency
+                    if row["pde"] == "dense_fourier" and row["method"] == "dpi"
+                ),
+                None,
+            ),
+            "rng_replay_rmse": diagnostic.get("replay_rmse"),
+            "relative_rmse_difference_from_historical": diagnostic.get("relative_rmse_difference"),
+            "rng_replay_callback_calls": diagnostic.get("rng_only_callback_calls"),
+            "prediction_artifact_hash_valid": prediction_hash_valid,
+            "excluded_from_frontier": True,
+            "changes_frozen_check_6_verdict": False,
+        })
     return {
         "revision": REVISION,
         "completed_utc": datetime.now(timezone.utc).isoformat(),
         "overall_pass": all(bool(row["pass"]) for row in checks),
         "checks": checks,
+        "post_freeze_diagnostics": post_freeze_diagnostics,
     }
 
 
@@ -546,6 +575,17 @@ def _write_fidelity_markdown(payload: dict[str, Any]) -> None:
     ]
     for row in payload["checks"]:
         lines.append(f"| {row['id']} | {row['name']} | {'PASS' if row['pass'] else 'FAIL'} |")
+    if payload.get("post_freeze_diagnostics"):
+        lines += [
+            "", "## Post-freeze diagnostics", "",
+            "These diagnostics explain failures but never change a frozen verdict or enter a frontier.", "",
+        ]
+        for diagnostic in payload["post_freeze_diagnostics"]:
+            lines.append(
+                f"- {diagnostic['name']}: historical RMSE `{diagnostic['historical_rmse']:.9g}`, "
+                f"frontier RMSE `{diagnostic['frontier_rmse']:.9g}`, RNG-replay RMSE "
+                f"`{diagnostic['rng_replay_rmse']:.9g}`; frozen Check 6 remains unchanged."
+            )
     lines += ["", "```json", json.dumps(payload, indent=2, sort_keys=True), "```", ""]
     (RESULTS_DIR / "fidelity_audit.md").write_text("\n".join(lines), encoding="utf-8")
 
