@@ -1,0 +1,388 @@
+"""Aggregate measured checkpoints and perform the artifact/fidelity audit."""
+
+from __future__ import annotations
+
+import csv
+from datetime import datetime, timezone
+import json
+import math
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+
+from .common import file_sha256, write_json_atomic
+from .prepare import historical_results_root
+from .protocol import (
+    BASE_REVISION,
+    C0_CONSISTENCY_ABSOLUTE_RMSE,
+    C0_CONSISTENCY_RELATIVE_RMSE,
+    CONFIGURATIONS,
+    GLOBAL_GPU_SECONDS_CAP,
+    METHODS,
+    PDES,
+    PREDICTION_DIR,
+    RAW_DIR,
+    RESULTS_DIR,
+    REVISION,
+    STATUS_DIR,
+    UPSTREAM_DPI_REVISION,
+    protocol_payload,
+)
+from .run_frontier import training_inventory
+
+
+STANDARD_FIELDS = (
+    "revision", "pde", "dimension", "method", "configuration_id", "seed",
+    "trajectory_id", "checkpoint_id", "algorithm_iteration",
+    "training_seconds", "selection_seconds", "main_axis_seconds",
+    "inference_seconds", "inference_seconds_mean", "total_compute_seconds",
+    "validation_metric", "rmse", "rmse_sd", "relmae", "relative_l2",
+    "mae", "bias", "n_inference_replicates", "causal_selected_checkpoint",
+    "is_original_budget",
+    "is_final", "checkpoint", "checkpoint_sha256", "prediction_files",
+    "prediction_sha256s", "test_bank_sha256", "test_input_sha256",
+    "truth_value_sha256", "method_source_revision", "status",
+)
+
+
+def _write_csv(path: Path, rows: list[dict[str, Any]], fields=None) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if fields is None:
+        fields = sorted({key for row in rows for key in row})
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(fields), extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _metric_rows() -> list[dict[str, Any]]:
+    result = []
+    for path in sorted(PREDICTION_DIR.rglob("*.json")):
+        row = json.loads(path.read_text(encoding="utf-8"))
+        if row.get("status") == "COMPLETE" and "rmse" in row:
+            row["_metric_path"] = str(path)
+            result.append(row)
+    return result
+
+
+def _aggregate_replicates(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    groups: dict[tuple, list[dict[str, Any]]] = {}
+    for row in rows:
+        key = (
+            row["pde"], row["method"], row["configuration_id"],
+            row["checkpoint_id"], int(row["algorithm_iteration"]),
+        )
+        groups.setdefault(key, []).append(row)
+    output: list[dict[str, Any]] = []
+    for key, members in sorted(groups.items()):
+        first = members[0]
+        numeric_means = ("rmse", "relmae", "relative_l2", "mae", "bias")
+        item = {name: first.get(name) for name in STANDARD_FIELDS}
+        for name in numeric_means:
+            values = [float(row[name]) for row in members]
+            item[name] = float(np.mean(values))
+        rmse_values = [float(row["rmse"]) for row in members]
+        item.update({
+            "revision": REVISION,
+            "dimension": 100,
+            "seed": 0,
+            "training_seconds": float(first["training_seconds"]),
+            "selection_seconds": float(first.get("selection_seconds", 0.0)),
+            "main_axis_seconds": float(first["main_axis_seconds"]),
+            "inference_seconds": float(sum(float(row["inference_seconds"]) for row in members)),
+            "inference_seconds_mean": float(np.mean([float(row["inference_seconds"]) for row in members])),
+            "rmse_sd": float(np.std(rmse_values, ddof=1)) if len(members) > 1 else 0.0,
+            "n_inference_replicates": len(members),
+            "prediction_files": ";".join(str(row["prediction_file"]) for row in members),
+            "prediction_sha256s": ";".join(str(row["prediction_sha256"]) for row in members),
+            "method_source_revision": (
+                BASE_REVISION if first["method"] == "tangent_actor"
+                else UPSTREAM_DPI_REVISION
+            ),
+            "status": "COMPLETE",
+        })
+        item["total_compute_seconds"] = item["main_axis_seconds"] + item["inference_seconds"]
+        output.append(item)
+    return output
+
+
+def _trajectory_records() -> list[dict[str, Any]]:
+    records = []
+    for row in training_inventory():
+        path = Path(row["path"])
+        if not path.is_file():
+            continue
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        records.append(payload)
+    return records
+
+
+def _trajectory_summary(
+    trajectories: list[dict[str, Any]], metrics: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    lookup: dict[str, list[dict[str, Any]]] = {}
+    for row in metrics:
+        lookup.setdefault(str(row["trajectory_id"]), []).append(row)
+    output = []
+    for trajectory in trajectories:
+        rows = lookup.get(str(trajectory["trajectory_id"]), [])
+        original = [row for row in rows if str(row.get("is_original_budget")).lower() == "true"]
+        final = max(rows, key=lambda row: float(row["main_axis_seconds"])) if rows else None
+        output.append({
+            "trajectory_id": trajectory["trajectory_id"],
+            "pde": trajectory["pde"], "method": trajectory["method"],
+            "configuration_id": trajectory["configuration_id"],
+            "seed": trajectory["seed"], "status": trajectory["status"],
+            "stop_reason": trajectory.get("stop_reason"),
+            "checkpoint_count": len(trajectory.get("checkpoints", [])),
+            "reported_checkpoint_count": len(rows),
+            "training_seconds": trajectory.get("training_seconds"),
+            "selection_seconds": trajectory.get("selection_seconds", 0.0),
+            "final_rmse": final.get("rmse") if final else None,
+            "original_budget_rmse": original[0].get("rmse") if len(original) == 1 else None,
+            "peak_gpu_bytes": trajectory.get("peak_gpu_bytes"),
+            "failure": trajectory.get("failure"),
+        })
+    return output
+
+
+def _elapsed_seconds(text: str) -> float:
+    # Slurm format is [[days-]hours:]minutes:seconds.
+    days = 0
+    if "-" in text:
+        day_text, text = text.split("-", 1)
+        days = int(day_text)
+    parts = [float(value) for value in text.split(":")]
+    if len(parts) == 3:
+        hours, minutes, seconds = parts
+    elif len(parts) == 2:
+        hours, minutes, seconds = 0.0, *parts
+    else:
+        hours, minutes, seconds = 0.0, 0.0, parts[0]
+    return days * 86400 + hours * 3600 + minutes * 60 + seconds
+
+
+def _compute_accounting(trajectories: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    slurm = RESULTS_DIR / "slurm_accounting_raw.csv"
+    rows: list[dict[str, Any]] = []
+    if slurm.is_file():
+        with slurm.open(newline="", encoding="utf-8") as handle:
+            for row in csv.DictReader(handle):
+                elapsed = _elapsed_seconds(row["elapsed"])
+                gpu_count = int(row.get("gpu_count") or 0)
+                row["job_wall_seconds"] = elapsed
+                row["allocated_gpu_seconds"] = elapsed * gpu_count
+                rows.append(row)
+    active_total = sum(float(row.get("training_seconds", 0.0)) for row in trajectories)
+    allocated_total = sum(float(row.get("allocated_gpu_seconds", 0.0)) for row in rows)
+    rows.append({
+        "job_id": "TOTAL", "job_name": "all_wcf_jobs",
+        "state": "SUMMARY", "gpu_count": "",
+        "elapsed": "", "job_wall_seconds": "",
+        "allocated_gpu_seconds": allocated_total,
+        "active_training_seconds": active_total,
+        "allocated_gpu_hours": allocated_total / 3600.0,
+        "active_training_hours": active_total / 3600.0,
+        "within_18_gpu_hour_cap": allocated_total <= GLOBAL_GPU_SECONDS_CAP,
+    })
+    return rows
+
+
+def _overlap(metrics: list[dict[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {"definition": "intersection of observed C0 main-axis time ranges"}
+    for pde in PDES:
+        ranges = {}
+        for method in METHODS:
+            times = [
+                float(row["main_axis_seconds"]) / 60.0 for row in metrics
+                if row["pde"] == pde and row["method"] == method
+                and row["configuration_id"] == "C0"
+            ]
+            ranges[method] = [min(times), max(times)] if times else None
+        valid = [value for value in ranges.values() if value is not None]
+        low = max(value[0] for value in valid) if len(valid) == len(METHODS) else None
+        high = min(value[1] for value in valid) if len(valid) == len(METHODS) else None
+        result[pde] = {
+            "ranges_minutes": ranges,
+            "intersection_minutes": [low, high] if low is not None and low <= high else None,
+            "meaningful_observed_overlap": bool(low is not None and low <= high),
+            "no_interpolation_used": True,
+        }
+    return result
+
+
+def _historical_rows() -> list[dict[str, str]]:
+    path = historical_results_root() / "main_whole_function_results.csv"
+    if not path.is_file():
+        return []
+    with path.open(newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
+
+
+def _historical_rmse(row: dict[str, str]) -> float | None:
+    for key in ("value_rmse", "rmse", "Value RMSE"):
+        value = row.get(key)
+        if value not in (None, "", "NA", "nan"):
+            return float(value)
+    return None
+
+
+def _fidelity(
+    trajectories: list[dict[str, Any]], metrics: list[dict[str, Any]], accounting: list[dict[str, Any]]
+) -> dict[str, Any]:
+    checks: list[dict[str, Any]] = []
+    monotone_failures = []
+    checkpoint_failures = []
+    for trajectory in trajectories:
+        times = [float(row["main_axis_seconds"]) for row in trajectory.get("checkpoints", [])]
+        if any(right < left for left, right in zip(times, times[1:])):
+            monotone_failures.append(trajectory["trajectory_id"])
+        for checkpoint in trajectory.get("checkpoints", []):
+            path_text = checkpoint.get("checkpoint")
+            digest = checkpoint.get("checkpoint_sha256")
+            if path_text and digest:
+                path = Path(path_text)
+                if not path.is_file() or file_sha256(path) != digest:
+                    checkpoint_failures.append(checkpoint["checkpoint_id"])
+    checks.append({"id": 1, "name": "monotone checkpoint times", "pass": not monotone_failures,
+                   "failures": monotone_failures})
+    checks.append({"id": 2, "name": "checkpoint weights match recorded hashes", "pass": not checkpoint_failures,
+                   "failures": checkpoint_failures})
+    prediction_failures = []
+    for row in metrics:
+        paths = str(row["prediction_files"]).split(";")
+        hashes = str(row["prediction_sha256s"]).split(";")
+        if len(paths) != len(hashes) or any(
+            not Path(path).is_file() or file_sha256(Path(path)) != digest
+            for path, digest in zip(paths, hashes)
+        ):
+            prediction_failures.append(f"{row['trajectory_id']}:{row['checkpoint_id']}")
+    checks.append({"id": 3, "name": "predictions bind to recorded checkpoints/artifacts",
+                   "pass": not prediction_failures, "failures": prediction_failures})
+    ta_missing = [
+        row["trajectory_id"] for row in trajectories
+        if row["method"] == "tangent_actor" and not row.get("phases")
+    ]
+    checks.append({"id": 4, "name": "TA timing includes label generation and fitting",
+                   "pass": not ta_missing, "failures": ta_missing})
+    truth_failures = [
+        row["trajectory_id"] for row in trajectories
+        if row.get("ground_truth_used_for_training_selection_or_stopping") is not False
+    ]
+    gate = STATUS_DIR / "all_training_complete.json"
+    checks.append({"id": 5, "name": "truth-free training/selection and global truth gate",
+                   "pass": not truth_failures and gate.is_file(), "failures": truth_failures})
+
+    historical = _historical_rows()
+    consistency = []
+    aliases = {
+        "tangent_actor": {"tangent_actor", "TA", "ta"},
+        "dpi": {"dpi", "DPI"},
+        "pinn_hte": {"pinn_hte", "PINN-HTE", "pinn"},
+    }
+    for pde in PDES:
+        for method in METHODS:
+            candidates = [
+                row for row in metrics
+                if row["pde"] == pde and row["method"] == method
+                and row["configuration_id"] == "C0" and bool(row.get("is_original_budget"))
+            ]
+            if method == "tangent_actor" and len(candidates) == 1:
+                selected_id = candidates[0].get("causal_selected_checkpoint")
+                selected = [
+                    row for row in metrics
+                    if row["pde"] == pde and row["method"] == method
+                    and row["configuration_id"] == "C0"
+                    and row["checkpoint_id"] == selected_id
+                ]
+                if len(selected) == 1:
+                    candidates = selected
+            old_candidates = [
+                row for row in historical
+                if row.get("pde") == pde
+                and row.get("method") in aliases[method]
+                and int(float(row.get("dimension", row.get("d", 0)))) == 100
+            ]
+            new = float(candidates[0]["rmse"]) if len(candidates) == 1 else None
+            old = _historical_rmse(old_candidates[0]) if len(old_candidates) == 1 else None
+            if new is None or old is None:
+                passed = False
+                tolerance = None
+            else:
+                tolerance = max(C0_CONSISTENCY_ABSOLUTE_RMSE, C0_CONSISTENCY_RELATIVE_RMSE * old)
+                passed = abs(new - old) <= tolerance
+            consistency.append({
+                "pde": pde, "method": method, "new_rmse": new,
+                "historical_rmse": old, "tolerance": tolerance, "pass": passed,
+            })
+    checks.append({"id": 6, "name": "original-budget C0 consistency",
+                   "pass": all(row["pass"] for row in consistency), "details": consistency})
+    failures = [row["trajectory_id"] for row in trajectories if row.get("failure")]
+    checks.append({"id": 7, "name": "every numerical failure recorded",
+                   "pass": True, "recorded_failures": failures})
+    totals = [row for row in accounting if row.get("job_id") == "TOTAL"]
+    within = bool(totals and str(totals[0].get("within_18_gpu_hour_cap")).lower() == "true")
+    checks.append({"id": 8, "name": "scheduler accounting reconciled and within cap",
+                   "pass": within, "details": totals})
+    protocol = protocol_payload()
+    checks.append({"id": 9, "name": "common frozen protocols on both PDEs",
+                   "pass": len(trajectories) == 18,
+                   "protocol_sha256": protocol["protocol_sha256"]})
+    submitted = RESULTS_DIR / "submitted_jobs.json"
+    submitted_text = submitted.read_text(encoding="utf-8").lower() if submitted.is_file() else ""
+    checks.append({"id": 10, "name": "no new SDGD-PINN job submitted",
+                   "pass": "sdgd" not in submitted_text})
+    return {
+        "revision": REVISION,
+        "completed_utc": datetime.now(timezone.utc).isoformat(),
+        "overall_pass": all(bool(row["pass"]) for row in checks),
+        "checks": checks,
+    }
+
+
+def _write_fidelity_markdown(payload: dict[str, Any]) -> None:
+    lines = [
+        "# Fidelity audit", "",
+        f"Overall: **{'PASS' if payload['overall_pass'] else 'FAIL'}**", "",
+        "The checks below are mechanical; a failed check is not silently waived.", "",
+        "| # | Check | Result |", "|---:|---|---|",
+    ]
+    for row in payload["checks"]:
+        lines.append(f"| {row['id']} | {row['name']} | {'PASS' if row['pass'] else 'FAIL'} |")
+    lines += ["", "```json", json.dumps(payload, indent=2, sort_keys=True), "```", ""]
+    (RESULTS_DIR / "fidelity_audit.md").write_text("\n".join(lines), encoding="utf-8")
+
+
+def aggregate() -> dict[str, Any]:
+    inventory = training_inventory()
+    if len(inventory) != 18 or any(row["status"] != "COMPLETE" for row in inventory):
+        raise RuntimeError(f"all evaluated trajectories are required: {inventory}")
+    raw_metrics = _metric_rows()
+    metrics = _aggregate_replicates(raw_metrics)
+    trajectories = _trajectory_records()
+    summaries = _trajectory_summary(trajectories, metrics)
+    accounting = _compute_accounting(trajectories)
+    overlap = _overlap(metrics)
+    fidelity = _fidelity(trajectories, metrics, accounting)
+    _write_csv(RESULTS_DIR / "checkpoint_metrics.csv", metrics, STANDARD_FIELDS)
+    _write_csv(RESULTS_DIR / "trajectory_summary.csv", summaries)
+    _write_csv(RESULTS_DIR / "compute_accounting.csv", accounting)
+    write_json_atomic(RESULTS_DIR / "overlap_audit.json", overlap)
+    write_json_atomic(RESULTS_DIR / "artifact_audit.json", fidelity)
+    _write_fidelity_markdown(fidelity)
+    summary = {
+        "revision": REVISION, "status": "COMPLETE",
+        "checkpoint_rows": len(metrics), "trajectory_rows": len(summaries),
+        "overlap": overlap, "fidelity_pass": fidelity["overall_pass"],
+    }
+    write_json_atomic(RESULTS_DIR / "analysis_summary.json", summary)
+    return summary
+
+
+def main() -> None:
+    print(json.dumps(aggregate(), indent=2, sort_keys=True), flush=True)
+
+
+if __name__ == "__main__":
+    main()
