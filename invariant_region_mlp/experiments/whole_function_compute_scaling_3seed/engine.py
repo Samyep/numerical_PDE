@@ -170,7 +170,10 @@ def _train_pinn(spec: RunSpec, device: torch.device) -> dict[str, Any]:
     from picard.utils import hutchinson_trace_estimation_batch
 
     final_epoch = int(spec.settings["training_epochs"])
-    wanted = set(int(v) for v in spec.checkpoint_values)
+    wanted = (
+        set(int(v) for v in spec.checkpoint_values)
+        if spec.sweep == "C0" else {final_epoch}
+    )
     wanted.add(final_epoch)
     batch_size = int(spec.settings["batch_size"])
     hte_vectors = int(spec.settings["hutchinson_vectors"])
