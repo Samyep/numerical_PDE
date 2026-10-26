@@ -51,6 +51,26 @@ def _original(rows: list[dict[str, str]], pde: str, method: str) -> tuple[dict, 
     return item, rmse, selected_id
 
 
+def _overlap_separation(
+    rows: list[dict[str, str]], pde: str, lower: float, upper: float,
+) -> tuple[float, float, float]:
+    def in_interval(row: dict[str, str]) -> bool:
+        minutes = float(row["main_axis_seconds"]) / 60.0
+        return (
+            row["pde"] == pde
+            and row["configuration_id"] == "C0"
+            and lower <= minutes <= upper
+        )
+
+    ta = [float(row["rmse"]) for row in rows if in_interval(row) and row["method"] == "tangent_actor"]
+    baselines = [float(row["rmse"]) for row in rows if in_interval(row) and row["method"] != "tangent_actor"]
+    if not ta or not baselines:
+        raise RuntimeError((pde, lower, upper, len(ta), len(baselines)))
+    worst_ta = max(ta)
+    best_baseline = min(baselines)
+    return worst_ta, best_baseline, best_baseline / worst_ta
+
+
 def render() -> None:
     rows = _csv("checkpoint_metrics.csv")
     trajectories = _csv("trajectory_summary.csv")
@@ -81,6 +101,25 @@ def render() -> None:
                 f"{float(boundary['main_axis_seconds']) / 60:.3f} | {rmse:.6g} | "
                 f"{float(selected_row['relmae']):.6g} |"
             )
+    lines += ["", "## Headline measured comparisons", ""]
+    for pde in PDES:
+        _ta_boundary, ta_rmse, _ta_id = _original(rows, pde, "tangent_actor")
+        _dpi_boundary, dpi_rmse, _dpi_id = _original(rows, pde, "dpi")
+        _pinn_boundary, pinn_rmse, _pinn_id = _original(rows, pde, "pinn_hte")
+        interval = overlap[pde]["intersection_minutes"]
+        worst_ta, best_baseline, conservative_gap = _overlap_separation(
+            rows, pde, float(interval[0]), float(interval[1])
+        )
+        lines += [
+            f"- **{LABEL[pde]} original-budget outputs:** Tangent-Actor RMSE "
+            f"`{ta_rmse:.6g}` is **{dpi_rmse / ta_rmse:.1f}x** lower than DPI and "
+            f"**{pinn_rmse / ta_rmse:.1f}x** lower than PINN-HTE. These checkpoints "
+            "have their own measured method-specific costs and are not an equal-time comparison.",
+            f"- **{LABEL[pde]} observed C0 overlap ({float(interval[0]):.2f}--{float(interval[1]):.2f} min):** "
+            f"the worst measured Tangent-Actor RMSE is `{worst_ta:.6g}`, while the best measured "
+            f"DPI/PINN-HTE RMSE is `{best_baseline:.6g}`--a conservative **{conservative_gap:.1f}x** "
+            "separation using measured checkpoints only (no time interpolation).",
+        ]
     lines += ["", "## C0 anytime trajectories", "",
               "The primary curves are C0. C1/C2 are sensitivity analyses and are not collapsed into a test-selected envelope.", "",
               "| PDE | Method | First measured RMSE (min) | Final measured RMSE (min) | Stop reason |",
@@ -136,6 +175,25 @@ def render() -> None:
         f"- 18-GPU-hour cap respected: **{total.get('within_18_gpu_hour_cap')}**.",
         f"- Protocol SHA-256: `{protocol['protocol_sha256']}`.",
         "- Complete checkpoint, prediction, test-bank, source-revision, and scheduler details are in the companion CSV/JSON artifacts.",
+    ]
+    failed_checks = [item for item in audit["checks"] if not item["pass"]]
+    if failed_checks:
+        lines += ["", "### Failed audit checks", ""]
+        for item in failed_checks:
+            lines.append(f"- **Check {item['id']} -- {item['name']}: FAIL.**")
+            if item["id"] == 6:
+                for detail in item.get("details", []):
+                    if detail.get("pass"):
+                        continue
+                    difference = abs(float(detail["new_rmse"]) - float(detail["historical_rmse"]))
+                    lines.append(
+                        f"  - {LABEL[detail['pde']]} / {LABEL[detail['method']]}: new original-budget "
+                        f"RMSE `{float(detail['new_rmse']):.9g}` versus historical "
+                        f"`{float(detail['historical_rmse']):.9g}`; absolute difference "
+                        f"`{difference:.9g}` exceeds the frozen tolerance "
+                        f"`{float(detail['tolerance']):.9g}`. The failure is retained without changing the threshold."
+                    )
+    lines += [
         "", "## Limitations", "",
         "This is a single-training-seed study (seed 0). Tangent-Actor uses two fixed Monte Carlo inference replicates, but those replicates do not measure training-seed variability. C1/C2 are sensitivity runs, not test-selected hyperparameters. Timing is H100-specific and separates active numerical work from Slurm allocation time. Existing SDGD-PINN fixed-budget results were not rerun and do not appear on these scaling curves.",
         "", "## Figures", "",

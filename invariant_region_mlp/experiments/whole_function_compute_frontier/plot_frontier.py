@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import math
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -42,7 +43,13 @@ def _read() -> list[dict]:
 
 
 def _original_marker(ax, subset: list[dict]) -> None:
-    originals = [row for row in subset if row["is_original_budget"]]
+    # The paper-default reference is C0.  C1/C2 preserve the same algorithmic
+    # boundary for bookkeeping, but their altered numerical configurations are
+    # sensitivity runs rather than additional "original-budget" outputs.
+    originals = [
+        row for row in subset
+        if row["is_original_budget"] and row["configuration_id"] == "C0"
+    ]
     for boundary in originals:
         y = boundary["rmse"]
         if boundary["method"] == "tangent_actor":
@@ -62,7 +69,19 @@ def _original_marker(ax, subset: list[dict]) -> None:
         )
 
 
-def _panel(ax, rows: list[dict], pde: str, *, total_cost: bool = False, legend: bool = False) -> None:
+def _x_limit(rows: list[dict], *, total_cost: bool) -> float:
+    key = "total_compute_seconds" if total_cost else "main_axis_seconds"
+    largest = max((row[key] / 60.0 for row in rows), default=30.0)
+    # Preserve the requested approximately 0--30 minute view while never
+    # clipping a genuinely measured checkpoint that crossed a budget at an
+    # algorithmic boundary.
+    return max(30.0, 5.0 * math.ceil(largest / 5.0)) + 0.5
+
+
+def _panel(
+    ax, rows: list[dict], pde: str, *, total_cost: bool = False,
+    legend: bool = False, x_max: float | None = None,
+) -> None:
     subset = [row for row in rows if row["pde"] == pde]
     x_key = "total_compute_seconds" if total_cost else "main_axis_seconds"
     for method in METHOD_LABELS:
@@ -90,7 +109,7 @@ def _panel(ax, rows: list[dict], pde: str, *, total_cost: bool = False, legend: 
     if not total_cost:
         _original_marker(ax, subset)
     ax.set_yscale("log")
-    ax.set_xlim(0.0, 30.8)
+    ax.set_xlim(0.0, x_max if x_max is not None else _x_limit(subset, total_cost=total_cost))
     ax.set_title(PDE_LABELS[pde])
     ax.set_xlabel("Cumulative training + selection (min)" if not total_cost else "Total compute incl. inference (min)")
     ax.set_ylabel("Whole-function RMSE")
@@ -107,40 +126,46 @@ def _single(rows: list[dict], pde: str, filename: str) -> None:
 
 
 def _joint(rows: list[dict]) -> None:
-    fig, axes = plt.subplots(1, 2, figsize=(8.8, 3.35), constrained_layout=True)
+    fig, axes = plt.subplots(1, 2, figsize=(9.2, 4.15))
+    x_max = _x_limit(rows, total_cost=False)
     for ax, pde in zip(axes, PDES):
-        _panel(ax, rows, pde)
+        _panel(ax, rows, pde, x_max=x_max)
     handles, labels = axes[0].get_legend_handles_labels()
     # Add one semantic entry for the stars without duplicating it per method.
     star = plt.Line2D([], [], marker="*", linestyle="None", color="gray",
                       markeredgecolor="black", markersize=9, label="Original-budget output")
     fig.legend(handles + [star], labels + ["Original-budget output"],
-               loc="lower center", bbox_to_anchor=(0.5, -0.08),
-               ncol=4, frameon=False, fontsize=8)
-    fig.savefig(FIGURE_DIR / "two_pde_accuracy_compute.pdf", bbox_inches="tight")
-    fig.savefig(FIGURE_DIR / "two_pde_accuracy_compute.png", dpi=260, bbox_inches="tight")
+               loc="lower center", bbox_to_anchor=(0.5, 0.015),
+               ncol=5, frameon=False, fontsize=8)
+    fig.subplots_adjust(left=0.075, right=0.99, top=0.90, bottom=0.26, wspace=0.20)
+    fig.savefig(FIGURE_DIR / "two_pde_accuracy_compute.pdf", bbox_inches="tight", pad_inches=0.04)
+    fig.savefig(FIGURE_DIR / "two_pde_accuracy_compute.png", dpi=260, bbox_inches="tight", pad_inches=0.04)
     plt.close(fig)
 
 
 def _configuration_ablation(rows: list[dict]) -> None:
-    fig, axes = plt.subplots(1, 2, figsize=(8.8, 3.35), constrained_layout=True)
+    fig, axes = plt.subplots(1, 2, figsize=(9.2, 4.15))
+    x_max = _x_limit(rows, total_cost=False)
     for ax, pde in zip(axes, PDES):
-        _panel(ax, rows, pde, legend=False)
+        _panel(ax, rows, pde, legend=False, x_max=x_max)
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, -0.08),
-               ncol=3, frameon=False, fontsize=8)
-    fig.savefig(FIGURE_DIR / "configuration_ablation.pdf", bbox_inches="tight")
+    fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, 0.015),
+               ncol=5, frameon=False, fontsize=8)
+    fig.subplots_adjust(left=0.075, right=0.99, top=0.90, bottom=0.26, wspace=0.20)
+    fig.savefig(FIGURE_DIR / "configuration_ablation.pdf", bbox_inches="tight", pad_inches=0.04)
     plt.close(fig)
 
 
 def _total_cost(rows: list[dict]) -> None:
-    fig, axes = plt.subplots(1, 2, figsize=(8.8, 3.35), constrained_layout=True)
+    fig, axes = plt.subplots(1, 2, figsize=(9.2, 4.15))
+    x_max = _x_limit(rows, total_cost=True)
     for ax, pde in zip(axes, PDES):
-        _panel(ax, rows, pde, total_cost=True)
+        _panel(ax, rows, pde, total_cost=True, x_max=x_max)
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, -0.08),
-               ncol=3, frameon=False, fontsize=8)
-    fig.savefig(FIGURE_DIR / "accuracy_vs_total_cost.pdf", bbox_inches="tight")
+    fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, 0.015),
+               ncol=5, frameon=False, fontsize=8)
+    fig.subplots_adjust(left=0.075, right=0.99, top=0.90, bottom=0.26, wspace=0.20)
+    fig.savefig(FIGURE_DIR / "accuracy_vs_total_cost.pdf", bbox_inches="tight", pad_inches=0.04)
     plt.close(fig)
 
 
