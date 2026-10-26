@@ -49,7 +49,7 @@ from .protocol import (
 CHECKED_OUT_REVISION = subprocess.check_output(
     ["git", "rev-parse", "HEAD"], cwd=SOURCE_ROOT, text=True
 ).strip()
-DPI_INTEGRAL_CHUNK_SIZE = 8192
+DPI_INTEGRAL_CHUNK_SIZE = 1024
 
 
 def _scheduler_metadata() -> dict[str, Any]:
