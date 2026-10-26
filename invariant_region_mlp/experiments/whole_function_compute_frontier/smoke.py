@@ -23,10 +23,7 @@ def _ta_smoke(pde: str, device: torch.device) -> list[dict]:
         t = torch.zeros(2, dtype=torch.float64, device=device)
         x = torch.zeros(2, 100, dtype=torch.float64, device=device)
         with torch.no_grad():
-            output = (
-                actor.predict(t, x, benchmark.T)
-                if pde == "b6_fullrank" else actor.predict(t, x)
-            )
+            output = actor.predict(t, x)
         tensors = [item for item in output if item is not None]
         finite = all(bool(torch.isfinite(item).all()) for item in tensors)
         rows.append({
