@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 import csv
 import json
 import math
@@ -13,6 +13,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib.ticker import FixedLocator, FuncFormatter, NullFormatter
 import numpy as np
 
 from invariant_region_mlp.experiments.main_highdim_expansion.benchmarks import (
@@ -192,9 +193,26 @@ def _plot(rows: list[dict[str, Any]]) -> None:
                     alpha=0.96,
                 )
         axis.set_title(titles[pde])
-        axis.set_xlabel("Mean training time per seed (min)")
+        axis.set_xlabel("Mean training time per seed (min, log scale)")
         axis.set_ylabel("Whole-function RMSE")
+        axis.set_xscale("log")
         axis.set_yscale("log")
+        pde_times = [
+            float(row["mean_training_seconds"]) / 60.0
+            for row in rows if row["pde"] == pde
+        ]
+        low, high = min(pde_times), max(pde_times)
+        candidate_ticks = (3, 5, 10, 20, 30, 50, 100)
+        ticks = [
+            tick for tick in candidate_ticks
+            if low * 0.92 <= tick <= high * 1.08
+        ]
+        axis.set_xlim(low * 0.88, high * 1.10)
+        axis.xaxis.set_major_locator(FixedLocator(ticks))
+        axis.xaxis.set_major_formatter(
+            FuncFormatter(lambda value, _position: f"{value:g}")
+        )
+        axis.xaxis.set_minor_formatter(NullFormatter())
         axis.grid(True, which="both", alpha=0.22)
     method_handles = [
         Line2D([0], [0], color=colors[m], marker="o", lw=2.5, label=names[m])
@@ -369,6 +387,32 @@ def _report(summary: list[dict[str, Any]], audit: dict[str, Any]) -> None:
         "",
         "Each point is the mean of three separately computed per-seed RMSE values; error bars are their sample standard deviation. Predictions are not ensembled.",
         "",
+        "## Descriptive best observed points",
+        "",
+        "These post-evaluation minima summarize the measured grid only; they were not used for training, stopping, checkpoint selection, or a test-selected envelope.",
+        "",
+        "| PDE | Method | Sweep | Parameter | Mean time (min) | Mean RMSE | Ratio to TA best |",
+        "|---|---|---|---:|---:|---:|---:|",
+    ]
+    for pde in ("b6_fullrank", "dense_fourier"):
+        pde_rows = [row for row in summary if row["pde"] == pde]
+        ta_best = min(
+            float(row["mean_rmse"])
+            for row in pde_rows if row["method"] == "tangent_actor"
+        )
+        for method in ("tangent_actor", "dpi", "pinn_hte"):
+            row = min(
+                (item for item in pde_rows if item["method"] == method),
+                key=lambda item: float(item["mean_rmse"]),
+            )
+            lines.append(
+                f"| {pde} | {method} | {row['sweep']} | {row['parameter_value']} | "
+                f"{float(row['mean_training_seconds']) / 60:.3f} | "
+                f"{float(row['mean_rmse']):.8g} | "
+                f"{float(row['mean_rmse']) / ta_best:.2f}x |"
+            )
+    lines += [
+        "",
         "## Main results",
         "",
         "| PDE | Method | Sweep | Parameter | Mean time (min) | Mean RMSE | Seed SD |",
@@ -411,11 +455,66 @@ def _report(summary: list[dict[str, Any]], audit: dict[str, Any]) -> None:
         + audit.get("provenance_failures", [])
         + audit.get("numerical_failures", [])
     )
-    lines += ["", "Audit failures/deviations:", ""]
+    lines += ["", "Audit failures and recorded deviations:", ""]
     if failures:
         lines.extend(f"- `{json.dumps(item, sort_keys=True)}`" for item in failures)
     else:
-        lines.append("- None.")
+        lines.append("- Final artifact audit: no failures.")
+    if resource:
+        noncompleted = resource.get("failed_or_cancelled_rows", [])
+        state_counts = Counter(
+            str(row.get("state", "UNKNOWN")).split()[0]
+            for row in noncompleted
+        )
+        lines.append(
+            "- Scheduler history retained and counted: "
+            + ", ".join(
+                f"{state}={count}" for state, count in sorted(state_counts.items())
+            )
+            + "."
+        )
+        formal_timeouts = [
+            row for row in noncompleted
+            if row.get("state") == "TIMEOUT"
+        ]
+        if formal_timeouts:
+            lines.append(
+                "- Formal deviation: the three B6 PINN-HTE C2 runs at "
+                "batch size 16384 timed out at 70:12, then completed with "
+                "the identical numerical configuration after only the Slurm "
+                "wall-time limit was raised; both attempts are included in "
+                "resource accounting."
+            )
+    over_window = [
+        row for row in summary
+        if float(row["mean_training_seconds"]) / 60.0 > 35.0
+    ]
+    if over_window:
+        details = ", ".join(
+            f"{row['pde']}/{row['method']}/{row['sweep']}={float(row['mean_training_seconds']) / 60:.1f} min"
+            for row in over_window
+        )
+        lines.append(
+            "- Timing-calibration deviation: points beyond the intended "
+            f"25--35 minute endpoint are retained ({details})."
+        )
+    pre_fix_audit = RESULTS_DIR / "artifact_audit_pre_dpi_c0_evaluation_fix.json"
+    if pre_fix_audit.is_file():
+        lines.append(
+            "- A pre-fix artifact audit failed because the evaluator skipped "
+            "pre-registered DPI C0 checkpoints at 80/160/320. The FAIL record "
+            "is preserved in `artifact_audit_pre_dpi_c0_evaluation_fix.json`; "
+            "the evaluator-only fix did not retrain models, and the six C0 "
+            "trajectories were re-evaluated in Slurm job 6619464."
+        )
+    archived_chunk_dir = CALIBRATION_MANIFEST.parent / "calibration" / "archived_pre_final_chunk"
+    if archived_chunk_dir.is_dir():
+        archived_count = sum(path.is_dir() for path in archived_chunk_dir.iterdir())
+        lines.append(
+            f"- {archived_count} pre-final DPI chunk-timing directories were "
+            "moved to `calibration/archived_pre_final_chunk/` and preserved; "
+            "they were not used to freeze the final grid."
+        )
     lines += [
         "", "## DPI large-sample chunking validation", "",
         f"Status: **{chunk_validation.get('status', 'MISSING')}**; all nominal samples used: "
