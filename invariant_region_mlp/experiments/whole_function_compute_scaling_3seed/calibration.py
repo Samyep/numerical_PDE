@@ -120,7 +120,9 @@ def _round_insert(method: str, sweep: str, value: float) -> int:
 
 def _predicted_candidates(
     method: str, sweep: str, anchors: list[tuple[int, float]]
-) -> tuple[list[int], dict[int, float], list[tuple[int, float]], int | None]:
+) -> tuple[
+    list[int], dict[int, float], list[tuple[int, float]], int | None, str | None
+]:
     monotone = _monotone_anchors(anchors)
     candidates = sorted({
         *CANDIDATE_LADDERS[(method, sweep)],
@@ -130,19 +132,19 @@ def _predicted_candidates(
         value: _predict_piecewise_log_linear(monotone, value)
         for value in candidates
     }
-    extension_count = 0
-    while predictions[candidates[-1]] < 1500.0:
-        candidates.append(candidates[-1] * 2)
-        predictions[candidates[-1]] = _predict_piecewise_log_linear(
-            monotone, candidates[-1]
-        )
-        extension_count += 1
-        if extension_count > 30:
-            raise RuntimeError(
-                f"timing model does not reach 25 minutes for {(method, sweep)}"
-            )
+    # If the entire declared ladder remains short, time exactly one doubled
+    # value.  Rebuilding after that observation implements the preregistered
+    # repeated-doubling rule without extrapolating directly to an impractical
+    # many-orders-of-magnitude parameter.
+    if predictions[candidates[-1]] < 1500.0:
+        inserted = candidates[-1] * 2
+        candidates.append(inserted)
+        predictions[inserted] = _predict_piecewise_log_linear(monotone, inserted)
+        return candidates, predictions, monotone, inserted, "ladder_below_25_double"
+
     valid_end = [value for value in candidates if 1500.0 <= predictions[value] <= 2100.0]
     inserted: int | None = None
+    supplemental_reason: str | None = None
     if not valid_end:
         below = [value for value in candidates if predictions[value] < 1500.0]
         above = [value for value in candidates if predictions[value] > 2100.0]
@@ -161,7 +163,8 @@ def _predicted_candidates(
             candidates.append(inserted)
             candidates.sort()
         predictions[inserted] = _predict_piecewise_log_linear(monotone, inserted)
-    return candidates, predictions, monotone, inserted
+        supplemental_reason = "geometric_intermediate_for_window_jump"
+    return candidates, predictions, monotone, inserted, supplemental_reason
 
 
 def _projected_seconds(lines: list[dict[str, Any]]) -> float:
@@ -246,9 +249,10 @@ def build_manifest() -> dict[str, Any]:
              float(row["training_seconds"]) * float(row["spec"].calibration_scale))
             for row in rows
         )
-        candidates, predictions, monotone_anchors, inserted = _predicted_candidates(
-            method, sweep, anchors
-        )
+        (
+            candidates, predictions, monotone_anchors, inserted,
+            supplemental_reason,
+        ) = _predicted_candidates(method, sweep, anchors)
         ends = [v for v in candidates if 1500.0 <= predictions[v] <= 2100.0]
         # A geometric intermediate must be measured before its timing can be
         # trusted.  Its provisional prediction need not itself land inside the
@@ -287,7 +291,8 @@ def build_manifest() -> dict[str, Any]:
                 {"parameter_value": value, "scaled_formal_seconds": seconds}
                 for value, seconds in monotone_anchors
             ],
-            "geometric_intermediate": inserted,
+            "supplemental_timing_candidate": inserted,
+            "supplemental_timing_reason": supplemental_reason,
             "calibration_anchors": [
                 {
                     "parameter_value": int(row["spec"].parameter_value),

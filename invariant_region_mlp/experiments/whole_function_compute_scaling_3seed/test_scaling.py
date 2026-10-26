@@ -5,6 +5,7 @@ import pytest
 from .calibration import (
     _monotone_anchors,
     _nearest_distinct,
+    _predicted_candidates,
     _predict_piecewise_log_linear,
 )
 from .protocol import (
@@ -60,3 +61,12 @@ def test_budget_reduction_selects_distinct_targets() -> None:
     values = [1, 2, 3, 4, 5]
     predictions = {1: 300.0, 2: 600.0, 3: 900.0, 4: 1200.0, 5: 1800.0}
     assert _nearest_distinct(values, predictions, (300.0, 900.0, 1800.0)) == [1, 3, 5]
+
+
+def test_slow_ladder_requests_one_measured_doubling() -> None:
+    candidates, _predictions, _anchors, inserted, reason = _predicted_candidates(
+        "dpi", "C1", [(1024, 350.0), (8192, 400.0)]
+    )
+    assert inserted == 131072
+    assert candidates[-1] == inserted
+    assert reason == "ladder_below_25_double"
