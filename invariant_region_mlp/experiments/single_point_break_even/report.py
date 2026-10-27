@@ -74,6 +74,38 @@ def build() -> Path:
                 f"{_fmt(item.get('final_rmse'))} | {crossing} |"
             )
 
+    crossing_lines = []
+    for target_name, threshold in TARGETS.items():
+        for method, label in (
+            ("fh_mlp_standard", "Full-History MLP"),
+            ("deep_bsde", "Deep BSDE"),
+        ):
+            item = analysis["break_even"][target_name].get(method, {})
+            status = item.get("status", "NOT_EVALUATED")
+            if status == "OBSERVED_BREAK_EVEN":
+                crossing_lines.append(
+                    f"- **{target_name}, {label}:** observed between "
+                    f"`{item.get('previous_queries')}` and "
+                    f"`{item['crossing_queries']}` queries; at the first crossing, "
+                    f"TA used `{item['tangent_actor_mean_seconds_at_crossing']:.3f}` s "
+                    f"and the baseline used "
+                    f"`{item['baseline_mean_seconds_at_crossing']:.3f}` s."
+                )
+            elif status == "NOT_REACHED_WITHIN_TESTED_BUDGET":
+                crossing_lines.append(
+                    f"- **{target_name}, {label}:** `NOT_REACHED_WITHIN_TESTED_BUDGET`; "
+                    f"at the largest common measured prefix "
+                    f"(`{item['largest_common_queries']}` queries), TA used "
+                    f"`{item['tangent_actor_mean_seconds']:.3f}` s and the baseline "
+                    f"used `{item['baseline_mean_seconds']:.3f}` s "
+                    f"(baseline/TA = "
+                    f"`{item['baseline_over_tangent_actor_time']:.4f}`)."
+                )
+            else:
+                crossing_lines.append(
+                    f"- **{target_name}, {label}:** `{status}`."
+                )
+
     selection_lines = []
     for target_name in TARGETS:
         values = []
@@ -98,6 +130,14 @@ prefix at which mean baseline time is no smaller than mean Tangent-Actor total
 time.  No line fitted to one query and no interpolated crossing is used.
 The strict-target accuracy result is retained even when its runtime comparison
 is marked `NOT_EVALUATED_COMPUTE_CAP`; no reduced-replicate curve is substituted.
+
+## Measured amortization result
+
+{chr(10).join(crossing_lines)}
+
+These statements stop at the largest prefix actually executed by all three
+replicates.  In particular, a missing crossing is not converted into an
+asymptotic claim by fitting per-query slopes.
 
 ## Frozen calibration choices
 
