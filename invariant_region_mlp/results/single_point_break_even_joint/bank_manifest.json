@@ -1,0 +1,204 @@
+{
+  "banks": {
+    "calibration": {
+      "contains_reference": true,
+      "file_sha256": "6948692e564446756cd83b180ad65573cca76e08fcbe54394fb98d74cecc38f0",
+      "input_array_sha256": "6d4a025d764413e7242fbdbd3358d4dcd5cee5b1918c54cc15c8ca6d2b0448e8",
+      "law": "t=0; x~N(0,I_100); row zero replaced by exact origin",
+      "path": "invariant_region_mlp/results/single_point_break_even_joint/banks/calibration.npz",
+      "seed": 503452024,
+      "size": 32
+    },
+    "final": {
+      "contains_reference": true,
+      "file_sha256": "fc02cdef79345de8009430a21e21ff6eb804c2e610ad8bd0faf11327925d2269",
+      "input_array_sha256": "552c692782d39fa644de24d3f6bcb941f6331ee919fd942de6ae716e322ad340",
+      "law": "t=0; x~N(0,I_100); row zero replaced by exact origin",
+      "path": "invariant_region_mlp/results/single_point_break_even_joint/banks/final.npz",
+      "seed": 194022954,
+      "size": 64
+    },
+    "timing": {
+      "contains_reference": false,
+      "file_sha256": "19bbade840e6a8183f460dc6b1485c95560902b5d62ab379d0a711e99845d202",
+      "input_array_sha256": "295e610ee22e1c903386eb08a59e035bfd5ca00efc5add608ad35f53e999c2fb",
+      "law": "t=0; x~N(0,I_100)",
+      "path": "invariant_region_mlp/results/single_point_break_even_joint/banks/timing.npz",
+      "seed": 326692472,
+      "size": 1048576
+    }
+  },
+  "basis_sha256": "e08d9619fda41e83ad9f8d2ecba818e46328e4d0482473d71f79491d5d62b0ea",
+  "protocol": {
+    "active_cap_seconds": 3600.0,
+    "addendum_commit": "8a18360be907da36b8b875c4fdf6ba0b0cc1007d",
+    "allocated_gpu_hour_cap": 18.0,
+    "bank_sizes": {
+      "calibration": 32,
+      "final": 64,
+      "timing": 1048576
+    },
+    "base_seed": 20261282,
+    "calibration_seeds": [
+      0,
+      1,
+      2
+    ],
+    "deep_bsde_candidate_updates": [
+      500,
+      1000,
+      2000,
+      4000
+    ],
+    "deep_bsde_timing_counts": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      24,
+      32,
+      48,
+      64
+    ],
+    "dimension": 100,
+    "fh_configs": [
+      [
+        2,
+        8
+      ],
+      [
+        2,
+        16
+      ],
+      [
+        2,
+        32
+      ],
+      [
+        3,
+        8
+      ],
+      [
+        3,
+        12
+      ],
+      [
+        3,
+        16
+      ],
+      [
+        3,
+        24
+      ]
+    ],
+    "fh_replicates": 5,
+    "final_seeds": [
+      10,
+      11,
+      12
+    ],
+    "horizon": 0.5,
+    "joint_actor_config": {
+      "batch_size": 512,
+      "checkpoint_interval": 250,
+      "depth": 4,
+      "gradient_clip": 10.0,
+      "label_time_steps": 32,
+      "learning_rate": 0.00015,
+      "optimizer_steps": 5000,
+      "parent_batch": 8,
+      "path_chunk": 32,
+      "paths_per_label": 128,
+      "training_points": 8192,
+      "validation_points": 512,
+      "width": 384
+    },
+    "pde": "joint_nonseparable",
+    "revision": "single_point_break_even_joint_v1",
+    "source_import_commit": "5d4bc017c",
+    "source_validated_commit": "b7dd884225936a0d67f770efce1207bc478d4f7c",
+    "ta_inference_replicates": 2,
+    "ta_paths": [
+      32,
+      128,
+      512
+    ],
+    "ta_steps": 64,
+    "targets": {
+      "epsilon_1": 0.06,
+      "epsilon_2": 0.02
+    },
+    "timing_counts": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256,
+      512,
+      1024,
+      2048,
+      4096,
+      8192,
+      16384,
+      32768,
+      65536,
+      131072,
+      262144,
+      524288,
+      1048576
+    ]
+  },
+  "revision": "single_point_break_even_joint_v1",
+  "separation_audit": {
+    "comparisons": [
+      {
+        "exact_overlap_count": 1,
+        "left": "calibration",
+        "mandated_origin_overlap": true,
+        "right": "final",
+        "unexpected_overlap_count": 0
+      },
+      {
+        "exact_overlap_count": 1,
+        "left": "calibration",
+        "mandated_origin_overlap": true,
+        "right": "previous_32",
+        "unexpected_overlap_count": 0
+      },
+      {
+        "exact_overlap_count": 1,
+        "left": "final",
+        "mandated_origin_overlap": true,
+        "right": "previous_32",
+        "unexpected_overlap_count": 0
+      },
+      {
+        "exact_overlap_count": 0,
+        "left": "timing",
+        "right": "calibration",
+        "row_fingerprint_matches": 0
+      },
+      {
+        "exact_overlap_count": 0,
+        "left": "timing",
+        "right": "final",
+        "row_fingerprint_matches": 0
+      },
+      {
+        "exact_overlap_count": 0,
+        "left": "timing",
+        "right": "previous_32",
+        "row_fingerprint_matches": 0
+      }
+    ],
+    "hash_method": "two independent vectorized uint64 fingerprints; all matches exactly confirmed",
+    "status": "VALIDATED_WITH_MANDATED_ORIGIN_EXCEPTION",
+    "timing_unique_rows": 1048576
+  },
+  "truth_policy": "calibration/final only; timing bank contains no truth"
+}
