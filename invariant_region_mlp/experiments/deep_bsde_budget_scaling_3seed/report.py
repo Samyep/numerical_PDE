@@ -32,7 +32,7 @@ def write_report() -> str:
         f"- Numerical failures: **{completeness['numerical_failure_count']}**.",
         f"- Allocation preflight: **{preflight['status']}**, projected {preflight['projected_total_gpu_hours_with_contingency']:.2f} H100 GPU-hours including contingency.",
         f"- Actual allocation (including recorded failures/retries): **{accounting['total_allocated_h100_gpu_hours']:.2f} H100 GPU-hours**.",
-        f"- Frozen DPI/PINN predictions on the paired 64-point subset: **{matched['status']}** (no retraining).",
+        f"- Frozen DPI/PINN predictions on the paired 64-point subset: **{matched['status']}**, **{matched.get('row_count', 0)} / 108** seed-level artifacts (no retraining).",
         "",
         "Deep BSDE is a native scalar-initial-value method here: every one of the 64 query states receives a fresh model. Reported Deep BSDE compute is therefore the cumulative active training time for all 64 models, averaged across training seeds—not a one-query runtime.",
         "",
