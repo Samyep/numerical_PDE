@@ -127,6 +127,7 @@ def _metrics(
     extra_nonfinite: int = 0,
 ) -> dict[str, Any]:
     error = prediction - reference
+    finite_error = error[np.isfinite(error)]
     nonfinite = extra_nonfinite + int((~np.isfinite(prediction)).sum())
     nonfinite += sum(int(row.get("nonfinite_count", 0)) for row in records)
     return {
@@ -134,9 +135,11 @@ def _metrics(
         "candidate": candidate,
         "run_count": len(records),
         "prediction_count": len(prediction),
-        "pooled_rmse": float(np.sqrt(np.mean(error**2))),
-        "pooled_mae": float(np.mean(np.abs(error))),
-        "pooled_bias": float(np.mean(error)),
+        "pooled_rmse": (
+            float(np.sqrt(np.mean(finite_error**2))) if len(finite_error) else 1e300
+        ),
+        "pooled_mae": float(np.mean(np.abs(finite_error))) if len(finite_error) else 1e300,
+        "pooled_bias": float(np.mean(finite_error)) if len(finite_error) else 0.0,
         "nonfinite_count": nonfinite,
         "gpu": ";".join(sorted({str(row.get("gpu")) for row in records})),
     }

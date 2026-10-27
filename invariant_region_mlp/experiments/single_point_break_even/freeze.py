@@ -73,6 +73,7 @@ def _summary(
     **extra: Any,
 ) -> dict[str, Any]:
     error = predictions - references
+    finite_error = error[np.isfinite(error)]
     active = np.asarray([float(row[active_key]) for row in records], dtype=np.float64)
     point_count = np.asarray([float(row.get("points", 1)) for row in records])
     per_query = active / point_count
@@ -83,9 +84,11 @@ def _summary(
         "candidate": candidate,
         "run_count": len(records),
         "prediction_count": len(predictions),
-        "pooled_rmse": float(np.sqrt(np.mean(error**2))),
-        "pooled_mae": float(np.mean(np.abs(error))),
-        "pooled_bias": float(np.mean(error)),
+        "pooled_rmse": (
+            float(np.sqrt(np.mean(finite_error**2))) if len(finite_error) else 1e300
+        ),
+        "pooled_mae": float(np.mean(np.abs(finite_error))) if len(finite_error) else 1e300,
+        "pooled_bias": float(np.mean(finite_error)) if len(finite_error) else 0.0,
         "mean_active_seconds": float(np.mean(active)),
         "std_active_seconds": float(np.std(active, ddof=1)) if len(active) > 1 else 0.0,
         "mean_seconds_per_query": float(np.mean(per_query)),
@@ -194,6 +197,7 @@ def _db_rows(bank_hash: str) -> list[dict[str, Any]]:
         prediction = np.asarray(predictions, dtype=np.float64)
         reference = np.asarray(references, dtype=np.float64)
         error = prediction - reference
+        finite_error = error[np.isfinite(error)]
         nonfinite += int((~np.isfinite(prediction)).sum())
         row = {
             "method": "deep_bsde",
@@ -201,12 +205,16 @@ def _db_rows(bank_hash: str) -> list[dict[str, Any]]:
             "updates": updates,
             "run_count": len(records),
             "prediction_count": len(prediction),
-            "pooled_rmse": float(np.sqrt(np.mean(error**2))) if len(error) else float("inf"),
-            "pooled_mae": float(np.mean(np.abs(error))) if len(error) else float("inf"),
-            "pooled_bias": float(np.mean(error)) if len(error) else float("nan"),
-            "mean_active_seconds": float(np.mean(active)) if active else float("inf"),
+            "pooled_rmse": (
+                float(np.sqrt(np.mean(finite_error**2))) if len(finite_error) else 1e300
+            ),
+            "pooled_mae": (
+                float(np.mean(np.abs(finite_error))) if len(finite_error) else 1e300
+            ),
+            "pooled_bias": float(np.mean(finite_error)) if len(finite_error) else 0.0,
+            "mean_active_seconds": float(np.mean(active)) if active else 1e300,
             "std_active_seconds": float(np.std(active, ddof=1)) if len(active) > 1 else 0.0,
-            "mean_seconds_per_query": float(np.mean(active)) if active else float("inf"),
+            "mean_seconds_per_query": float(np.mean(active)) if active else 1e300,
             "nonfinite_count": nonfinite,
             "gpu": ";".join(sorted({str(value.get("gpu")) for value in records})),
         }
