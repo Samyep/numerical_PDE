@@ -130,6 +130,7 @@ def audit() -> dict:
         RESULTS_DIR / "submitted_jobs.json",
         RESULTS_DIR / "scheduling_amendment.json",
         RESULTS_DIR / "scope_amendment.json",
+        RESULTS_DIR / "checkpoint_storage_archive.json",
         RESULTS_DIR / "infrastructure_incidents.json",
         RESULTS_DIR / "resource_accounting.json",
         *required_tables,
