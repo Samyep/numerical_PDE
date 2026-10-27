@@ -212,6 +212,9 @@ def _plot(
             q = np.asarray(sorted(curve), dtype=np.float64)
             mean = np.asarray([curve[int(value)]["mean"] for value in q])
             std = np.asarray([curve[int(value)]["std"] for value in q])
+            observed_minimum = np.asarray(
+                [curve[int(value)]["minimum"] for value in q]
+            )
             axis.plot(
                 q,
                 mean,
@@ -223,7 +226,11 @@ def _plot(
             )
             axis.fill_between(
                 q,
-                np.maximum(mean - std, np.finfo(float).tiny),
+                # Arithmetic mean - SD can be negative for startup-dominated
+                # timings.  A negative time has no representation on a log
+                # axis, so truncate only that lower visual bound at the
+                # smallest actually observed replicate time.
+                np.maximum(mean - std, observed_minimum),
                 mean + std,
                 color=METHOD_COLORS[method],
                 alpha=0.14,
