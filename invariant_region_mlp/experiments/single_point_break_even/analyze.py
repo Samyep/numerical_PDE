@@ -276,6 +276,9 @@ def _plot(
 
 def analyze() -> dict[str, Any]:
     frozen = require_frozen_selections()
+    analysis_code_commit = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=SOURCE_ROOT, text=True
+    ).strip()
     final = _read(RESULTS_DIR / "final_accuracy_summary.json")
     timing_coverage = _read(RESULTS_DIR / "timing_coverage.json")
     all_rows: list[dict[str, Any]] = []
@@ -355,6 +358,7 @@ def analyze() -> dict[str, Any]:
         "status": "COMPLETE",
         "analyzed_utc": datetime.now(timezone.utc).isoformat(),
         "frozen_selections_canonical_sha256": frozen["canonical_sha256"],
+        "analysis_code_commit": analysis_code_commit,
         "targets": final["targets"],
         "break_even": crossings,
         "timing_row_count": len(all_rows),

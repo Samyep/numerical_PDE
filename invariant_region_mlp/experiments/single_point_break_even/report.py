@@ -182,6 +182,7 @@ states and deliberately contains no truth array.
 
 - Preregistration commit: `498589cc2`.
 - Frozen implementation commit: `{frozen['code_commit']}`.
+- Analysis code commit: `{analysis['analysis_code_commit']}`.
 - Frozen selection hash: `{frozen['canonical_sha256']}`.
 - Study revision: `{analysis['revision']}`.
 - Figure: `results/single_point_break_even/figures/matched_accuracy_break_even.pdf`.
