@@ -161,6 +161,17 @@ def _atomic_torch(path: Path, payload: dict[str, Any]) -> None:
             temporary.unlink()
 
 
+def _load_resume(path: Path) -> dict[str, Any]:
+    """Load RNG tensors on CPU before restoring device-specific state.
+
+    ``torch.Generator.set_state`` requires a CPU ByteTensor even when the
+    generator itself is CUDA-backed.  Model and optimizer state are copied to
+    their parameter devices by ``load_state_dict`` below.
+    """
+
+    return torch.load(path, map_location="cpu", weights_only=False)
+
+
 def _finite_parameters(model: torch.nn.Module) -> bool:
     return all(bool(torch.isfinite(parameter).all()) for parameter in model.parameters())
 
@@ -248,7 +259,7 @@ def train_query(
     nonfinite_events: list[dict[str, Any]] = []
     validation_hash = array_sha256(validation_dw.detach().cpu().numpy())
     if resume.is_file() and not preflight:
-        state = torch.load(resume, map_location=device, weights_only=False)
+        state = _load_resume(resume)
         expected_resume = {
             "revision": REVISION,
             "trajectory_signature": trajectory.signature,

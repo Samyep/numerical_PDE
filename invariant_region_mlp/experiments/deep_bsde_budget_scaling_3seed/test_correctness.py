@@ -14,7 +14,7 @@ from invariant_region_mlp.experiments.original_pde_benchmark_comparison.deep_bsd
 )
 
 from .protocol import SCALING_DISPLAY_POINTS, TRAJECTORIES, TRAJECTORY_BY_ID, scaling_task_specs
-from .solver import VariableStartDeepBSDE
+from .solver import VariableStartDeepBSDE, _load_resume
 
 
 class _TimeDriftBenchmark:
@@ -157,4 +157,18 @@ def test_cuda_device_unavailable_is_a_fail_fast_infrastructure_error() -> None:
         "CUDA error: CUDA-capable device(s) is/are busy or unavailable"
     ))
     assert not _is_cuda_infrastructure_failure(RuntimeError("nonfinite terminal loss"))
+
+
+def test_resume_generator_state_is_loaded_as_cpu_bytetensor(tmp_path: Path) -> None:
+    path = tmp_path / "resume.pt"
+    torch.save({
+        "train_generator": torch.Generator(device="cpu").manual_seed(17).get_state(),
+        "validation_dw": torch.zeros(1, dtype=torch.float64),
+    }, path)
+    state = _load_resume(path)
+    generator_state = state["train_generator"]
+    assert generator_state.device.type == "cpu"
+    assert generator_state.dtype == torch.uint8
+    restored = torch.Generator(device="cpu")
+    restored.set_state(generator_state)
 
