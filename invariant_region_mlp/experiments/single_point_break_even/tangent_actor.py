@@ -50,6 +50,24 @@ def _require_h100(device: torch.device) -> str:
     return name
 
 
+def _next_prefix_fits(
+    *,
+    fixed_seconds: float,
+    inference_seconds: float,
+    previous_queries: int,
+    next_queries: int,
+    max_active_seconds: float,
+) -> bool:
+    """Truth-free guard for the frozen active-compute timing cap."""
+    if fixed_seconds + inference_seconds >= max_active_seconds:
+        return False
+    if previous_queries <= 0 or inference_seconds <= 0.0:
+        return True
+    seconds_per_query = inference_seconds / previous_queries
+    projected_increment = seconds_per_query * (next_queries - previous_queries)
+    return fixed_seconds + inference_seconds + projected_increment <= max_active_seconds
+
+
 def _configure():
     """Redirect every source artifact into this isolated result namespace."""
     source_ta.RAW_DIR = RAW_DIR
@@ -245,7 +263,18 @@ def timing(
     previous = 0
     peak = 0
     for count in TIMING_COUNTS:
-        if inference_elapsed >= max_active_seconds:
+        fixed_seconds = training_seconds + checkpoint_load_seconds
+        # Avoid knowingly starting a large doubling interval that cannot fit
+        # in the frozen per-replicate active-compute cap.  This forecast uses
+        # only timing already observed in this truth-free run; it never
+        # fabricates or reports the unexecuted prefix.
+        if not _next_prefix_fits(
+            fixed_seconds=fixed_seconds,
+            inference_seconds=inference_elapsed,
+            previous_queries=previous,
+            next_queries=count,
+            max_active_seconds=max_active_seconds,
+        ):
             break
         local_t = bank["t"][previous:count]
         local_x = bank["x"][previous:count]

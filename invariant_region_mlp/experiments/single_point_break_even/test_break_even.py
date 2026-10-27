@@ -6,7 +6,7 @@ import json
 
 import numpy as np
 
-from . import deep_bsde
+from . import deep_bsde, tangent_actor
 from .protocol import (
     DB_CANDIDATE_UPDATES,
     DIMENSION,
@@ -53,4 +53,28 @@ def test_json_protocol_values_are_finite() -> None:
     payload = {"targets": TARGETS, "paths": TA_PATHS, "configs": FH_CONFIGS}
     encoded = json.dumps(payload, allow_nan=False)
     assert np.isfinite(len(encoded))
+
+
+def test_tangent_actor_timing_cap_includes_training() -> None:
+    assert tangent_actor._next_prefix_fits(
+        fixed_seconds=800.0,
+        inference_seconds=100.0,
+        previous_queries=100,
+        next_queries=200,
+        max_active_seconds=3600.0,
+    )
+    assert not tangent_actor._next_prefix_fits(
+        fixed_seconds=800.0,
+        inference_seconds=1500.0,
+        previous_queries=100,
+        next_queries=200,
+        max_active_seconds=3600.0,
+    )
+    assert not tangent_actor._next_prefix_fits(
+        fixed_seconds=3600.0,
+        inference_seconds=0.0,
+        previous_queries=0,
+        next_queries=1,
+        max_active_seconds=3600.0,
+    )
 
