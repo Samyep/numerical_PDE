@@ -22,6 +22,9 @@ def write_report() -> str:
     preflight = json.loads((RESULTS_DIR / "preflight_allocation_gate.json").read_text(encoding="utf-8"))
     matched = json.loads((RESULTS_DIR / "matched_existing_baselines_status.json").read_text(encoding="utf-8"))
     scope = json.loads((RESULTS_DIR / "scope_amendment.json").read_text(encoding="utf-8"))
+    incidents = json.loads(
+        (RESULTS_DIR / "infrastructure_incidents.json").read_text(encoding="utf-8")
+    )
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=SOURCE_ROOT, text=True).strip()
     lines = [
         "# Deep BSDE hyperparameter-budget scaling (three seeds)",
@@ -35,6 +38,7 @@ def write_report() -> str:
         f"- Frozen DPI/PINN predictions on the paired 64-point subset: **{matched['status']}**, **{matched.get('row_count', 0)} / 108** seed-level artifacts (no retraining).",
         f"- Scope amendment: **C0/C1/C2 only**, {scope['expected_active_tasks']} tasks / {scope['expected_terminal_records']} terminal records. Joint J1/J2/J3 scaling is excluded from analysis and tables at the user's request before the truth gate opened.",
         "- Excluded work is retained for audit and charged to total allocation: one completed J1 bundle and four terminal records from an interrupted J3 bundle; no excluded accuracy is computed.",
+        f"- Infrastructure incidents: **{len(incidents.get('incidents', []))}**. A CUDA-unavailable H100 node affected nine task launches; exact frozen-task retries exclude that node, and every failed/cancelled allocation is retained in accounting.",
         "",
         "Deep BSDE is a native scalar-initial-value method here: every one of the 64 query states receives a fresh model. Reported Deep BSDE compute is therefore the cumulative active training time for all 64 models, averaged across training seeds—not a one-query runtime.",
         "",

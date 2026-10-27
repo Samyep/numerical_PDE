@@ -97,6 +97,16 @@ def audit() -> dict:
         or scope.get("expected_terminal_records") != expected_records
     ):
         failures.append("C0/C1/C2 scope amendment mismatch")
+    incidents = json.loads(
+        (RESULTS_DIR / "infrastructure_incidents.json").read_text(encoding="utf-8")
+    )
+    for incident in incidents.get("incidents", []):
+        if (
+            incident.get("accuracy_or_truth_observed") is not False
+            or incident.get("allocation_included_in_final_accounting") is not True
+            or incident.get("retry_array_job_id") not in submitted.get("all_job_ids", [])
+        ):
+            failures.append("infrastructure incident provenance mismatch")
     required_tables = [
         TABLE_DIR / "deep_bsde_budget_scaling_main.tex",
         TABLE_DIR / "deep_bsde_budget_scaling_main_preview.pdf",
@@ -120,6 +130,7 @@ def audit() -> dict:
         RESULTS_DIR / "submitted_jobs.json",
         RESULTS_DIR / "scheduling_amendment.json",
         RESULTS_DIR / "scope_amendment.json",
+        RESULTS_DIR / "infrastructure_incidents.json",
         RESULTS_DIR / "resource_accounting.json",
         *required_tables,
     ]
