@@ -13,6 +13,20 @@
       "recovery": "Excluded the affected node and resubmitted the exact frozen task indices without numerical changes.",
       "retry_array_job_id": "6630293",
       "status": "INFRASTRUCTURE_RETRY_SUBMITTED"
+    },
+    {
+      "accuracy_or_truth_observed": false,
+      "affected_array_task_indices_failed_before_numerical_training": [11],
+      "allocation_included_in_final_accounting": true,
+      "detected_utc": "2026-10-27T21:23:14Z",
+      "error": "CUDA device became busy or unavailable at the first synchronization call inside train_query",
+      "failed_array_job_id": "6630293",
+      "legacy_redundant_infrastructure_markers_preserved": 64,
+      "node": "atl1-1-03-010-30-0",
+      "numerical_output_produced": false,
+      "recovery": "Added CUDA infrastructure fail-fast handling, excluded both affected nodes, and resubmitted task 11 unchanged.",
+      "retry_array_job_id": "6630351",
+      "status": "INFRASTRUCTURE_RETRY_SUBMITTED"
     }
   ],
   "status": "RECORDED"
