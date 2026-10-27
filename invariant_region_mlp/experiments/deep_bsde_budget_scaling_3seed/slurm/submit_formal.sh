@@ -17,10 +17,16 @@ python - "$job_id" <<'PY'
 import json, sys
 from datetime import datetime, timezone
 from invariant_region_mlp.experiments.deep_bsde_budget_scaling_3seed.protocol import RESULTS_DIR, write_json_atomic
-write_json_atomic(RESULTS_DIR / "submitted_jobs.json", {
+path = RESULTS_DIR / "submitted_jobs.json"
+payload = json.loads(path.read_text()) if path.is_file() else {}
+job_ids = list(payload.get("all_job_ids", []))
+job_ids.append(sys.argv[1])
+payload.update({
     "formal_array_job_id": sys.argv[1],
-    "submitted_utc": datetime.now(timezone.utc).isoformat(),
+    "all_job_ids": job_ids,
+    "formal_submitted_utc": datetime.now(timezone.utc).isoformat(),
 })
+write_json_atomic(path, payload)
 PY
 echo "$job_id"
 
