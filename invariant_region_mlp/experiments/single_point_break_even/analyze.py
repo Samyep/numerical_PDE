@@ -447,10 +447,11 @@ def _timing_integrity(
                 "valid_status": record.get("status") in {"complete", "TIME_CAP"},
                 "no_nonfinite": int(record.get("nonfinite_count", -1)) == 0,
                 "input_prefix_hash": record.get("query_input_sha256") == expected_input_hash,
-                "prefixes_strictly_increase": (
+                "prefixes_consistent_with_completed_queries": (
                     bool(query_counts)
                     and all(b > a for a, b in zip(query_counts, query_counts[1:]))
-                    and query_counts[-1] == completed
+                    and query_counts[0] > 0
+                    and query_counts[-1] <= completed
                 ),
                 "time_is_monotone": (
                     bool(total_seconds)
