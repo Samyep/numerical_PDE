@@ -1,0 +1,25 @@
+{
+  "decision_basis": {
+    "allen_cahn_total_cap_h100_hours": 18.0,
+    "allocated_before_timing_h100_hours": 9.131948,
+    "decision": "Run the complete three-replicate primary-target timing comparison first. Do not submit the six secondary-target timing tasks because their one-hour-per-replicate worst-case allocation cannot fit after the primary comparison while preserving the frozen total cap.",
+    "decision_utc": "2026-10-27T08:12:37Z",
+    "primary_slurm_array": "6624759_[3-8,12-14]",
+    "submitted_manifest_indices": [3, 4, 5, 6, 7, 8, 12, 13, 14],
+    "unsubmitted_manifest_indices": [0, 1, 2, 9, 10, 11]
+  },
+  "revision": "single_point_break_even_v1",
+  "status": "FROZEN_COMPUTE_CURTAILMENT",
+  "targets": {
+    "epsilon_1": {
+      "deep_bsde": "RUN",
+      "fh_mlp_standard": "RUN",
+      "tangent_actor": "RUN"
+    },
+    "epsilon_2": {
+      "deep_bsde": "TARGET_NOT_REACHED",
+      "fh_mlp_standard": "NOT_EVALUATED_COMPUTE_CAP",
+      "tangent_actor": "NOT_EVALUATED_COMPUTE_CAP"
+    }
+  }
+}
