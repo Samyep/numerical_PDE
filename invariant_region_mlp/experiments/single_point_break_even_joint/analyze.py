@@ -89,7 +89,6 @@ def _plot(curves: dict[tuple[str, str], list[dict[str, Any]]], final: dict[str, 
     # empty axis, so the publication figure shows the primary matched-accuracy
     # comparison and leaves the secondary outcome in the report/table.
     target = "epsilon_1"
-    threshold = TARGETS[target]
     fig, axis = plt.subplots(figsize=(7.25, 4.55), constrained_layout=True)
     for method in METHODS:
         item = final["targets"][target][method]
@@ -116,9 +115,9 @@ def _plot(curves: dict[tuple[str, str], list[dict[str, Any]]], final: dict[str, 
         axis.axvspan(previous, observed, color="#6f6f6f", alpha=0.09, zorder=0)
         axis.axvline(observed, color="#555555", lw=1.0, ls=":", zorder=2)
         axis.text(
-            np.sqrt(previous * observed), 0.035, "observed break-even interval",
+            np.sqrt(previous * observed), 0.055, "observed break-even interval",
             transform=axis.get_xaxis_transform(), ha="center", va="bottom",
-            fontsize=8.2, color="#444444",
+            rotation=90, fontsize=8.0, color="#444444",
         )
 
     axis.set_xscale("log", base=2)
@@ -128,14 +127,9 @@ def _plot(curves: dict[tuple[str, str], list[dict[str, Any]]], final: dict[str, 
     axis.set_xlim(0.8, 1.16 * 2**20)
     axis.set_xlabel("Distinct initial-state queries")
     axis.set_ylabel("Measured total H100 time (s)")
-    axis.set_title(rf"Joint nonseparable, $d=100$  |  RMSE $\leq {threshold:.0e}$", pad=10)
+    axis.set_title(r"Joint nonseparable ($d=100$), RMSE $\leq 0.06$", pad=10)
     axis.grid(True, which="both", alpha=0.20, linewidth=0.6)
     axis.legend(loc="center left", bbox_to_anchor=(0.025, 0.52), frameon=False)
-    axis.text(
-        0.025, 0.965, "Deep BSDE: target not reached",
-        transform=axis.transAxes, ha="left", va="top", fontsize=8.6,
-        color="#444444",
-    )
     for suffix in ("png", "pdf"):
         fig.savefig(FIGURE_DIR / f"joint_matched_accuracy_break_even.{suffix}", dpi=300, bbox_inches="tight")
     plt.close(fig)
