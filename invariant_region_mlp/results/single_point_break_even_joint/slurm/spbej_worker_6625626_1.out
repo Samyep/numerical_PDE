@@ -1,0 +1,53 @@
+---------------------------------------
+Begin Slurm Prolog: Oct-27-2026 06:05:21
+Job ID:    6625628
+User ID:   ywang4280
+Account:   isye
+Job name:  spbej_worker
+Partition: ice-gpu
+QOS:       coe-ice
+---------------------------------------
+0, GPU-106bec26-ba7d-8b44-4c02-2eb895d72b32, NVIDIA H100 80GB HBM3, 81559 MiB, 615.71.09
+joint_break_even_d100_s1 a1 labels=283.8s fit=10.8s validation=0.00572871
+joint_break_even_d100_s1 a2 labels=283.0s fit=9.4s validation=0.00183183
+joint_break_even_d100_s1 a3 labels=282.8s fit=9.5s validation=0.00113017
+joint_break_even_d100_s1 a4 labels=283.2s fit=9.4s validation=0.000790171
+{
+  "finished_utc": "2026-10-27T10:28:19.117818+00:00",
+  "gpu_count": 1,
+  "record_ids": [
+    "joint_break_even_d100_s1",
+    "ta__calibration__s1__direct__r0",
+    "ta__calibration__s1__mcv_32__r0",
+    "ta__calibration__s1__mcv_32__r1",
+    "ta__calibration__s1__mcv_128__r0",
+    "ta__calibration__s1__mcv_128__r1",
+    "ta__calibration__s1__mcv_512__r0",
+    "ta__calibration__s1__mcv_512__r1"
+  ],
+  "revision": "single_point_break_even_joint_v1",
+  "slurm_array_task_id": "1",
+  "slurm_job_id": "6625628",
+  "stage": "calibration",
+  "status": "complete",
+  "task": {
+    "index": 1,
+    "kind": "ta_calibration_bundle",
+    "seed": 1
+  },
+  "task_id": "calibration__0001__ta_calibration_bundle",
+  "task_wall_seconds": 1369.4471979539376
+}
+---------------------------------------
+Begin Slurm Epilog: Oct-27-2026 06:28:19
+Job ID:        6625628
+Array Job ID:  6625626_1
+User ID:       ywang4280
+Account:       isye
+Job name:      spbej_worker
+Resources:     cpu=8,gres/gpu:h100=1,mem=64G,node=1
+Rsrc Used:     cput=03:04:08,vmem=0,walltime=00:23:01,mem=1352576K,energy_used=0
+Partition:     ice-gpu
+QOS:           coe-ice
+Nodes:         atl1-1-03-013-13-0
+---------------------------------------

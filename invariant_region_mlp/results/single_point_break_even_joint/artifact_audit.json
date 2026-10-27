@@ -1,0 +1,151 @@
+{
+  "allocated_h100_gpu_hours": 5.838178167855302,
+  "artifacts": {
+    "invariant_region_mlp/results/single_point_break_even_joint/FROZEN_SELECTIONS.json": "3a796f08624f4706034187377dab79649acc4d7790f2fd78c1061e17af780655",
+    "invariant_region_mlp/results/single_point_break_even_joint/analysis_summary.json": "723df0abee0099d794cc587637787132410ddab3971e1e6b951612e8d7eb956a",
+    "invariant_region_mlp/results/single_point_break_even_joint/bank_manifest.json": "a2e09c543a26feaef7998afd00abbc4c40110986048e288c1fc3bdcaa9915acd",
+    "invariant_region_mlp/results/single_point_break_even_joint/break_even_summary.csv": "44e828d8462f117ccb47a58bf049043c8784f47076f00b4459baaa30481be250",
+    "invariant_region_mlp/results/single_point_break_even_joint/calibration_rows.csv": "97e15227bcb25ea624c37313dc6543c331673fad96162a29effb94b5b072dbd0",
+    "invariant_region_mlp/results/single_point_break_even_joint/figures/joint_matched_accuracy_break_even.pdf": "30c4178053a4c36cbafba2c409feb47e40ed677d634aaa4d3a5b6fa4ea38fe8f",
+    "invariant_region_mlp/results/single_point_break_even_joint/figures/joint_matched_accuracy_break_even.png": "0337dbe6bc701f2d0354090f2886cdaddd5ee87e8b4fb7a709896c9573923ddc",
+    "invariant_region_mlp/results/single_point_break_even_joint/final_accuracy_rows.csv": "1e6ad53178c5a258f1d4928aa0e6a253ffe64ece2eb2b180cd4502941af873f6",
+    "invariant_region_mlp/results/single_point_break_even_joint/final_accuracy_summary.json": "f1a622eae42481871dfc05beaa5f96df90ae05eae4abcfad4ccb30b24c0288f4",
+    "invariant_region_mlp/results/single_point_break_even_joint/preflight_audit.json": "1e21c58fda202e3e5d1e9efd7464aaaf9b50051fd699faef163dc467480ab127",
+    "invariant_region_mlp/results/single_point_break_even_joint/reference_audit.json": "9389202d5027226e96181c5d0d4661ca4184b4df3f8a88710f575ebc65d1db02",
+    "invariant_region_mlp/results/single_point_break_even_joint/resource_accounting.csv": "8d8aa190250a37a1e2de4e36790011dbd0f3a5b2362245fcb12133ef753c63e8",
+    "invariant_region_mlp/results/single_point_break_even_joint/timing_coverage.json": "c52298846cf724be5b29571a8146e9d3bae5e12b475f7c71ceb4d74118571eea",
+    "invariant_region_mlp/results/single_point_break_even_joint/timing_rows.csv": "e4013e00caea1dd8bf753c0738fd391a9ae43d05d2bd37eb61609b7f234d1975"
+  },
+  "audited_utc": "2026-10-27T11:54:38.569859+00:00",
+  "checks": {
+    "all_required_artifacts_exist": true,
+    "analysis_complete": true,
+    "frozen_selection_hash_valid": true,
+    "preflight_validated": true,
+    "reference_validated": true,
+    "three_replicates_per_timed_configuration": true,
+    "timing_bank_has_no_truth": true,
+    "timing_bank_shape": true,
+    "timing_records_integrity": true,
+    "within_18_h100_hour_cap": true
+  },
+  "overall_pass": true,
+  "revision": "single_point_break_even_joint_v1",
+  "status": "VALIDATED",
+  "timing_record_audit": [
+    {
+      "candidate": "n2_M16",
+      "checks": {
+        "actual_prefix_execution": true,
+        "h100": true,
+        "input_prefix_hash": true,
+        "no_nonfinite": true,
+        "prediction_finite": true,
+        "prediction_hash": true,
+        "prediction_shape": true,
+        "prefixes_monotone": true,
+        "times_monotone": true,
+        "truth_not_loaded": true,
+        "valid_status": true
+      },
+      "method": "fh_mlp_standard",
+      "overall_pass": true,
+      "replicate": 0
+    },
+    {
+      "candidate": "n2_M16",
+      "checks": {
+        "actual_prefix_execution": true,
+        "h100": true,
+        "input_prefix_hash": true,
+        "no_nonfinite": true,
+        "prediction_finite": true,
+        "prediction_hash": true,
+        "prediction_shape": true,
+        "prefixes_monotone": true,
+        "times_monotone": true,
+        "truth_not_loaded": true,
+        "valid_status": true
+      },
+      "method": "fh_mlp_standard",
+      "overall_pass": true,
+      "replicate": 1
+    },
+    {
+      "candidate": "n2_M16",
+      "checks": {
+        "actual_prefix_execution": true,
+        "h100": true,
+        "input_prefix_hash": true,
+        "no_nonfinite": true,
+        "prediction_finite": true,
+        "prediction_hash": true,
+        "prediction_shape": true,
+        "prefixes_monotone": true,
+        "times_monotone": true,
+        "truth_not_loaded": true,
+        "valid_status": true
+      },
+      "method": "fh_mlp_standard",
+      "overall_pass": true,
+      "replicate": 2
+    },
+    {
+      "candidate": "direct",
+      "checks": {
+        "actual_prefix_execution": true,
+        "h100": true,
+        "input_prefix_hash": true,
+        "no_nonfinite": true,
+        "prediction_finite": true,
+        "prediction_hash": true,
+        "prediction_shape": true,
+        "prefixes_monotone": true,
+        "times_monotone": true,
+        "truth_not_loaded": true,
+        "valid_status": true
+      },
+      "method": "tangent_actor",
+      "overall_pass": true,
+      "replicate": 0
+    },
+    {
+      "candidate": "direct",
+      "checks": {
+        "actual_prefix_execution": true,
+        "h100": true,
+        "input_prefix_hash": true,
+        "no_nonfinite": true,
+        "prediction_finite": true,
+        "prediction_hash": true,
+        "prediction_shape": true,
+        "prefixes_monotone": true,
+        "times_monotone": true,
+        "truth_not_loaded": true,
+        "valid_status": true
+      },
+      "method": "tangent_actor",
+      "overall_pass": true,
+      "replicate": 1
+    },
+    {
+      "candidate": "direct",
+      "checks": {
+        "actual_prefix_execution": true,
+        "h100": true,
+        "input_prefix_hash": true,
+        "no_nonfinite": true,
+        "prediction_finite": true,
+        "prediction_hash": true,
+        "prediction_shape": true,
+        "prefixes_monotone": true,
+        "times_monotone": true,
+        "truth_not_loaded": true,
+        "valid_status": true
+      },
+      "method": "tangent_actor",
+      "overall_pass": true,
+      "replicate": 2
+    }
+  ]
+}

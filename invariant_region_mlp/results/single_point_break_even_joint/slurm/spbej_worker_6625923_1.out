@@ -1,0 +1,50 @@
+---------------------------------------
+Begin Slurm Prolog: Oct-27-2026 06:50:53
+Job ID:    6625925
+User ID:   ywang4280
+Account:   isye
+Job name:  spbej_worker
+Partition: ice-gpu
+QOS:       coe-ice
+---------------------------------------
+0, GPU-08ed3a4a-de04-7f82-b3ad-0215e43f4b96, NVIDIA H100 80GB HBM3, 81559 MiB, 615.71.09
+joint_break_even_d100_s11 a1 labels=291.6s fit=11.9s validation=0.00545545
+joint_break_even_d100_s11 a2 labels=289.7s fit=10.1s validation=0.0018405
+joint_break_even_d100_s11 a3 labels=304.9s fit=10.0s validation=0.00107615
+joint_break_even_d100_s11 a4 labels=300.7s fit=9.7s validation=0.00081295
+{
+  "finished_utc": "2026-10-27T11:15:01.500661+00:00",
+  "gpu_count": 1,
+  "record_ids": [
+    "joint_break_even_d100_s11",
+    "ta__final__s11__direct__r0"
+  ],
+  "revision": "single_point_break_even_joint_v1",
+  "slurm_array_task_id": "1",
+  "slurm_job_id": "6625925",
+  "stage": "final_accuracy",
+  "status": "complete",
+  "task": {
+    "candidates": [
+      "direct"
+    ],
+    "index": 1,
+    "kind": "ta_final_bundle",
+    "seed": 11
+  },
+  "task_id": "final_accuracy__0001__ta_final_bundle",
+  "task_wall_seconds": 1440.6680310301017
+}
+---------------------------------------
+Begin Slurm Epilog: Oct-27-2026 07:15:03
+Job ID:        6625925
+Array Job ID:  6625923_1
+User ID:       ywang4280
+Account:       isye
+Job name:      spbej_worker
+Resources:     cpu=8,gres/gpu:h100=1,mem=64G,node=1
+Rsrc Used:     cput=03:13:36,vmem=0,walltime=00:24:12,mem=1614360K,energy_used=0
+Partition:     ice-gpu
+QOS:           coe-ice
+Nodes:         atl1-1-03-013-8-0
+---------------------------------------

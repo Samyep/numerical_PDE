@@ -1,0 +1,43 @@
+---------------------------------------
+Begin Slurm Prolog: Oct-27-2026 07:18:55
+Job ID:    6626045
+User ID:   ywang4280
+Account:   isye
+Job name:  spbej_worker
+Partition: ice-gpu
+QOS:       coe-ice
+---------------------------------------
+0, GPU-6984032e-dcb6-3deb-e54e-b6fc6c771ef6, NVIDIA H100 80GB HBM3, 81559 MiB, 615.71.09
+{
+  "finished_utc": "2026-10-27T11:19:18.992318+00:00",
+  "gpu_count": 1,
+  "record_ids": [
+    "ta__timing__s10__direct"
+  ],
+  "revision": "single_point_break_even_joint_v1",
+  "slurm_array_task_id": "0",
+  "slurm_job_id": "6626045",
+  "stage": "timing",
+  "status": "complete",
+  "task": {
+    "candidate": "direct",
+    "index": 0,
+    "kind": "ta_timing",
+    "seed": 10
+  },
+  "task_id": "timing__0000__ta_timing",
+  "task_wall_seconds": 15.94685005908832
+}
+---------------------------------------
+Begin Slurm Epilog: Oct-27-2026 07:19:19
+Job ID:        6626045
+Array Job ID:  6626044_0
+User ID:       ywang4280
+Account:       isye
+Job name:      spbej_worker
+Resources:     cpu=8,gres/gpu:h100=1,mem=64G,node=1
+Rsrc Used:     cput=00:03:36,vmem=0,walltime=00:00:27,mem=3575752K,energy_used=0
+Partition:     ice-gpu
+QOS:           coe-ice
+Nodes:         atl1-1-03-013-8-0
+---------------------------------------

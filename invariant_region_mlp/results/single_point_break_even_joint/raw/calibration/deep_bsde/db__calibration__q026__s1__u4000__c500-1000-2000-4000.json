@@ -1,0 +1,95 @@
+{
+  "active_seconds": 87.945352925919,
+  "amortized_decoder": false,
+  "candidates": [
+    {
+      "absolute_error": 0.028885793362313006,
+      "active_seconds": 10.999675124883652,
+      "error": 0.028885793362313006,
+      "nonfinite_count_cumulative": 0,
+      "reference": 0.5254856355305437,
+      "updates": 500,
+      "validation_terminal_clipped_mse": 0.011240506000347887,
+      "y0": 0.5543714288928567
+    },
+    {
+      "absolute_error": 0.0231035950470031,
+      "active_seconds": 22.055667443899438,
+      "error": 0.0231035950470031,
+      "nonfinite_count_cumulative": 0,
+      "reference": 0.5254856355305437,
+      "updates": 1000,
+      "validation_terminal_clipped_mse": 0.007574781740363375,
+      "y0": 0.5485892305775468
+    },
+    {
+      "absolute_error": 0.011252927894137787,
+      "active_seconds": 43.96459889202379,
+      "error": 0.011252927894137787,
+      "nonfinite_count_cumulative": 0,
+      "reference": 0.5254856355305437,
+      "updates": 2000,
+      "validation_terminal_clipped_mse": 0.003596266670312009,
+      "y0": 0.5367385634246815
+    },
+    {
+      "absolute_error": 0.0019129199388902007,
+      "active_seconds": 87.85720555204898,
+      "error": 0.0019129199388902007,
+      "nonfinite_count_cumulative": 0,
+      "reference": 0.5254856355305437,
+      "updates": 4000,
+      "validation_terminal_clipped_mse": 0.002090183317269354,
+      "y0": 0.5273985554694339
+    }
+  ],
+  "capture_updates": [
+    500,
+    1000,
+    2000,
+    4000
+  ],
+  "checkpoint": "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/results/single_point_break_even_joint/checkpoints/calibration/deep_bsde/db__calibration__q026__s1__u4000__c500-1000-2000-4000.pt",
+  "checkpoint_sha256": "53f075b456040c3e240a9508018bdebf6dbd7cff410329995884d555946f1dc6",
+  "completed_updates": 4000,
+  "configuration": {
+    "batch_size": 64,
+    "benchmark": "joint_nonseparable_d100",
+    "dtype": "float64",
+    "hidden_widths": [
+      110,
+      110
+    ],
+    "intervals": 20,
+    "iterations": 4000,
+    "learning_rate": 0.01,
+    "logging_frequency": 500,
+    "total_time": 0.5,
+    "validation_size": 256,
+    "y_init_range": [
+      0.0,
+      1.0
+    ]
+  },
+  "finished_utc": "2026-10-27T10:39:31.147520+00:00",
+  "fresh_model_per_query": true,
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "max_updates": 4000,
+  "method": "deep_bsde_native_scalar_y0",
+  "native_scalar_y0": true,
+  "nonfinite_count": 0,
+  "parameter_count": 665861,
+  "peak_gpu_bytes": 103625216,
+  "point": 26,
+  "prediction_file": "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/results/single_point_break_even_joint/predictions/calibration/deep_bsde/db__calibration__q026__s1__u4000__c500-1000-2000-4000.npz",
+  "prediction_sha256": "2599c83bc14cfc621e4fbc832cc1c43d4d261153ec6a2bd325b63dc9783232c7",
+  "query_input_sha256": "7d87723e7c446f7e4d5d15fda6639e7a33f7f6951a162d71b2e109191d7fa331",
+  "resume_checkpoint": "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/results/single_point_break_even_joint/checkpoints/calibration/deep_bsde/db__calibration__q026__s1__u4000__c500-1000-2000-4000_resume.pt",
+  "revision": "single_point_break_even_joint_v1",
+  "run_id": "db__calibration__q026__s1__u4000__c500-1000-2000-4000",
+  "seed": 1,
+  "stage": "calibration",
+  "status": "complete",
+  "truth_loaded_only_after_frozen_training_schedule": true,
+  "validation_dw_sha256": "da40e43d56d3552aea51e43b594ca89e0f709cd2400d82663691fe52f91399a5"
+}

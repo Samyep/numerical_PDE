@@ -1,0 +1,109 @@
+{
+  "aggregated_utc": "2026-10-27T11:16:53.461177+00:00",
+  "configuration_changes_after_final_errors": false,
+  "final_bank_input_sha256": "552c692782d39fa644de24d3f6bcb941f6331ee919fd942de6ae716e322ad340",
+  "frozen_selections_canonical_sha256": "a14f2c78d1dae61912f1820eb60e884c3aa9f9856031b22ce7b433e9236b0e38",
+  "revision": "single_point_break_even_joint_v1",
+  "rows": [
+    {
+      "candidate": "direct",
+      "gpu": "NVIDIA H100 80GB HBM3",
+      "method": "tangent_actor",
+      "nonfinite_count": 0,
+      "pooled_bias": 0.002427084870606886,
+      "pooled_mae": 0.00307435226144174,
+      "pooled_rmse": 0.003764354572928127,
+      "prediction_count": 192,
+      "run_count": 3
+    },
+    {
+      "candidate": "n2_M16",
+      "gpu": "NVIDIA H100 80GB HBM3",
+      "method": "fh_mlp_standard",
+      "nonfinite_count": 0,
+      "pooled_bias": 0.0044625622391815225,
+      "pooled_mae": 0.013833479385907472,
+      "pooled_rmse": 0.0176567694237466,
+      "prediction_count": 320,
+      "run_count": 5
+    },
+    {
+      "candidate": "n2_M32",
+      "gpu": "NVIDIA H100 80GB HBM3",
+      "method": "fh_mlp_standard",
+      "nonfinite_count": 0,
+      "pooled_bias": 0.0030457331286926166,
+      "pooled_mae": 0.009112541217879735,
+      "pooled_rmse": 0.011861496336411675,
+      "prediction_count": 320,
+      "run_count": 5
+    }
+  ],
+  "status": "COMPLETE",
+  "targets": {
+    "epsilon_1": {
+      "deep_bsde": {
+        "calibration": {
+          "best_actual_mean_seconds": 89.58233271567256,
+          "best_calibration_rmse": 0.016321816051856716,
+          "best_candidate": "updates_4000",
+          "selected_candidate": null,
+          "status": "TARGET_NOT_REACHED"
+        },
+        "selected_candidate": null,
+        "status": "TARGET_NOT_REACHED"
+      },
+      "fh_mlp_standard": {
+        "calibration_rmse": 0.020764149972181997,
+        "final_prediction_count": 320,
+        "final_rmse": 0.0176567694237466,
+        "nonfinite_count": 0,
+        "selected_candidate": "n2_M16",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.06
+      },
+      "tangent_actor": {
+        "calibration_rmse": 0.004662251947315029,
+        "final_prediction_count": 192,
+        "final_rmse": 0.003764354572928127,
+        "nonfinite_count": 0,
+        "selected_candidate": "direct",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.06
+      },
+      "threshold": 0.06
+    },
+    "epsilon_2": {
+      "deep_bsde": {
+        "calibration": {
+          "best_actual_mean_seconds": 89.58233271567256,
+          "best_calibration_rmse": 0.016321816051856716,
+          "best_candidate": "updates_4000",
+          "selected_candidate": null,
+          "status": "TARGET_NOT_REACHED"
+        },
+        "selected_candidate": null,
+        "status": "TARGET_NOT_REACHED"
+      },
+      "fh_mlp_standard": {
+        "calibration_rmse": 0.013974306613907953,
+        "final_prediction_count": 320,
+        "final_rmse": 0.011861496336411675,
+        "nonfinite_count": 0,
+        "selected_candidate": "n2_M32",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.02
+      },
+      "tangent_actor": {
+        "calibration_rmse": 0.004662251947315029,
+        "final_prediction_count": 192,
+        "final_rmse": 0.003764354572928127,
+        "nonfinite_count": 0,
+        "selected_candidate": "direct",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.02
+      },
+      "threshold": 0.02
+    }
+  }
+}

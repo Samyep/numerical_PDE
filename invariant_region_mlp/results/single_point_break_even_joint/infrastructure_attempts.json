@@ -1,0 +1,26 @@
+{
+  "attempts": [
+    {
+      "task_id": "postprocess_final_accuracy_duplicate_20261027T1116Z",
+      "stage": "postprocessing",
+      "kind": "duplicate_final_accuracy_aggregation",
+      "status": "failed",
+      "task_wall_seconds": 48.0,
+      "slurm_job_id": null,
+      "slurm_array_task_id": null,
+      "gpu_count": 0,
+      "error": "A second CPU-only aggregation was started while the first was still running; both used final_accuracy_rows.csv.tmp, so the duplicate process failed during os.replace after the first process completed successfully. No experiment output or GPU run was changed."
+    },
+    {
+      "task_id": "timing_submit_sha_guard_20261027T1119Z",
+      "stage": "infrastructure",
+      "kind": "timing_submission_sha_guard",
+      "status": "failed",
+      "task_wall_seconds": 2.5,
+      "slurm_job_id": null,
+      "slurm_array_task_id": null,
+      "gpu_count": 0,
+      "error": "The first submission command used an incorrectly expanded abbreviated commit as its exact-SHA guard and exited before sbatch. The full checked-out SHA was then read directly and job 6626044 was submitted without moving the checkout."
+    }
+  ]
+}

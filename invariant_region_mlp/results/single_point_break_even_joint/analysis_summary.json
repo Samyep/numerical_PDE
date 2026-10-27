@@ -1,0 +1,143 @@
+{
+  "analysis_code_commit": "7111bd0de808f40801ff677ee90774407f859b5b",
+  "analyzed_utc": "2026-10-27T11:54:18.655177+00:00",
+  "break_even": {
+    "epsilon_1": {
+      "deep_bsde": {
+        "status": "TARGET_NOT_REACHED"
+      },
+      "fh_mlp_standard": {
+        "baseline_mean_seconds_at_crossing": 1521.8966233139702,
+        "baseline_std_seconds_at_crossing": 5.267764227348444,
+        "crossing_queries": 1048576,
+        "per_replicate_crossings": [
+          {
+            "crossing_queries": 1048576,
+            "previous_queries": 524288,
+            "replicate": 0,
+            "status": "OBSERVED_BREAK_EVEN"
+          },
+          {
+            "crossing_queries": 1048576,
+            "previous_queries": 524288,
+            "replicate": 1,
+            "status": "OBSERVED_BREAK_EVEN"
+          },
+          {
+            "crossing_queries": 1048576,
+            "previous_queries": 524288,
+            "replicate": 2,
+            "status": "OBSERVED_BREAK_EVEN"
+          }
+        ],
+        "previous_queries": 524288,
+        "status": "OBSERVED_BREAK_EVEN",
+        "tangent_actor_mean_seconds_at_crossing": 1420.2835372226157,
+        "tangent_actor_std_seconds_at_crossing": 18.78674727696605
+      }
+    },
+    "epsilon_2": {
+      "deep_bsde": {
+        "status": "TARGET_NOT_REACHED"
+      },
+      "fh_mlp_standard": {
+        "status": "NOT_EVALUATED_COMPUTE_CAP"
+      }
+    }
+  },
+  "curve_keys": [
+    [
+      "tangent_actor",
+      "direct"
+    ],
+    [
+      "fh_mlp_standard",
+      "n2_M16"
+    ]
+  ],
+  "frozen_selections_canonical_sha256": "a14f2c78d1dae61912f1820eb60e884c3aa9f9856031b22ce7b433e9236b0e38",
+  "revision": "single_point_break_even_joint_v1",
+  "status": "COMPLETE",
+  "targets": {
+    "epsilon_1": {
+      "deep_bsde": {
+        "calibration": {
+          "best_actual_mean_seconds": 89.58233271567256,
+          "best_calibration_rmse": 0.016321816051856716,
+          "best_candidate": "updates_4000",
+          "selected_candidate": null,
+          "status": "TARGET_NOT_REACHED"
+        },
+        "selected_candidate": null,
+        "status": "TARGET_NOT_REACHED"
+      },
+      "fh_mlp_standard": {
+        "calibration_rmse": 0.020764149972181997,
+        "final_prediction_count": 320,
+        "final_rmse": 0.0176567694237466,
+        "nonfinite_count": 0,
+        "selected_candidate": "n2_M16",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.06
+      },
+      "tangent_actor": {
+        "calibration_rmse": 0.004662251947315029,
+        "final_prediction_count": 192,
+        "final_rmse": 0.003764354572928127,
+        "nonfinite_count": 0,
+        "selected_candidate": "direct",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.06
+      },
+      "threshold": 0.06
+    },
+    "epsilon_2": {
+      "deep_bsde": {
+        "calibration": {
+          "best_actual_mean_seconds": 89.58233271567256,
+          "best_calibration_rmse": 0.016321816051856716,
+          "best_candidate": "updates_4000",
+          "selected_candidate": null,
+          "status": "TARGET_NOT_REACHED"
+        },
+        "selected_candidate": null,
+        "status": "TARGET_NOT_REACHED"
+      },
+      "fh_mlp_standard": {
+        "calibration_rmse": 0.013974306613907953,
+        "final_prediction_count": 320,
+        "final_rmse": 0.011861496336411675,
+        "nonfinite_count": 0,
+        "selected_candidate": "n2_M32",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.02
+      },
+      "tangent_actor": {
+        "calibration_rmse": 0.004662251947315029,
+        "final_prediction_count": 192,
+        "final_rmse": 0.003764354572928127,
+        "nonfinite_count": 0,
+        "selected_candidate": "direct",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.02
+      },
+      "threshold": 0.02
+    }
+  },
+  "timing_coverage": {
+    "policy": "primary target first; secondary runs only when it reuses the primary configuration",
+    "revision": "single_point_break_even_joint_v1",
+    "targets": {
+      "epsilon_1": {
+        "deep_bsde": "TARGET_NOT_REACHED",
+        "fh_mlp_standard": "RUN",
+        "tangent_actor": "RUN"
+      },
+      "epsilon_2": {
+        "deep_bsde": "TARGET_NOT_REACHED",
+        "fh_mlp_standard": "NOT_EVALUATED_COMPUTE_CAP",
+        "tangent_actor": "RUN"
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "policy": "primary target first; secondary runs only when it reuses the primary configuration",
+  "revision": "single_point_break_even_joint_v1",
+  "targets": {
+    "epsilon_1": {
+      "deep_bsde": "TARGET_NOT_REACHED",
+      "fh_mlp_standard": "RUN",
+      "tangent_actor": "RUN"
+    },
+    "epsilon_2": {
+      "deep_bsde": "TARGET_NOT_REACHED",
+      "fh_mlp_standard": "NOT_EVALUATED_COMPUTE_CAP",
+      "tangent_actor": "RUN"
+    }
+  }
+}
