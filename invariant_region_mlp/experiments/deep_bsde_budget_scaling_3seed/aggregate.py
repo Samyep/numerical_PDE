@@ -254,14 +254,33 @@ def _find_prediction_json(scaling_root: Path, row: dict[str, str], seed: int) ->
             scaling_root / "runs" / f"formal_{method}_{pde}_{sweep.lower()}_{parameter_name}-{parameter_value}_s{seed}"
         ]
     for run_dir in candidates:
-        prediction_root = run_dir / "predictions" / method / pde / sweep
+        # The frozen scaling study stores C1/C2 predictions below a legacy
+        # ``C0`` directory even though their metadata correctly records the
+        # actual sweep.  Discover below the PDE directory and validate the
+        # metadata instead of inferring provenance from that legacy folder.
+        prediction_root = run_dir / "predictions" / method / pde
         if not prediction_root.is_dir():
             continue
-        for metadata_path in prediction_root.glob("*.json"):
+        matches = []
+        for metadata_path in prediction_root.rglob("*.json"):
             metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
             observed = int(metadata.get("parameter_value", metadata.get("algorithm_iteration", -1)))
-            if observed == int(parameter_value):
-                return metadata_path
+            if (
+                metadata.get("pde") == pde
+                and metadata.get("method") == method
+                and metadata.get("sweep") == sweep
+                and metadata.get("parameter_name") == parameter_name
+                and int(metadata.get("training_seed", metadata.get("seed", -1))) == int(seed)
+                and observed == int(parameter_value)
+            ):
+                matches.append(metadata_path)
+        if len(matches) > 1:
+            raise RuntimeError(
+                f"ambiguous frozen prediction artifacts for {pde}/{method}/{sweep}/"
+                f"{parameter_name}={parameter_value}/seed={seed}: {matches}"
+            )
+        if matches:
+            return matches[0]
     return None
 
 
@@ -284,8 +303,20 @@ def _matched_existing(selected: list[dict[str, str]]) -> tuple[list[dict[str, An
                 missing.append({**selected_row, "seed": seed})
                 continue
             prediction_path = metadata_path.with_suffix(".npz")
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            if not prediction_path.is_file():
+                raise RuntimeError(f"missing frozen prediction array: {prediction_path}")
+            expected_prediction_hash = metadata.get("prediction_sha256")
+            if expected_prediction_hash and file_sha256(prediction_path) != expected_prediction_hash:
+                raise RuntimeError(f"frozen prediction hash mismatch: {prediction_path}")
             with np.load(prediction_path, allow_pickle=False) as payload:
                 full_prediction = np.asarray(payload["prediction"], dtype=np.float64)
+            if full_prediction.shape != (1200,) and full_prediction.shape != (960,):
+                raise RuntimeError(
+                    f"unexpected frozen prediction shape {full_prediction.shape}: {prediction_path}"
+                )
+            if int(index_cache[pde].max()) >= full_prediction.shape[0]:
+                raise RuntimeError(f"frozen prediction does not cover final indices: {prediction_path}")
             prediction = full_prediction[index_cache[pde]]
             metrics = _metrics(prediction, truth_cache[pde])
             rows.append({

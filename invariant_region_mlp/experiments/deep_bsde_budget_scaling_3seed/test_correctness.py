@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import math
+import json
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -109,4 +111,34 @@ def test_no_truth_dependency_in_solver_module() -> None:
     assert "_truth.npz" not in source
     assert "truth_u" not in source
     assert "exact_u" not in source
+
+
+def test_frozen_prediction_discovery_uses_metadata_not_legacy_folder(
+    tmp_path: Path,
+) -> None:
+    from .aggregate import _find_prediction_json
+
+    run = (
+        tmp_path / "runs"
+        / "formal_dpi_b6_fullrank_c1_integral_mc_samples-512_s0"
+        / "predictions" / "dpi" / "b6_fullrank" / "C0"
+    )
+    run.mkdir(parents=True)
+    metadata_path = run / "picard_0080.json"
+    metadata_path.write_text(json.dumps({
+        "pde": "b6_fullrank",
+        "method": "dpi",
+        "sweep": "C1",
+        "parameter_name": "integral_mc_samples",
+        "parameter_value": 512,
+        "training_seed": 0,
+    }), encoding="utf-8")
+    selected = {
+        "pde": "b6_fullrank",
+        "method": "dpi",
+        "sweep": "C1",
+        "parameter_name": "integral_mc_samples",
+        "parameter_value": "512",
+    }
+    assert _find_prediction_json(tmp_path, selected, 0) == metadata_path
 
