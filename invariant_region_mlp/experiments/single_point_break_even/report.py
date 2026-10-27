@@ -36,6 +36,7 @@ def build() -> Path:
     artifact = _read(RESULTS_DIR / "artifact_audit.json") if (
         RESULTS_DIR / "artifact_audit.json"
     ).is_file() else {"status": "PENDING"}
+    timing_coverage = _read(RESULTS_DIR / "timing_coverage.json")
     resource_path = RESULTS_DIR / "resource_accounting.csv"
     resources = []
     if resource_path.is_file():
@@ -56,7 +57,11 @@ def build() -> Path:
         ):
             item = analysis["targets"][target_name][method]
             if method == "tangent_actor":
-                crossing = "reference curve"
+                crossing = (
+                    "reference curve"
+                    if timing_coverage["targets"][target_name][method] == "RUN"
+                    else timing_coverage["targets"][target_name][method]
+                )
             else:
                 cross = analysis["break_even"][target_name].get(method, {})
                 if cross.get("status") == "OBSERVED_BREAK_EVEN":
@@ -91,6 +96,8 @@ def build() -> Path:
 The headline crossing is the first **actually executed** common query-count
 prefix at which mean baseline time is no smaller than mean Tangent-Actor total
 time.  No line fitted to one query and no interpolated crossing is used.
+The strict-target accuracy result is retained even when its runtime comparison
+is marked `NOT_EVALUATED_COMPUTE_CAP`; no reduced-replicate curve is substituted.
 
 ## Frozen calibration choices
 

@@ -179,6 +179,7 @@ def _plot(
     final: dict[str, Any],
     target_rows: dict[str, dict[str, list[dict[str, Any]]]],
     crossings: dict[str, Any],
+    timing_coverage: dict[str, Any],
 ) -> None:
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(1, 2, figsize=(9.0, 3.75), sharey=True)
@@ -186,9 +187,15 @@ def _plot(
         details = final["targets"][target_name]
         for method in ("tangent_actor", "fh_mlp_standard", "deep_bsde"):
             item = details[method]
-            if item["status"] != "FINAL_ACCURACY_PASSED":
+            coverage_status = timing_coverage["targets"][target_name][method]
+            if item["status"] != "FINAL_ACCURACY_PASSED" or coverage_status != "RUN":
                 label = METHOD_LABELS[method]
-                reason = item["status"].replace("_", " ").lower()
+                status = (
+                    item["status"]
+                    if item["status"] != "FINAL_ACCURACY_PASSED"
+                    else coverage_status
+                )
+                reason = status.replace("_", " ").lower()
                 axis.text(
                     0.98,
                     0.06 + 0.07 * list(METHOD_LABELS).index(method),
@@ -270,6 +277,7 @@ def _plot(
 def analyze() -> dict[str, Any]:
     frozen = require_frozen_selections()
     final = _read(RESULTS_DIR / "final_accuracy_summary.json")
+    timing_coverage = _read(RESULTS_DIR / "timing_coverage.json")
     all_rows: list[dict[str, Any]] = []
     cache: dict[tuple[str, str], list[dict[str, Any]]] = {}
     target_rows: dict[str, dict[str, list[dict[str, Any]]]] = {}
@@ -282,6 +290,8 @@ def analyze() -> dict[str, Any]:
             item = final["targets"][target_name][method]
             if item["status"] != "FINAL_ACCURACY_PASSED":
                 continue
+            if timing_coverage["targets"][target_name][method] != "RUN":
+                continue
             candidate = item["selected_candidate"]
             key = (method, candidate)
             if key not in cache:
@@ -289,6 +299,26 @@ def analyze() -> dict[str, Any]:
                 all_rows.extend(cache[key])
             target_rows[target_name][method] = cache[key]
         if "tangent_actor" not in target_rows[target_name]:
+            for baseline in ("fh_mlp_standard", "deep_bsde"):
+                baseline_final_status = final["targets"][target_name][baseline]["status"]
+                status = (
+                    baseline_final_status
+                    if baseline_final_status != "FINAL_ACCURACY_PASSED"
+                    else timing_coverage["targets"][target_name]["tangent_actor"]
+                )
+                local = {"status": status}
+                crossings[target_name][baseline] = local
+                break_even_rows.append({
+                    "target": target_name,
+                    "threshold": TARGETS[target_name],
+                    "baseline": baseline,
+                    "status": local["status"],
+                    "previous_queries": None,
+                    "crossing_queries": None,
+                    "largest_common_queries": None,
+                    "tangent_actor_seconds": None,
+                    "baseline_seconds": None,
+                })
             continue
         for baseline in ("fh_mlp_standard", "deep_bsde"):
             if baseline not in target_rows[target_name]:
@@ -319,7 +349,7 @@ def analyze() -> dict[str, Any]:
             })
     _write_csv(RESULTS_DIR / "timing_rows.csv", all_rows)
     _write_csv(RESULTS_DIR / "break_even_summary.csv", break_even_rows)
-    _plot(final, target_rows, crossings)
+    _plot(final, target_rows, crossings, timing_coverage)
     payload = {
         "revision": REVISION,
         "status": "COMPLETE",
@@ -328,6 +358,7 @@ def analyze() -> dict[str, Any]:
         "targets": final["targets"],
         "break_even": crossings,
         "timing_row_count": len(all_rows),
+        "timing_coverage": timing_coverage,
         "no_extrapolated_crossings": True,
         "hardware": "NVIDIA H100 80GB",
     }
@@ -380,6 +411,7 @@ def artifact_audit() -> dict[str, Any]:
         RESULTS_DIR / "resource_accounting.csv",
         RESULTS_DIR / "analysis_summary.json",
         RESULTS_DIR / "infrastructure_attempts.json",
+        RESULTS_DIR / "timing_coverage.json",
         FIGURE_DIR / "matched_accuracy_break_even.png",
         FIGURE_DIR / "matched_accuracy_break_even.pdf",
     ]
@@ -393,6 +425,15 @@ def artifact_audit() -> dict[str, Any]:
         "frozen_selection_hash_valid": bool(require_frozen_selections()),
         "analysis_complete": _read(RESULTS_DIR / "analysis_summary.json").get("status") == "COMPLETE",
     }
+    with (RESULTS_DIR / "resource_accounting.csv").open(
+        newline="", encoding="utf-8"
+    ) as handle:
+        resource_rows = list(csv.DictReader(handle))
+    allocated_gpu_hours = sum(
+        float(row["task_wall_seconds"]) * float(row.get("gpu_count") or 0)
+        for row in resource_rows
+    ) / 3600.0
+    checks["within_18_h100_hour_cap"] = allocated_gpu_hours <= 18.0
     payload = {
         "revision": REVISION,
         "status": "VALIDATED" if all(checks.values()) else "FAILED",
@@ -403,6 +444,7 @@ def artifact_audit() -> dict[str, Any]:
             for path in required if path.is_file()
         },
         "timing_input_sha256": array_sha256(timing["t"], timing["x"]),
+        "allocated_h100_gpu_hours": allocated_gpu_hours,
         "audited_utc": datetime.now(timezone.utc).isoformat(),
     }
     write_json_atomic(RESULTS_DIR / "artifact_audit.json", payload)
