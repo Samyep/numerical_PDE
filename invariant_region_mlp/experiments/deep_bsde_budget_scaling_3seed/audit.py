@@ -107,6 +107,18 @@ def audit() -> dict:
             or incident.get("retry_array_job_id") not in submitted.get("all_job_ids", [])
         ):
             failures.append("infrastructure incident provenance mismatch")
+    recovery = json.loads(
+        (RESULTS_DIR / "resume_recovery_audit.json").read_text(encoding="utf-8")
+    )
+    if (
+        recovery.get("status") != "PASS"
+        or recovery.get("truth_opened_during_recovery") is not False
+        or recovery.get("data_deleted") is not False
+        or recovery.get("archived_marker_count") != 17
+        or recovery.get("final_terminal_record_count") != expected_records
+        or recovery.get("final_numerical_failure_count") != 0
+    ):
+        failures.append("resume recovery audit mismatch")
     required_tables = [
         TABLE_DIR / "deep_bsde_budget_scaling_main.tex",
         TABLE_DIR / "deep_bsde_budget_scaling_main_preview.pdf",
@@ -131,6 +143,7 @@ def audit() -> dict:
         RESULTS_DIR / "scheduling_amendment.json",
         RESULTS_DIR / "scope_amendment.json",
         RESULTS_DIR / "checkpoint_storage_archive.json",
+        RESULTS_DIR / "resume_recovery_audit.json",
         RESULTS_DIR / "infrastructure_incidents.json",
         RESULTS_DIR / "resource_accounting.json",
         *required_tables,

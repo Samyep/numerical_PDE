@@ -25,6 +25,9 @@ def write_report() -> str:
     incidents = json.loads(
         (RESULTS_DIR / "infrastructure_incidents.json").read_text(encoding="utf-8")
     )
+    recovery = json.loads(
+        (RESULTS_DIR / "resume_recovery_audit.json").read_text(encoding="utf-8")
+    )
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=SOURCE_ROOT, text=True).strip()
     lines = [
         "# Deep BSDE hyperparameter-budget scaling (three seeds)",
@@ -39,6 +42,7 @@ def write_report() -> str:
         f"- Scope amendment: **C0/C1/C2 only**, {scope['expected_active_tasks']} tasks / {scope['expected_terminal_records']} terminal records. Joint J1/J2/J3 scaling is excluded from analysis and tables at the user's request before the truth gate opened.",
         "- Excluded work is retained for audit and charged to total allocation: one completed J1 bundle and four terminal records from an interrupted J3 bundle; no excluded accuracy is computed.",
         f"- Infrastructure incidents: **{len(incidents.get('incidents', []))}**. Two CUDA-unavailable incidents affected task launches; a later ICE quota incident interrupted eight partially complete tasks. Exact frozen-task retries preserve completed query records, and every failed/cancelled allocation is retained in accounting.",
+        f"- Resume recovery: **{recovery['status']}**. The {recovery['archived_marker_count']} superseded infrastructure markers are retained in an audit archive; the final numerical-failure count is **{recovery['final_numerical_failure_count']}**.",
         "",
         "Deep BSDE is a native scalar-initial-value method here: every one of the 64 query states receives a fresh model. Reported Deep BSDE compute is therefore the cumulative active training time for all 64 models, averaged across training seeds—not a one-query runtime.",
         "",
@@ -63,6 +67,26 @@ def write_report() -> str:
         "",
         "C2 changes Euler time-discretization steps; it is not an optimizer-step sweep. C0 checkpoints 1000/2000/4000 come from a single continuous trajectory. The common 2000/64/20 checkpoint is reused exactly for C0-level2, C1-level2, and C2-level2.",
     ])
+    lines.extend(["", "## Observed budget trends", ""])
+    labels = {"b6_fullrank": "B6 Full-Rank HJB", "dense_fourier": "Dense Fourier"}
+    for pde, label in labels.items():
+        pde_rows = [row for row in scaling if row["pde"] == pde]
+        by_key = {(row["sweep"], int(row["level"])): row for row in pde_rows}
+        c0_l1, c0_l3 = by_key[("C0", 1)], by_key[("C0", 3)]
+        c1_l1, c1_l3 = by_key[("C1", 1)], by_key[("C1", 3)]
+        c2_l1, c2_l3 = by_key[("C2", 1)], by_key[("C2", 3)]
+        c0_gain = 100.0 * (float(c0_l1["mean_rmse"]) - float(c0_l3["mean_rmse"])) / float(c0_l1["mean_rmse"])
+        c1_gain = 100.0 * (float(c1_l1["mean_rmse"]) - float(c1_l3["mean_rmse"])) / float(c1_l1["mean_rmse"])
+        c2_change = 100.0 * (float(c2_l3["mean_rmse"]) - float(c2_l1["mean_rmse"])) / float(c2_l1["mean_rmse"])
+        best = min(pde_rows, key=lambda row: float(row["mean_rmse"]))
+        lines.append(
+            f"- **{label}:** increasing updates from 1000 to 4000 reduced RMSE by {c0_gain:.1f}%; "
+            f"batch 32 to 128 reduced it by {c1_gain:.1f}%. Increasing Euler steps from 10 to 40 "
+            f"changed RMSE by +{c2_change:.1f}% (nonmonotonic/worse). The best observed setting was "
+            f"{best['sweep']}-level {best['level']} ({best['parameter_name']}={best['parameter_value']}), "
+            f"RMSE {float(best['mean_rmse']):.6g} at {float(best['mean_total_active_training_minutes_64_queries']):.1f} "
+            f"cumulative minutes for 64 queries; it remained {float(best['ratio_to_historical_ta_reference']):.1f}x the descriptive historical TA-reference RMSE."
+        )
     lines.extend([
         "",
         "## Interpretation boundaries",
