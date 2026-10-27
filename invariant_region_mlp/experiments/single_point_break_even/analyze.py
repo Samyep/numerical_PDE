@@ -347,8 +347,23 @@ def resource_accounting() -> list[dict[str, Any]]:
             "task_wall_seconds": task["task_wall_seconds"],
             "slurm_job_id": task.get("slurm_job_id"),
             "slurm_array_task_id": task.get("slurm_array_task_id"),
+            "gpu_count": 1,
             "error": task.get("error"),
         })
+    infrastructure_path = RESULTS_DIR / "infrastructure_attempts.json"
+    if infrastructure_path.is_file():
+        for attempt in _read(infrastructure_path)["attempts"]:
+            rows.append({
+                "task_id": attempt["task_id"],
+                "stage": attempt["stage"],
+                "kind": attempt["kind"],
+                "status": attempt["status"],
+                "task_wall_seconds": attempt["task_wall_seconds"],
+                "slurm_job_id": attempt["slurm_job_id"],
+                "slurm_array_task_id": None,
+                "gpu_count": attempt["gpu_count"],
+                "error": attempt.get("error"),
+            })
     _write_csv(RESULTS_DIR / "resource_accounting.csv", rows)
     return rows
 
@@ -364,6 +379,7 @@ def artifact_audit() -> dict[str, Any]:
         RESULTS_DIR / "break_even_summary.csv",
         RESULTS_DIR / "resource_accounting.csv",
         RESULTS_DIR / "analysis_summary.json",
+        RESULTS_DIR / "infrastructure_attempts.json",
         FIGURE_DIR / "matched_accuracy_break_even.png",
         FIGURE_DIR / "matched_accuracy_break_even.pdf",
     ]

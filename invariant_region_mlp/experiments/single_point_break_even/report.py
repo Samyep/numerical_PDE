@@ -41,7 +41,10 @@ def build() -> Path:
     if resource_path.is_file():
         with resource_path.open(newline="", encoding="utf-8") as handle:
             resources = list(csv.DictReader(handle))
-    gpu_hours = sum(float(row["task_wall_seconds"]) for row in resources) / 3600.0
+    gpu_hours = sum(
+        float(row["task_wall_seconds"]) * float(row.get("gpu_count") or 0)
+        for row in resources
+    ) / 3600.0
     failed_tasks = sum(row["status"] != "complete" for row in resources)
 
     outcome_rows = []
