@@ -11,7 +11,7 @@
 #SBATCH --output=invariant_region_mlp/results/deep_bsde_budget_scaling_3seed/slurm/formal-%A_%a.out
 #SBATCH --error=invariant_region_mlp/results/deep_bsde_budget_scaling_3seed/slurm/formal-%A_%a.err
 set -euo pipefail
-script_dir=$(cd "$(dirname "$0")" && pwd)
+script_dir="${DBBS_SCRIPT_DIR:-${SLURM_SUBMIT_DIR}/invariant_region_mlp/experiments/deep_bsde_budget_scaling_3seed/slurm}"
 source "$script_dir/common_env.sh"
 python -m invariant_region_mlp.experiments.deep_bsde_budget_scaling_3seed.worker \
   --index "${SLURM_ARRAY_TASK_ID:?array task is required}" --device cuda
