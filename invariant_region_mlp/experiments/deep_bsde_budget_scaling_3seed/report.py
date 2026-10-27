@@ -93,7 +93,7 @@ def write_report() -> str:
         "",
         "- A lower observed RMSE at a larger setting is a genuine observed improvement only at the evaluated configurations; nonmonotonic sequences are reported without smoothing.",
         "- `TARGET_NOT_REACHED_WITHIN_EVALUATED_BUDGET` refers only to the pre-existing audited TA reference RMSE used to frame the reviewer question. That TA value was measured on 960 points, whereas Deep BSDE uses the frozen 64-point subset, so it is descriptive rather than a paired hypothesis test.",
-        "- A failed 64-query configuration is numerical instability and is not recomputed on a finite subset.",
+        "- A configuration with any final `numerical_failure` record is labelled numerical instability and is not recomputed on a finite subset. Infrastructure failures are separately retained and retried under the unchanged frozen configuration.",
         "- The experiment does not establish that Deep BSDE cannot converge under arbitrarily larger budgets.",
         "- The main ICML table keeps historical DPI/PINN values unchanged and states the 960-vs-64 protocol limitation. The supplementary table uses their saved predictions on the identical 64 points when available, without retraining.",
         "",

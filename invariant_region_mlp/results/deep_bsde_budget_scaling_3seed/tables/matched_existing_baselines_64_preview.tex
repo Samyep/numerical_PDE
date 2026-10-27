@@ -1,0 +1,38 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.35in,landscape]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\makeatletter
+\setlength{\@fptop}{0pt}
+\makeatother
+\pagestyle{empty}
+\begin{document}
+\begin{table}[t]
+\centering\small
+\caption{Supplementary paired evaluation of frozen DPI/PINN--HTE predictions on the same 64 states used for Deep BSDE. No baseline was retrained. Cells report $10^3\!\times$ RMSE (mean $\pm$ seed SD).}
+\label{tab:matched-existing-64}
+\begin{tabular}{llccc}
+\toprule
+Method & Sweep & Level 1 & Level 2 & Level 3 \\
+\midrule
+\multicolumn{5}{l}{\emph{b6 fullrank}} \\
+DPI & C0 & 139.54 $\pm$ 14.20 & 188.81 $\pm$ 72.08 & 150.72 $\pm$ 60.34 \\
+DPI & C1 & 164.34 $\pm$ 38.53 & 132.09 $\pm$ 29.57 & 127.32 $\pm$ 38.43 \\
+DPI & C2 & 147.20 $\pm$ 18.63 & 107.68 $\pm$ 17.37 & 112.68 $\pm$ 35.41 \\
+PINN--HTE & C0 & 217.97 $\pm$ 49.32 & 183.70 $\pm$ 47.94 & 97.77 $\pm$ 36.47 \\
+PINN--HTE & C1 & 158.06 $\pm$ 80.19 & 198.86 $\pm$ 22.50 & 186.18 $\pm$ 90.37 \\
+PINN--HTE & C2 & 217.97 $\pm$ 49.32 & 135.41 $\pm$ 28.57 & 104.04 $\pm$ 9.92 \\
+\addlinespace
+\multicolumn{5}{l}{\emph{dense fourier}} \\
+DPI & C0 & 100.54 $\pm$ 32.74 & 66.10 $\pm$ 15.34 & 63.81 $\pm$ 7.45 \\
+DPI & C1 & 77.57 $\pm$ 5.79 & 111.47 $\pm$ 54.66 & 117.22 $\pm$ 41.06 \\
+DPI & C2 & 100.54 $\pm$ 32.74 & 54.43 $\pm$ 8.08 & 75.51 $\pm$ 32.05 \\
+PINN--HTE & C0 & 64.19 $\pm$ 6.51 & 90.61 $\pm$ 3.72 & 99.29 $\pm$ 46.64 \\
+PINN--HTE & C1 & 100.75 $\pm$ 41.35 & 79.75 $\pm$ 8.75 & 69.05 $\pm$ 10.89 \\
+PINN--HTE & C2 & 88.15 $\pm$ 18.10 & 71.04 $\pm$ 22.77 & 55.95 $\pm$ 8.56 \\
+\addlinespace
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}

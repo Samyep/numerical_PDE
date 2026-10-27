@@ -1,0 +1,105 @@
+{
+  "active_training_seconds": 95.68901337333955,
+  "amortized_decoder": false,
+  "benchmark_metadata": {
+    "T": 0.5,
+    "actor_input": "full ambient x",
+    "actor_parameterization": "r=g+tau*R; q=sqrt(2)*grad(g)+tau*Q",
+    "analytically_integrable_high_dimensional_stress_test": true,
+    "d": 100,
+    "family": "dense_fourier_joint",
+    "has_gradient": true,
+    "k": 200,
+    "name": "dense_fourier_joint_d100_k200",
+    "omega_norm_max_error": 5.551115123125783e-16,
+    "omega_sha256": "c41f33bf92c33bf0ab826359a94d00c5d964a875ce57533e43e179994a2293b8",
+    "oracle_projection_used": false,
+    "parameter_seed": [
+      20261201,
+      100,
+      41
+    ],
+    "parameter_sha256": "b96804e2f7c20cbd4e72c0f961a4ebfc21bf46cae120d198b6afe6ce2e2684b6",
+    "phases_sha256": "25e2c4767c484c7f3623d4435495b1309be1642537eeb9d5abda7745ff525e27",
+    "sigma": 1.4142135623730951,
+    "signs_sha256": "9954a1b596790ea78cae267e3112eda4464e819aa0d07728da95cc322f22524d"
+  },
+  "captures": [
+    {
+      "active_training_seconds": 23.363990833982825,
+      "checkpoint": "/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/results/deep_bsde_budget_scaling_3seed/checkpoints/formal/dense_fourier/reference/s2/q29/update_1000.pt",
+      "checkpoint_sha256": "b1244caf286301ee8335f19c2504f58aecdcc30218f5b9c2565013f568d21ace",
+      "prediction": 1.2674764280009756,
+      "updates": 1000,
+      "validation_terminal_clipped_mse": 0.1797349888642638
+    },
+    {
+      "active_training_seconds": 54.52268387307413,
+      "checkpoint": "/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/results/deep_bsde_budget_scaling_3seed/checkpoints/formal/dense_fourier/reference/s2/q29/update_2000.pt",
+      "checkpoint_sha256": "2c03a447e27998d5989f5b88af1a7b87e0e4129154c21199547dcb0454af2332",
+      "prediction": 1.2668885265471357,
+      "updates": 2000,
+      "validation_terminal_clipped_mse": 0.14014245967674843
+    },
+    {
+      "active_training_seconds": 95.68896153732203,
+      "checkpoint": "/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/results/deep_bsde_budget_scaling_3seed/checkpoints/formal/dense_fourier/reference/s2/q29/update_4000.pt",
+      "checkpoint_sha256": "5d574042608c891c1e9f6ebfd4b5ec33a74a1503b2e030de7b25899eebe0c811",
+      "prediction": 1.2974409291642512,
+      "updates": 4000,
+      "validation_terminal_clipped_mse": 0.08895436924407704
+    }
+  ],
+  "completed_updates": 4000,
+  "configuration": {
+    "batch_size": 64,
+    "benchmark": "dense_fourier_joint_d100_k200",
+    "dtype": "float64",
+    "hidden_widths": [
+      110,
+      110
+    ],
+    "intervals": 20,
+    "iterations": 4000,
+    "learning_rate": 0.01,
+    "logging_frequency": 250,
+    "total_time": 0.2703802199451043,
+    "validation_size": 256,
+    "y_init_range": [
+      0.0,
+      1.0
+    ]
+  },
+  "dimension": 100,
+  "euler_dt": 0.013519010997255216,
+  "expected_updates": 4000,
+  "failure_reason": null,
+  "full_seed": 1922205559,
+  "initialization_seconds": 29.33782425103709,
+  "native_scalar_initial_value": true,
+  "nonfinite_events": [],
+  "original_index": 617,
+  "parameter_count": 665861,
+  "pde": "dense_fourier",
+  "peak_gpu_bytes": 103843840,
+  "position": 29,
+  "preflight": false,
+  "query_input_sha256": "32f9726467453c4638319708fa45d736242b58ac92eae6f935987f5ce5aafcf7",
+  "remaining_horizon": 0.2703802199451043,
+  "revision": "deep_bsde_budget_scaling_3seed_v1",
+  "seed": 2,
+  "selection": "fixed checkpoint schedule; no reference used",
+  "slurm": {
+    "array_job_id": "6631768",
+    "array_task_id": "35",
+    "job_id": "6631768",
+    "node": "atl1-1-03-010-20-0"
+  },
+  "status": "complete",
+  "t_start": 0.22961978005489567,
+  "trajectory_id": "reference",
+  "trajectory_signature": "0c9302c486d5688b5e3d9415792f50de33517ab5a6fcd359a5c6ce2e40eb1e83",
+  "truth_loaded": false,
+  "validation_dw_sha256": "e4471c8c78ab4bb98458bca524dce0c8f5c0675570ab95fe4705f0cf8d85cee4",
+  "z_convention": "z=sqrt(2)*grad(u)"
+}

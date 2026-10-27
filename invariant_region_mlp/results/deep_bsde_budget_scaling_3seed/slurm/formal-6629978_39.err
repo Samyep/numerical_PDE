@@ -1,0 +1,43 @@
+Traceback (most recent call last):
+  File "/storage/ice1/4/8/ywang4280/modded-nanogpt/.venv-cmw/lib/python3.11/site-packages/torch/serialization.py", line 1004, in save
+    _save(
+  File "/storage/ice1/4/8/ywang4280/modded-nanogpt/.venv-cmw/lib/python3.11/site-packages/torch/serialization.py", line 1313, in _save
+    zip_file.write_record(name, storage, num_bytes)
+RuntimeError: basic_ios::clear: iostream error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/experiments/deep_bsde_budget_scaling_3seed/worker.py", line 39, in run_task
+    gate = json.loads(gate_path.read_text(encoding="utf-8"))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/experiments/deep_bsde_budget_scaling_3seed/solver.py", line 356, in train_query
+    _atomic_torch(resume, state)
+  File "/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/experiments/deep_bsde_budget_scaling_3seed/solver.py", line 157, in _atomic_torch
+    torch.save(payload, temporary)
+  File "/storage/ice1/4/8/ywang4280/modded-nanogpt/.venv-cmw/lib/python3.11/site-packages/torch/serialization.py", line 1003, in save
+    with _open_zipfile_writer(f) as opened_zipfile:
+  File "/storage/ice1/4/8/ywang4280/modded-nanogpt/.venv-cmw/lib/python3.11/site-packages/torch/serialization.py", line 835, in __exit__
+    self.file_like.write_end_of_file()
+RuntimeError: [enforce fail at inline_container.cc:672] . unexpected pos 10778752 vs 10778648
+
+During handling of the above exception, another exception occurred:
+
+OSError: [Errno 122] Disk quota exceeded
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/experiments/deep_bsde_budget_scaling_3seed/worker.py", line 79, in <module>
+    if fatal_cuda_infrastructure:
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/experiments/deep_bsde_budget_scaling_3seed/worker.py", line 54, in run_task
+    )
+  File "/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/experiments/deep_bsde_budget_scaling_3seed/protocol.py", line 175, in write_json_atomic
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as stream:
+  File "/usr/local/pace-apps/spack/packages/linux-rhel9-x86_64_v3/gcc-11.3.1/python-3.11.9-3hh2x6apwv7ofr5ymaux56q7df3a6e22/lib/python3.11/tempfile.py", line 518, in __exit__
+    result = self.file.__exit__(exc, value, tb)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 122] Disk quota exceeded

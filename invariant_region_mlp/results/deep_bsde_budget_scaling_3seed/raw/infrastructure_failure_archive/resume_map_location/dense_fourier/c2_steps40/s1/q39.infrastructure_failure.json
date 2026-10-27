@@ -1,0 +1,16 @@
+{
+  "error": "RuntimeError('[enforce fail at inline_container.cc:672] . unexpected pos 64 vs 0')",
+  "error_type": "RuntimeError",
+  "fatal_cuda_infrastructure": false,
+  "position": 39,
+  "status": "infrastructure_failure",
+  "task": {
+    "pde": "dense_fourier",
+    "query_count": 64,
+    "seed": 1,
+    "task_index": 32,
+    "trajectory_id": "c2_steps40",
+    "trajectory_signature": "bee114b520b19fecb40d67ecd3044d0eb925ac1e8907e35ae689b948cb09c250"
+  },
+  "traceback": "Traceback (most recent call last):\n  File \"/storage/ice1/4/8/ywang4280/modded-nanogpt/.venv-cmw/lib/python3.11/site-packages/torch/serialization.py\", line 1004, in save\n    _save(\n  File \"/storage/ice1/4/8/ywang4280/modded-nanogpt/.venv-cmw/lib/python3.11/site-packages/torch/serialization.py\", line 1260, in _save\n    zip_file.write_record(\"data.pkl\", data_value, len(data_value))\nRuntimeError: basic_ios::clear: iostream error\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/experiments/deep_bsde_budget_scaling_3seed/worker.py\", line 51, in run_task\n    record = train_query(\n             ^^^^^^^^^^^^\n  File \"/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/experiments/deep_bsde_budget_scaling_3seed/solver.py\", line 356, in train_query\n    _atomic_torch(resume, state)\n  File \"/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/experiments/deep_bsde_budget_scaling_3seed/solver.py\", line 157, in _atomic_torch\n    torch.save(payload, temporary)\n  File \"/storage/ice1/4/8/ywang4280/modded-nanogpt/.venv-cmw/lib/python3.11/site-packages/torch/serialization.py\", line 1003, in save\n    with _open_zipfile_writer(f) as opened_zipfile:\n  File \"/storage/ice1/4/8/ywang4280/modded-nanogpt/.venv-cmw/lib/python3.11/site-packages/torch/serialization.py\", line 835, in __exit__\n    self.file_like.write_end_of_file()\nRuntimeError: [enforce fail at inline_container.cc:672] . unexpected pos 64 vs 0\n"
+}

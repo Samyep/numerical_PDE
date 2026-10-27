@@ -1,0 +1,16 @@
+{
+  "error": "TypeError('RNG state must be a torch.ByteTensor')",
+  "error_type": "TypeError",
+  "fatal_cuda_infrastructure": false,
+  "position": 43,
+  "status": "infrastructure_failure",
+  "task": {
+    "pde": "dense_fourier",
+    "query_count": 64,
+    "seed": 1,
+    "task_index": 28,
+    "trajectory_id": "reference",
+    "trajectory_signature": "0c9302c486d5688b5e3d9415792f50de33517ab5a6fcd359a5c6ce2e40eb1e83"
+  },
+  "traceback": "Traceback (most recent call last):\n  File \"/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/experiments/deep_bsde_budget_scaling_3seed/worker.py\", line 51, in run_task\n    record = train_query(\n             ^^^^^^^^^^^^\n  File \"/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/experiments/deep_bsde_budget_scaling_3seed/solver.py\", line 262, in train_query\n    train_generator.set_state(state[\"train_generator\"])\nTypeError: RNG state must be a torch.ByteTensor\n"
+}

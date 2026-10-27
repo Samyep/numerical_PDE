@@ -1,0 +1,89 @@
+{
+  "active_training_seconds": 41.563781501026824,
+  "amortized_decoder": false,
+  "benchmark_metadata": {
+    "T": 0.5,
+    "actor_input": "full ambient x",
+    "actor_parameterization": "r=g+tau*R; q=sqrt(2)*grad(g)+tau*Q",
+    "analytically_integrable_high_dimensional_stress_test": true,
+    "d": 100,
+    "family": "dense_fourier_joint",
+    "has_gradient": true,
+    "k": 200,
+    "name": "dense_fourier_joint_d100_k200",
+    "omega_norm_max_error": 5.551115123125783e-16,
+    "omega_sha256": "c41f33bf92c33bf0ab826359a94d00c5d964a875ce57533e43e179994a2293b8",
+    "oracle_projection_used": false,
+    "parameter_seed": [
+      20261201,
+      100,
+      41
+    ],
+    "parameter_sha256": "b96804e2f7c20cbd4e72c0f961a4ebfc21bf46cae120d198b6afe6ce2e2684b6",
+    "phases_sha256": "25e2c4767c484c7f3623d4435495b1309be1642537eeb9d5abda7745ff525e27",
+    "sigma": 1.4142135623730951,
+    "signs_sha256": "9954a1b596790ea78cae267e3112eda4464e819aa0d07728da95cc322f22524d"
+  },
+  "captures": [
+    {
+      "active_training_seconds": 41.563730276189744,
+      "checkpoint": "/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/results/deep_bsde_budget_scaling_3seed/checkpoints/formal/dense_fourier/c1_batch32/s2/q57/update_2000.pt",
+      "checkpoint_sha256": "0d28c1de2e964a7280ac3e211a3616601727add84e9cb937e0146e01705ae399",
+      "prediction": 1.8449321143919513,
+      "updates": 2000,
+      "validation_terminal_clipped_mse": 0.014923336469031056
+    }
+  ],
+  "completed_updates": 2000,
+  "configuration": {
+    "batch_size": 32,
+    "benchmark": "dense_fourier_joint_d100_k200",
+    "dtype": "float64",
+    "hidden_widths": [
+      110,
+      110
+    ],
+    "intervals": 20,
+    "iterations": 2000,
+    "learning_rate": 0.01,
+    "logging_frequency": 250,
+    "total_time": 0.062092006712451686,
+    "validation_size": 256,
+    "y_init_range": [
+      0.0,
+      1.0
+    ]
+  },
+  "dimension": 100,
+  "euler_dt": 0.0031046003356225843,
+  "expected_updates": 2000,
+  "failure_reason": null,
+  "full_seed": 425899125,
+  "initialization_seconds": 0.022324037039652467,
+  "native_scalar_initial_value": true,
+  "nonfinite_events": [],
+  "original_index": 315,
+  "parameter_count": 665861,
+  "pde": "dense_fourier",
+  "peak_gpu_bytes": 100009984,
+  "position": 57,
+  "preflight": false,
+  "query_input_sha256": "70f2c4953d60bb7ca3437b2fc5030089ad015deff488c45efe2ad69224a203ad",
+  "remaining_horizon": 0.062092006712451686,
+  "revision": "deep_bsde_budget_scaling_3seed_v1",
+  "seed": 2,
+  "selection": "fixed checkpoint schedule; no reference used",
+  "slurm": {
+    "array_job_id": "6629978",
+    "array_task_id": "36",
+    "job_id": "6630264",
+    "node": "atl1-1-03-010-25-0"
+  },
+  "status": "complete",
+  "t_start": 0.4379079932875483,
+  "trajectory_id": "c1_batch32",
+  "trajectory_signature": "86e7e640dcdb44bfbdd1d8a2b1d384a0959efe35d685c7c9e71fffd3bd4df455",
+  "truth_loaded": false,
+  "validation_dw_sha256": "80e1c7763b2ec5b963eb5e5a0023688a978b6ace962b4cc483f96130582702f8",
+  "z_convention": "z=sqrt(2)*grad(u)"
+}

@@ -1,0 +1,106 @@
+{
+  "active_training_seconds": 82.6520815405529,
+  "amortized_decoder": false,
+  "benchmark_metadata": {
+    "K": 200,
+    "T": 0.25,
+    "actor_input": "full ambient x",
+    "actor_kind": "gradient",
+    "beta": 1.5,
+    "common_vector_sha256": "b9a010333c2b2df58681599e739e31560052d2aecc4b49638c0313e5d233376e",
+    "construction_seed": [
+      20261201,
+      100,
+      66
+    ],
+    "d": 100,
+    "directions_sha256": "11ecd5c66b61556d422d3ba267d2098ba8d9bfdefa3162506707ce77f8ceff66",
+    "family": "b6_fullrank_lse",
+    "gamma": 1.0,
+    "multipliers_sha256": "dde204b9e220217674e25f52becc39586692048e2a5e3eb96378a22c161fd19e",
+    "name": "B6_d100",
+    "oracle_projection_used": false,
+    "parameter_sha256": "8d661b71b57f0f37c388a0c1ad81d97897f5838e315eabda8a499bf4abe7927a",
+    "pde_id": "B6",
+    "sigma": 1.4142135623730951,
+    "vectors_sha256": "cf4a54fb0792e689aeca847bc4f3fcb65b4963162c561f07451473e1bf6a5c7b"
+  },
+  "captures": [
+    {
+      "active_training_seconds": 21.15174877247773,
+      "checkpoint": "/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/results/deep_bsde_budget_scaling_3seed/checkpoints/formal/b6_fullrank/reference/s2/q00/update_1000.pt",
+      "checkpoint_sha256": "57dc7381248edf9f50097806c0b5181adf5b1ce873009de2832a6641b77d1d9a",
+      "prediction": -0.28084474031227585,
+      "updates": 1000,
+      "validation_terminal_clipped_mse": 0.3879625303542457
+    },
+    {
+      "active_training_seconds": 41.30710699874908,
+      "checkpoint": "/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/results/deep_bsde_budget_scaling_3seed/checkpoints/formal/b6_fullrank/reference/s2/q00/update_2000.pt",
+      "checkpoint_sha256": "64ac4ffdf442115aca2a47d91208a314322a1fbe374083d5d96766e15fcfc6bb",
+      "prediction": -0.3096611975908949,
+      "updates": 2000,
+      "validation_terminal_clipped_mse": 0.3136327707822514
+    },
+    {
+      "active_training_seconds": 82.65200524660759,
+      "checkpoint": "/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/results/deep_bsde_budget_scaling_3seed/checkpoints/formal/b6_fullrank/reference/s2/q00/update_4000.pt",
+      "checkpoint_sha256": "2bb684e1da1670a336046c0016e80c252a234808b442fc7d77ec53162758024f",
+      "prediction": -0.33597625221478206,
+      "updates": 4000,
+      "validation_terminal_clipped_mse": 0.19891175812586126
+    }
+  ],
+  "completed_updates": 4000,
+  "configuration": {
+    "batch_size": 64,
+    "benchmark": "B6_d100",
+    "dtype": "float64",
+    "hidden_widths": [
+      110,
+      110
+    ],
+    "intervals": 20,
+    "iterations": 4000,
+    "learning_rate": 0.01,
+    "logging_frequency": 250,
+    "total_time": 0.2456027027221481,
+    "validation_size": 256,
+    "y_init_range": [
+      0.0,
+      1.0
+    ]
+  },
+  "dimension": 100,
+  "euler_dt": 0.012280135136107404,
+  "expected_updates": 4000,
+  "failure_reason": null,
+  "full_seed": 60053649,
+  "initialization_seconds": 3.487714424962178,
+  "native_scalar_initial_value": true,
+  "nonfinite_events": [],
+  "original_index": 26,
+  "parameter_count": 665861,
+  "pde": "b6_fullrank",
+  "peak_gpu_bytes": 103705088,
+  "position": 0,
+  "preflight": false,
+  "query_input_sha256": "1adb7cb14c07143ce8f265c63ea9158336eb8785098b6a3fe536e68f73e0b357",
+  "remaining_horizon": 0.2456027027221481,
+  "revision": "deep_bsde_budget_scaling_3seed_v1",
+  "seed": 2,
+  "selection": "fixed checkpoint schedule; no reference used",
+  "slurm": {
+    "array_job_id": "6630293",
+    "array_task_id": "14",
+    "job_id": "6630375",
+    "node": "atl1-1-03-010-10-0"
+  },
+  "status": "complete",
+  "t_start": 0.004397297277851902,
+  "trajectory_id": "reference",
+  "trajectory_signature": "0c9302c486d5688b5e3d9415792f50de33517ab5a6fcd359a5c6ce2e40eb1e83",
+  "truth_loaded": false,
+  "validation_dw_sha256": "0503fe70ce480599afacf3703e0ededce82855806bf17aac62e7001f205a36b2",
+  "z_convention": "z=sqrt(2)*grad(u)"
+}

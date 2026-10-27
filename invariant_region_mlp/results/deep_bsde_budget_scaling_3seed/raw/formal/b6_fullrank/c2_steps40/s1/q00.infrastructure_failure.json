@@ -1,0 +1,15 @@
+{
+  "error": "AcceleratorError(\"CUDA error: CUDA-capable device(s) is/are busy or unavailable\\nSearch for `cudaErrorDevicesUnavailable' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.\\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\\n\")",
+  "error_type": "AcceleratorError",
+  "position": 0,
+  "status": "infrastructure_failure",
+  "task": {
+    "pde": "b6_fullrank",
+    "query_count": 64,
+    "seed": 1,
+    "task_index": 11,
+    "trajectory_id": "c2_steps40",
+    "trajectory_signature": "bee114b520b19fecb40d67ecd3044d0eb925ac1e8907e35ae689b948cb09c250"
+  },
+  "traceback": "Traceback (most recent call last):\n  File \"/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/experiments/deep_bsde_budget_scaling_3seed/worker.py\", line 39, in run_task\n    record = train_query(\n             ^^^^^^^^^^^^\n  File \"/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/experiments/deep_bsde_budget_scaling_3seed/solver.py\", line 229, in train_query\n    synchronize(device)\n  File \"/storage/ice1/4/8/ywang4280/ir-mlp-deep-bsde-budget-scaling-3seed-worktree/invariant_region_mlp/experiments/original_pde_benchmark_comparison/common.py\", line 58, in synchronize\n    torch.cuda.synchronize(device)\n  File \"/storage/ice1/4/8/ywang4280/modded-nanogpt/.venv-cmw/lib/python3.11/site-packages/torch/cuda/__init__.py\", line 1162, in synchronize\n    return torch._C._cuda_synchronize()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntorch.AcceleratorError: CUDA error: CUDA-capable device(s) is/are busy or unavailable\nSearch for `cudaErrorDevicesUnavailable' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n\n"
+}
