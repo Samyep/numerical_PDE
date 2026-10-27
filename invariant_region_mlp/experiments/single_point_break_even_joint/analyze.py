@@ -84,26 +84,58 @@ def _crossing(ta: list[dict[str, Any]], baseline: list[dict[str, Any]]) -> dict[
 
 def _plot(curves: dict[tuple[str, str], list[dict[str, Any]]], final: dict[str, Any], coverage: dict[str, Any]) -> None:
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
-    fig, axes = plt.subplots(1, 2, figsize=(10.2, 4.25), constrained_layout=True)
-    for axis, (target, threshold) in zip(axes, TARGETS.items()):
-        for method in METHODS:
-            item = final["targets"][target][method]
-            if coverage["targets"][target][method] != "RUN" or item.get("selected_candidate") is None: continue
-            curve = curves[(method, item["selected_candidate"])]
-            x = np.asarray([row["queries"] for row in curve]); mean = np.asarray([row["mean_seconds"] for row in curve]); std = np.asarray([row["std_seconds"] for row in curve])
-            positive = np.asarray([value for row in curve for value in row["replicate_seconds"] if value > 0])
-            floor = float(positive.min()) if len(positive) else 1e-12
-            axis.plot(x, mean, marker="o", ms=4, lw=1.8, color=COLORS[method], label=LABELS[method])
-            axis.fill_between(x, np.maximum(mean - std, floor), mean + std, color=COLORS[method], alpha=0.16, linewidth=0)
-        axis.set_xscale("log", base=2); axis.set_yscale("log")
-        axis.set_xlabel("Distinct initial-state queries")
-        axis.set_title(rf"RMSE $\leq {threshold:.0e}$")
-        axis.grid(True, which="both", alpha=0.22, linewidth=0.6)
-        unavailable = [LABELS[m] for m in METHODS if coverage["targets"][target][m] != "RUN"]
-        if unavailable: axis.text(0.03, 0.97, "Not timed: " + ", ".join(unavailable), transform=axis.transAxes, va="top", fontsize=8)
-    axes[0].set_ylabel("Measured total H100 time (s)")
-    handles, labels = axes[0].get_legend_handles_labels()
-    if handles: fig.legend(handles, labels, loc="upper center", ncol=3, frameon=False, bbox_to_anchor=(0.5, 1.04))
+    # The secondary target has no timed baseline under the frozen compute cap.
+    # Plotting a TA-only panel creates a visually dominant but scientifically
+    # empty axis, so the publication figure shows the primary matched-accuracy
+    # comparison and leaves the secondary outcome in the report/table.
+    target = "epsilon_1"
+    threshold = TARGETS[target]
+    fig, axis = plt.subplots(figsize=(7.25, 4.55), constrained_layout=True)
+    for method in METHODS:
+        item = final["targets"][target][method]
+        if coverage["targets"][target][method] != "RUN" or item.get("selected_candidate") is None:
+            continue
+        curve = curves[(method, item["selected_candidate"])]
+        x = np.asarray([row["queries"] for row in curve])
+        mean = np.asarray([row["mean_seconds"] for row in curve])
+        std = np.asarray([row["std_seconds"] for row in curve])
+        positive = np.asarray([value for row in curve for value in row["replicate_seconds"] if value > 0])
+        floor = float(positive.min()) if len(positive) else 1e-12
+        axis.plot(x, mean, marker="o", ms=4.2, lw=2.0, color=COLORS[method], label=LABELS[method], zorder=3)
+        axis.fill_between(x, np.maximum(mean - std, floor), mean + std, color=COLORS[method], alpha=0.14, linewidth=0, zorder=1)
+
+    ta_item = final["targets"][target]["tangent_actor"]
+    fh_item = final["targets"][target]["fh_mlp_standard"]
+    crossing = _crossing(
+        curves[("tangent_actor", ta_item["selected_candidate"])],
+        curves[("fh_mlp_standard", fh_item["selected_candidate"])],
+    )
+    if crossing["status"] == "OBSERVED_BREAK_EVEN":
+        previous = crossing["previous_queries"]
+        observed = crossing["crossing_queries"]
+        axis.axvspan(previous, observed, color="#6f6f6f", alpha=0.09, zorder=0)
+        axis.axvline(observed, color="#555555", lw=1.0, ls=":", zorder=2)
+        axis.text(
+            np.sqrt(previous * observed), 0.035, "observed break-even interval",
+            transform=axis.get_xaxis_transform(), ha="center", va="bottom",
+            fontsize=8.2, color="#444444",
+        )
+
+    axis.set_xscale("log", base=2)
+    axis.set_yscale("log")
+    ticks = [2**power for power in (0, 4, 8, 12, 16, 20)]
+    axis.set_xticks(ticks, [rf"$2^{{{power}}}$" for power in (0, 4, 8, 12, 16, 20)])
+    axis.set_xlim(0.8, 1.16 * 2**20)
+    axis.set_xlabel("Distinct initial-state queries")
+    axis.set_ylabel("Measured total H100 time (s)")
+    axis.set_title(rf"Joint nonseparable, $d=100$  |  RMSE $\leq {threshold:.0e}$", pad=10)
+    axis.grid(True, which="both", alpha=0.20, linewidth=0.6)
+    axis.legend(loc="center left", bbox_to_anchor=(0.025, 0.52), frameon=False)
+    axis.text(
+        0.025, 0.965, "Deep BSDE: target not reached",
+        transform=axis.transAxes, ha="left", va="top", fontsize=8.6,
+        color="#444444",
+    )
     for suffix in ("png", "pdf"):
         fig.savefig(FIGURE_DIR / f"joint_matched_accuracy_break_even.{suffix}", dpi=300, bbox_inches="tight")
     plt.close(fig)
