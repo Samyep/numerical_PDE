@@ -1,0 +1,87 @@
+{
+  "bank_files": {
+    "calibration": "6948692e564446756cd83b180ad65573cca76e08fcbe54394fb98d74cecc38f0",
+    "final": "fc02cdef79345de8009430a21e21ff6eb804c2e610ad8bd0faf11327925d2269",
+    "timing": "19bbade840e6a8183f460dc6b1485c95560902b5d62ab379d0a711e99845d202"
+  },
+  "checks": {
+    "basis_orthonormal": true,
+    "calibration_shape": true,
+    "deep_bsde_forward_backward_finite": true,
+    "driver_formula": true,
+    "driver_z_formula": true,
+    "fh_exact_replay": true,
+    "final_shape": true,
+    "gpu_is_h100_80gb": true,
+    "joint_actor_direct_finite": true,
+    "joint_actor_mcv_finite": true,
+    "mixed_derivative_nonzero": true,
+    "reference_validated": true,
+    "terminal_numpy_torch": true,
+    "timing_has_no_truth": true,
+    "timing_shape": true,
+    "validated_sources_byte_identical": true
+  },
+  "completed_utc": "2026-10-27T10:02:22.326660+00:00",
+  "diagnostics": {
+    "actor_direct_sha256": "e5b1aa9038c617d2cd4843df47dc6bae5e39a175933296f7bcf98eeb34d138eb",
+    "actor_mcv_sha256": "f6a1eb2bfc4696a66db5247f9c3bd0215329d4ea9d981f0a30b19429a39e12f7",
+    "deep_smoke_loss": 0.20295746451777585,
+    "driver_max_abs": 2.220446049250313e-16,
+    "driver_z_max_abs": 0.0,
+    "fh_replay_value": 0.6148575667558259,
+    "terminal_max_abs": 1.1102230246251565e-16
+  },
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "overall_pass": true,
+  "preflight_wall_seconds": 20.93190271500498,
+  "revision": "single_point_break_even_joint_v1",
+  "source_fidelity": {
+    "overall_pass": true,
+    "rows": [
+      {
+        "byte_identical": true,
+        "current_sha256": "13139aaffe812a6aafc9a9f01edfdc14145c2634fc228983f8bbec20aa781716",
+        "path": "invariant_region_mlp/experiments/single_point_joint_extension/benchmark.py",
+        "validated_commit_sha256": "13139aaffe812a6aafc9a9f01edfdc14145c2634fc228983f8bbec20aa781716"
+      },
+      {
+        "byte_identical": true,
+        "current_sha256": "8b6fa66df0408eeeeac63ca1a03e4c56db1021f693e4ebb525b06052cb5d7b4e",
+        "path": "invariant_region_mlp/experiments/single_point_joint_extension/tangent_actor.py",
+        "validated_commit_sha256": "8b6fa66df0408eeeeac63ca1a03e4c56db1021f693e4ebb525b06052cb5d7b4e"
+      },
+      {
+        "byte_identical": true,
+        "current_sha256": "4fbda420fb9c4655b3b0c22569ce359e0770a08466a8037d6576ad370da41176",
+        "path": "invariant_region_mlp/experiments/single_point_joint_extension/fh_mlp.py",
+        "validated_commit_sha256": "4fbda420fb9c4655b3b0c22569ce359e0770a08466a8037d6576ad370da41176"
+      },
+      {
+        "byte_identical": true,
+        "current_sha256": "94f5a3a128a0e93d768a08e0facd9f0d81e7f4d9bbb20e389de50d3ac4f741d7",
+        "path": "invariant_region_mlp/experiments/single_point_joint_extension/deep_bsde.py",
+        "validated_commit_sha256": "94f5a3a128a0e93d768a08e0facd9f0d81e7f4d9bbb20e389de50d3ac4f741d7"
+      },
+      {
+        "byte_identical": true,
+        "current_sha256": "0bc1d1618099bd88abbb6a8bbec4c1db1332340b4cf40a3319608616ad2407c4",
+        "path": "invariant_region_mlp/experiments/main_highdim_expansion/run_dense_actor.py",
+        "validated_commit_sha256": "0bc1d1618099bd88abbb6a8bbec4c1db1332340b4cf40a3319608616ad2407c4"
+      },
+      {
+        "byte_identical": true,
+        "current_sha256": "e22d2b698e14df954c36dec7d46e0da8caf86bf42099a91dad6300cdfe0314e2",
+        "path": "invariant_region_mlp/experiments/single_point_32_ice/fh_mlp.py",
+        "validated_commit_sha256": "e22d2b698e14df954c36dec7d46e0da8caf86bf42099a91dad6300cdfe0314e2"
+      },
+      {
+        "byte_identical": true,
+        "current_sha256": "f6ba85d75ecb9caea603873351e9d2f4ccae52a1e262e6dd5f0f6671fe52bb99",
+        "path": "invariant_region_mlp/experiments/single_point_32_ice/deep_bsde.py",
+        "validated_commit_sha256": "f6ba85d75ecb9caea603873351e9d2f4ccae52a1e262e6dd5f0f6671fe52bb99"
+      }
+    ]
+  },
+  "status": "VALIDATED"
+}
