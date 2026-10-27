@@ -399,6 +399,89 @@ def resource_accounting() -> list[dict[str, Any]]:
     return rows
 
 
+def _timing_integrity(
+    timing: dict[str, np.ndarray],
+) -> tuple[dict[str, bool], list[dict[str, Any]]]:
+    """Independently audit every timing record selected for a reported curve."""
+    final = _read(RESULTS_DIR / "final_accuracy_summary.json")
+    coverage = _read(RESULTS_DIR / "timing_coverage.json")
+    selected: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for target_name in TARGETS:
+        for method in METHOD_LABELS:
+            item = final["targets"][target_name][method]
+            if (
+                item["status"] == "FINAL_ACCURACY_PASSED"
+                and coverage["targets"][target_name][method] == "RUN"
+            ):
+                key = (method, item["selected_candidate"])
+                if key not in selected:
+                    selected[key] = _timing_records(*key)
+
+    details: list[dict[str, Any]] = []
+    for (method, candidate), records in selected.items():
+        for replicate, record in enumerate(records):
+            completed = int(record["completed_queries"])
+            expected_input_hash = array_sha256(
+                timing["t"][:completed], timing["x"][:completed]
+            )
+            prefix_rows = record["prefix_rows"]
+            query_counts = [int(row["queries"]) for row in prefix_rows]
+            total_seconds = [float(row["total_seconds"]) for row in prefix_rows]
+            prediction_path = Path(record["prediction_file"])
+            prediction_exists = prediction_path.is_file()
+            prediction_shape_ok = False
+            prediction_finite = False
+            prediction_hash_ok = False
+            if prediction_exists:
+                with np.load(prediction_path, allow_pickle=False) as payload:
+                    prediction = np.asarray(payload["prediction"], dtype=np.float64)
+                prediction_shape_ok = prediction.shape == (completed,)
+                prediction_finite = bool(np.isfinite(prediction).all())
+                prediction_hash_ok = (
+                    array_sha256(prediction) == record["prediction_sha256"]
+                )
+            local_checks = {
+                "actual_prefix_execution": record.get("actual_prefix_execution") is True,
+                "truth_not_loaded": record.get("truth_loaded") is False,
+                "h100_80gb": "H100 80GB" in str(record.get("gpu", "")),
+                "valid_status": record.get("status") in {"complete", "TIME_CAP"},
+                "no_nonfinite": int(record.get("nonfinite_count", -1)) == 0,
+                "input_prefix_hash": record.get("query_input_sha256") == expected_input_hash,
+                "prefixes_strictly_increase": (
+                    bool(query_counts)
+                    and all(b > a for a, b in zip(query_counts, query_counts[1:]))
+                    and query_counts[-1] == completed
+                ),
+                "time_is_monotone": (
+                    bool(total_seconds)
+                    and all(b >= a for a, b in zip(total_seconds, total_seconds[1:]))
+                ),
+                "prediction_exists": prediction_exists,
+                "prediction_shape": prediction_shape_ok,
+                "prediction_finite": prediction_finite,
+                "prediction_array_hash": prediction_hash_ok,
+            }
+            details.append({
+                "method": method,
+                "candidate": candidate,
+                "replicate": replicate,
+                "completed_queries": completed,
+                "record_status": record["status"],
+                "checks": local_checks,
+                "overall_pass": all(local_checks.values()),
+            })
+    checks = {
+        "reported_timing_configurations_present": bool(selected),
+        "three_replicates_per_timing_configuration": all(
+            len(records) == 3 for records in selected.values()
+        ),
+        "all_timing_records_integrity_checked": (
+            bool(details) and all(item["overall_pass"] for item in details)
+        ),
+    }
+    return checks, details
+
+
 def artifact_audit() -> dict[str, Any]:
     required = [
         RESULTS_DIR / "bank_manifest.json",
@@ -416,6 +499,7 @@ def artifact_audit() -> dict[str, Any]:
         FIGURE_DIR / "matched_accuracy_break_even.pdf",
     ]
     timing = load_bank("timing", require_truth=False)
+    timing_checks, timing_details = _timing_integrity(timing)
     checks = {
         "all_required_artifacts_exist": all(path.is_file() for path in required),
         "timing_bank_has_no_truth": "reference" not in timing,
@@ -424,6 +508,7 @@ def artifact_audit() -> dict[str, Any]:
         "preflight_validated": _read(RESULTS_DIR / "preflight_audit.json").get("status") == "VALIDATED",
         "frozen_selection_hash_valid": bool(require_frozen_selections()),
         "analysis_complete": _read(RESULTS_DIR / "analysis_summary.json").get("status") == "COMPLETE",
+        **timing_checks,
     }
     with (RESULTS_DIR / "resource_accounting.csv").open(
         newline="", encoding="utf-8"
@@ -444,6 +529,7 @@ def artifact_audit() -> dict[str, Any]:
             for path in required if path.is_file()
         },
         "timing_input_sha256": array_sha256(timing["t"], timing["x"]),
+        "timing_record_audit": timing_details,
         "allocated_h100_gpu_hours": allocated_gpu_hours,
         "audited_utc": datetime.now(timezone.utc).isoformat(),
     }
