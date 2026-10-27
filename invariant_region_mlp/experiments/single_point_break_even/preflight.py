@@ -105,7 +105,7 @@ def run(device: torch.device) -> dict:
         "deep_one_update_finite": (
             deep["status"] == "complete"
             and deep["nonfinite_count"] == 0
-            and np.isfinite(deep["candidates"][0]["y0"])
+            and bool(np.isfinite(deep["candidates"][0]["y0"]))
         ),
         "deep_config_frozen": (
             CONFIG.intervals == 20
