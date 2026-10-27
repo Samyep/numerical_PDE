@@ -13,7 +13,7 @@ from invariant_region_mlp.experiments.original_pde_benchmark_comparison.deep_bsd
     DeepBSDEConfig,
 )
 
-from .protocol import DISPLAY_POINTS, TRAJECTORIES, TRAJECTORY_BY_ID
+from .protocol import SCALING_DISPLAY_POINTS, TRAJECTORIES, TRAJECTORY_BY_ID, scaling_task_specs
 from .solver import VariableStartDeepBSDE
 
 
@@ -78,14 +78,21 @@ def test_invalid_full_horizon_at_nonzero_start_is_rejected() -> None:
 
 def test_display_reuse_is_exact_and_reference_is_unique() -> None:
     reference_points = [
-        row for row in DISPLAY_POINTS if row["trajectory_id"] == "reference"
+        row for row in SCALING_DISPLAY_POINTS if row["trajectory_id"] == "reference"
     ]
     assert {(row["sweep"], row["level"], row["checkpoint_updates"]) for row in reference_points} == {
         ("C0", 1, 1000), ("C0", 2, 2000), ("C0", 3, 4000),
-        ("C1", 2, 2000), ("C2", 2, 2000), ("J", 2, 2000),
+        ("C1", 2, 2000), ("C2", 2, 2000),
     }
     assert len({spec.signature for spec in TRAJECTORIES}) == len(TRAJECTORIES)
     assert TRAJECTORY_BY_ID["reference"].capture_updates == (1000, 2000, 4000)
+    active = scaling_task_specs()
+    assert len(active) == 30
+    assert all(not row["trajectory_id"].startswith("joint_") for row in active)
+    assert {row["task_index"] for row in active} == {
+        0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18,
+        21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 35, 36, 37, 38, 39,
+    }
 
 
 def test_sigma_convention_and_driver_formulas() -> None:

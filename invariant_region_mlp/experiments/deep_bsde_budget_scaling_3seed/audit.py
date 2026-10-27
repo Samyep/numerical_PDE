@@ -18,7 +18,7 @@ from .protocol import (
     TABLE_DIR,
     TRAINING_SEEDS,
     file_sha256,
-    task_specs,
+    scaling_task_specs,
     write_json_atomic,
 )
 
@@ -49,20 +49,18 @@ def audit() -> dict:
     completeness = json.loads((RESULTS_DIR / "training_completeness.json").read_text(encoding="utf-8"))
     if completeness["status"] != "ALL_FORMAL_TRAINING_COMPLETE_TRUTH_GATE_OPEN":
         failures.append("formal training incomplete")
-    expected_records = len(task_specs()) * FINAL_COUNT
+    active_tasks = scaling_task_specs()
+    expected_records = len(active_tasks) * FINAL_COUNT
     if completeness.get("terminal_records") != expected_records:
         failures.append("terminal record count mismatch")
     seed_rows = _csv_rows(RESULTS_DIR / "deep_bsde_seed_metrics.csv")
     per_query_rows = _csv_rows(RESULTS_DIR / "deep_bsde_per_query.csv")
     aggregate_rows = _csv_rows(RESULTS_DIR / "deep_bsde_scaling_summary.csv")
-    joint_rows = _csv_rows(RESULTS_DIR / "deep_bsde_joint_summary.csv")
-    if len(seed_rows) != len(PDES) * 12 * len(TRAINING_SEEDS):
+    if len(seed_rows) != len(PDES) * 9 * len(TRAINING_SEEDS):
         failures.append("seed metric row count mismatch")
     if len(aggregate_rows) != len(PDES) * 9:
         failures.append("sweep aggregate row count mismatch")
-    if len(joint_rows) != len(PDES) * 3:
-        failures.append("joint aggregate row count mismatch")
-    if len(per_query_rows) != len(PDES) * 12 * len(TRAINING_SEEDS) * FINAL_COUNT:
+    if len(per_query_rows) != len(PDES) * 9 * len(TRAINING_SEEDS) * FINAL_COUNT:
         failures.append("display per-query row count mismatch")
     matched_status = json.loads(
         (RESULTS_DIR / "matched_existing_baselines_status.json").read_text(encoding="utf-8")
@@ -88,11 +86,20 @@ def audit() -> dict:
     )
     if scheduling.get("numerical_protocol_changed") is not False or scheduling.get("truth_opened") is not False:
         failures.append("scheduling amendment changed numerical protocol or opened truth")
+    scope = json.loads((RESULTS_DIR / "scope_amendment.json").read_text(encoding="utf-8"))
+    active_indices = [int(task["task_index"]) for task in active_tasks]
+    if (
+        scope.get("status") != "APPLIED_BEFORE_TRUTH_GATE"
+        or scope.get("active_scope") != "C0_C1_C2_ONLY"
+        or scope.get("truth_gate_open_at_application") is not False
+        or scope.get("numerical_protocol_changed") is not False
+        or scope.get("active_array_task_indices") != active_indices
+        or scope.get("expected_terminal_records") != expected_records
+    ):
+        failures.append("C0/C1/C2 scope amendment mismatch")
     required_tables = [
         TABLE_DIR / "deep_bsde_budget_scaling_main.tex",
-        TABLE_DIR / "deep_bsde_joint_scaling.tex",
         TABLE_DIR / "deep_bsde_budget_scaling_main_preview.pdf",
-        TABLE_DIR / "deep_bsde_joint_scaling_preview.pdf",
         TABLE_DIR / "matched_existing_baselines_64.tex",
         TABLE_DIR / "matched_existing_baselines_64_preview.pdf",
     ]
@@ -108,11 +115,11 @@ def audit() -> dict:
         RESULTS_DIR / "deep_bsde_seed_metrics.csv",
         RESULTS_DIR / "deep_bsde_per_query.csv",
         RESULTS_DIR / "deep_bsde_scaling_summary.csv",
-        RESULTS_DIR / "deep_bsde_joint_summary.csv",
         RESULTS_DIR / "matched_existing_baselines_status.json",
         RESULTS_DIR / "matched_existing_baselines_64_seed_metrics.csv",
         RESULTS_DIR / "submitted_jobs.json",
         RESULTS_DIR / "scheduling_amendment.json",
+        RESULTS_DIR / "scope_amendment.json",
         RESULTS_DIR / "resource_accounting.json",
         *required_tables,
     ]
@@ -124,11 +131,12 @@ def audit() -> dict:
         "status": "PASS" if not failures else "FAIL",
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "failures": failures,
-        "expected_formal_tasks": len(task_specs()),
+        "expected_formal_tasks": len(active_tasks),
         "expected_terminal_records": expected_records,
         "observed_terminal_records": completeness.get("terminal_records"),
         "numerical_failure_count": completeness.get("numerical_failure_count"),
         "total_allocated_h100_gpu_hours": accounting["total_allocated_h100_gpu_hours"],
+        "scope": "C0_C1_C2_ONLY",
         "artifacts": artifacts,
     }
     write_json_atomic(RESULTS_DIR / "artifact_audit.json", payload)

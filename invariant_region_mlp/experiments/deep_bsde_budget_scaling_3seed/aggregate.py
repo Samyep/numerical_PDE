@@ -15,7 +15,7 @@ import numpy as np
 
 from .protocol import (
     DIMENSION,
-    DISPLAY_POINTS,
+    SCALING_DISPLAY_POINTS,
     FINAL_COUNT,
     HISTORICAL_TA_REFERENCE_RMSE,
     INPUT_DIR,
@@ -385,33 +385,6 @@ def _main_table(deep_rows: list[dict[str, Any]], historical: list[dict[str, str]
     return "\n".join(lines)
 
 
-def _joint_table(deep_rows: list[dict[str, Any]]) -> str:
-    lines = [
-        r"\begin{table}[t]",
-        r"\centering\small",
-        r"\caption{Deep BSDE joint budget scaling. Cells report $10^3\!\times$ RMSE (mean $\pm$ seed SD) and cumulative minutes for 64 independently trained query models.}",
-        r"\label{tab:deep-bsde-joint-scaling}",
-        r"\begin{tabular}{lccc}",
-        r"\toprule",
-        r"PDE & J1 $(1000,32,10)$ & J2 $(2000,64,20)$ & J3 $(4000,128,40)$ \\",
-        r"\midrule",
-    ]
-    labels = {"b6_fullrank": "B6 Full-Rank", "dense_fourier": "Dense Fourier"}
-    for pde in PDES:
-        cells = []
-        for level in (1, 2, 3):
-            row = next(r for r in deep_rows if r["pde"] == pde and r["family"] == "joint" and int(r["level"]) == level)
-            if row["status"] != "complete":
-                cells.append("FAIL")
-            else:
-                cells.append(
-                    rf"\shortstack{{{1000*float(row['mean_rmse']):.2f} $\pm$ {1000*float(row['std_rmse']):.2f}\\{float(row['mean_total_active_training_minutes_64_queries']):.1f} min}}"
-                )
-        lines.append(labels[pde] + " & " + " & ".join(cells) + r" \\")
-    lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}", ""])
-    return "\n".join(lines)
-
-
 def _matched_table(rows: list[dict[str, Any]]) -> str:
     grouped: dict[tuple[str, str, str, int], list[dict[str, Any]]] = {}
     for row in rows:
@@ -464,7 +437,7 @@ def aggregate() -> dict:
     seed_rows: list[dict[str, Any]] = []
     query_rows: list[dict[str, Any]] = []
     for pde in PDES:
-        for point in DISPLAY_POINTS:
+        for point in SCALING_DISPLAY_POINTS:
             for seed in TRAINING_SEEDS:
                 seed_row, point_rows = _deep_seed_row(pde, point, seed)
                 seed_rows.append(seed_row)
@@ -476,10 +449,6 @@ def aggregate() -> dict:
         RESULTS_DIR / "deep_bsde_scaling_summary.csv",
         [row for row in deep_rows if row["family"] == "sweep"],
     )
-    _write_csv(
-        RESULTS_DIR / "deep_bsde_joint_summary.csv",
-        [row for row in deep_rows if row["family"] == "joint"],
-    )
 
     historical = _selected_historical(_historical_rows())
     _write_csv(RESULTS_DIR / "historical_dpi_pinn_selected_levels.csv", historical)
@@ -489,12 +458,9 @@ def aggregate() -> dict:
     write_json_atomic(RESULTS_DIR / "matched_existing_baselines_status.json", matched_status)
 
     main_text = _main_table(deep_rows, historical)
-    joint_text = _joint_table(deep_rows)
     TABLE_DIR.mkdir(parents=True, exist_ok=True)
     (TABLE_DIR / "deep_bsde_budget_scaling_main.tex").write_text(main_text, encoding="utf-8")
-    (TABLE_DIR / "deep_bsde_joint_scaling.tex").write_text(joint_text, encoding="utf-8")
     _write_preview("deep_bsde_budget_scaling_main", main_text)
-    _write_preview("deep_bsde_joint_scaling", joint_text)
     if matched_status["status"] == "COMPLETE":
         matched_text = _matched_table(matched_rows)
         (TABLE_DIR / "matched_existing_baselines_64.tex").write_text(matched_text, encoding="utf-8")
@@ -509,7 +475,7 @@ def aggregate() -> dict:
                 reuse_rows.append({
                     "pde": pde, "seed": seed, "position": position,
                     "checkpoint_sha256": capture["checkpoint_sha256"],
-                    "consumers": ["C0-level2", "C1-level2", "C2-level2", "J2"],
+                    "consumers": ["C0-level2", "C1-level2", "C2-level2"],
                     "exact_single_artifact_reuse": True,
                 })
     write_json_atomic(RESULTS_DIR / "checkpoint_reuse_audit.json", {
@@ -526,7 +492,8 @@ def aggregate() -> dict:
         "matched_existing_baselines": matched_status,
         "historical_level_selection_rule": "lowest, rounded midpoint, and highest frozen parameter; no accuracy selection",
         "main_table": str(TABLE_DIR / "deep_bsde_budget_scaling_main.tex"),
-        "joint_table": str(TABLE_DIR / "deep_bsde_joint_scaling.tex"),
+        "scope": "C0_C1_C2_ONLY",
+        "joint_scaling_excluded_by_user_amendment": True,
     }
     write_json_atomic(RESULTS_DIR / "analysis_summary.json", payload)
     return payload

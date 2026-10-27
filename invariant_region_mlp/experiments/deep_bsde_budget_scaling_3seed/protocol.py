@@ -113,6 +113,16 @@ DISPLAY_POINTS: Final = (
     {"family": "joint", "sweep": "J", "level": 3, "parameter_name": "joint", "parameter_value": 3, "trajectory_id": "joint_j3", "checkpoint_updates": 4000},
 )
 
+# The original frozen preregistration and task-index mapping remain intact.
+# The user narrowed the executable/reporting scope on 2026-10-27, before the
+# truth gate opened, to the individual C0/C1/C2 sweeps only.  Keeping the
+# original declarations here prevents pending Slurm array indices from being
+# reinterpreted while these filtered views drive completion and analysis.
+SCALING_DISPLAY_POINTS: Final = tuple(
+    point for point in DISPLAY_POINTS if point["family"] == "sweep"
+)
+EXCLUDED_JOINT_TRAJECTORIES: Final = ("joint_j1", "joint_j3")
+
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 SOURCE_ROOT = PACKAGE_DIR.parents[2]
@@ -241,13 +251,23 @@ def task_specs() -> list[dict[str, Any]]:
     return tasks
 
 
+def scaling_task_specs() -> list[dict[str, Any]]:
+    """Return C0/C1/C2 tasks with their original frozen array indices."""
+
+    return [
+        task for task in task_specs()
+        if task["trajectory_id"] not in EXCLUDED_JOINT_TRAJECTORIES
+    ]
+
+
 __all__ = [
-    "CHECKPOINT_DIR", "DISPLAY_POINTS", "EXPECTED_INPUTS", "INPUT_DIR",
+    "CHECKPOINT_DIR", "DISPLAY_POINTS", "SCALING_DISPLAY_POINTS",
+    "EXCLUDED_JOINT_TRAJECTORIES", "EXPECTED_INPUTS", "INPUT_DIR",
     "MAX_H100_GPU_HOURS", "PDES", "PREFLIGHT_CONTINGENCY",
     "PREFLIGHT_UPDATES", "RAW_DIR", "REPORT_PATH", "RESULTS_DIR",
     "REVISION", "STATUS_DIR", "TABLE_DIR", "TRAINING_SEEDS",
     "TRAJECTORIES", "TRAJECTORY_BY_ID", "TrajectorySpec", "array_sha256",
     "canonical_sha256", "ensure_directories", "file_sha256",
     "historical_results_root", "protocol_payload", "stable_seed",
-    "task_specs", "write_json_atomic", "write_npz_atomic",
+    "scaling_task_specs", "task_specs", "write_json_atomic", "write_npz_atomic",
 ]
