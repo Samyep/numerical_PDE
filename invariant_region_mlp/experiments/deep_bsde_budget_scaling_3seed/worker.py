@@ -20,6 +20,18 @@ from .protocol import (
 from .solver import load_input, require_h100, train_query
 
 
+def _is_cuda_infrastructure_failure(error: BaseException) -> bool:
+    """Identify node/device failures that make every later query invalid."""
+
+    message = f"{type(error).__name__}: {error}".lower()
+    return any(marker in message for marker in (
+        "cuda-capable device(s) is/are busy or unavailable",
+        "cuda initialization: cuda unknown error",
+        "cuda unknown error",
+        "no cuda gpus are available",
+    ))
+
+
 def run_task(index: int, device: torch.device) -> dict:
     gate_path = RESULTS_DIR / "preflight_allocation_gate.json"
     if not gate_path.is_file():
@@ -46,6 +58,7 @@ def run_task(index: int, device: torch.device) -> dict:
                 failures += 1
         except Exception as error:
             failures += 1
+            fatal_cuda_infrastructure = _is_cuda_infrastructure_failure(error)
             failure_path = (
                 RESULTS_DIR / "raw" / "formal" / task["pde"]
                 / task["trajectory_id"] / f"s{task['seed']}"
@@ -58,7 +71,13 @@ def run_task(index: int, device: torch.device) -> dict:
                 "error_type": type(error).__name__,
                 "error": repr(error),
                 "traceback": traceback.format_exc(),
+                "fatal_cuda_infrastructure": fatal_cuda_infrastructure,
             })
+            # A broken or unavailable CUDA device poisons the allocation, not
+            # the query.  Fail the Slurm task immediately so it can be retried
+            # on a healthy node; do not emit 63 redundant failure markers.
+            if fatal_cuda_infrastructure:
+                raise
     payload = {
         "status": "complete" if successes + failures == task["query_count"] else "incomplete",
         "finished_utc": datetime.now(timezone.utc).isoformat(),

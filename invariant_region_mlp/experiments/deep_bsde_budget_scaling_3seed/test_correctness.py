@@ -149,3 +149,12 @@ def test_frozen_prediction_discovery_uses_metadata_not_legacy_folder(
     }
     assert _find_prediction_json(tmp_path, selected, 0) == metadata_path
 
+
+def test_cuda_device_unavailable_is_a_fail_fast_infrastructure_error() -> None:
+    from .worker import _is_cuda_infrastructure_failure
+
+    assert _is_cuda_infrastructure_failure(RuntimeError(
+        "CUDA error: CUDA-capable device(s) is/are busy or unavailable"
+    ))
+    assert not _is_cuda_infrastructure_failure(RuntimeError("nonfinite terminal loss"))
+
