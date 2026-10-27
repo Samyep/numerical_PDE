@@ -185,6 +185,12 @@ states and deliberately contains no truth array.
 - Frozen selection hash: `{frozen['canonical_sha256']}`.
 - Study revision: `{analysis['revision']}`.
 - Figure: `results/single_point_break_even/figures/matched_accuracy_break_even.pdf`.
+- H100 archive (checkpoints, timing bank, raw predictions, and Slurm logs):
+  `/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/results/single_point_break_even/`.
+
+Large checkpoints and the truth-free 524,288-query timing bank remain in that
+ICE archive rather than being placed in Git.  Their hashes and the hashes of
+every reported prediction are retained in the machine-readable records.
 
 The optional second PDE is not part of this report.  It may begin only after
 this Allen--Cahn artifact audit is validated and under a separately frozen
