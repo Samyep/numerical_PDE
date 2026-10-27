@@ -47,6 +47,10 @@ def build() -> Path:
         for row in resources
     ) / 3600.0
     failed_tasks = sum(row["status"] != "complete" for row in resources)
+    primary_ta = analysis["targets"]["epsilon_1"]["tangent_actor"]
+    primary_ta_margin_pct = 100.0 * (
+        TARGETS["epsilon_1"] - primary_ta["final_rmse"]
+    ) / TARGETS["epsilon_1"]
 
     outcome_rows = []
     for target_name, threshold in TARGETS.items():
@@ -130,6 +134,10 @@ prefix at which mean baseline time is no smaller than mean Tangent-Actor total
 time.  No line fitted to one query and no interpolated crossing is used.
 The strict-target accuracy result is retained even when its runtime comparison
 is marked `NOT_EVALUATED_COMPUTE_CAP`; no reduced-replicate curve is substituted.
+Tangent-Actor's primary final RMSE is a mechanical pass but a narrow one:
+it lies only `{primary_ta_margin_pct:.3f}%` below the frozen threshold.  The
+reference-uncertainty audit remains two orders of magnitude smaller than that
+threshold; the narrow margin is not hidden or reclassified.
 
 ## Measured amortization result
 
