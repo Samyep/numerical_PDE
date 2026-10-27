@@ -1,0 +1,246 @@
+{
+  "audited_query_solver_blob": "bb2179ffdcd81282829f30569e545e0252c4b5d3",
+  "base_revision": "9cb0d6f1d69c47882c497807283700fc60c770de",
+  "branch": "ir-mlp-deep-bsde-budget-scaling-3seed",
+  "calibration_count": 32,
+  "deep_bsde_fresh_model_per_query": true,
+  "dimension": 100,
+  "display_points": [
+    {
+      "checkpoint_updates": 1000,
+      "family": "sweep",
+      "level": 1,
+      "parameter_name": "updates",
+      "parameter_value": 1000,
+      "sweep": "C0",
+      "trajectory_id": "reference"
+    },
+    {
+      "checkpoint_updates": 2000,
+      "family": "sweep",
+      "level": 2,
+      "parameter_name": "updates",
+      "parameter_value": 2000,
+      "sweep": "C0",
+      "trajectory_id": "reference"
+    },
+    {
+      "checkpoint_updates": 4000,
+      "family": "sweep",
+      "level": 3,
+      "parameter_name": "updates",
+      "parameter_value": 4000,
+      "sweep": "C0",
+      "trajectory_id": "reference"
+    },
+    {
+      "checkpoint_updates": 2000,
+      "family": "sweep",
+      "level": 1,
+      "parameter_name": "batch_size",
+      "parameter_value": 32,
+      "sweep": "C1",
+      "trajectory_id": "c1_batch32"
+    },
+    {
+      "checkpoint_updates": 2000,
+      "family": "sweep",
+      "level": 2,
+      "parameter_name": "batch_size",
+      "parameter_value": 64,
+      "sweep": "C1",
+      "trajectory_id": "reference"
+    },
+    {
+      "checkpoint_updates": 2000,
+      "family": "sweep",
+      "level": 3,
+      "parameter_name": "batch_size",
+      "parameter_value": 128,
+      "sweep": "C1",
+      "trajectory_id": "c1_batch128"
+    },
+    {
+      "checkpoint_updates": 2000,
+      "family": "sweep",
+      "level": 1,
+      "parameter_name": "time_steps",
+      "parameter_value": 10,
+      "sweep": "C2",
+      "trajectory_id": "c2_steps10"
+    },
+    {
+      "checkpoint_updates": 2000,
+      "family": "sweep",
+      "level": 2,
+      "parameter_name": "time_steps",
+      "parameter_value": 20,
+      "sweep": "C2",
+      "trajectory_id": "reference"
+    },
+    {
+      "checkpoint_updates": 2000,
+      "family": "sweep",
+      "level": 3,
+      "parameter_name": "time_steps",
+      "parameter_value": 40,
+      "sweep": "C2",
+      "trajectory_id": "c2_steps40"
+    },
+    {
+      "checkpoint_updates": 1000,
+      "family": "joint",
+      "level": 1,
+      "parameter_name": "joint",
+      "parameter_value": 1,
+      "sweep": "J",
+      "trajectory_id": "joint_j1"
+    },
+    {
+      "checkpoint_updates": 2000,
+      "family": "joint",
+      "level": 2,
+      "parameter_name": "joint",
+      "parameter_value": 2,
+      "sweep": "J",
+      "trajectory_id": "reference"
+    },
+    {
+      "checkpoint_updates": 4000,
+      "family": "joint",
+      "level": 3,
+      "parameter_name": "joint",
+      "parameter_value": 3,
+      "sweep": "J",
+      "trajectory_id": "joint_j3"
+    }
+  ],
+  "expected_inputs": {
+    "b6_fullrank": {
+      "T": 0.25,
+      "driver": "-0.5*sum(z**2)",
+      "parameter_file_sha256": "21b508c30ad63de912979cc9c85ecda0d81aedab1357c88a40e04692495972a4",
+      "test_bank_file_sha256": "6ee6c56ca3d4f413764f28865cb8c00823ea2881ebc90f2643ff4a36fe878730",
+      "test_input_sha256": "0ee05fff7ce16f30d0d31563f60df7db3eb23a9c46bbe7bc9be8eb3dbee1311b",
+      "truth_value_sha256": "6262db7f6b7ee2c41cb6011dadb7288226157533488f708be7d6ea6773f2e13a"
+    },
+    "dense_fourier": {
+      "T": 0.5,
+      "driver": "0.5*tanh(y)*sum(z**2)",
+      "parameter_file_sha256": "042588d7c3cc8175cc7b9344284725443650837f72008806c668d35b9a005307",
+      "test_bank_file_sha256": "998fde8b2c0556de4b8fa9a55dec5e489224828cf74e5f3b36f77cb1a8e2c011",
+      "test_input_sha256": "d409296128f48c5ae00c5de2c6ddd998768c01dff18a89c385245a50ff581b70",
+      "truth_value_sha256": "3b33ea36e21595b5c20e5d91097d1fadfcbf3f7884c0328f20579e69995fc816"
+    }
+  },
+  "final_count": 64,
+  "historical_ta_reference_rmse_960_bank": {
+    "b6_fullrank": 0.0007200539,
+    "dense_fourier": 0.0017584167
+  },
+  "max_h100_gpu_hours": 120.0,
+  "official_port_source_revision": "29518ced89b3a8c0e89cdfa50b2a1cec999904aa",
+  "pdes": [
+    "b6_fullrank",
+    "dense_fourier"
+  ],
+  "preregistration_commit": "a1ff02e15f70c6c04a6450ca15c839ee1ea0ca3f",
+  "profile": {
+    "dtype": "float64",
+    "hidden_widths": [
+      110,
+      110
+    ],
+    "learning_rate": 0.01,
+    "terminal_loss_clip": 50.0,
+    "validation_size": 256,
+    "y_init_range": [
+      0.0,
+      1.0
+    ]
+  },
+  "protocol_sha256": "16f20c13a4ef0ee2f620a1d2a626b0b771f7dfd2fb900c2210dc048e5b9712f2",
+  "revision": "deep_bsde_budget_scaling_3seed_v1",
+  "subset_seed": 20261309,
+  "subset_strata": 32,
+  "training_seeds": [
+    0,
+    1,
+    2
+  ],
+  "trajectories": [
+    {
+      "batch_size": 64,
+      "capture_updates": [
+        1000,
+        2000,
+        4000
+      ],
+      "signature": "0c9302c486d5688b5e3d9415792f50de33517ab5a6fcd359a5c6ce2e40eb1e83",
+      "time_steps": 20,
+      "trajectory_id": "reference",
+      "updates": 4000
+    },
+    {
+      "batch_size": 32,
+      "capture_updates": [
+        2000
+      ],
+      "signature": "86e7e640dcdb44bfbdd1d8a2b1d384a0959efe35d685c7c9e71fffd3bd4df455",
+      "time_steps": 20,
+      "trajectory_id": "c1_batch32",
+      "updates": 2000
+    },
+    {
+      "batch_size": 128,
+      "capture_updates": [
+        2000
+      ],
+      "signature": "778beba3746f9f48a2092ac874d0a5f495b584f0b4a49bb3dd12ba2ff4093423",
+      "time_steps": 20,
+      "trajectory_id": "c1_batch128",
+      "updates": 2000
+    },
+    {
+      "batch_size": 64,
+      "capture_updates": [
+        2000
+      ],
+      "signature": "8c0e8562bd881644f3636add99f7f2e624a6bc54ebbcdb8caeb25307c32466ac",
+      "time_steps": 10,
+      "trajectory_id": "c2_steps10",
+      "updates": 2000
+    },
+    {
+      "batch_size": 64,
+      "capture_updates": [
+        2000
+      ],
+      "signature": "bee114b520b19fecb40d67ecd3044d0eb925ac1e8907e35ae689b948cb09c250",
+      "time_steps": 40,
+      "trajectory_id": "c2_steps40",
+      "updates": 2000
+    },
+    {
+      "batch_size": 32,
+      "capture_updates": [
+        1000
+      ],
+      "signature": "c13a54d77fb5fb080025cbadfa3a6d95f1aa25ab2fd2286da89ad8e0bbc6d43a",
+      "time_steps": 10,
+      "trajectory_id": "joint_j1",
+      "updates": 1000
+    },
+    {
+      "batch_size": 128,
+      "capture_updates": [
+        4000
+      ],
+      "signature": "9583cc96172004a58265cfd8f346d2840f8c2c30e64dee6f4e511801c292ce10",
+      "time_steps": 40,
+      "trajectory_id": "joint_j3",
+      "updates": 4000
+    }
+  ],
+  "truth_used_for_selection_training_or_stopping": false
+}

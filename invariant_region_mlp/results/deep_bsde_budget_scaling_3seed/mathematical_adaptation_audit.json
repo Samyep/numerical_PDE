@@ -1,0 +1,40 @@
+{
+  "cells": [
+    {
+      "T": 0.25,
+      "driver_formula": "-0.5*sum(z**2)",
+      "expected_parameter_sha256": "8d661b71b57f0f37c388a0c1ad81d97897f5838e315eabda8a499bf4abe7927a",
+      "parameter_hash_match": true,
+      "parameter_sha256": "8d661b71b57f0f37c388a0c1ad81d97897f5838e315eabda8a499bf4abe7927a",
+      "pde": "b6_fullrank",
+      "pde_residual_abs": 0.0,
+      "sigma": 1.4142135623730951,
+      "terminal_max_abs_error": 0.0,
+      "z_sqrt2_grad_max_abs_error": 2.7755575615628914e-16
+    },
+    {
+      "T": 0.5,
+      "driver_formula": "0.5*tanh(y)*sum(z**2)",
+      "expected_parameter_sha256": "b96804e2f7c20cbd4e72c0f961a4ebfc21bf46cae120d198b6afe6ce2e2684b6",
+      "parameter_hash_match": true,
+      "parameter_sha256": "b96804e2f7c20cbd4e72c0f961a4ebfc21bf46cae120d198b6afe6ce2e2684b6",
+      "pde": "dense_fourier",
+      "pde_residual_abs": 3.0531133177191805e-16,
+      "sigma": 1.4142135623730951,
+      "terminal_max_abs_error": 0.0,
+      "z_sqrt2_grad_max_abs_error": 1.6653345369377348e-16
+    }
+  ],
+  "created_utc": "2026-10-27T20:44:00.437121+00:00",
+  "failures": [],
+  "source_fidelity_checks": {
+    "euler_dt": true,
+    "float64_profile": true,
+    "inherits_official_architecture": true,
+    "learned_initial_z_shape": true,
+    "remaining_horizon": true,
+    "scalar_initial_value_shape": true,
+    "time_slice_subnet_count": true
+  },
+  "status": "PASS"
+}
