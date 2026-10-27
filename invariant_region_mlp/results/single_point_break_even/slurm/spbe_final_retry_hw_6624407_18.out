@@ -1,0 +1,47 @@
+---------------------------------------
+Begin Slurm Prolog: Oct-27-2026 03:50:47
+Job ID:    6624560
+User ID:   ywang4280
+Account:   isye
+Job name:  spbe_final_retry_hw
+Partition: coe-gpu
+QOS:       coe-ice
+---------------------------------------
+0, GPU-1b2a673e-9207-001f-3bc4-16cf531ea4fe, NVIDIA H100 80GB HBM3, 81559 MiB, 615.71.09
+{
+  "finished_utc": "2026-10-27T07:54:30.115805+00:00",
+  "record_ids": [
+    "db__final__q013__s10__u4000__c4000",
+    "db__final__q013__s11__u4000__c4000",
+    "db__final__q013__s12__u4000__c4000"
+  ],
+  "revision": "single_point_break_even_v1",
+  "slurm_array_task_id": "18",
+  "slurm_job_id": "6624560",
+  "stage": "final_accuracy",
+  "status": "complete",
+  "task": {
+    "capture_updates": [
+      4000
+    ],
+    "index": 18,
+    "kind": "db_final_bundle",
+    "max_updates": 4000,
+    "point": 13
+  },
+  "task_id": "final_accuracy__0018__db_final_bundle",
+  "task_wall_seconds": 219.01744198496453
+}
+---------------------------------------
+Begin Slurm Epilog: Oct-27-2026 03:54:30
+Job ID:        6624560
+Array Job ID:  6624407_18
+User ID:       ywang4280
+Account:       isye
+Job name:      spbe_final_retry_hw
+Resources:     cpu=8,gres/gpu:h100=1,mem=64G,node=1
+Rsrc Used:     cput=00:30:00,vmem=0,walltime=00:03:45,mem=1065556K,energy_used=0
+Partition:     coe-gpu
+QOS:           coe-ice
+Nodes:         atl1-1-03-010-25-0
+---------------------------------------

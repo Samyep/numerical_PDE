@@ -1,0 +1,43 @@
+Lmod Warning:
+-------------------------------------------------------------------------------
+The following dependent module(s) are not currently loaded:
+libxml2/2.10.3-74cdfsk (required by: gettext/0.22.5-ojoqw7w), xz/5.2.5-y72uqzs
+(required by: tar/1.30-7aefvn4, gettext/0.22.5-ojoqw7w, python/3.11.9)
+-------------------------------------------------------------------------------
+
+
+
+
+The following have been reloaded with a version change:
+  1) libxml2/2.10.3-74cdfsk => libxml2/2.13.5-xvypeyo
+  2) xz/5.2.5-y72uqzs => xz/5.6.3-u3gckxx
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/experiments/single_point_break_even/preflight.py", line 153, in <module>
+    print(json.dumps(run(torch.device("cuda")), indent=2, sort_keys=True))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/experiments/single_point_break_even/preflight.py", line 146, in run
+    write_json_atomic(RESULTS_DIR / "preflight_audit.json", payload)
+  File "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/experiments/single_point_break_even/protocol.py", line 103, in write_json_atomic
+    json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n",
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/pace-apps/spack/packages/linux-rhel9-x86_64_v3/gcc-11.3.1/python-3.11.9-3hh2x6apwv7ofr5ymaux56q7df3a6e22/lib/python3.11/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/usr/local/pace-apps/spack/packages/linux-rhel9-x86_64_v3/gcc-11.3.1/python-3.11.9-3hh2x6apwv7ofr5ymaux56q7df3a6e22/lib/python3.11/json/encoder.py", line 202, in encode
+    chunks = list(chunks)
+             ^^^^^^^^^^^^
+  File "/usr/local/pace-apps/spack/packages/linux-rhel9-x86_64_v3/gcc-11.3.1/python-3.11.9-3hh2x6apwv7ofr5ymaux56q7df3a6e22/lib/python3.11/json/encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "/usr/local/pace-apps/spack/packages/linux-rhel9-x86_64_v3/gcc-11.3.1/python-3.11.9-3hh2x6apwv7ofr5ymaux56q7df3a6e22/lib/python3.11/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/usr/local/pace-apps/spack/packages/linux-rhel9-x86_64_v3/gcc-11.3.1/python-3.11.9-3hh2x6apwv7ofr5ymaux56q7df3a6e22/lib/python3.11/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/usr/local/pace-apps/spack/packages/linux-rhel9-x86_64_v3/gcc-11.3.1/python-3.11.9-3hh2x6apwv7ofr5ymaux56q7df3a6e22/lib/python3.11/json/encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "/usr/local/pace-apps/spack/packages/linux-rhel9-x86_64_v3/gcc-11.3.1/python-3.11.9-3hh2x6apwv7ofr5ymaux56q7df3a6e22/lib/python3.11/json/encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type bool is not JSON serializable

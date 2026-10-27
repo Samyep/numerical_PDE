@@ -1,0 +1,43 @@
+---------------------------------------
+Begin Slurm Prolog: Oct-27-2026 03:09:05
+Job ID:    6624184
+User ID:   ywang4280
+Account:   isye
+Job name:  spbe_cal_db
+Partition: ice-gpu
+QOS:       coe-ice
+---------------------------------------
+0, GPU-4ba7afa9-42da-ea61-eb99-234938183473, NVIDIA H100 80GB HBM3, 81559 MiB, 615.71.09
+{
+  "finished_utc": "2026-10-27T07:15:29.852317+00:00",
+  "record_ids": [
+    "db__calibration__q026__s0__u8000__c2000-4000-8000",
+    "db__calibration__q026__s1__u8000__c2000-4000-8000",
+    "db__calibration__q026__s2__u8000__c2000-4000-8000"
+  ],
+  "revision": "single_point_break_even_v1",
+  "slurm_array_task_id": "41",
+  "slurm_job_id": "6624184",
+  "stage": "calibration",
+  "status": "complete",
+  "task": {
+    "index": 41,
+    "kind": "db_calibration_bundle",
+    "point": 26
+  },
+  "task_id": "calibration__0041__db_calibration_bundle",
+  "task_wall_seconds": 360.06791606800107
+}
+---------------------------------------
+Begin Slurm Epilog: Oct-27-2026 03:15:38
+Job ID:        6624184
+Array Job ID:  6623702_41
+User ID:       ywang4280
+Account:       isye
+Job name:      spbe_cal_db
+Resources:     cpu=8,gres/gpu:h100=1,mem=64G,node=1
+Rsrc Used:     cput=00:52:40,vmem=0,walltime=00:06:35,mem=1185344K,energy_used=0
+Partition:     ice-gpu
+QOS:           coe-ice
+Nodes:         atl1-1-03-013-3-0
+---------------------------------------

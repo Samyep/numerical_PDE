@@ -1,0 +1,129 @@
+{
+  "aggregated_utc": "2026-10-27T08:10:30.510479+00:00",
+  "configuration_changes_after_final_errors": false,
+  "final_bank_input_sha256": "92af58f525b1bde4fdd9005a967ea6bc2599c8cc408717cfcb31a1ce6d08237f",
+  "frozen_selections_canonical_sha256": "311804c418ece6276a1fb5f08c5afdb31c1f36d8455a6c5184f56660c53f2f4c",
+  "revision": "single_point_break_even_v1",
+  "rows": [
+    {
+      "candidate": "mcv_32",
+      "gpu": "NVIDIA H100 80GB HBM3",
+      "method": "tangent_actor",
+      "nonfinite_count": 0,
+      "pooled_bias": 9.736082334942944e-06,
+      "pooled_mae": 0.00011931617743998075,
+      "pooled_rmse": 0.0002479854115025378,
+      "prediction_count": 384,
+      "run_count": 6
+    },
+    {
+      "candidate": "n3_M16",
+      "gpu": "NVIDIA H100 80GB HBM3",
+      "method": "fh_mlp_standard",
+      "nonfinite_count": 0,
+      "pooled_bias": -9.653756174901262e-05,
+      "pooled_mae": 0.0001738973363266971,
+      "pooled_rmse": 0.00022619525099188588,
+      "prediction_count": 320,
+      "run_count": 5
+    },
+    {
+      "candidate": "updates_4000",
+      "gpu": "NVIDIA H100 80GB HBM3",
+      "method": "deep_bsde",
+      "nonfinite_count": 0,
+      "pooled_bias": 5.9865303746775836e-05,
+      "pooled_mae": 0.00014940777686071036,
+      "pooled_rmse": 0.00018793641787554142,
+      "prediction_count": 192,
+      "run_count": 192
+    },
+    {
+      "candidate": "mcv_256",
+      "gpu": "NVIDIA H100 80GB HBM3",
+      "method": "tangent_actor",
+      "nonfinite_count": 0,
+      "pooled_bias": 1.1337205636440808e-05,
+      "pooled_mae": 4.222059881643183e-05,
+      "pooled_rmse": 7.401369717050203e-05,
+      "prediction_count": 384,
+      "run_count": 6
+    },
+    {
+      "candidate": "n4_M12",
+      "gpu": "NVIDIA H100 80GB HBM3",
+      "method": "fh_mlp_standard",
+      "nonfinite_count": 0,
+      "pooled_bias": -4.125627615135638e-06,
+      "pooled_mae": 7.179826052519119e-05,
+      "pooled_rmse": 9.182895326094184e-05,
+      "prediction_count": 320,
+      "run_count": 5
+    }
+  ],
+  "status": "COMPLETE",
+  "targets": {
+    "epsilon_1": {
+      "deep_bsde": {
+        "calibration_rmse": 0.00019881014887242337,
+        "final_prediction_count": 192,
+        "final_rmse": 0.00018793641787554142,
+        "nonfinite_count": 0,
+        "selected_candidate": "updates_4000",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.00025
+      },
+      "fh_mlp_standard": {
+        "calibration_rmse": 0.0002315926385883864,
+        "final_prediction_count": 320,
+        "final_rmse": 0.00022619525099188588,
+        "nonfinite_count": 0,
+        "selected_candidate": "n3_M16",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.00025
+      },
+      "tangent_actor": {
+        "calibration_rmse": 0.000233184541047206,
+        "final_prediction_count": 384,
+        "final_rmse": 0.0002479854115025378,
+        "nonfinite_count": 0,
+        "selected_candidate": "mcv_32",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.00025
+      },
+      "threshold": 0.00025
+    },
+    "epsilon_2": {
+      "deep_bsde": {
+        "calibration": {
+          "best_actual_mean_seconds": 142.4576382639829,
+          "best_calibration_rmse": 0.00015466914072293647,
+          "best_candidate": "updates_8000",
+          "selected_candidate": null,
+          "status": "TARGET_NOT_REACHED"
+        },
+        "selected_candidate": null,
+        "status": "TARGET_NOT_REACHED"
+      },
+      "fh_mlp_standard": {
+        "calibration_rmse": 7.983261868596627e-05,
+        "final_prediction_count": 320,
+        "final_rmse": 9.182895326094184e-05,
+        "nonfinite_count": 0,
+        "selected_candidate": "n4_M12",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.0001
+      },
+      "tangent_actor": {
+        "calibration_rmse": 9.925375030232261e-05,
+        "final_prediction_count": 384,
+        "final_rmse": 7.401369717050203e-05,
+        "nonfinite_count": 0,
+        "selected_candidate": "mcv_256",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.0001
+      },
+      "threshold": 0.0001
+    }
+  }
+}

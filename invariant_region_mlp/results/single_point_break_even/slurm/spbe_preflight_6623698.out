@@ -1,0 +1,91 @@
+---------------------------------------
+Begin Slurm Prolog: Oct-27-2026 02:28:01
+Job ID:    6623698
+User ID:   ywang4280
+Account:   isye
+Job name:  spbe_preflight
+Partition: ice-gpu
+QOS:       coe-ice
+---------------------------------------
+0, GPU-67bb529e-d0f4-aa30-11fe-c10b6f1e9831, NVIDIA H100 80GB HBM3, 81559 MiB, 615.71.09
+.....................                                                    [100%]
+21 passed in 4.25s
+{
+  "banks": {
+    "calibration": {
+      "file_sha256": "25ecc10dea596850fe976db0a135277d57f421abd35b277492594a117511d63b",
+      "input_sha256": "08de893ca502572306c9571fe113b19bd4e9bc4a1a71d0cd8362e6e1a99a6b1e"
+    },
+    "final": {
+      "file_sha256": "bb7da5ed7b435e6e1b6d15eb02765fa74e1c91ec9a59475747ad6d610f859908",
+      "input_sha256": "92af58f525b1bde4fdd9005a967ea6bc2599c8cc408717cfcb31a1ce6d08237f"
+    },
+    "timing": {
+      "file_sha256": "37820d212e1c372ede6199ab0c84bd3c34d62d6494195a031538f13b7786d76b",
+      "input_sha256": "e1abc0da6a82e4d5c5f9790277c628d1ec5eeec5b6e7c123e0744eda89232d4a"
+    }
+  },
+  "checks": {
+    "bank_shapes": true,
+    "deep_config_frozen": true,
+    "deep_one_update_finite": true,
+    "fh_draw_replay_exact": true,
+    "fh_nonfinite_zero": true,
+    "gpu_is_h100": true,
+    "reference_gate": true,
+    "timing_has_no_truth": true
+  },
+  "cuda_version": "13.0",
+  "deep_smoke": {
+    "active_seconds": 1.4469694287981838,
+    "candidates": [
+      {
+        "active_seconds": 1.4469206109642982,
+        "nonfinite_count_cumulative": 0,
+        "updates": 1,
+        "validation_terminal_clipped_mse": 0.12310700209017375,
+        "y0": 0.48885124278894815
+      }
+    ],
+    "completed_updates": 1,
+    "nonfinite_count": 0,
+    "parameter_count": 665861,
+    "peak_gpu_bytes": 100382208,
+    "status": "complete",
+    "validation_dw_sha256": "637c05856499afcd7c23d6e2f7ff2f80c498dfff5671042a2441a1adf0e07448"
+  },
+  "fh_replay_max_abs": 0.0,
+  "fh_value": 0.05241729505434972,
+  "finished_utc": "2026-10-27T06:28:16.633032+00:00",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "overall_pass": true,
+  "revision": "single_point_break_even_v1",
+  "source_files": {
+    "deep_bsde": {
+      "path": "invariant_region_mlp/experiments/single_point_32_ice/deep_bsde.py",
+      "sha256": "f6ba85d75ecb9caea603873351e9d2f4ccae52a1e262e6dd5f0f6671fe52bb99"
+    },
+    "fh_mlp": {
+      "path": "invariant_region_mlp/experiments/single_point_32_ice/fh_mlp.py",
+      "sha256": "e22d2b698e14df954c36dec7d46e0da8caf86bf42099a91dad6300cdfe0314e2"
+    },
+    "tangent_actor": {
+      "path": "invariant_region_mlp/experiments/single_point_32_ice/tangent_actor.py",
+      "sha256": "9b8506934b52d18e72870a914026f59996a966b88d4204d356501bd0ce850d16"
+    }
+  },
+  "status": "VALIDATED",
+  "torch_version": "2.11.0+cu130"
+}
+---------------------------------------
+Begin Slurm Epilog: Oct-27-2026 02:28:17
+Job ID:        6623698
+User ID:       ywang4280
+Account:       isye
+Job name:      spbe_preflight
+Resources:     cpu=8,gres/gpu:h100=1,mem=64G,node=1
+Rsrc Used:     cput=00:02:32,vmem=0,walltime=00:00:19,mem=1803236K,energy_used=0
+Partition:     ice-gpu
+QOS:           coe-ice
+Nodes:         atl1-1-03-013-13-0
+---------------------------------------

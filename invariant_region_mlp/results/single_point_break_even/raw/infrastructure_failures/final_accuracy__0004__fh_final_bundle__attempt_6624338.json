@@ -1,0 +1,19 @@
+{
+  "error": "formal break-even computation requires CUDA",
+  "error_type": "RuntimeError",
+  "finished_utc": "2026-10-27T07:31:22.856662+00:00",
+  "revision": "single_point_break_even_v1",
+  "slurm_array_task_id": "4",
+  "slurm_job_id": "6624379",
+  "stage": "final_accuracy",
+  "status": "failed",
+  "task": {
+    "M": 12,
+    "index": 4,
+    "kind": "fh_final_bundle",
+    "n": 4
+  },
+  "task_id": "final_accuracy__0004__fh_final_bundle",
+  "task_wall_seconds": 0.1002152250148356,
+  "traceback": "Traceback (most recent call last):\n  File \"/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/experiments/single_point_break_even/dispatch.py\", line 212, in run_task\n    records = _run(task, device)\n              ^^^^^^^^^^^^^^^^^^\n  File \"/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/experiments/single_point_break_even/dispatch.py\", line 169, in _run\n    records.append(fh_mlp.evaluate(\n                   ^^^^^^^^^^^^^^^^\n  File \"/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/experiments/single_point_break_even/fh_mlp.py\", line 101, in evaluate\n    gpu = _require_h100(device)\n          ^^^^^^^^^^^^^^^^^^^^^\n  File \"/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/experiments/single_point_break_even/fh_mlp.py\", line 49, in _require_h100\n    raise RuntimeError(\"formal break-even computation requires CUDA\")\nRuntimeError: formal break-even computation requires CUDA\n"
+}

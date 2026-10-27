@@ -1,0 +1,62 @@
+{
+  "active_seconds": 72.6331150769256,
+  "amortized_decoder": false,
+  "candidates": [
+    {
+      "absolute_error": 0.00023790844603364947,
+      "active_seconds": 72.55926870298572,
+      "error": 0.00023790844603364947,
+      "nonfinite_count_cumulative": 0,
+      "reference": 0.020057152198752693,
+      "updates": 4000,
+      "validation_terminal_clipped_mse": 0.00013051741782770247,
+      "y0": 0.020295060644786343
+    }
+  ],
+  "capture_updates": [
+    4000
+  ],
+  "checkpoint": "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/results/single_point_break_even/checkpoints/final/deep_bsde/db__final__q014__s12__u4000__c4000.pt",
+  "checkpoint_sha256": "b40c8dd1fe4b5a7326c39f7091c77ad7f33dd3e7e550ea51123dbe9b65323c5c",
+  "completed_updates": 4000,
+  "configuration": {
+    "batch_size": 64,
+    "benchmark": "allen_cahn_d100",
+    "dtype": "float64",
+    "hidden_widths": [
+      110,
+      110
+    ],
+    "intervals": 20,
+    "iterations": 8000,
+    "learning_rate": 0.0005,
+    "logging_frequency": 2000,
+    "total_time": 0.3,
+    "validation_size": 256,
+    "y_init_range": [
+      0.3,
+      0.5
+    ]
+  },
+  "finished_utc": "2026-10-27T07:54:32.835106+00:00",
+  "fresh_model_per_query": true,
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "max_updates": 4000,
+  "method": "deep_bsde_native_scalar_y0",
+  "native_scalar_y0": true,
+  "nonfinite_count": 0,
+  "parameter_count": 665861,
+  "peak_gpu_bytes": 102580736,
+  "point": 14,
+  "prediction_file": "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/results/single_point_break_even/predictions/final/deep_bsde/db__final__q014__s12__u4000__c4000.npz",
+  "prediction_sha256": "b3037088ea7beaa402b094c51e0d51cba7dac1b42b6b54822ec3b125b12b2c78",
+  "query_input_sha256": "8503f0e7777dda9fbf4d45f64bb238f4292d79eec2c6179fc4223cbf6c52937e",
+  "resume_checkpoint": "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/results/single_point_break_even/checkpoints/final/deep_bsde/db__final__q014__s12__u4000__c4000_resume.pt",
+  "revision": "single_point_break_even_v1",
+  "run_id": "db__final__q014__s12__u4000__c4000",
+  "seed": 12,
+  "stage": "final",
+  "status": "complete",
+  "truth_loaded_only_after_frozen_training_schedule": true,
+  "validation_dw_sha256": "ac6996ca3024d071a45dcc1e1d79602918b53749b0c82534366110cb3f8ae576"
+}

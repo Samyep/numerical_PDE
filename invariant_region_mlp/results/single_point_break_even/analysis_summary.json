@@ -1,0 +1,188 @@
+{
+  "analysis_code_commit": "64343a6d4e43d3796a1bdbfe0c08f60663e56736",
+  "analyzed_utc": "2026-10-27T09:40:45.107726+00:00",
+  "break_even": {
+    "epsilon_1": {
+      "deep_bsde": {
+        "baseline_mean_seconds_at_crossing": 1185.9482675049585,
+        "crossing_queries": 16,
+        "interval": [
+          8,
+          16
+        ],
+        "per_replicate": [
+          {
+            "crossing_queries": 16,
+            "largest_common_queries": 32,
+            "previous_queries": 8,
+            "replicate": 0
+          },
+          {
+            "crossing_queries": 16,
+            "largest_common_queries": 32,
+            "previous_queries": 8,
+            "replicate": 1
+          },
+          {
+            "crossing_queries": 16,
+            "largest_common_queries": 32,
+            "previous_queries": 8,
+            "replicate": 2
+          }
+        ],
+        "previous_queries": 8,
+        "status": "OBSERVED_BREAK_EVEN",
+        "tangent_actor_mean_seconds_at_crossing": 801.2531224280441
+      },
+      "fh_mlp_standard": {
+        "baseline_mean_seconds": 578.146319830635,
+        "baseline_over_tangent_actor_time": 0.17409836250300392,
+        "largest_common_queries": 262144,
+        "per_replicate": [
+          {
+            "crossing_queries": null,
+            "largest_common_queries": 262144,
+            "previous_queries": null,
+            "replicate": 0
+          },
+          {
+            "crossing_queries": null,
+            "largest_common_queries": 262144,
+            "previous_queries": null,
+            "replicate": 1
+          },
+          {
+            "crossing_queries": null,
+            "largest_common_queries": 262144,
+            "previous_queries": null,
+            "replicate": 2
+          }
+        ],
+        "status": "NOT_REACHED_WITHIN_TESTED_BUDGET",
+        "tangent_actor_mean_seconds": 3320.8027434529117
+      }
+    },
+    "epsilon_2": {
+      "deep_bsde": {
+        "status": "TARGET_NOT_REACHED"
+      },
+      "fh_mlp_standard": {
+        "status": "NOT_EVALUATED_COMPUTE_CAP"
+      }
+    }
+  },
+  "frozen_selections_canonical_sha256": "311804c418ece6276a1fb5f08c5afdb31c1f36d8455a6c5184f56660c53f2f4c",
+  "hardware": "NVIDIA H100 80GB",
+  "no_extrapolated_crossings": true,
+  "revision": "single_point_break_even_v1",
+  "status": "COMPLETE",
+  "targets": {
+    "epsilon_1": {
+      "deep_bsde": {
+        "calibration_rmse": 0.00019881014887242337,
+        "final_prediction_count": 192,
+        "final_rmse": 0.00018793641787554142,
+        "nonfinite_count": 0,
+        "selected_candidate": "updates_4000",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.00025
+      },
+      "fh_mlp_standard": {
+        "calibration_rmse": 0.0002315926385883864,
+        "final_prediction_count": 320,
+        "final_rmse": 0.00022619525099188588,
+        "nonfinite_count": 0,
+        "selected_candidate": "n3_M16",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.00025
+      },
+      "tangent_actor": {
+        "calibration_rmse": 0.000233184541047206,
+        "final_prediction_count": 384,
+        "final_rmse": 0.0002479854115025378,
+        "nonfinite_count": 0,
+        "selected_candidate": "mcv_32",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.00025
+      },
+      "threshold": 0.00025
+    },
+    "epsilon_2": {
+      "deep_bsde": {
+        "calibration": {
+          "best_actual_mean_seconds": 142.4576382639829,
+          "best_calibration_rmse": 0.00015466914072293647,
+          "best_candidate": "updates_8000",
+          "selected_candidate": null,
+          "status": "TARGET_NOT_REACHED"
+        },
+        "selected_candidate": null,
+        "status": "TARGET_NOT_REACHED"
+      },
+      "fh_mlp_standard": {
+        "calibration_rmse": 7.983261868596627e-05,
+        "final_prediction_count": 320,
+        "final_rmse": 9.182895326094184e-05,
+        "nonfinite_count": 0,
+        "selected_candidate": "n4_M12",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.0001
+      },
+      "tangent_actor": {
+        "calibration_rmse": 9.925375030232261e-05,
+        "final_prediction_count": 384,
+        "final_rmse": 7.401369717050203e-05,
+        "nonfinite_count": 0,
+        "selected_candidate": "mcv_256",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.0001
+      },
+      "threshold": 0.0001
+    }
+  },
+  "timing_coverage": {
+    "decision_basis": {
+      "allen_cahn_total_cap_h100_hours": 18.0,
+      "decision": "Run the complete three-replicate primary-target timing comparison first. Do not submit the six secondary-target timing tasks because their one-hour-per-replicate worst-case allocation cannot fit after the primary comparison while preserving the frozen total cap.",
+      "decision_utc": "2026-10-27T08:12:37Z",
+      "infrastructure_before_timing_h100_hours": 0.10777777777777778,
+      "numerical_tasks_before_timing_h100_hours": 9.131948,
+      "primary_slurm_array": "6624759_[3-8,12-14]",
+      "submitted_manifest_indices": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        12,
+        13,
+        14
+      ],
+      "total_allocated_before_timing_h100_hours": 9.239725777777778,
+      "unsubmitted_manifest_indices": [
+        0,
+        1,
+        2,
+        9,
+        10,
+        11
+      ]
+    },
+    "revision": "single_point_break_even_v1",
+    "status": "FROZEN_COMPUTE_CURTAILMENT",
+    "targets": {
+      "epsilon_1": {
+        "deep_bsde": "RUN",
+        "fh_mlp_standard": "RUN",
+        "tangent_actor": "RUN"
+      },
+      "epsilon_2": {
+        "deep_bsde": "TARGET_NOT_REACHED",
+        "fh_mlp_standard": "NOT_EVALUATED_COMPUTE_CAP",
+        "tangent_actor": "NOT_EVALUATED_COMPUTE_CAP"
+      }
+    }
+  },
+  "timing_row_count": 141
+}
