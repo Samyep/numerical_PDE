@@ -1,0 +1,214 @@
+{
+  "banks": {
+    "calibration": {
+      "contains_reference": true,
+      "file_sha256": "25ecc10dea596850fe976db0a135277d57f421abd35b277492594a117511d63b",
+      "input_array_sha256": "08de893ca502572306c9571fe113b19bd4e9bc4a1a71d0cd8362e6e1a99a6b1e",
+      "law": "t=0; x~N(0,I_100); row zero replaced by exact origin",
+      "path": "invariant_region_mlp/results/single_point_break_even/banks/calibration.npz",
+      "seed": 1627821958,
+      "size": 32
+    },
+    "final": {
+      "contains_reference": true,
+      "file_sha256": "bb7da5ed7b435e6e1b6d15eb02765fa74e1c91ec9a59475747ad6d610f859908",
+      "input_array_sha256": "92af58f525b1bde4fdd9005a967ea6bc2599c8cc408717cfcb31a1ce6d08237f",
+      "law": "t=0; x~N(0,I_100); row zero replaced by exact origin",
+      "path": "invariant_region_mlp/results/single_point_break_even/banks/final.npz",
+      "seed": 4053164256,
+      "size": 64
+    },
+    "timing": {
+      "contains_reference": false,
+      "file_sha256": "37820d212e1c372ede6199ab0c84bd3c34d62d6494195a031538f13b7786d76b",
+      "input_array_sha256": "e1abc0da6a82e4d5c5f9790277c628d1ec5eeec5b6e7c123e0744eda89232d4a",
+      "law": "t=0; x~N(0,I_100)",
+      "path": "invariant_region_mlp/results/single_point_break_even/banks/timing.npz",
+      "seed": 2986998060,
+      "size": 524288
+    }
+  },
+  "namespace_seed": 20271027,
+  "previous_bank": {
+    "input_array_sha256": "905e61abd24f9df000d1867cb4a7ec87937210c54ea58c519dc23087ff617621",
+    "path": "invariant_region_mlp/results/single_point_32_ice/frozen_query_banks/allen_cahn_d100"
+  },
+  "protocol": {
+    "bank_sizes": {
+      "calibration": 32,
+      "final": 64,
+      "timing": 524288
+    },
+    "calibration_seeds": [
+      0,
+      1,
+      2
+    ],
+    "deep_bsde_candidate_updates": [
+      2000,
+      4000,
+      8000
+    ],
+    "deep_bsde_timing_counts": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      24,
+      32,
+      48,
+      64
+    ],
+    "dimension": 100,
+    "fh_configs": [
+      [
+        3,
+        12
+      ],
+      [
+        3,
+        16
+      ],
+      [
+        3,
+        24
+      ],
+      [
+        3,
+        32
+      ],
+      [
+        3,
+        48
+      ],
+      [
+        3,
+        64
+      ],
+      [
+        3,
+        96
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        4,
+        8
+      ],
+      [
+        4,
+        10
+      ],
+      [
+        4,
+        12
+      ],
+      [
+        4,
+        16
+      ]
+    ],
+    "fh_replicates": 5,
+    "fh_timing_replicates": 3,
+    "final_seeds": [
+      10,
+      11,
+      12
+    ],
+    "horizon": 0.3,
+    "namespace_seed": 20271027,
+    "pde": "allen_cahn",
+    "preregistration_commit": "498589cc2",
+    "revision": "single_point_break_even_v1",
+    "source_commit": "9ce44b4393d2e54ed461b69a214af0d2019bb304",
+    "ta_inference_replicates": 2,
+    "ta_paths": [
+      32,
+      64,
+      128,
+      256,
+      512,
+      1024
+    ],
+    "ta_steps": 64,
+    "targets": {
+      "epsilon_1": 0.00025,
+      "epsilon_2": 0.0001
+    },
+    "timing_counts": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256,
+      512,
+      1024,
+      2048,
+      4096,
+      8192,
+      16384,
+      32768,
+      65536,
+      131072,
+      262144,
+      524288
+    ]
+  },
+  "revision": "single_point_break_even_v1",
+  "separation_audit": {
+    "comparisons": [
+      {
+        "left": "calibration",
+        "mandated_origin_overlap": true,
+        "overlap_count": 1,
+        "right": "final",
+        "unexpected_overlap_count": 0
+      },
+      {
+        "left": "calibration",
+        "mandated_origin_overlap": false,
+        "overlap_count": 0,
+        "right": "timing",
+        "unexpected_overlap_count": 0
+      },
+      {
+        "left": "final",
+        "mandated_origin_overlap": false,
+        "overlap_count": 0,
+        "right": "timing",
+        "unexpected_overlap_count": 0
+      },
+      {
+        "left": "calibration",
+        "mandated_origin_overlap": true,
+        "overlap_count": 1,
+        "right": "previous_32",
+        "unexpected_overlap_count": 0
+      },
+      {
+        "left": "final",
+        "mandated_origin_overlap": true,
+        "overlap_count": 1,
+        "right": "previous_32",
+        "unexpected_overlap_count": 0
+      },
+      {
+        "left": "timing",
+        "mandated_origin_overlap": false,
+        "overlap_count": 0,
+        "right": "previous_32",
+        "unexpected_overlap_count": 0
+      }
+    ],
+    "internal_protocol_conflict": "calibration, final, and the previous bank are each required to contain x=0, so literal pairwise state disjointness is impossible",
+    "status": "VALIDATED_WITH_MANDATED_ORIGIN_EXCEPTION"
+  },
+  "truth_policy": "calibration/final only; timing bank contains no truth"
+}

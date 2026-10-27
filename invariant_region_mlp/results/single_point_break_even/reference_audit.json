@@ -1,0 +1,125 @@
+{
+  "combined_input_sha256": "df065af3a02c401e0565a6b77bc0a2bcb0836f9be0ca08f34c81eea285292534",
+  "combined_reference_sha256": "eebc37a2527a72d946d5dcb842cf2284a98f314f19d083237243980130a594d1",
+  "combined_uncertainty_sha256": "b83dd7bc0fe5f583f9e9727063e833eb5c56aa1c560be2df7389f2b859936641",
+  "finite": true,
+  "generated_utc": "2026-10-27T06:25:22.374227+00:00",
+  "overall_pass": true,
+  "pde_and_terminal_audit": {
+    "coarse_difference_steps": {
+      "ds": 0.4,
+      "dt": 0.002
+    },
+    "coarse_fine_residual_rms": 2.1498151820274513e-07,
+    "fine_difference_steps": {
+      "ds": 0.2,
+      "dt": 0.001
+    },
+    "passed": true,
+    "radial_config": {
+      "dimension": 100,
+      "ds": 0.0125,
+      "dt": 1.25e-05,
+      "horizon": 0.3,
+      "s_max": 170.0
+    },
+    "relative_residual_rms": 6.058179922904306e-05,
+    "residual_max_abs": 1.0522399107749242e-05,
+    "residual_rms": 4.266873280692264e-06,
+    "seed": 2659226122,
+    "states": 200,
+    "status": "PASS",
+    "terminal_implementation_max_abs": 1.3877787807814457e-17,
+    "terminal_solver_max_abs": 0.0,
+    "thresholds": {
+      "coarse_fine_residual_rms": 0.002,
+      "relative_residual_rms": 0.002,
+      "residual_max_abs": 0.02,
+      "residual_rms": 0.002,
+      "terminal_max_abs": 1e-14
+    }
+  },
+  "revision": "single_point_break_even_v1",
+  "source_reference_audit": {
+    "coordinate": "s=||x||^2",
+    "domain_levels": [
+      {
+        "dimension": 100,
+        "ds": 0.05,
+        "dt": 5e-05,
+        "horizon": 0.3,
+        "name": "domain_0",
+        "s_max": 160.0
+      },
+      {
+        "dimension": 100,
+        "ds": 0.05,
+        "dt": 5e-05,
+        "horizon": 0.3,
+        "maximum_change_from_previous": 0.0030892159137141904,
+        "name": "domain_1",
+        "s_max": 200.0
+      },
+      {
+        "dimension": 100,
+        "ds": 0.05,
+        "dt": 5e-05,
+        "horizon": 0.3,
+        "maximum_change_from_previous": 0.00042282847990625025,
+        "name": "domain_2",
+        "s_max": 250.0
+      },
+      {
+        "dimension": 100,
+        "ds": 0.05,
+        "dt": 5e-05,
+        "horizon": 0.3,
+        "maximum_change_from_previous": 1.6524075097008872e-06,
+        "name": "domain_3",
+        "s_max": 320.0
+      }
+    ],
+    "kind": "radial Strang-reaction / Crank-Nicolson convergence audit",
+    "maximum_coarse_fine_difference": 3.870040605604558e-05,
+    "maximum_domain_difference": 1.6285577910807314e-06,
+    "maximum_query_s": 136.0158099258977,
+    "maximum_richardson_difference": 8.144921801594984e-08,
+    "maximum_uncertainty": 1.6285577910807314e-06,
+    "passed": true,
+    "refinement_levels": [
+      {
+        "dimension": 100,
+        "ds": 0.1,
+        "dt": 0.0001,
+        "horizon": 0.3,
+        "name": "coarse",
+        "s_max": 320.0
+      },
+      {
+        "dimension": 100,
+        "ds": 0.05,
+        "dt": 5e-05,
+        "horizon": 0.3,
+        "name": "fine",
+        "s_max": 320.0
+      },
+      {
+        "dimension": 100,
+        "ds": 0.025,
+        "dt": 2.5e-05,
+        "horizon": 0.3,
+        "name": "superfine",
+        "s_max": 320.0
+      }
+    ],
+    "richardson_order": 1,
+    "threshold": 2e-05
+  },
+  "status": "VALIDATED",
+  "thresholds": {
+    "uncertainty_max": 1e-05,
+    "uncertainty_rms": 5e-06
+  },
+  "uncertainty_max": 1.6285577910807314e-06,
+  "uncertainty_rms": 1.955633491079588e-07
+}
