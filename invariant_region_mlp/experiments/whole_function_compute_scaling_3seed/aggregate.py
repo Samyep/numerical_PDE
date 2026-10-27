@@ -230,6 +230,174 @@ def _plot(rows: list[dict[str, Any]]) -> None:
     plt.close(fig)
 
 
+def _plot_faceted(rows: list[dict[str, Any]]) -> None:
+    """A paper-facing small-multiple view of the same frozen results.
+
+    The original two-panel plot is intentionally retained above.  Here the
+    sweep identity is encoded by the column rather than by another set of
+    line styles, leaving only the three methods to distinguish within each
+    panel.  Open markers identify observations beyond the intended 35-minute
+    calibration window; those observations remain at their measured times.
+    """
+    FIGURE_DIR.mkdir(parents=True, exist_ok=True)
+    methods = ("tangent_actor", "dpi", "pinn_hte")
+    colors = {
+        "tangent_actor": "#0072B2",
+        "dpi": "#D55E00",
+        "pinn_hte": "#009E73",
+    }
+    markers = {"tangent_actor": "o", "dpi": "s", "pinn_hte": "^"}
+    names = {
+        "tangent_actor": "Tangent-Actor",
+        "dpi": "DPI",
+        "pinn_hte": "PINN-HTE",
+    }
+    pdes = ("b6_fullrank", "dense_fourier")
+    pde_names = {
+        "b6_fullrank": "B6 Full-Rank HJB",
+        "dense_fourier": "Dense Fourier",
+    }
+    sweeps = ("C0", "C1", "C2")
+    sweep_titles = {
+        "C0": "C0  ·  Iterations",
+        "C1": "C1  ·  Estimator accuracy",
+        "C2": "C2  ·  Optimization / batch",
+    }
+
+    fig, axes = plt.subplots(
+        2, 3, figsize=(11.7, 6.75), sharey=True,
+        gridspec_kw={"hspace": 0.24, "wspace": 0.12},
+    )
+    for row_index, pde in enumerate(pdes):
+        for column_index, sweep in enumerate(sweeps):
+            axis = axes[row_index, column_index]
+            panel_rows = [
+                row for row in rows
+                if row["pde"] == pde and row["sweep"] == sweep
+            ]
+            for method in methods:
+                line = sorted(
+                    [row for row in panel_rows if row["method"] == method],
+                    key=lambda row: int(row["parameter_value"]),
+                )
+                if not line:
+                    continue
+                x = np.asarray([
+                    float(row["mean_training_seconds"]) / 60.0 for row in line
+                ])
+                y = np.asarray([float(row["mean_rmse"]) for row in line])
+                yerr = np.asarray([float(row["std_rmse"]) for row in line])
+                axis.errorbar(
+                    x,
+                    y,
+                    yerr=yerr,
+                    color=colors[method],
+                    linestyle="-",
+                    marker=markers[method],
+                    markerfacecolor=colors[method],
+                    markeredgecolor="white",
+                    markeredgewidth=0.65,
+                    markersize=5.2,
+                    linewidth=1.8,
+                    elinewidth=0.9,
+                    capsize=2.0,
+                    alpha=0.93,
+                    zorder=3,
+                )
+                over_budget = x > 35.0
+                if np.any(over_budget):
+                    axis.scatter(
+                        x[over_budget],
+                        y[over_budget],
+                        marker=markers[method],
+                        s=38,
+                        facecolor="white",
+                        edgecolor=colors[method],
+                        linewidth=1.25,
+                        zorder=5,
+                    )
+
+            axis.set_xscale("log")
+            axis.set_yscale("log")
+            axis.set_ylim(4.2e-4, 3.3e-1)
+            panel_times = [
+                float(row["mean_training_seconds"]) / 60.0
+                for row in panel_rows
+            ]
+            low, high = min(panel_times), max(panel_times)
+            axis.set_xlim(max(2.6, low * 0.82), high * 1.14)
+            candidate_ticks = (3, 5, 10, 20, 30, 50, 100)
+            ticks = [
+                tick for tick in candidate_ticks
+                if axis.get_xlim()[0] <= tick <= axis.get_xlim()[1]
+            ]
+            axis.xaxis.set_major_locator(FixedLocator(ticks))
+            axis.xaxis.set_major_formatter(
+                FuncFormatter(lambda value, _position: f"{value:g}")
+            )
+            axis.xaxis.set_minor_formatter(NullFormatter())
+            axis.set_axisbelow(True)
+            axis.grid(True, which="major", color="#DDDDDD", linewidth=0.70)
+            axis.grid(False, which="minor")
+            axis.spines["top"].set_visible(False)
+            axis.spines["right"].set_visible(False)
+            axis.tick_params(axis="both", labelsize=8.8)
+            if row_index == 0:
+                axis.set_title(sweep_titles[sweep], fontsize=10.5, pad=9)
+            if column_index == 0:
+                axis.set_ylabel(
+                    f"{pde_names[pde]}\nWhole-function RMSE",
+                    fontsize=9.5,
+                    labelpad=8,
+                )
+            if any(time > 35.0 for time in panel_times):
+                axis.axvline(
+                    35.0, color="#8A8A8A", linestyle=(0, (3, 3)),
+                    linewidth=0.9, alpha=0.8, zorder=1,
+                )
+
+    method_handles = [
+        Line2D(
+            [0], [0], color=colors[method], marker=markers[method],
+            markerfacecolor=colors[method], markeredgecolor="white",
+            markeredgewidth=0.65, linewidth=2.0, markersize=6.2,
+            label=names[method],
+        )
+        for method in methods
+    ]
+    fig.legend(
+        handles=method_handles,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.005),
+        ncol=3,
+        frameon=False,
+        columnspacing=2.2,
+        handlelength=2.4,
+        fontsize=10.0,
+    )
+    fig.text(
+        0.995,
+        0.012,
+        "Mean ± s.d. across three training seeds; dashed line: 35-min boundary; open markers: beyond boundary",
+        ha="right",
+        va="bottom",
+        fontsize=8.0,
+        color="#666666",
+    )
+    fig.supxlabel("Mean training time per seed (min, log scale)", y=0.047, fontsize=10.0)
+    fig.subplots_adjust(left=0.095, right=0.985, bottom=0.125, top=0.90)
+    fig.savefig(
+        FIGURE_DIR / "two_pde_three_seed_scaling_faceted.png",
+        dpi=240,
+        bbox_inches="tight",
+    )
+    fig.savefig(
+        FIGURE_DIR / "two_pde_three_seed_scaling_faceted.pdf",
+        bbox_inches="tight",
+    )
+    plt.close(fig)
+
+
 def _audit(seed_rows: list[dict[str, Any]], summary: list[dict[str, Any]]) -> dict[str, Any]:
     specs = formal_specs()
     expected_runs = {spec.run_id for spec in specs}
@@ -539,6 +707,7 @@ def _report(summary: list[dict[str, Any]], audit: dict[str, Any]) -> None:
         f"Seed metrics SHA-256: `{file_sha256(RESULTS_DIR / 'seed_metrics.csv')}`.",
         f"Scaling summary SHA-256: `{file_sha256(RESULTS_DIR / 'scaling_summary.csv')}`.",
         f"Figure PDF SHA-256: `{file_sha256(FIGURE_DIR / 'two_pde_three_seed_scaling.pdf')}`.",
+        f"Faceted figure PDF SHA-256: `{file_sha256(FIGURE_DIR / 'two_pde_three_seed_scaling_faceted.pdf')}`.",
         f"DPI chunking validation SHA-256: `{file_sha256(RESULTS_DIR / 'dpi_chunking_validation.json') if (RESULTS_DIR / 'dpi_chunking_validation.json').is_file() else 'MISSING'}`.",
     ]
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -551,6 +720,7 @@ def aggregate() -> dict[str, Any]:
     _write_csv(RESULTS_DIR / "seed_metrics.csv", seed_rows)
     _write_csv(RESULTS_DIR / "scaling_summary.csv", summary)
     _plot(summary)
+    _plot_faceted(summary)
     audit = _audit(seed_rows, summary)
     _report(summary, audit)
     payload = {
@@ -558,6 +728,7 @@ def aggregate() -> dict[str, Any]:
         "summary_points": len(summary),
         "audit_pass": audit["overall_pass"],
         "figure": str(FIGURE_DIR / "two_pde_three_seed_scaling.pdf"),
+        "faceted_figure": str(FIGURE_DIR / "two_pde_three_seed_scaling_faceted.pdf"),
         "report": str(REPORT_PATH),
     }
     write_json_atomic(RESULTS_DIR / "analysis_summary.json", payload)
