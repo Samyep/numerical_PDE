@@ -141,6 +141,20 @@ def analyze() -> dict[str, Any]:
 
 def resource_accounting() -> list[dict[str, Any]]:
     rows = []
+    preflight_path = RESULTS_DIR / "preflight_audit.json"
+    if preflight_path.is_file():
+        preflight = _read(preflight_path)
+        rows.append({
+            "task_id": "h100_preflight",
+            "stage": "preflight",
+            "kind": "mathematical_and_source_preflight",
+            "status": "complete" if preflight.get("status") == "VALIDATED" else "failed",
+            "task_wall_seconds": float(preflight.get("preflight_wall_seconds", 0.0)),
+            "slurm_job_id": None,
+            "slurm_array_task_id": None,
+            "gpu_count": 1,
+            "error": None,
+        })
     for path in sorted((RESULTS_DIR / "raw" / "task_status").glob("*.json")):
         item = _read(path); rows.append({"task_id": item["task_id"], "stage": item["stage"], "kind": item["task"]["kind"], "status": item["status"], "task_wall_seconds": item["task_wall_seconds"], "slurm_job_id": item.get("slurm_job_id"), "slurm_array_task_id": item.get("slurm_array_task_id"), "gpu_count": item.get("gpu_count", 1), "error": item.get("error")})
     path = RESULTS_DIR / "infrastructure_attempts.json"
