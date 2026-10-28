@@ -366,6 +366,17 @@ def _iteration_figure(rows: list[dict[str, Any]]) -> None:
 
 def _resource_accounting(job_ids: list[str]) -> tuple[list[dict[str, Any]], float]:
     rows = _read_csv(RESULTS_DIR / "RESOURCE_ACCOUNTING.csv")
+    # Keep the builder idempotent: a render retry must replace, rather than
+    # duplicate, accounting rows for the same formal allocations.
+    requested = set(job_ids)
+    rows = [
+        row
+        for row in rows
+        if not (
+            row.get("workload") == "slurm_allocation"
+            and row.get("job_id") in requested
+        )
+    ]
     actual_total = 0.0
     if job_ids:
         output = subprocess.check_output(

@@ -27,14 +27,22 @@ tail -n +2 "$TASK_FILE" | while IFS=',' read -r slot sequence pde variant seed e
   fi
   echo "CELL_BEGIN slot=$SLOT seq=$sequence pde=$pde variant=$variant seed=$seed estimate=$estimate utc=$(date -u +%FT%TZ)"
   common=(--pde "$pde" --variant "$variant" --seed "$seed" --device cuda)
-  if [[ "$variant" == "a3_no_updates" ]]; then
-    python -m invariant_region_mlp.experiments.final_component_ablation.run_ablation \
-      "${common[@]}" --replicate 0 --evaluate-only
+  if [[ ! -s "$rep0" ]]; then
+    if [[ "$variant" == "a3_no_updates" ]]; then
+      python -m invariant_region_mlp.experiments.final_component_ablation.run_ablation \
+        "${common[@]}" --replicate 0 --evaluate-only
+    else
+      python -m invariant_region_mlp.experiments.final_component_ablation.run_ablation \
+        "${common[@]}" --replicate 0
+    fi
   else
-    python -m invariant_region_mlp.experiments.final_component_ablation.run_ablation \
-      "${common[@]}" --replicate 0
+    echo "REPLICATE_SKIP slot=$SLOT seq=$sequence replicate=0 reason=complete"
   fi
-  python -m invariant_region_mlp.experiments.final_component_ablation.run_ablation \
-    "${common[@]}" --replicate 1 --evaluate-only
+  if [[ ! -s "$rep1" ]]; then
+    python -m invariant_region_mlp.experiments.final_component_ablation.run_ablation \
+      "${common[@]}" --replicate 1 --evaluate-only
+  else
+    echo "REPLICATE_SKIP slot=$SLOT seq=$sequence replicate=1 reason=complete"
+  fi
   echo "CELL_END slot=$SLOT seq=$sequence pde=$pde variant=$variant seed=$seed utc=$(date -u +%FT%TZ)"
 done
