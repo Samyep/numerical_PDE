@@ -44,8 +44,13 @@ def _gpu_count(tres: str) -> int:
 
 def _sacct(job_id: str) -> list[dict]:
     command = [
-        "sacct", "-X", "-n", "-P", "-j", str(job_id),
-        "--format=JobIDRaw,State,ElapsedRaw,AllocTRES,NodeList,ExitCode",
+        # Do not pass ``-X`` here.  On the ICE Slurm version it collapses an
+        # array query to the parent allocation, which silently under-counts
+        # every array element.  ``JobID`` retains the ``<parent>_<index>``
+        # spelling needed to identify those allocations; ``JobIDRaw`` is the
+        # accounting database identifier and does not retain that relation.
+        "sacct", "-n", "-P", "-j", str(job_id),
+        "--format=JobID,JobIDRaw,State,ElapsedRaw,AllocTRES,NodeList,ExitCode",
     ]
     output = subprocess.check_output(command, text=True)
     parsed = []
@@ -53,12 +58,13 @@ def _sacct(job_id: str) -> list[dict]:
         if not line.strip():
             continue
         parts = line.split("|")
-        if len(parts) < 6:
+        if len(parts) < 7:
             continue
-        raw, state, elapsed, tres, node, exit_code = parts[:6]
-        if "." in raw:
+        display, raw, state, elapsed, tres, node, exit_code = parts[:7]
+        if "." in display:
             continue
         parsed.append({
+            "job_id": display,
             "job_id_raw": raw,
             "state": state,
             "elapsed_raw_seconds": int(elapsed or 0),
@@ -67,10 +73,10 @@ def _sacct(job_id: str) -> list[dict]:
             "exit_code": exit_code,
             "gpu_count": _gpu_count(tres),
         })
-    children = [row for row in parsed if row["job_id_raw"].startswith(f"{job_id}_")]
+    children = [row for row in parsed if row["job_id"].startswith(f"{job_id}_")]
     if children:
         return children
-    return [row for row in parsed if row["job_id_raw"] == str(job_id)]
+    return [row for row in parsed if row["job_id"] == str(job_id)]
 
 
 def collect() -> dict:

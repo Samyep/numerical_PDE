@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from . import dispatch, final_accuracy, freeze, prepare
+from . import accounting, dispatch, final_accuracy, freeze, prepare
 from .benchmark import make_benchmark
 from .protocol import (
     BANK_SIZES,
@@ -103,3 +103,17 @@ def test_no_out_of_scope_solver_is_dispatched() -> None:
     source = inspect.getsource(dispatch._run).lower()
     for token in ("deep_bsde", "pinn", "sdgd", "dpi"):
         assert token not in source
+
+
+def test_accounting_counts_each_slurm_array_allocation(monkeypatch) -> None:
+    output = "\n".join([
+        "77_0|101|COMPLETED|10|gres/gpu:h100=1|node-a|0:0",
+        "77_0.batch|101.batch|COMPLETED|10|gres/gpu:h100=1|node-a|0:0",
+        "77_1|102|COMPLETED|12|gres/gpu:h100=1|node-b|0:0",
+        "77_1.extern|102.extern|COMPLETED|12|gres/gpu:h100=1|node-b|0:0",
+    ])
+    monkeypatch.setattr(accounting.subprocess, "check_output", lambda *args, **kwargs: output)
+    rows = accounting._sacct("77")
+    assert [row["job_id"] for row in rows] == ["77_0", "77_1"]
+    assert [row["job_id_raw"] for row in rows] == ["101", "102"]
+    assert sum(row["elapsed_raw_seconds"] for row in rows) == 22
