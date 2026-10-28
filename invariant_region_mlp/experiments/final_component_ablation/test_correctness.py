@@ -21,7 +21,9 @@ from invariant_region_mlp.experiments.tangent_actor_scaling_diagnosis.models imp
     TerminalAwareActor,
 )
 
+from .build_artifacts import _mcv_inference_only
 from .models import UnanchoredJointActor
+from .protocol import PDES
 
 
 def _actors(family: str = "joint_concave", d: int = 6):
@@ -121,3 +123,26 @@ def test_convex_sign_transform_is_applied_to_value_and_gradient() -> None:
     gradients = np.arange(18, dtype=np.float64).reshape(3, 6)
     np.testing.assert_allclose(driver.working_to_original(values), -values)
     np.testing.assert_allclose(driver.working_to_original(gradients), -gradients)
+
+
+def test_inference_only_mcv_diagnostic_keeps_actor_and_paths_paired() -> None:
+    rows = []
+    for pde in PDES:
+        for seed in (0, 1, 2):
+            for replicate in (0, 1):
+                mcv = 1.0 + 0.1 * seed + 0.01 * replicate
+                rows.append({
+                    "pde": pde,
+                    "variant": "a0_full",
+                    "seed": seed,
+                    "inference_replicate": replicate,
+                    "primary_replicate": replicate == 0,
+                    "mcv_rmse_same_paths": mcv,
+                    "plain_rmse_same_paths": 2.0 * mcv,
+                    "variance_reduction": 4.0,
+                })
+    seed_rows, summary = _mcv_inference_only(rows)
+    assert len(seed_rows) == len(PDES) * 3 * 2
+    assert len(summary) == len(PDES)
+    assert all(row["same_actor"] and row["same_brownian_paths"] for row in seed_rows)
+    assert all(row["plain_over_mcv_rmse_ratio_mean"] == 2.0 for row in summary)

@@ -164,6 +164,75 @@ def _paired(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return output
 
 
+def _mcv_inference_only(
+    rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Summarize plain versus MCV inference for the same frozen Full actors."""
+    seed_rows: list[dict[str, Any]] = []
+    full_rows = [row for row in rows if row["variant"] == "a0_full"]
+    for row in full_rows:
+        mcv = float(row["mcv_rmse_same_paths"])
+        plain = float(row["plain_rmse_same_paths"])
+        seed_rows.append({
+            "pde": row["pde"],
+            "seed": int(row["seed"]),
+            "inference_replicate": int(row["inference_replicate"]),
+            "primary_replicate": bool(row["primary_replicate"]),
+            "full_mcv_rmse": mcv,
+            "full_without_mcv_inference_rmse": plain,
+            "plain_minus_mcv_rmse": plain - mcv,
+            "plain_over_mcv_rmse_ratio": plain / mcv,
+            "same_actor": True,
+            "same_brownian_paths": True,
+            "training_and_selection_used_mcv": True,
+            "variance_reduction": float(row["variance_reduction"]),
+        })
+    summary: list[dict[str, Any]] = []
+    for pde in PDES:
+        primary = [
+            row
+            for row in seed_rows
+            if row["pde"] == pde and row["primary_replicate"]
+        ]
+        repeat = [
+            row
+            for row in seed_rows
+            if row["pde"] == pde and not row["primary_replicate"]
+        ]
+        if len(primary) != 3 or len(repeat) != 3:
+            raise RuntimeError(f"incomplete Full-actor inference-only MCV diagnostic: {pde}")
+        summary.append({
+            "pde": pde,
+            "pde_name": PDE_NAMES[pde],
+            "training_seed_count": 3,
+            "inference_replicates_per_actor": 2,
+            "full_mcv_rmse_mean": _mean(row["full_mcv_rmse"] for row in primary),
+            "full_mcv_rmse_std": _sample_std(row["full_mcv_rmse"] for row in primary),
+            "full_without_mcv_inference_rmse_mean": _mean(
+                row["full_without_mcv_inference_rmse"] for row in primary
+            ),
+            "full_without_mcv_inference_rmse_std": _sample_std(
+                row["full_without_mcv_inference_rmse"] for row in primary
+            ),
+            "paired_plain_minus_mcv_rmse_mean": _mean(
+                row["plain_minus_mcv_rmse"] for row in primary
+            ),
+            "plain_over_mcv_rmse_ratio_mean": _mean(
+                row["plain_over_mcv_rmse_ratio"] for row in primary
+            ),
+            "variance_reduction_mean": _mean(
+                row["variance_reduction"] for row in primary
+            ),
+            "independent_plain_rmse_mean": _mean(
+                row["full_without_mcv_inference_rmse"] for row in repeat
+            ),
+            "independent_mcv_rmse_mean": _mean(
+                row["full_mcv_rmse"] for row in repeat
+            ),
+        })
+    return seed_rows, summary
+
+
 def _iteration_rows() -> list[dict[str, Any]]:
     source = RESULTS_DIR.parent / "tangent_actor_icml_final_suite" / "ABLATION_RESULTS.csv"
     rows = _read_csv(source)
@@ -293,6 +362,43 @@ def _table(summary: list[dict[str, Any]]) -> None:
             bbox_inches="tight",
         )
         plt.close(fig)
+
+
+def _mcv_inference_table(summary: list[dict[str, Any]]) -> None:
+    lookup = {row["pde"]: row for row in summary}
+    lines = [
+        r"\begin{table*}[t]",
+        r"\centering",
+        r"\caption{Inference-only martingale-control-variate diagnostic at $d=100$. Both rows use the same frozen Full Tangent-Actor and identical Brownian paths; only the final estimator changes. Entries are whole-function value RMSE (mean $\pm$ sample standard deviation across three training seeds).}",
+        r"\label{tab:mcv-inference-only}",
+        r"\resizebox{\textwidth}{!}{%",
+        r"\begin{tabular}{lcccc}",
+        r"\toprule",
+        r"Method & Radial Log-Terminal HJB & Concave Cubic--Quadratic & Convex Cubic--Quadratic & Oscillatory Value--Gradient \\",
+        r"\midrule",
+    ]
+    for label, mean_key, std_key in (
+        ("Tangent-Actor (Full; FK--MCV)", "full_mcv_rmse_mean", "full_mcv_rmse_std"),
+        (
+            "Full TA w/o MCV Inference",
+            "full_without_mcv_inference_rmse_mean",
+            "full_without_mcv_inference_rmse_std",
+        ),
+    ):
+        values = [
+            _format_value(float(lookup[pde][mean_key]), float(lookup[pde][std_key]))
+            for pde in PDES
+        ]
+        lines.append(label + " & " + " & ".join(values) + r" \\")
+    lines.extend([
+        r"\bottomrule",
+        r"\end{tabular}%",
+        r"}",
+        r"\end{table*}",
+    ])
+    (TABLE_DIR / "mcv_inference_only.tex").write_text(
+        "\n".join(lines) + "\n", encoding="utf-8"
+    )
 
 
 def _component_figure(summary: list[dict[str, Any]]) -> None:
@@ -425,6 +531,7 @@ def _report(
     summary: list[dict[str, Any]],
     paired: list[dict[str, Any]],
     rows: list[dict[str, Any]],
+    mcv_inference: list[dict[str, Any]],
     actual_gpu_hours: float,
 ) -> None:
     lookup = {(row["variant"], row["pde"]): row for row in summary}
@@ -484,7 +591,22 @@ def _report(
         )
     lines.extend([
         "",
-        "The frozen Full checkpoints were also evaluated with plain and MCV estimators on identical Brownian paths; `plain_rmse_same_paths` and `mcv_rmse_same_paths` in the seed-level CSV isolate inference variance reduction from Actor-learning changes.",
+        "## Inference-only MCV diagnostic",
+        "",
+        "`Full TA w/o MCV Inference` is a supplemental diagnostic, not a fifth primary method. It freezes the Full TA Actor trained and selected with MCV, then replaces only the final FK–MCV estimator by plain FK on identical Brownian paths. In contrast, primary `w/o MCV` removes MCV from labels, reference-free selection, and inference.",
+        "",
+        "| PDE | Full FK–MCV RMSE | Full w/o MCV inference RMSE | Plain / MCV |",
+        "|---|---:|---:|---:|",
+    ])
+    for row in mcv_inference:
+        lines.append(
+            f"| {row['pde_name']} | {row['full_mcv_rmse_mean']:.3e} ± {row['full_mcv_rmse_std']:.3e} | "
+            f"{row['full_without_mcv_inference_rmse_mean']:.3e} ± {row['full_without_mcv_inference_rmse_std']:.3e} | "
+            f"{row['plain_over_mcv_rmse_ratio_mean']:.2f}× |"
+        )
+    lines.extend([
+        "",
+        "Seed- and replicate-level paired values are in `MCV_INFERENCE_ONLY_SEED_METRICS.csv`; the separate summary is in `MCV_INFERENCE_ONLY_SUMMARY.csv`. This comparison isolates inference variance reduction without conflating it with Actor-learning changes.",
         "",
         "## Costs, failures, and numerical resolution",
         "",
@@ -502,8 +624,10 @@ def _report(
         "",
         "- `results/final_component_ablation/ABLATION_SEED_METRICS.csv`",
         "- `results/final_component_ablation/ABLATION_SUMMARY.csv`",
+        "- `results/final_component_ablation/MCV_INFERENCE_ONLY_SUMMARY.csv`",
         "- `results/final_component_ablation/ACTOR_ITERATION_SUMMARY.csv`",
         "- `results/final_component_ablation/tables/final_component_ablation.tex`",
+        "- `results/final_component_ablation/tables/mcv_inference_only.tex`",
         "- `results/final_component_ablation/figures/component_ablation.pdf`",
         "- `results/final_component_ablation/figures/actor_iteration_ablation.pdf`",
     ])
@@ -519,9 +643,12 @@ def _artifact_audit(expected_evaluations: int) -> None:
         RESULTS_DIR / "SOURCE_FIDELITY_AUDIT.json",
         RESULTS_DIR / "ABLATION_SEED_METRICS.csv",
         RESULTS_DIR / "ABLATION_SUMMARY.csv",
+        RESULTS_DIR / "MCV_INFERENCE_ONLY_SEED_METRICS.csv",
+        RESULTS_DIR / "MCV_INFERENCE_ONLY_SUMMARY.csv",
         RESULTS_DIR / "ACTOR_ITERATION_SUMMARY.csv",
         RESULTS_DIR / "RESOURCE_ACCOUNTING.csv",
         TABLE_DIR / "final_component_ablation.tex",
+        TABLE_DIR / "mcv_inference_only.tex",
         TABLE_DIR / "final_component_ablation_preview.pdf",
         FIGURE_DIR / "component_ablation.pdf",
         FIGURE_DIR / "component_ablation.png",
@@ -582,13 +709,17 @@ def main() -> None:
     })
     paired = _paired(rows)
     _write_csv(RESULTS_DIR / "PAIRED_ABLATION_DIFFERENCES.csv", paired)
+    mcv_seed_rows, mcv_inference = _mcv_inference_only(rows)
+    _write_csv(RESULTS_DIR / "MCV_INFERENCE_ONLY_SEED_METRICS.csv", mcv_seed_rows)
+    _write_csv(RESULTS_DIR / "MCV_INFERENCE_ONLY_SUMMARY.csv", mcv_inference)
     iterations = _iteration_rows()
     _write_csv(RESULTS_DIR / "ACTOR_ITERATION_SUMMARY.csv", iterations)
     _, actual = _resource_accounting([value for value in args.job_ids.split(",") if value])
     _table(summary)
+    _mcv_inference_table(mcv_inference)
     _component_figure(summary)
     _iteration_figure(iterations)
-    _report(summary, paired, rows, actual)
+    _report(summary, paired, rows, mcv_inference, actual)
     _artifact_audit(_expected_count())
     print(json.dumps({
         "evaluations": len(rows),
