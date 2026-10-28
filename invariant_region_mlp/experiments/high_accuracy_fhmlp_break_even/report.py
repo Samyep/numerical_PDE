@@ -102,6 +102,27 @@ def generate() -> Path:
         "- The main timing curve uses `TA-direct`. The current manuscript describes FK-MCV as the final evaluation estimator, so FK-MCV accuracy and timing are explicitly separated rather than relabelled as direct inference.",
         "- A missing crossing means `NOT_REACHED_WITHIN_TESTED_BUDGET`; it is not converted into an interpolated claim.",
         "",
+        "## Recorded failures and scheduler deviations",
+        "",
+        "| Stage | Slurm allocation | State | Elapsed (s) | H100 GPU-hours |",
+        "|---|---|---|---:|---:|",
+    ]
+    exceptional = [
+        row for row in resources["rows"]
+        if str(row.get("state")) != "COMPLETED"
+    ]
+    for row in exceptional:
+        lines.append(
+            f"| {row['stage']} | {row.get('job_id', row.get('job_id_raw'))} | "
+            f"{row['state']} | {int(row['elapsed_raw_seconds'])} | "
+            f"{float(row['allocated_h100_gpu_hours']):.6f} |"
+        )
+    lines += [
+        "",
+        "- The first preflight failed on an over-broad prior/prior bank-overlap assertion; the fresh-bank separation rule was corrected and revalidated before calibration.",
+        "- Three final-array allocations were rejected by the frozen commit guard after audit-only commits were synchronized to the run checkout. They produced no numerical records; the same manifest indices were rerun at the frozen numerical commit.",
+        "- The FH final bundle wrote all five complete records and its complete task-status artifact before a deliberately shortened two-minute scheduler limit expired during environment teardown. Slurm therefore records `TIMEOUT`; every prediction file, finite-value check, input hash and prediction hash passed the final artifact audit.",
+        "",
         "## Provenance",
         "",
         "- Preregistration commit: `60c04015682a5f77ff03fd829f575d059620a1bd`.",
