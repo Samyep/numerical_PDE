@@ -821,7 +821,14 @@ def train(
         "pde": pde,
         "variant": variant,
         "seed": seed,
-        "configuration": asdict(HJB_CONFIG if pde == "hjb_log" else JOINT_CONFIG),
+        "configuration": asdict(
+            replace(
+                HJB_CONFIG,
+                label_estimator="plain" if variant == "a1_no_mcv" else "mcv",
+            )
+            if pde == "hjb_log"
+            else JOINT_CONFIG
+        ),
         "phases": phases,
         "selection": {
             "criterion": "minimum independent noise-corrected fixed-point inconsistency",
