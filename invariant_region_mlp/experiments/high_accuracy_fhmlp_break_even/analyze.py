@@ -170,6 +170,7 @@ def _plot_target(
     fig, axis = plt.subplots(figsize=(7.15, 4.45), constrained_layout=True)
     _draw_curve(axis, ta_curve, "ta_direct")
     _draw_curve(axis, fh_curve, "fh_mlp_standard")
+    common_max = min(ta_curve[-1]["queries"], fh_curve[-1]["queries"])
     if crossing["status"] == "OBSERVED_BREAK_EVEN":
         previous = crossing["previous_queries"]
         observed = crossing["crossing_queries"]
