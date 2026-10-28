@@ -1,0 +1,85 @@
+from __future__ import annotations
+
+import inspect
+from pathlib import Path
+
+import numpy as np
+import torch
+
+from . import dispatch, final_accuracy, freeze
+from .benchmark import make_benchmark
+from .protocol import (
+    BANK_SIZES,
+    EXPECTED_TA_ARTIFACTS,
+    FH_CONFIGS,
+    GEOMETRIC_TIMING_COUNTS,
+    PREREGISTRATION_COMMIT,
+    RESULTS_DIR,
+    TA_PATHS,
+    TARGETS,
+    refined_timing_counts,
+    stable_seed,
+)
+
+
+def test_preregistration_and_thresholds_are_frozen() -> None:
+    assert PREREGISTRATION_COMMIT == "60c04015682a5f77ff03fd829f575d059620a1bd"
+    assert TARGETS == {"primary": 1.0e-2, "secondary": 5.0e-3}
+    assert BANK_SIZES == {"calibration": 64, "final": 128, "timing": 2**20}
+
+
+def test_full_history_candidate_grid_is_exact() -> None:
+    assert FH_CONFIGS == (
+        (2, 32), (2, 48), (2, 64), (2, 96), (2, 128),
+        (2, 192), (2, 256), (2, 384), (2, 512),
+        (3, 24), (3, 32), (3, 48), (3, 64), (3, 96),
+    )
+
+
+def test_ta_modes_and_charged_training_are_separate() -> None:
+    assert TA_PATHS == (32, 128, 512)
+    assert all(row["charged_training_seconds"] > 1300 for row in EXPECTED_TA_ARTIFACTS.values())
+    source = inspect.getsource(dispatch._run)
+    assert 'candidate"] == "direct"' in source
+    assert "MCV_TIMING_TASK_CAP_SECONDS" in source
+
+
+def test_refinement_preserves_geometric_grid_and_adds_actual_counts() -> None:
+    refined = refined_timing_counts(200_000)
+    assert set(GEOMETRIC_TIMING_COUNTS).issubset(refined)
+    assert len(refined) > len(GEOMETRIC_TIMING_COUNTS)
+    assert refined == tuple(sorted(set(refined)))
+    assert refined[-1] == 2**20
+
+
+def test_fresh_bank_seeds_are_split_specific() -> None:
+    seeds = {stable_seed("query_bank", name) for name in BANK_SIZES}
+    assert len(seeds) == 3
+
+
+def test_joint_driver_formula() -> None:
+    benchmark = make_benchmark(100)
+    rng = np.random.default_rng(821)
+    y_np = rng.normal(size=4)
+    z_np = rng.normal(size=(4, 100))
+    y = torch.as_tensor(y_np, dtype=torch.float64)
+    z = torch.as_tensor(z_np, dtype=torch.float64)
+    expected = y_np - y_np**3 - 0.5 * np.square(z_np + y_np[:, None] * benchmark.v).sum(axis=1)
+    np.testing.assert_allclose(benchmark.driver(y, z).numpy(), expected, rtol=0, atol=1e-12)
+
+
+def test_final_truth_is_gated_by_frozen_selection() -> None:
+    assert "require_frozen_selections" in inspect.getsource(final_accuracy.aggregate)
+    source = inspect.getsource(freeze.freeze)
+    assert source.index("_required_paths") < source.index('load_bank("calibration"')
+
+
+def test_new_results_are_isolated() -> None:
+    assert RESULTS_DIR.name == "high_accuracy_fhmlp_break_even"
+    assert "single_point_break_even_joint" not in str(RESULTS_DIR)
+
+
+def test_no_out_of_scope_solver_is_dispatched() -> None:
+    source = inspect.getsource(dispatch._run).lower()
+    for token in ("deep_bsde", "pinn", "sdgd", "dpi"):
+        assert token not in source
