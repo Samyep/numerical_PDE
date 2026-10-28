@@ -75,15 +75,24 @@ def _exact_overlap(left: np.ndarray, right: np.ndarray) -> int:
 
 def _separation_audit(states: dict[str, np.ndarray]) -> dict[str, Any]:
     old = _load_previous_small_banks()
-    small = {"calibration": states["calibration"], "final": states["final"], **old}
+    fresh = {"calibration": states["calibration"], "final": states["final"]}
+    small = {**fresh, **old}
     comparisons: list[dict[str, Any]] = []
-    names = list(small)
-    for left_index, left in enumerate(names):
-        for right in names[left_index + 1 :]:
-            overlap = _exact_overlap(small[left], small[right])
-            comparisons.append({"left": left, "right": right, "exact_overlap_count": overlap})
-            if overlap:
-                raise RuntimeError(f"fresh-bank overlap detected: {left}/{right}={overlap}")
+    # Only freshness claims are relevant here.  Prior audited banks may
+    # intentionally overlap one another (the old 32-query bank is a subset of
+    # an earlier calibration design), so old-vs-old comparisons are recorded
+    # nowhere and must not block genuinely fresh data.
+    pairs = [("calibration", "final")]
+    pairs.extend(
+        (fresh_name, old_name)
+        for fresh_name in fresh
+        for old_name in old
+    )
+    for left, right in pairs:
+        overlap = _exact_overlap(small[left], small[right])
+        comparisons.append({"left": left, "right": right, "exact_overlap_count": overlap})
+        if overlap:
+            raise RuntimeError(f"fresh-bank overlap detected: {left}/{right}={overlap}")
 
     timing = states["timing"]
     timing_fp = _fingerprints(timing)

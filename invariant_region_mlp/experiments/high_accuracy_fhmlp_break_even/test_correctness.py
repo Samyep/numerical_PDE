@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from . import dispatch, final_accuracy, freeze
+from . import dispatch, final_accuracy, freeze, prepare
 from .benchmark import make_benchmark
 from .protocol import (
     BANK_SIZES,
@@ -55,6 +55,26 @@ def test_refinement_preserves_geometric_grid_and_adds_actual_counts() -> None:
 def test_fresh_bank_seeds_are_split_specific() -> None:
     seeds = {stable_seed("query_bank", name) for name in BANK_SIZES}
     assert len(seeds) == 3
+
+
+def test_bank_separation_ignores_only_prior_prior_overlap(monkeypatch) -> None:
+    prior_shared = np.asarray([[9.0, 9.0]], dtype=np.float64)
+    monkeypatch.setattr(
+        prepare,
+        "_load_previous_small_banks",
+        lambda: {"old_a": prior_shared, "old_b": prior_shared.copy()},
+    )
+    states = {
+        "calibration": np.asarray([[1.0, 1.0]], dtype=np.float64),
+        "final": np.asarray([[2.0, 2.0]], dtype=np.float64),
+        "timing": np.asarray([[3.0, 3.0], [4.0, 4.0]], dtype=np.float64),
+    }
+    audit = prepare._separation_audit(states)
+    assert audit["status"] == "VALIDATED"
+    assert not any(
+        {row["left"], row["right"]} == {"old_a", "old_b"}
+        for row in audit["comparisons"]
+    )
 
 
 def test_joint_driver_formula() -> None:
