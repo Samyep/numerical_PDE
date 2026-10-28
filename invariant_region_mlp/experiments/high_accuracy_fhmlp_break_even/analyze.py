@@ -170,7 +170,6 @@ def _plot_target(
     fig, axis = plt.subplots(figsize=(7.15, 4.45), constrained_layout=True)
     _draw_curve(axis, ta_curve, "ta_direct")
     _draw_curve(axis, fh_curve, "fh_mlp_standard")
-    common_max = min(ta_curve[-1]["queries"], fh_curve[-1]["queries"])
     if crossing["status"] == "OBSERVED_BREAK_EVEN":
         previous = crossing["previous_queries"]
         observed = crossing["crossing_queries"]
@@ -207,7 +206,7 @@ def _plot_target(
     axis.set_xlabel("Number of query points")
     axis.set_ylabel("Measured cumulative H100 computation (minutes)")
     axis.set_title(
-        rf"100D Joint Nonseparable PDE  |  common RMSE $\leq {threshold:.0e}$",
+        rf"100D Joint Nonseparable PDE  |  common RMSE $\leq {threshold:g}$",
         pad=9,
     )
     axis.grid(True, alpha=0.20, linewidth=0.6)
