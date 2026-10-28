@@ -36,13 +36,15 @@ nvidia-smi --query-gpu=index,name,memory.total,driver_version --format=csv,nohea
 python -c 'import torch; print("torch", torch.__version__, "cuda", torch.cuda.is_available(), "count", torch.cuda.device_count())'
 python -m invariant_region_mlp.experiments.final_component_ablation.preflight
 
+worker_count=${SLURM_NTASKS:?SLURM_NTASKS is required}
 pids=()
-for slot in 0 1 2 3; do
+for ((slot = 0; slot < worker_count; slot++)); do
   slot_out="$SOURCE_ROOT/invariant_region_mlp/results/final_component_ablation/slurm/${SLURM_JOB_ID}_slot${slot}.out"
   slot_err="$SOURCE_ROOT/invariant_region_mlp/results/final_component_ablation/slurm/${SLURM_JOB_ID}_slot${slot}.err"
   srun --exclusive --exact --nodes=1 --ntasks=1 --cpus-per-task="$SLURM_CPUS_PER_TASK" \
     --mem=50G --gpus-per-node=1 --gpus-per-task=1 --gpu-bind=single:1 --network=no_vni \
-    --output="$slot_out" --error="$slot_err" "$WORKER" "$TASK_FILE" "$slot" &
+    --output="$slot_out" --error="$slot_err" \
+    "$WORKER" "$TASK_FILE" "$slot" "$worker_count" &
   pids+=("$!")
 done
 

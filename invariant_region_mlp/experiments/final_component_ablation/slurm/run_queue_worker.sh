@@ -3,7 +3,12 @@ set -euo pipefail
 
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
 TASK_FILE=${1:?usage: run_queue_worker.sh TASK_FILE SLOT}
-SLOT=${2:?usage: run_queue_worker.sh TASK_FILE SLOT}
+SLOT=${2:?usage: run_queue_worker.sh TASK_FILE SLOT [WORKER_COUNT]}
+WORKER_COUNT=${3:-4}
+if (( SLOT < 0 || SLOT >= WORKER_COUNT )); then
+  echo "invalid worker slot=$SLOT worker_count=$WORKER_COUNT" >&2
+  exit 2
+fi
 
 module load default
 source /sw/user/python/miniforge3-pytorch-2.10.0/etc/profile.d/conda.sh
@@ -13,10 +18,10 @@ export PYTHONPATH="$SOURCE_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-12}
 
-tail -n +2 "$TASK_FILE" | while IFS=',' read -r slot sequence pde variant seed estimate extra; do
-  [[ "$slot" == "$SLOT" ]] || continue
+tail -n +2 "$TASK_FILE" | while IFS=',' read -r queue_slot sequence pde variant seed estimate extra; do
+  (( queue_slot % WORKER_COUNT == SLOT )) || continue
   if [[ -n "${extra:-}" ]]; then
-    echo "invalid queue row slot=$slot sequence=$sequence" >&2
+    echo "invalid queue row slot=$queue_slot sequence=$sequence" >&2
     exit 2
   fi
   rep0="$SOURCE_ROOT/invariant_region_mlp/results/final_component_ablation/raw/evaluation_${pde}_d100_${variant}_s${seed}_rep0.json"
