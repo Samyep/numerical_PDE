@@ -10,7 +10,6 @@ import subprocess
 from typing import Any
 
 import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import numpy as np
 
 from .protocol import (
@@ -178,35 +177,27 @@ def _plot_target(
         plot_previous = max(1, previous)
         axis.axvspan(plot_previous, observed, color="#777777", alpha=0.10, zorder=0)
         axis.axvline(observed, color="#555555", linewidth=1.1, linestyle=":", zorder=2)
+        bracket_mid = float(np.sqrt(plot_previous * observed))
+        axis.text(
+            bracket_mid, 0.955, "Measured break-even bracket",
+            transform=axis.get_xaxis_transform(), ha="center", va="top",
+            fontsize=8.2, color="#444444",
+        )
         axis.annotate(
-            f"First measured crossing: {observed:,}",
+            f"First measured crossing\n{observed:,} queries",
             xy=(observed, crossing["fh_mean_seconds_at_crossing"] / 60.0),
-            xytext=(8, 18), textcoords="offset points", fontsize=8.2,
+            xytext=(-12, -35), textcoords="offset points", fontsize=8.2,
+            ha="right", va="top",
             arrowprops={"arrowstyle": "-", "color": "#555555", "lw": 0.8},
         )
-        inset = inset_axes(axis, width="43%", height="43%", loc="upper left", borderpad=1.0)
-        _draw_curve(inset, ta_curve, "ta_direct", "TA")
-        _draw_curve(inset, fh_curve, "fh_mlp_standard", "FH-MLP")
         beyond = crossing["representative_beyond_queries"]
-        inset.set_xlim(max(1, plot_previous * 0.92), min(common_max, beyond * 1.08))
-        local_values = []
-        for curve in (ta_curve, fh_curve):
-            local_values.extend(
-                row["mean_seconds"] / 60.0
-                for row in curve
-                if plot_previous <= row["queries"] <= beyond
-            )
-        inset.set_ylim(max(0.0, min(local_values) * 0.92), max(local_values) * 1.08)
-        inset.set_xscale("log", base=2)
-        inset.grid(True, alpha=0.18, linewidth=0.5)
-        inset.tick_params(labelsize=7)
-        inset.set_title("Measured crossover", fontsize=8.0, pad=3)
         saved = 100.0 * crossing["ta_relative_computation_saved_beyond"]
         axis.text(
-            0.985, 0.035,
+            0.975, 0.055,
             f"At {beyond:,} queries: TA uses {saved:.1f}% less computation",
             transform=axis.transAxes, ha="right", va="bottom", fontsize=8.2,
             color="#333333",
+            bbox={"boxstyle": "round,pad=0.25", "facecolor": "white", "edgecolor": "#cccccc", "alpha": 0.90},
         )
     axis.set_xscale("log", base=2)
     powers = range(0, 21, 4)
@@ -215,15 +206,12 @@ def _plot_target(
     axis.set_ylim(bottom=0.0)
     axis.set_xlabel("Number of query points")
     axis.set_ylabel("Measured cumulative H100 computation (minutes)")
-    axis.set_title("High-Accuracy Amortization on a 100D Joint Nonseparable PDE", pad=9)
-    axis.text(
-        0.985, 0.965,
-        rf"Common accuracy requirement: RMSE $\leq {threshold:.0e}$",
-        transform=axis.transAxes, ha="right", va="top", fontsize=8.6,
-        bbox={"boxstyle": "round,pad=0.25", "facecolor": "white", "edgecolor": "#bbbbbb", "alpha": 0.92},
+    axis.set_title(
+        rf"100D Joint Nonseparable PDE  |  common RMSE $\leq {threshold:.0e}$",
+        pad=9,
     )
     axis.grid(True, alpha=0.20, linewidth=0.6)
-    axis.legend(loc="upper center", frameon=False, ncol=2)
+    axis.legend(loc="center left", frameon=False)
     stem = f"high_accuracy_break_even_{target}"
     fig.savefig(FIGURE_DIR / f"{stem}.pdf", bbox_inches="tight")
     fig.savefig(FIGURE_DIR / f"{stem}.svg", bbox_inches="tight")
