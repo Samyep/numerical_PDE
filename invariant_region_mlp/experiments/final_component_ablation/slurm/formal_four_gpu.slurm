@@ -41,7 +41,7 @@ for slot in 0 1 2 3; do
   slot_out="$SOURCE_ROOT/invariant_region_mlp/results/final_component_ablation/slurm/${SLURM_JOB_ID}_slot${slot}.out"
   slot_err="$SOURCE_ROOT/invariant_region_mlp/results/final_component_ablation/slurm/${SLURM_JOB_ID}_slot${slot}.err"
   srun --exclusive --exact --nodes=1 --ntasks=1 --cpus-per-task="$SLURM_CPUS_PER_TASK" \
-    --mem=50G --gpus-per-task=1 --gpu-bind=single:1 --network=no_vni \
+    --mem=50G --gpus-per-node=1 --gpus-per-task=1 --gpu-bind=single:1 --network=no_vni \
     --output="$slot_out" --error="$slot_err" "$WORKER" "$TASK_FILE" "$slot" &
   pids+=("$!")
 done
