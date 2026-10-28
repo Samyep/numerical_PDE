@@ -552,8 +552,19 @@ def _fixed_point(
     labels: list[tuple[np.ndarray, np.ndarray | None]] = []
     metadata: list[dict[str, Any]] = []
     for replicate in (0, 1):
-        label_seed = stable_seed(
-            "component_ablation_selector", pde, seed, actor_name, replicate
+        # Preserve the mature joint selector's streams exactly; use one
+        # variant-independent stream elsewhere so ablations remain paired.
+        label_seed = (
+            stable_final(
+                _base_run_id(pde, seed),
+                "fixed_point",
+                actor_name,
+                replicate,
+            )
+            if pde in ("joint_concave", "joint_convex")
+            else stable_seed(
+                "component_ablation_selector", pde, seed, actor_name, replicate
+            )
         )
         if pde == "hjb_log":
             q, meta = original_labels(
