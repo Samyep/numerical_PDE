@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from . import accounting, dispatch, final_accuracy, freeze, prepare
+from . import accounting, audit, dispatch, final_accuracy, freeze, prepare
 from .benchmark import make_benchmark
 from .protocol import (
     BANK_SIZES,
@@ -117,3 +117,7 @@ def test_accounting_counts_each_slurm_array_allocation(monkeypatch) -> None:
     assert [row["job_id"] for row in rows] == ["77_0", "77_1"]
     assert [row["job_id_raw"] for row in rows] == ["101", "102"]
     assert sum(row["elapsed_raw_seconds"] for row in rows) == 22
+
+
+def test_artifact_audit_has_source_root_for_relative_hash_manifest() -> None:
+    assert audit.SOURCE_ROOT.is_dir()

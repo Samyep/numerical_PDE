@@ -17,6 +17,7 @@ from .protocol import (
     FIGURE_DIR,
     RESULTS_DIR,
     REVISION,
+    SOURCE_ROOT,
     TARGETS,
     array_sha256,
     file_sha256,
