@@ -883,6 +883,59 @@ def _selected_actor(
     return actor, training
 
 
+def _selection_diagnostics(training: dict[str, Any]) -> dict[str, Any]:
+    """Expose the frozen reference-free score without opening test truth."""
+    selection = training.get("selection")
+    if selection and selection.get("rows"):
+        actor_name = selection["selected_actor"]
+        row = next(item for item in selection["rows"] if item["actor"] == actor_name)
+        return {
+            "reference_free_selection_criterion": selection.get("criterion"),
+            "reference_free_fixed_point_inconsistency": row.get(
+                "normalized_total_inconsistency"
+            ),
+            "reference_free_policy_improvement": None,
+        }
+    source = training.get("selection_source")
+    if not source:
+        return {
+            "reference_free_selection_criterion": None,
+            "reference_free_fixed_point_inconsistency": None,
+            "reference_free_policy_improvement": None,
+        }
+    payload = json.loads(Path(source).read_text(encoding="utf-8"))
+    source_selection = payload.get("selection", {})
+    rows = source_selection.get("rows") or source_selection.get(
+        "ranking_audit_diagnostics"
+    )
+    if rows:
+        actor_name = source_selection.get(
+            "selected_actor", f"a{training['selected_iteration']}"
+        )
+        row = next(item for item in rows if item["actor"] == actor_name)
+        return {
+            "reference_free_selection_criterion": source_selection.get(
+                "criterion", source_selection.get("selected_by")
+            ),
+            "reference_free_fixed_point_inconsistency": row.get(
+                "normalized_total_inconsistency"
+            ),
+            "reference_free_policy_improvement": None,
+        }
+    phases = payload.get("phases", [])
+    index = int(training["selected_iteration"]) - 1
+    policy = phases[index].get("reference_free_policy_validation", {}) if index >= 0 else {}
+    return {
+        "reference_free_selection_criterion": phases[index].get(
+            "selection_criterion"
+        )
+        if index >= 0
+        else None,
+        "reference_free_fixed_point_inconsistency": None,
+        "reference_free_policy_improvement": policy.get("source_minus_new_mean"),
+    }
+
+
 def _test_bank(pde: str) -> tuple[np.ndarray, np.ndarray, Path]:
     if pde == "hjb_log":
         path = ORIGINAL_RESULTS / "evaluation_bank_hjb_log_d100.npz"
@@ -1020,6 +1073,7 @@ def evaluate(
         "reference_array_sha256": _array_hash(truth),
         "ground_truth_loaded_only_after_checkpoint_selection": True,
         "status": "complete",
+        **_selection_diagnostics(training),
     }
     if pde == "hjb_log":
         if actor_q is not None and truth_q is not None:
