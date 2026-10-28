@@ -956,10 +956,16 @@ def _truth(
 ) -> tuple[np.ndarray, np.ndarray | None, dict[str, Any]]:
     if pde == "hjb_log":
         value, q = hjb_log_reference(t, x, order=128, return_gradient=True)
+        coarse_value = hjb_log_reference(
+            t, x, order=64, return_gradient=False
+        )
         return value, q, {
             "kind": "independent Hopf-Cole Gauss-Laguerre quadrature",
             "order": 128,
-            "uncertainty": "order-128 source audit",
+            "reference_uncertainty_value_rmse": float(
+                np.sqrt(np.mean(np.square(value - coarse_value)))
+            ),
+            "uncertainty_definition": "order-64 versus order-128 value RMSE",
         }
     reference, metadata = joint_reference(pde)
     coordinates = x @ problem.B[:, :2]
