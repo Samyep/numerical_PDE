@@ -1,0 +1,65 @@
+{
+  "passed": true,
+  "protocol_sha256": "20eb5873dbfcd8137cf7ec9c3be1ea1cda7804693e2ae17d50ff624c253511ff",
+  "scientific_checks": {
+    "anchored_terminal_identity_max_error": 2.9802322387695312e-08,
+    "banks_and_references_match": true,
+    "convex_sign_conversion_max_error": 0.0,
+    "ground_truth_leakage": false,
+    "matching_initial_prediction_max_error": 0.0,
+    "passed": true,
+    "pathwise_labels": "plain and complete corrected payoffs differentiated; unit tested",
+    "plain_mcv_same_target": "proved by payoff identity and unit test",
+    "reference_audits": {
+      "joint_concave": {
+        "audit": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/references/joint_concave_k2_audit.json",
+        "reference_uncertainty_value_rmse": 8.453967703870988e-05,
+        "sha256": "a900f519bb02e50fa4fac5b8b8b1c86e5f33a28b688697d84688f8705ea12f87",
+        "source": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/references/joint_concave_k2_n128.npz"
+      },
+      "joint_convex": {
+        "audit": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/references/joint_convex_k2_audit.json",
+        "reference_uncertainty_value_rmse": 7.78411804651081e-05,
+        "sha256": "62a2994301b95500d5ad5e05d1d6fba3d1db113f1efb5df3c11e82deefff7d89",
+        "source": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/references/joint_convex_k2_n128.npz"
+      },
+      "nonconvex_coupled": {
+        "audit": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/references/coupled_refinement_audit.json",
+        "reference_uncertainty_value_rmse": 8.079690914758104e-06,
+        "sha256": "53b8c2e3c241c628fe2bfb69e4a12ab870eb02b2284938c11b78eddacef355f0",
+        "source": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_accuracy_frontier/references/sine_quadratic_coupled_d100_k2_lam0p2_eta1p0_refined.npz"
+      }
+    },
+    "same_original_pde": true,
+    "unanchored_can_depart_terminal": true,
+    "value_domain_constraints_retained": true
+  },
+  "test_banks": {
+    "hjb_log": {
+      "array_sha256": "c712b031bc607a0c8699283a3252da8367542be200512c94baed41c03ab2ca82",
+      "file_sha256": "7f3f3b201d4f137712ffca28a546383527143b537ea16418966a909c2aac5ffb",
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/original_pde_benchmark_comparison/evaluation_bank_hjb_log_d100.npz",
+      "states": 960
+    },
+    "joint_concave": {
+      "array_sha256": "5b2dd0ea3f0fd92be3657357720672fdbde9405bed106b6be949a8d14b87612b",
+      "file_sha256": "4b11953513f7beca4d171af337d5866d0104133b036bf19000252c55db11cbf1",
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_joint_concave_d100.npz",
+      "states": 960
+    },
+    "joint_convex": {
+      "array_sha256": "c8d0c831ca04e7efa318f22fb04d0dd618ad3c6705483c69a5319e82b3ab0cce",
+      "file_sha256": "37d85cded403a93b5528446b55f4378681fcac67672bccbb7b54f746db8ea760",
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/tangent_actor_icml_final_suite/inputs/test_bank_joint_convex_d100.npz",
+      "states": 960
+    },
+    "nonconvex_coupled": {
+      "array_sha256": "4d9a2a3b8414fdb3a60a766a3ea690f4d8d7742f9c8f4c5a45b4f8fe92edb390",
+      "file_sha256": "f788bea2534e80cea108eb8f4c5cba469b3d2f30318564dbaa5379391715323e",
+      "historical_512_primary_reuse": false,
+      "path": "/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source/invariant_region_mlp/results/final_component_ablation/inputs/test_bank_nonconvex_coupled_d100_960.npz",
+      "seed": 872413536,
+      "states": 960
+    }
+  }
+}
