@@ -1,0 +1,105 @@
+{
+  "actor_updates": 4,
+  "allocated_gpu_hour_ceiling": 36.0,
+  "branch": "ir-mlp-final-component-ablation",
+  "dimension": 100,
+  "estimators": {
+    "a0_full": {
+      "inference": "mcv",
+      "selector": "mcv",
+      "training_labels": "mcv"
+    },
+    "a1_no_mcv": {
+      "inference": "plain",
+      "selector": "plain",
+      "training_labels": "plain"
+    },
+    "a2_no_terminal_anchor": {
+      "inference": "mcv",
+      "selector": "mcv",
+      "training_labels": "mcv"
+    },
+    "a3_no_updates": {
+      "inference": "mcv",
+      "selector": null,
+      "training_labels": null
+    }
+  },
+  "evaluation": {
+    "metric": "whole-function value RMSE",
+    "paths": 1024,
+    "primary_replicate": 0,
+    "replicates": [
+      0,
+      1
+    ],
+    "rmae": "sum(abs(prediction-reference))/sum(abs(reference))",
+    "states": 960,
+    "steps": 64
+  },
+  "formal_timing_gpu": "NVIDIA GH200",
+  "hjb_configuration": {
+    "activation": "silu",
+    "batch_size": 512,
+    "checkpoint_interval": 250,
+    "depth": 4,
+    "gradient_clip": 10.0,
+    "label_estimator": "mcv",
+    "label_time_steps": 32,
+    "learning_rate": 0.00015,
+    "optimizer_steps": 5000,
+    "parent_batch": 8,
+    "path_chunk": 32,
+    "paths_per_label": 128,
+    "training_distribution": "mixed",
+    "training_points": 8192,
+    "validation_points": 512,
+    "width": 384
+  },
+  "joint_configuration": {
+    "batch_size": 512,
+    "checkpoint_interval": 250,
+    "depth": 4,
+    "gradient_clip": 10.0,
+    "label_time_steps": 32,
+    "learning_rate": 0.00015,
+    "optimizer_steps": 5000,
+    "parent_batch": 8,
+    "path_chunk": 32,
+    "paths_per_label": 128,
+    "training_points": 8192,
+    "validation_points": 512,
+    "width": 384
+  },
+  "no_test_reference_for_training_selection_or_tuning": true,
+  "nonconvex_960_bank_amendment": {
+    "historical_512_results_reused_as_primary": false,
+    "reason": "historical nonconvex manuscript bank has 512 states but this task mandates 960",
+    "rule": "icml_final_test_bank/nonconvex_coupled/d100, 960 states, T=0.5",
+    "status": "frozen_before_evaluation"
+  },
+  "pdes": [
+    "hjb_log",
+    "joint_concave",
+    "joint_convex",
+    "nonconvex_coupled"
+  ],
+  "protocol_sha256": "20eb5873dbfcd8137cf7ec9c3be1ea1cda7804693e2ae17d50ff624c253511ff",
+  "schema_version": 1,
+  "selection": {
+    "ground_truth_used": false,
+    "hjb": "published four-update protocol with held-out noisy-label optimizer checkpoints",
+    "joint": "minimum independent noise-corrected normalized fixed-point inconsistency"
+  },
+  "training_seeds": [
+    0,
+    1,
+    2
+  ],
+  "variants": [
+    "a0_full",
+    "a1_no_mcv",
+    "a2_no_terminal_anchor",
+    "a3_no_updates"
+  ]
+}
