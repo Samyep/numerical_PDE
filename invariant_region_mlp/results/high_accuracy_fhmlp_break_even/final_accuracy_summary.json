@@ -1,0 +1,106 @@
+{
+  "aggregated_utc": "2026-10-28T05:32:49.459733+00:00",
+  "configuration_changes_after_final_errors": false,
+  "final_bank_input_sha256": "66e65d5b1672a14db04b0a73d02f086fa9c9ede1ca4c4069de49e26b73146b7e",
+  "frozen_selections_canonical_sha256": "d8f701c82d613432545fb0f232666b48e01a38a32716f5e316b5084f8f30334f",
+  "revision": "high_accuracy_fhmlp_break_even_v1",
+  "rows": [
+    {
+      "candidate": "direct",
+      "gpu": "NVIDIA H100 80GB HBM3",
+      "method": "ta_direct",
+      "nonfinite_count": 0,
+      "pooled_bias": 0.0018296461289444641,
+      "pooled_mae": 0.002720095319758805,
+      "pooled_rmse": 0.0033384357646113537,
+      "prediction_count": 384,
+      "run_count": 3
+    },
+    {
+      "candidate": "mcv_32",
+      "gpu": "NVIDIA H100 80GB HBM3",
+      "method": "ta_fk_mcv",
+      "nonfinite_count": 0,
+      "pooled_bias": 0.0008627528212156159,
+      "pooled_mae": 0.0015221142690024954,
+      "pooled_rmse": 0.0019004180209841164,
+      "prediction_count": 768,
+      "run_count": 6
+    },
+    {
+      "candidate": "n2_M128",
+      "gpu": "NVIDIA H100 80GB HBM3",
+      "method": "fh_mlp_standard",
+      "nonfinite_count": 0,
+      "pooled_bias": 0.0036686819111389664,
+      "pooled_mae": 0.0063486091152456774,
+      "pooled_rmse": 0.008519910106129718,
+      "prediction_count": 640,
+      "run_count": 5
+    }
+  ],
+  "status": "COMPLETE",
+  "targets": {
+    "primary": {
+      "fh_mlp_standard": {
+        "calibration_rmse": 0.009734794458666136,
+        "final_prediction_count": 640,
+        "final_rmse": 0.008519910106129718,
+        "nonfinite_count": 0,
+        "selected_candidate": "n2_M128",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.01
+      },
+      "ta_direct": {
+        "calibration_rmse": 0.003208418291567986,
+        "final_prediction_count": 384,
+        "final_rmse": 0.0033384357646113537,
+        "nonfinite_count": 0,
+        "selected_candidate": "direct",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.01
+      },
+      "ta_fk_mcv": {
+        "calibration_rmse": 0.002041584717667759,
+        "final_prediction_count": 768,
+        "final_rmse": 0.0019004180209841164,
+        "nonfinite_count": 0,
+        "selected_candidate": "mcv_32",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.01
+      },
+      "threshold": 0.01
+    },
+    "secondary": {
+      "fh_mlp_standard": {
+        "calibration": {
+          "best_calibration_rmse": 0.008597313351897746,
+          "best_candidate": "n2_M512",
+          "selected_candidate": null,
+          "status": "TARGET_NOT_REACHED_WITHIN_EVALUATED_BUDGET"
+        },
+        "selected_candidate": null,
+        "status": "TARGET_NOT_REACHED_WITHIN_EVALUATED_BUDGET"
+      },
+      "ta_direct": {
+        "calibration_rmse": 0.003208418291567986,
+        "final_prediction_count": 384,
+        "final_rmse": 0.0033384357646113537,
+        "nonfinite_count": 0,
+        "selected_candidate": "direct",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.005
+      },
+      "ta_fk_mcv": {
+        "calibration_rmse": 0.002041584717667759,
+        "final_prediction_count": 768,
+        "final_rmse": 0.0019004180209841164,
+        "nonfinite_count": 0,
+        "selected_candidate": "mcv_32",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.005
+      },
+      "threshold": 0.005
+    }
+  }
+}

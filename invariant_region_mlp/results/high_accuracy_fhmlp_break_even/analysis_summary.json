@@ -1,0 +1,137 @@
+{
+  "analysis_code_commit": "bde292577e2e89aeef524d05b0ea87ed5feff6c4",
+  "analyzed_utc": "2026-10-28T06:37:59.383538+00:00",
+  "break_even": {
+    "primary": {
+      "crossing_queries": 1048576,
+      "fh_mean_seconds_at_crossing": 1551.221368546976,
+      "fh_mean_seconds_beyond": 1551.221368546976,
+      "fh_std_seconds_at_crossing": 5.01450319004609,
+      "per_replicate_crossings": [
+        {
+          "crossing_queries": 1048576,
+          "previous_queries": 524288,
+          "replicate": 0,
+          "status": "OBSERVED_BREAK_EVEN"
+        },
+        {
+          "crossing_queries": 1048576,
+          "previous_queries": 524288,
+          "replicate": 1,
+          "status": "OBSERVED_BREAK_EVEN"
+        },
+        {
+          "crossing_queries": 1048576,
+          "previous_queries": 524288,
+          "replicate": 2,
+          "status": "OBSERVED_BREAK_EVEN"
+        }
+      ],
+      "previous_queries": 524288,
+      "representative_beyond_queries": 1048576,
+      "status": "OBSERVED_BREAK_EVEN",
+      "ta_mean_seconds_at_crossing": 1370.352401554177,
+      "ta_mean_seconds_beyond": 1370.352401554177,
+      "ta_relative_computation_saved_beyond": 0.11659777944022154,
+      "ta_std_seconds_at_crossing": 3.0304130081999445
+    },
+    "secondary": {
+      "status": "PAIR_NOT_ACCURACY_QUALIFIED"
+    }
+  },
+  "curve_keys": [
+    [
+      "fh_mlp_standard",
+      "n2_M128"
+    ],
+    [
+      "ta_direct",
+      "direct"
+    ],
+    [
+      "ta_fk_mcv",
+      "mcv_32"
+    ]
+  ],
+  "frozen_selections_canonical_sha256": "d8f701c82d613432545fb0f232666b48e01a38a32716f5e316b5084f8f30334f",
+  "revision": "high_accuracy_fhmlp_break_even_v1",
+  "status": "COMPLETE",
+  "targets": {
+    "primary": {
+      "fh_mlp_standard": {
+        "calibration_rmse": 0.009734794458666136,
+        "final_prediction_count": 640,
+        "final_rmse": 0.008519910106129718,
+        "nonfinite_count": 0,
+        "selected_candidate": "n2_M128",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.01
+      },
+      "ta_direct": {
+        "calibration_rmse": 0.003208418291567986,
+        "final_prediction_count": 384,
+        "final_rmse": 0.0033384357646113537,
+        "nonfinite_count": 0,
+        "selected_candidate": "direct",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.01
+      },
+      "ta_fk_mcv": {
+        "calibration_rmse": 0.002041584717667759,
+        "final_prediction_count": 768,
+        "final_rmse": 0.0019004180209841164,
+        "nonfinite_count": 0,
+        "selected_candidate": "mcv_32",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.01
+      },
+      "threshold": 0.01
+    },
+    "secondary": {
+      "fh_mlp_standard": {
+        "calibration": {
+          "best_calibration_rmse": 0.008597313351897746,
+          "best_candidate": "n2_M512",
+          "selected_candidate": null,
+          "status": "TARGET_NOT_REACHED_WITHIN_EVALUATED_BUDGET"
+        },
+        "selected_candidate": null,
+        "status": "TARGET_NOT_REACHED_WITHIN_EVALUATED_BUDGET"
+      },
+      "ta_direct": {
+        "calibration_rmse": 0.003208418291567986,
+        "final_prediction_count": 384,
+        "final_rmse": 0.0033384357646113537,
+        "nonfinite_count": 0,
+        "selected_candidate": "direct",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.005
+      },
+      "ta_fk_mcv": {
+        "calibration_rmse": 0.002041584717667759,
+        "final_prediction_count": 768,
+        "final_rmse": 0.0019004180209841164,
+        "nonfinite_count": 0,
+        "selected_candidate": "mcv_32",
+        "status": "FINAL_ACCURACY_PASSED",
+        "threshold": 0.005
+      },
+      "threshold": 0.005
+    }
+  },
+  "timing_coverage": {
+    "revision": "high_accuracy_fhmlp_break_even_v1",
+    "targets": {
+      "primary": {
+        "fh_mlp_standard": "RUN",
+        "ta_direct": "RUN",
+        "ta_fk_mcv": "RUN"
+      },
+      "secondary": {
+        "fh_mlp_standard": "TARGET_NOT_REACHED_WITHIN_EVALUATED_BUDGET",
+        "ta_direct": "RUN",
+        "ta_fk_mcv": "RUN"
+      }
+    }
+  }
+}

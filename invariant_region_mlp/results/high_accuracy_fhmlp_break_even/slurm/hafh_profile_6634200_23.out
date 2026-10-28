@@ -1,0 +1,44 @@
+---------------------------------------
+Begin Slurm Prolog: Oct-27-2026 23:06:42
+Job ID:    6634656
+User ID:   ywang4280
+Account:   isye
+Job name:  hafh_profile
+Partition: ice-gpu
+QOS:       coe-ice
+---------------------------------------
+0, GPU-bebdc91f-6529-0bad-8c77-85ddfe72cd5b, NVIDIA H100 80GB HBM3, 81559 MiB, 615.71.09
+{
+  "finished_utc": "2026-10-28T03:06:51.632981+00:00",
+  "gpu_count": 1,
+  "record_ids": [
+    "fh__profile__n3_M48__r1"
+  ],
+  "revision": "high_accuracy_fhmlp_break_even_v1",
+  "slurm_array_task_id": "23",
+  "slurm_job_id": "6634656",
+  "stage": "profile",
+  "status": "complete",
+  "task": {
+    "M": 48,
+    "index": 23,
+    "kind": "fh_profile",
+    "n": 3,
+    "replicate": 1
+  },
+  "task_id": "profile__0023__fh_profile",
+  "task_wall_seconds": 5.297965345904231
+}
+---------------------------------------
+Begin Slurm Epilog: Oct-27-2026 23:06:52
+Job ID:        6634656
+Array Job ID:  6634200_23
+User ID:       ywang4280
+Account:       isye
+Job name:      hafh_profile
+Resources:     cpu=8,gres/gpu:h100=1,mem=64G,node=1
+Rsrc Used:     cput=00:01:44,vmem=0,walltime=00:00:13,mem=1595360K,energy_used=0
+Partition:     ice-gpu
+QOS:           coe-ice
+Nodes:         atl1-1-03-012-23-0
+---------------------------------------

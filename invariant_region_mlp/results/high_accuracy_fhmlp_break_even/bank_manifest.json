@@ -1,0 +1,277 @@
+{
+  "banks": {
+    "calibration": {
+      "contains_reference": true,
+      "file_sha256": "d7fb391b1f155369a5048df475d053b1691becc440f08d0b75c5d3493e26bf44",
+      "input_array_sha256": "aa4330569e6e9e227ac47e69b4a16e6cec56b377d830f4de50c4f1b713bc9f0f",
+      "law": "t=0; x~N(0,I_100)",
+      "path": "invariant_region_mlp/results/high_accuracy_fhmlp_break_even/banks/calibration.npz",
+      "seed": 505987713,
+      "size": 64
+    },
+    "final": {
+      "contains_reference": true,
+      "file_sha256": "cfc3709b8225595f201eb631a74ebc2a0865447fabaf130aaaa310bfff5bbab6",
+      "input_array_sha256": "66e65d5b1672a14db04b0a73d02f086fa9c9ede1ca4c4069de49e26b73146b7e",
+      "law": "t=0; x~N(0,I_100)",
+      "path": "invariant_region_mlp/results/high_accuracy_fhmlp_break_even/banks/final.npz",
+      "seed": 1540618836,
+      "size": 128
+    },
+    "timing": {
+      "contains_reference": false,
+      "file_sha256": "da6d33a7eb1719c2473b12045a4ca30acea4064845e91e9955a2994194fd7d0d",
+      "input_array_sha256": "9144827b12b6992bf44e3602974663c25b27e04904bf1db7eec6777f47e83a5a",
+      "law": "t=0; x~N(0,I_100)",
+      "path": "invariant_region_mlp/results/high_accuracy_fhmlp_break_even/banks/timing.npz",
+      "seed": 4010859695,
+      "size": 1048576
+    }
+  },
+  "basis_sha256": "e08d9619fda41e83ad9f8d2ecba818e46328e4d0482473d71f79491d5d62b0ea",
+  "protocol": {
+    "bank_sizes": {
+      "calibration": 64,
+      "final": 128,
+      "timing": 1048576
+    },
+    "base_seed": 20261327,
+    "caps": {
+      "allocated_h100_gpu_hours": 30.0,
+      "calibration_task_seconds": 7200.0,
+      "formal_timing_task_seconds": 10800.0,
+      "mcv_timing_task_seconds": 3600.0,
+      "profile_task_seconds": 900.0,
+      "ta_and_final_accuracy_gpu_hour_reserve": 5.0,
+      "timing_gpu_hour_reserve": 12.0
+    },
+    "dimension": 100,
+    "expected_ta_artifacts": {
+      "0": {
+        "charged_training_seconds": 1360.5530377796385,
+        "checkpoint_sha256": "092af2949b7cf4ae7803f62266622f7eb8a749e23ed8816500712d310485080d",
+        "selected_actor": "a4",
+        "training_sha256": "ee0876f16cac7df73ab762737f0ea3582d15c3b4e693d4a2ed815390cbe02f76"
+      },
+      "1": {
+        "charged_training_seconds": 1360.9297719779424,
+        "checkpoint_sha256": "65f57b3d47314a975a9918f617cd330515e79ac589b11af69864b241435f5be9",
+        "selected_actor": "a4",
+        "training_sha256": "d395199f578cf8896262ebe5fb24ba3326db4eba518052361107e4f8a122052c"
+      },
+      "2": {
+        "charged_training_seconds": 1365.9744462522212,
+        "checkpoint_sha256": "a12b7c4c00fb7d2ddb4223cae15beb14b412ec3c4ee042d53ae051d5023b1428",
+        "selected_actor": "a4",
+        "training_sha256": "e7cd46dcd1503c6a93165bc66d52cfa7623d785e816ab703ae999fe65f0ce149"
+      }
+    },
+    "fh_accuracy_replicates": 5,
+    "fh_configs": [
+      [
+        2,
+        32
+      ],
+      [
+        2,
+        48
+      ],
+      [
+        2,
+        64
+      ],
+      [
+        2,
+        96
+      ],
+      [
+        2,
+        128
+      ],
+      [
+        2,
+        192
+      ],
+      [
+        2,
+        256
+      ],
+      [
+        2,
+        384
+      ],
+      [
+        2,
+        512
+      ],
+      [
+        3,
+        24
+      ],
+      [
+        3,
+        32
+      ],
+      [
+        3,
+        48
+      ],
+      [
+        3,
+        64
+      ],
+      [
+        3,
+        96
+      ]
+    ],
+    "geometric_timing_counts": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256,
+      512,
+      1024,
+      2048,
+      4096,
+      8192,
+      16384,
+      32768,
+      65536,
+      131072,
+      262144,
+      524288,
+      1048576
+    ],
+    "horizon": 0.5,
+    "joint_actor_config": {
+      "batch_size": 512,
+      "checkpoint_interval": 250,
+      "depth": 4,
+      "gradient_clip": 10.0,
+      "label_time_steps": 32,
+      "learning_rate": 0.00015,
+      "optimizer_steps": 5000,
+      "parent_batch": 8,
+      "path_chunk": 32,
+      "paths_per_label": 128,
+      "training_points": 8192,
+      "validation_points": 512,
+      "width": 384
+    },
+    "pde": "joint_nonseparable",
+    "preregistration_commit": "60c04015682a5f77ff03fd829f575d059620a1bd",
+    "profile_queries": 4,
+    "profile_replicates": 2,
+    "reference_thresholds": {
+      "value_refinement_max_abs": 0.0001,
+      "value_refinement_rmse": 2e-05
+    },
+    "refinement_multipliers": [
+      1.125,
+      1.25,
+      1.375,
+      1.5,
+      1.625,
+      1.75,
+      1.875
+    ],
+    "revision": "high_accuracy_fhmlp_break_even_v1",
+    "source_base_commit": "49b48e646a8ffa246e4b780c2c54f2a56f24f3a4",
+    "source_validated_commit": "b7dd884225936a0d67f770efce1207bc478d4f7c",
+    "ta_mcv_accuracy_replicates": 2,
+    "ta_paths": [
+      32,
+      128,
+      512
+    ],
+    "ta_steps": 64,
+    "ta_training_seeds": [
+      0,
+      1,
+      2
+    ],
+    "targets": {
+      "primary": 0.01,
+      "secondary": 0.005
+    }
+  },
+  "revision": "high_accuracy_fhmlp_break_even_v1",
+  "separation_audit": {
+    "comparisons": [
+      {
+        "exact_overlap_count": 0,
+        "left": "calibration",
+        "right": "final"
+      },
+      {
+        "exact_overlap_count": 0,
+        "left": "calibration",
+        "right": "previous_32"
+      },
+      {
+        "exact_overlap_count": 0,
+        "left": "calibration",
+        "right": "previous_joint_calibration"
+      },
+      {
+        "exact_overlap_count": 0,
+        "left": "calibration",
+        "right": "previous_joint_final"
+      },
+      {
+        "exact_overlap_count": 0,
+        "left": "final",
+        "right": "previous_32"
+      },
+      {
+        "exact_overlap_count": 0,
+        "left": "final",
+        "right": "previous_joint_calibration"
+      },
+      {
+        "exact_overlap_count": 0,
+        "left": "final",
+        "right": "previous_joint_final"
+      },
+      {
+        "exact_overlap_count": 0,
+        "left": "timing",
+        "right": "calibration",
+        "row_fingerprint_matches": 0
+      },
+      {
+        "exact_overlap_count": 0,
+        "left": "timing",
+        "right": "final",
+        "row_fingerprint_matches": 0
+      },
+      {
+        "exact_overlap_count": 0,
+        "left": "timing",
+        "right": "previous_32",
+        "row_fingerprint_matches": 0
+      },
+      {
+        "exact_overlap_count": 0,
+        "left": "timing",
+        "right": "previous_joint_calibration",
+        "row_fingerprint_matches": 0
+      },
+      {
+        "exact_overlap_count": 0,
+        "left": "timing",
+        "right": "previous_joint_final",
+        "row_fingerprint_matches": 0
+      }
+    ],
+    "status": "VALIDATED",
+    "timing_unique_rows": 1048576
+  },
+  "truth_policy": "calibration/final only; timing stream contains no truth"
+}

@@ -1,0 +1,166 @@
+{
+  "bank_files": {
+    "calibration": "d7fb391b1f155369a5048df475d053b1691becc440f08d0b75c5d3493e26bf44",
+    "final": "cfc3709b8225595f201eb631a74ebc2a0865447fabaf130aaaa310bfff5bbab6",
+    "timing": "da6d33a7eb1719c2473b12045a4ca30acea4064845e91e9955a2994194fd7d0d"
+  },
+  "checks": {
+    "all_times_zero": true,
+    "basis_orthonormal": true,
+    "calibration_has_reference": true,
+    "calibration_shape": true,
+    "driver_formula": true,
+    "driver_z_formula": true,
+    "fh_exact_replay": true,
+    "final_has_reference_but_was_not_read": true,
+    "final_shape": true,
+    "gpu_is_h100_80gb": true,
+    "joint_actor_direct_finite": true,
+    "joint_actor_mcv_finite": true,
+    "mixed_derivative_nonzero": true,
+    "no_deep_bsde_method_in_new_study": true,
+    "reference_validated": true,
+    "ta_source_artifacts_exact": true,
+    "terminal_numpy_torch": true,
+    "timing_has_no_truth": true,
+    "timing_shape": true,
+    "validated_sources_byte_identical": true
+  },
+  "completed_utc": "2026-10-28T02:49:48.139704+00:00",
+  "diagnostics": {
+    "actor_direct_sha256": "dcacd0f56f6ca78d70839320fb2246fcdd779ecedac8ee1548456a62e87b5ead",
+    "actor_mcv_sha256": "ee538bd91d8ce1c14be047d1252f9801fa9829552fc148fcfd31d386eb0192c2",
+    "driver_max_abs": 2.220446049250313e-16,
+    "driver_z_max_abs": 0.0,
+    "fh_replay_value": 0.6553825385918369,
+    "source_training_selected_actor": "a4",
+    "terminal_max_abs": 1.1102230246251565e-16
+  },
+  "fh_batched_execution_audit": {
+    "original_recursion_retained": true,
+    "reason": "A multi-query call changes the random-stream assignment and therefore is not an exact same-query, same-sample replay of the audited per-point recursion. No faster batched implementation was substituted.",
+    "source_api_finding": "AuditedFullHistoryMLP accepts one generator seed for an entire solve call, whereas the frozen formal protocol assigns a distinct stable seed to every query.",
+    "status": "NOT_ADOPTED"
+  },
+  "final_reference_values_accessed": false,
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "gpu_total_memory": 85064286208,
+  "overall_pass": true,
+  "preflight_wall_seconds": 19.0864190269931,
+  "revision": "high_accuracy_fhmlp_break_even_v1",
+  "source_fidelity": {
+    "overall_pass": true,
+    "rows": [
+      {
+        "authoritative_commit": "49b48e646a8ffa246e4b780c2c54f2a56f24f3a4",
+        "byte_identical": true,
+        "current_sha256": "7bbba5a150a2b4305bc4c7479170df750d14259b944fee8e381b705a89d7aaa8",
+        "path": "invariant_region_mlp/experiments/single_point_break_even/fh_mlp.py",
+        "validated_commit_sha256": "7bbba5a150a2b4305bc4c7479170df750d14259b944fee8e381b705a89d7aaa8"
+      },
+      {
+        "authoritative_commit": "49b48e646a8ffa246e4b780c2c54f2a56f24f3a4",
+        "byte_identical": true,
+        "current_sha256": "9586aaee446821ab9d8709b2d501c516660af729f20d1927c860ea8b4d4ec4d8",
+        "path": "invariant_region_mlp/experiments/single_point_break_even_joint/benchmark.py",
+        "validated_commit_sha256": "9586aaee446821ab9d8709b2d501c516660af729f20d1927c860ea8b4d4ec4d8"
+      },
+      {
+        "authoritative_commit": "b7dd884225936a0d67f770efce1207bc478d4f7c",
+        "byte_identical": true,
+        "current_sha256": "13139aaffe812a6aafc9a9f01edfdc14145c2634fc228983f8bbec20aa781716",
+        "path": "invariant_region_mlp/experiments/single_point_joint_extension/benchmark.py",
+        "validated_commit_sha256": "13139aaffe812a6aafc9a9f01edfdc14145c2634fc228983f8bbec20aa781716"
+      },
+      {
+        "authoritative_commit": "b7dd884225936a0d67f770efce1207bc478d4f7c",
+        "byte_identical": true,
+        "current_sha256": "0bc1d1618099bd88abbb6a8bbec4c1db1332340b4cf40a3319608616ad2407c4",
+        "path": "invariant_region_mlp/experiments/main_highdim_expansion/run_dense_actor.py",
+        "validated_commit_sha256": "0bc1d1618099bd88abbb6a8bbec4c1db1332340b4cf40a3319608616ad2407c4"
+      },
+      {
+        "authoritative_commit": "b7dd884225936a0d67f770efce1207bc478d4f7c",
+        "byte_identical": true,
+        "current_sha256": "8fe7c29c1ee0225088b6200287136d8d7d6f66c2f5df3a713bb143b263af011e",
+        "path": "invariant_region_mlp/experiments/main_highdim_expansion/joint_actor.py",
+        "validated_commit_sha256": "8fe7c29c1ee0225088b6200287136d8d7d6f66c2f5df3a713bb143b263af011e"
+      },
+      {
+        "authoritative_commit": "b7dd884225936a0d67f770efce1207bc478d4f7c",
+        "byte_identical": true,
+        "current_sha256": "e22d2b698e14df954c36dec7d46e0da8caf86bf42099a91dad6300cdfe0314e2",
+        "path": "invariant_region_mlp/experiments/single_point_32_ice/fh_mlp.py",
+        "validated_commit_sha256": "e22d2b698e14df954c36dec7d46e0da8caf86bf42099a91dad6300cdfe0314e2"
+      },
+      {
+        "authoritative_commit": "b7dd884225936a0d67f770efce1207bc478d4f7c",
+        "byte_identical": true,
+        "current_sha256": "95e2af228ac5e1151aed0428d78355ec42a78a168baced8d2831d5b75fe438b5",
+        "path": "invariant_region_mlp/experiments/single_point_32_ice/protocol.py",
+        "validated_commit_sha256": "95e2af228ac5e1151aed0428d78355ec42a78a168baced8d2831d5b75fe438b5"
+      },
+      {
+        "authoritative_commit": "b7dd884225936a0d67f770efce1207bc478d4f7c",
+        "byte_identical": true,
+        "current_sha256": "34198c2d9d8c9291117539402d8e082b734706d12c2bcadad51d9df52f280a11",
+        "path": "invariant_region_mlp/experiments/tangent_actor_strong_baselines/full_history_mlp.py",
+        "validated_commit_sha256": "34198c2d9d8c9291117539402d8e082b734706d12c2bcadad51d9df52f280a11"
+      }
+    ]
+  },
+  "status": "VALIDATED",
+  "ta_source_artifacts": {
+    "overall_pass": true,
+    "rows": [
+      {
+        "checkpoint_path": "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/results/single_point_break_even_joint/checkpoints/joint_break_even_d100_s0_a4.pt",
+        "checks": {
+          "charged_seconds_match": true,
+          "checkpoint_exists": true,
+          "checkpoint_sha256": true,
+          "selected_actor": true,
+          "training_complete": true,
+          "training_exists": true,
+          "training_sha256": true,
+          "truth_free_selection": true
+        },
+        "overall_pass": true,
+        "seed": 0,
+        "training_path": "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/results/single_point_break_even_joint/raw/actor/training_joint_break_even_d100_s0.json"
+      },
+      {
+        "checkpoint_path": "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/results/single_point_break_even_joint/checkpoints/joint_break_even_d100_s1_a4.pt",
+        "checks": {
+          "charged_seconds_match": true,
+          "checkpoint_exists": true,
+          "checkpoint_sha256": true,
+          "selected_actor": true,
+          "training_complete": true,
+          "training_exists": true,
+          "training_sha256": true,
+          "truth_free_selection": true
+        },
+        "overall_pass": true,
+        "seed": 1,
+        "training_path": "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/results/single_point_break_even_joint/raw/actor/training_joint_break_even_d100_s1.json"
+      },
+      {
+        "checkpoint_path": "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/results/single_point_break_even_joint/checkpoints/joint_break_even_d100_s2_a4.pt",
+        "checks": {
+          "charged_seconds_match": true,
+          "checkpoint_exists": true,
+          "checkpoint_sha256": true,
+          "selected_actor": true,
+          "training_complete": true,
+          "training_exists": true,
+          "training_sha256": true,
+          "truth_free_selection": true
+        },
+        "overall_pass": true,
+        "seed": 2,
+        "training_path": "/storage/ice1/4/8/ywang4280/ir-mlp-single-point-break-even-worktree/invariant_region_mlp/results/single_point_break_even_joint/raw/actor/training_joint_break_even_d100_s2.json"
+      }
+    ]
+  }
+}
