@@ -1149,16 +1149,10 @@ def _component_vertical_matrix_figure(
         "a1_no_mcv": "s",
         "a3_no_updates": "X",
     }
-    short_method_names = {
-        "a0_full": "Full TA",
-        "a2_no_terminal_anchor": "w/o anchor",
-        "a1_no_mcv": "w/o MCV",
-        "a3_no_updates": "w/o updates",
-    }
     row_names = {
         "hjb_log": "Log HJB",
-        "joint_concave": "Joint concave",
-        "joint_convex": "Joint convex",
+        "joint_concave": "Concave",
+        "joint_convex": "Convex",
         "nonconvex_coupled": "Nonconvex",
     }
     diverging = LinearSegmentedColormap.from_list(
@@ -1238,12 +1232,11 @@ def _component_vertical_matrix_figure(
         ticks = tuple(np.linspace(0.0, upper, 5))
         ax.set_yticks(ticks)
         ax.set_yticklabels(
-            ("0", "", f"{ticks[2]:.1e}", "", f"{ticks[4]:.1e}"), fontsize=5.7
+            ("0", "", "", "", f"{ticks[4]:.1e}"), fontsize=5.7
         )
         ax.set_xticks(range(4))
         if bottom:
-            ax.set_xticklabels(("Full", "−Anchor", "−MCV", "Fixed $A_0$"), fontsize=5.4)
-            ax.set_xlabel("component configuration", fontsize=6.4, labelpad=2.2)
+            ax.set_xticklabels(("Full", "−A", "−M", "$A_0$"), fontsize=5.5)
         else:
             ax.set_xticklabels([])
         ax.tick_params(axis="x", length=0)
@@ -1284,7 +1277,6 @@ def _component_vertical_matrix_figure(
         ax.set_xticks(x_positions)
         if bottom:
             ax.set_xticklabels(x_labels, fontsize=5.6)
-            ax.set_xlabel("ablation", fontsize=6.4, labelpad=2.2)
         else:
             ax.set_xticklabels([])
         ax.tick_params(axis="x", length=0)
@@ -1294,30 +1286,25 @@ def _component_vertical_matrix_figure(
             spine.set_linewidth(0.55)
 
     with plt.rc_context(paper_style):
-        fig = plt.figure(figsize=(7.25, 5.28), facecolor="white")
+        fig = plt.figure(figsize=(7.15, 4.55), facecolor="white")
         grid = fig.add_gridspec(
             4,
             4,
-            left=0.155,
-            right=0.985,
-            bottom=0.12,
-            top=0.80,
-            hspace=0.27,
-            wspace=0.23,
-            width_ratios=(1.45, 1.0, 1.0, 1.0),
+            left=0.13,
+            right=0.99,
+            bottom=0.075,
+            top=0.925,
+            hspace=0.22,
+            wspace=0.25,
+            width_ratios=(1.42, 1.0, 1.0, 1.0),
         )
         axes = np.empty((4, 4), dtype=object)
-        column_titles = (
-            "Whole-function RMSE\nfour configurations",
-            "MCV ablation\ninference-only vs. full removal",
-            "Terminal anchoring\nremoved",
-            "Tangent updates\nfixed at $A_0$",
-        )
+        column_titles = ("RMSE", "MCV", "Anchor", "Updates")
 
         for row_index, pde in enumerate(PDES):
             bottom_row = row_index == len(PDES) - 1
 
-            # Column 1: vertical bars, seed points, and uncertainty whiskers.
+            # Column 1: vertical bars with seed-level uncertainty whiskers.
             absolute_ax = fig.add_subplot(grid[row_index, 0])
             axes[row_index, 0] = absolute_ax
             means = np.asarray(
@@ -1355,7 +1342,7 @@ def _component_vertical_matrix_figure(
                 transform=absolute_ax.transAxes,
                 ha="right",
                 va="center",
-                fontsize=8.2,
+                fontsize=7.6,
                 fontweight="bold",
             )
 
@@ -1372,8 +1359,6 @@ def _component_vertical_matrix_figure(
             ratio_background(mcv_ax, mcv_x_limits)
             inference_ratio = float(mcv_lookup[pde]["plain_over_mcv_rmse_ratio_mean"])
             full_removal_ratio = float(lookup[("a1_no_mcv", pde)]["rmse_mean"]) / full_mean
-            mcv_x = np.asarray((0.0, 1.0))
-            mcv_ratios = np.asarray((inference_ratio, full_removal_ratio))
             no_mcv_by_seed = {
                 int(row["seed"]): float(row["value_rmse"])
                 for row in local_rows(pde, "a1_no_mcv")
@@ -1415,17 +1400,6 @@ def _component_vertical_matrix_figure(
                     linestyle="none",
                     zorder=6,
                 )
-            for x_value, ratio in zip(mcv_x, mcv_ratios, strict=True):
-                mcv_ax.annotate(
-                    f"{ratio:.2f}×",
-                    xy=(x_value, ratio),
-                    xytext=(0, 5),
-                    textcoords="offset points",
-                    ha="center",
-                    va="bottom",
-                    fontsize=5.9,
-                    fontweight="bold" if x_value == 1.0 else "normal",
-                )
             style_ratio_axis(
                 mcv_ax,
                 bottom=bottom_row,
@@ -1435,10 +1409,10 @@ def _component_vertical_matrix_figure(
                 x_limits=mcv_x_limits,
             )
 
-            # Columns 3 and 4: vertical bars rise from the shared 1x baseline.
+            # Columns 3 and 4: point-ranges rise from the shared 1x baseline.
             for column_index, variant, bottom_label in (
-                (2, "a2_no_terminal_anchor", "removed"),
-                (3, "a3_no_updates", "fixed $A_0$"),
+                (2, "a2_no_terminal_anchor", ""),
+                (3, "a3_no_updates", ""),
             ):
                 effect_ax = fig.add_subplot(grid[row_index, column_index])
                 axes[row_index, column_index] = effect_ax
@@ -1494,16 +1468,6 @@ def _component_vertical_matrix_figure(
                     linewidth=0.6,
                     zorder=5,
                 )
-                effect_ax.annotate(
-                    f"{ratio:.2f}×",
-                    xy=(0.0, ratio),
-                    xytext=(0, 5),
-                    textcoords="offset points",
-                    ha="center",
-                    va="bottom",
-                    fontsize=6.1,
-                    fontweight="bold",
-                )
                 style_ratio_axis(
                     effect_ax,
                     bottom=bottom_row,
@@ -1516,45 +1480,10 @@ def _component_vertical_matrix_figure(
         for column_index, title in enumerate(column_titles):
             axes[0, column_index].set_title(
                 title,
-                fontsize=7.15,
+                fontsize=8.0,
                 fontweight="bold",
-                pad=7.5,
-                linespacing=1.15,
+                pad=6.0,
             )
-
-        legend_handles = [
-            Line2D(
-                [0],
-                [0],
-                marker=markers[variant],
-                linestyle="none",
-                markerfacecolor=COLORS[variant],
-                markeredgecolor="white",
-                markeredgewidth=0.45,
-                markersize=5.2,
-                label=short_method_names[variant],
-            )
-            for variant in plot_order
-        ]
-        fig.legend(
-            handles=legend_handles,
-            loc="upper center",
-            bbox_to_anchor=(0.57, 0.965),
-            ncol=4,
-            frameon=False,
-            fontsize=6.5,
-            columnspacing=1.35,
-            handletextpad=0.35,
-        )
-        fig.text(
-            0.57,
-            0.025,
-            "Component ablation across four high-dimensional PDEs",
-            ha="center",
-            va="bottom",
-            fontsize=6.1,
-            color="#4a4a4a",
-        )
         for suffix, dpi in (("pdf", None), ("png", 300)):
             fig.savefig(
                 FIGURE_DIR / f"component_ablation.{suffix}",
