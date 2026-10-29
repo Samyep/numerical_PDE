@@ -1235,10 +1235,10 @@ def _component_vertical_matrix_figure(
     ) -> None:
         ax.set_xlim(-0.55, 3.55)
         ax.set_ylim(0.0, upper)
-        ticks = (0.0, upper / 2.0, upper)
+        ticks = tuple(np.linspace(0.0, upper, 5))
         ax.set_yticks(ticks)
         ax.set_yticklabels(
-            ("0", f"{ticks[1]:.1e}", f"{ticks[2]:.1e}"), fontsize=5.7
+            ("0", "", f"{ticks[2]:.1e}", "", f"{ticks[4]:.1e}"), fontsize=5.7
         )
         ax.set_xticks(range(4))
         if bottom:
@@ -1248,7 +1248,14 @@ def _component_vertical_matrix_figure(
             ax.set_xticklabels([])
         ax.tick_params(axis="x", length=0)
         ax.tick_params(axis="y", length=2.2, pad=1.6)
-        ax.grid(axis="y", color="white", alpha=0.72, linewidth=0.55)
+        ax.grid(
+            axis="y",
+            which="major",
+            color="white",
+            alpha=0.94,
+            linewidth=0.68,
+            zorder=1.5,
+        )
         for spine in ax.spines.values():
             spine.set_color("#5a5a5a")
             spine.set_linewidth(0.55)
@@ -1330,24 +1337,15 @@ def _component_vertical_matrix_figure(
                 edgecolor="white",
                 linewidth=0.55,
                 yerr=stds,
-                capsize=1.8,
-                error_kw={"ecolor": "#333333", "elinewidth": 0.75, "capthick": 0.75},
+                capsize=3.1,
+                error_kw={
+                    "ecolor": "#292929",
+                    "elinewidth": 0.95,
+                    "capthick": 0.95,
+                    "zorder": 6,
+                },
                 zorder=3,
             )
-            for x_value, variant in zip(x_positions, plot_order, strict=True):
-                observations = local_rows(pde, variant)
-                jitter = np.linspace(-0.11, 0.11, len(observations))
-                absolute_ax.scatter(
-                    x_value + jitter,
-                    [float(row["value_rmse"]) for row in observations],
-                    s=11,
-                    marker=markers[variant],
-                    facecolor="white",
-                    edgecolor=COLORS[variant],
-                    linewidth=0.65,
-                    alpha=0.78,
-                    zorder=5,
-                )
             style_absolute_axis(absolute_ax, upper, bottom=bottom_row)
             absolute_ax.text(
                 -0.30,
@@ -1375,27 +1373,6 @@ def _component_vertical_matrix_figure(
             full_removal_ratio = float(lookup[("a1_no_mcv", pde)]["rmse_mean"]) / full_mean
             mcv_x = np.asarray((0.0, 1.0))
             mcv_ratios = np.asarray((inference_ratio, full_removal_ratio))
-            mcv_ax.bar(
-                mcv_x,
-                mcv_ratios - 1.0,
-                bottom=1.0,
-                width=0.48,
-                color=("#fddbc7", COLORS["a1_no_mcv"]),
-                alpha=0.78,
-                edgecolor=COLORS["a1_no_mcv"],
-                linewidth=0.75,
-                zorder=3,
-            )
-            mcv_ax.scatter(
-                [0.0, 1.0],
-                mcv_ratios,
-                s=24,
-                marker="o",
-                facecolor=("white", COLORS["a1_no_mcv"]),
-                edgecolor=COLORS["a1_no_mcv"],
-                linewidth=0.85,
-                zorder=5,
-            )
             no_mcv_by_seed = {
                 int(row["seed"]): float(row["value_rmse"])
                 for row in local_rows(pde, "a1_no_mcv")
@@ -1407,19 +1384,35 @@ def _component_vertical_matrix_figure(
             removal_seed_ratios = [
                 no_mcv_by_seed[seed] / full_by_seed[seed] for seed in sorted(full_by_seed)
             ]
-            for x_value, observed in (
-                (0.0, inference_seed_ratios),
-                (1.0, removal_seed_ratios),
+            for x_value, ratio, observed, facecolor in (
+                (0.0, inference_ratio, inference_seed_ratios, "white"),
+                (1.0, full_removal_ratio, removal_seed_ratios, COLORS["a1_no_mcv"]),
             ):
-                mcv_ax.scatter(
-                    x_value + np.linspace(-0.10, 0.10, len(observed)),
-                    observed,
-                    s=9,
-                    facecolor="white",
-                    edgecolor=COLORS["a1_no_mcv"],
-                    linewidth=0.55,
-                    alpha=0.62,
-                    zorder=5,
+                spread = float(np.std(observed, ddof=1)) if len(observed) > 1 else 0.0
+                mcv_ax.vlines(
+                    x_value,
+                    1.0,
+                    ratio,
+                    color=COLORS["a1_no_mcv"],
+                    linewidth=1.65,
+                    alpha=0.82,
+                    zorder=3,
+                )
+                mcv_ax.errorbar(
+                    [x_value],
+                    [ratio],
+                    yerr=[spread],
+                    fmt="o",
+                    markersize=4.5,
+                    markerfacecolor=facecolor,
+                    markeredgecolor=COLORS["a1_no_mcv"],
+                    markeredgewidth=0.85,
+                    ecolor="#292929",
+                    elinewidth=1.05,
+                    capsize=3.7,
+                    capthick=1.05,
+                    linestyle="none",
+                    zorder=6,
                 )
             for x_value, ratio in zip(mcv_x, mcv_ratios, strict=True):
                 mcv_ax.annotate(
@@ -1452,27 +1445,6 @@ def _component_vertical_matrix_figure(
                 ratio_background(effect_ax, effect_x_limits)
                 ratio = float(lookup[(variant, pde)]["rmse_mean"]) / full_mean
                 delta = float(lookup[(variant, pde)]["rmse_mean"]) - full_mean
-                effect_ax.bar(
-                    [0.0],
-                    [ratio - 1.0],
-                    bottom=1.0,
-                    width=0.42,
-                    color=COLORS[variant],
-                    alpha=0.76,
-                    edgecolor="white",
-                    linewidth=0.55,
-                    zorder=3,
-                )
-                effect_ax.scatter(
-                    [0.0],
-                    [ratio],
-                    s=26,
-                    marker=markers[variant],
-                    facecolor=COLORS[variant],
-                    edgecolor="white",
-                    linewidth=0.55,
-                    zorder=5,
-                )
                 if variant == "a2_no_terminal_anchor":
                     ablated_by_seed = {
                         int(row["seed"]): float(row["value_rmse"])
@@ -1487,15 +1459,39 @@ def _component_vertical_matrix_figure(
                         float(row["value_rmse"]) / full_mean
                         for row in local_rows(pde, variant)
                     ]
+                spread = (
+                    float(np.std(observed_ratios, ddof=1))
+                    if len(observed_ratios) > 1
+                    else 0.0
+                )
+                effect_ax.vlines(
+                    0.0,
+                    1.0,
+                    ratio,
+                    color=COLORS[variant],
+                    linewidth=1.75,
+                    alpha=0.84,
+                    zorder=3,
+                )
+                effect_ax.errorbar(
+                    [0.0],
+                    [ratio],
+                    yerr=[spread],
+                    fmt="none",
+                    ecolor="#292929",
+                    elinewidth=1.05,
+                    capsize=3.7,
+                    capthick=1.05,
+                    zorder=6,
+                )
                 effect_ax.scatter(
-                    np.linspace(-0.10, 0.10, len(observed_ratios)),
-                    observed_ratios,
-                    s=10,
+                    [0.0],
+                    [ratio],
+                    s=27,
                     marker=markers[variant],
-                    facecolor="white",
-                    edgecolor=COLORS[variant],
-                    linewidth=0.55,
-                    alpha=0.64,
+                    facecolor=COLORS[variant],
+                    edgecolor="white",
+                    linewidth=0.6,
                     zorder=5,
                 )
                 effect_ax.annotate(
@@ -1570,8 +1566,9 @@ def _component_vertical_matrix_figure(
         fig.text(
             0.57,
             0.025,
-            "All quantities grow upward: bar height is value RMSE; diagnostic bars start at the "
-            "$1\\times$ Full-TA baseline. Faint markers show seeds (fixed $A_0$: inference replicates).",
+            "All quantities grow upward: the first column shows RMSE bars; diagnostic stems start "
+            "at the $1\\times$ Full-TA baseline. I-bars show sample SD across seeds "
+            "(fixed $A_0$: inference replicates).",
             ha="center",
             va="bottom",
             fontsize=5.95,
