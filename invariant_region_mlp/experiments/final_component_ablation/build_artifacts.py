@@ -1684,12 +1684,13 @@ def _component_vertical_matrix_figure(
                 update_ratios.append(float(np.mean(observed)))
                 update_spreads.append(float(np.std(observed, ddof=1)))
             update_x = np.arange(5, dtype=float)
+            update_curve_color = "#C44755"
             update_ax.plot(
                 update_x,
                 update_ratios,
-                color=COLORS["a3_no_updates"],
+                color=update_curve_color,
                 linewidth=1.15,
-                alpha=0.82,
+                alpha=0.78,
                 zorder=3,
             )
             update_ax.errorbar(
@@ -1708,20 +1709,27 @@ def _component_vertical_matrix_figure(
                 update_ratios,
                 s=14,
                 marker="o",
-                facecolor=COLORS["a3_no_updates"],
+                facecolor=update_curve_color,
                 edgecolor="white",
                 linewidth=0.45,
                 zorder=5,
             )
-            for x_value, ratio, spread in zip(
-                update_x, update_ratios, update_spreads, strict=True
+            label_offsets = ((0, 6), (3, 10), (0, 22), (0, 10), (-2, 22))
+            label_alignments = ("center", "left", "center", "center", "right")
+            for x_value, ratio, spread, offset, alignment in zip(
+                update_x,
+                update_ratios,
+                update_spreads,
+                label_offsets,
+                label_alignments,
+                strict=True,
             ):
                 update_ax.annotate(
                     f"{ratio:.2f}×",
                     xy=(x_value, ratio + spread),
-                    xytext=(0, 3),
+                    xytext=offset,
                     textcoords="offset points",
-                    ha="center",
+                    ha=alignment,
                     va="bottom",
                     fontsize=4.7,
                     color="#252525",
