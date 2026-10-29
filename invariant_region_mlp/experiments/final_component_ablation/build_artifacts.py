@@ -16,6 +16,8 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
+from matplotlib.ticker import LogLocator, NullFormatter
 import numpy as np
 
 from .protocol import FIGURE_DIR, PDES, PROJECT_DIR, RESULTS_DIR, TABLE_DIR, VARIANTS
@@ -34,10 +36,10 @@ PDE_NAMES = {
     "nonconvex_coupled": "Oscillatory Value--Gradient",
 }
 COLORS = {
-    "a0_full": "#1f4e79",
-    "a1_no_mcv": "#c55a11",
-    "a2_no_terminal_anchor": "#70ad47",
-    "a3_no_updates": "#7f6000",
+    "a0_full": "#2166ac",
+    "a1_no_mcv": "#ef8a62",
+    "a2_no_terminal_anchor": "#67a9cf",
+    "a3_no_updates": "#b2182b",
 }
 
 
@@ -401,37 +403,279 @@ def _mcv_inference_table(summary: list[dict[str, Any]]) -> None:
     )
 
 
-def _component_figure(summary: list[dict[str, Any]]) -> None:
+def _component_figure(
+    summary: list[dict[str, Any]], rows: list[dict[str, Any]]
+) -> None:
+    """Render a seed-level forest plot plus a relative-penalty heatmap."""
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     lookup = {(row["variant"], row["pde"]): row for row in summary}
-    x = np.arange(len(PDES), dtype=float)
-    width = 0.19
-    fig, ax = plt.subplots(figsize=(7.15, 3.6), constrained_layout=True)
-    for index, variant in enumerate(VARIANTS):
-        means = np.asarray([lookup[(variant, pde)]["rmse_mean"] for pde in PDES])
-        stds = np.asarray([lookup[(variant, pde)]["rmse_std"] for pde in PDES])
-        ax.bar(
-            x + (index - 1.5) * width,
-            means,
-            width,
-            yerr=stds,
-            capsize=2.2,
-            color=COLORS[variant],
-            edgecolor="white",
-            linewidth=0.5,
-            label=METHOD_NAMES[variant],
+    plot_order = (
+        "a0_full",
+        "a2_no_terminal_anchor",
+        "a1_no_mcv",
+        "a3_no_updates",
+    )
+    method_labels = {
+        "a0_full": "Full TA",
+        "a2_no_terminal_anchor": "w/o terminal anchor",
+        "a1_no_mcv": "w/o MCV",
+        "a3_no_updates": "w/o tangent updates",
+    }
+    short_pde_names = {
+        "hjb_log": "Log HJB",
+        "joint_concave": "Concave",
+        "joint_convex": "Convex",
+        "nonconvex_coupled": "Oscillatory",
+    }
+    markers = {
+        "a0_full": "D",
+        "a2_no_terminal_anchor": "o",
+        "a1_no_mcv": "s",
+        "a3_no_updates": "X",
+    }
+    positions = {variant: 3 - index for index, variant in enumerate(plot_order)}
+    paper_style = {
+        "font.family": "serif",
+        "font.serif": ["DejaVu Serif"],
+        "mathtext.fontset": "dejavuserif",
+        "axes.linewidth": 0.7,
+        "xtick.major.width": 0.7,
+        "ytick.major.width": 0.7,
+    }
+    with plt.rc_context(paper_style):
+        fig = plt.figure(figsize=(7.25, 5.05), constrained_layout=True)
+        grid = fig.add_gridspec(2, 4, height_ratios=(2.2, 1.25))
+        forest_axes = [fig.add_subplot(grid[0, index]) for index in range(4)]
+
+        for pde_index, (ax, pde) in enumerate(
+            zip(forest_axes, PDES, strict=True)
+        ):
+            # Faint lines retain the paired-seed structure for trained variants.
+            for seed, jitter in zip((0, 1, 2), (-0.09, 0.0, 0.09), strict=True):
+                paired_values = []
+                paired_positions = []
+                for variant in ("a0_full", "a2_no_terminal_anchor", "a1_no_mcv"):
+                    local = [
+                        row
+                        for row in rows
+                        if row["pde"] == pde
+                        and row["variant"] == variant
+                        and int(row["seed"]) == seed
+                        and row["primary_replicate"]
+                    ]
+                    if len(local) != 1:
+                        raise RuntimeError(
+                            f"missing paired seed point: {pde} {variant} seed={seed}"
+                        )
+                    paired_values.append(float(local[0]["value_rmse"]))
+                    paired_positions.append(positions[variant] + jitter)
+                ax.plot(
+                    paired_values,
+                    paired_positions,
+                    color="#6b6b6b",
+                    alpha=0.16,
+                    linewidth=0.55,
+                    zorder=1,
+                )
+
+            for variant in plot_order:
+                center = lookup[(variant, pde)]
+                local = [
+                    row
+                    for row in rows
+                    if row["pde"] == pde
+                    and row["variant"] == variant
+                    and (
+                        variant == "a3_no_updates" or row["primary_replicate"]
+                    )
+                ]
+                local = sorted(
+                    local,
+                    key=lambda row: (
+                        int(row["seed"]), int(row["inference_replicate"])
+                    ),
+                )
+                jitter = np.linspace(-0.09, 0.09, len(local))
+                ax.scatter(
+                    [float(row["value_rmse"]) for row in local],
+                    positions[variant] + jitter,
+                    s=15,
+                    color=COLORS[variant],
+                    alpha=0.38,
+                    edgecolors="none",
+                    zorder=2,
+                )
+                ax.errorbar(
+                    float(center["rmse_mean"]),
+                    positions[variant],
+                    xerr=float(center["rmse_std"]),
+                    fmt=markers[variant],
+                    markersize=5.0,
+                    markerfacecolor=COLORS[variant],
+                    markeredgecolor="white",
+                    markeredgewidth=0.55,
+                    color=COLORS[variant],
+                    ecolor=COLORS[variant],
+                    elinewidth=1.25,
+                    capsize=2.0,
+                    zorder=4,
+                )
+
+            ax.axvline(
+                float(lookup[("a0_full", pde)]["rmse_mean"]),
+                color=COLORS["a0_full"],
+                linewidth=0.75,
+                linestyle=(0, (2, 2)),
+                alpha=0.28,
+                zorder=0,
+            )
+            ax.set_xscale("log")
+            displayed_means = np.asarray(
+                [float(lookup[(variant, pde)]["rmse_mean"]) for variant in plot_order]
+            )
+            lower = float(np.min(displayed_means))
+            upper = float(np.max(displayed_means))
+            ax.set_xlim(lower / 1.22, upper * 1.22)
+            ax.set_xticks((lower, upper))
+            ax.set_xticklabels((f"{lower:.1e}", f"{upper:.1e}"), fontsize=6.7)
+            ax.xaxis.set_minor_locator(
+                LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=24)
+            )
+            ax.xaxis.set_minor_formatter(NullFormatter())
+            ax.set_ylim(-0.55, 3.55)
+            ax.set_title(short_pde_names[pde], fontsize=10.0, fontweight="bold")
+            ax.grid(axis="x", which="both", color="#c7c7c7", alpha=0.28, linewidth=0.55)
+            ax.tick_params(axis="x", which="major", length=3.0, pad=2.0)
+            ax.tick_params(axis="x", which="minor", length=1.8)
+            ax.tick_params(axis="y", length=0)
+            ax.set_xlabel("value RMSE", fontsize=6.8, labelpad=3.0)
+            if pde_index == 0:
+                ax.set_yticks(
+                    [positions[variant] for variant in plot_order],
+                    [method_labels[variant] for variant in plot_order],
+                    fontsize=7.2,
+                )
+            else:
+                ax.set_yticks([positions[variant] for variant in plot_order])
+                ax.set_yticklabels([])
+            for side in ("top", "right"):
+                ax.spines[side].set_visible(False)
+
+        forest_axes[0].set_ylabel("Component configuration", fontsize=8.0)
+        fig.text(
+            0.012,
+            0.985,
+            "a",
+            ha="left",
+            va="top",
+            fontsize=11,
+            fontweight="bold",
         )
-    values = [float(row["rmse_mean"]) for row in summary]
-    if max(values) / min(values) > 20:
-        ax.set_yscale("log")
-    ax.set_ylabel("Whole-function value RMSE")
-    ax.set_xticks(x)
-    ax.set_xticklabels(["Log HJB", "Concave", "Convex", "Oscillatory"])
-    ax.grid(axis="y", which="both", alpha=0.22, linewidth=0.6)
-    ax.legend(ncol=2, fontsize=8, frameon=False, loc="upper left")
-    for suffix, dpi in (("pdf", None), ("png", 300)):
-        fig.savefig(FIGURE_DIR / f"component_ablation.{suffix}", dpi=dpi, bbox_inches="tight")
-    plt.close(fig)
+
+        heat_ax = fig.add_subplot(grid[1, :])
+        heat_variants = (
+            "a2_no_terminal_anchor",
+            "a1_no_mcv",
+            "a3_no_updates",
+        )
+        ratios = np.asarray(
+            [
+                [
+                    float(lookup[(variant, pde)]["rmse_mean"])
+                    / float(lookup[("a0_full", pde)]["rmse_mean"])
+                    for pde in PDES
+                ]
+                for variant in heat_variants
+            ]
+        )
+        log_ratios = np.log10(ratios)
+        span = max(float(np.max(np.abs(log_ratios))), 0.08)
+        cmap = LinearSegmentedColormap.from_list(
+            "tangent_actor_rdbu", ("#2166ac", "#f7f7f7", "#b2182b"), N=256
+        )
+        norm = TwoSlopeNorm(vmin=-span, vcenter=0.0, vmax=span)
+        image = heat_ax.imshow(log_ratios, cmap=cmap, norm=norm, aspect="auto")
+        heat_ax.set_xticks(
+            range(len(PDES)),
+            [short_pde_names[pde] for pde in PDES],
+            fontsize=8.0,
+        )
+        heat_ax.set_yticks(
+            range(len(heat_variants)),
+            [
+                "w/o terminal anchor",
+                "w/o MCV",
+                "w/o tangent updates",
+            ],
+            fontsize=7.6,
+        )
+        heat_ax.set_title(
+            "Ablation penalty relative to Full TA",
+            fontsize=9.3,
+            fontweight="bold",
+            pad=5,
+        )
+        heat_ax.set_xticks(np.arange(-0.5, len(PDES), 1), minor=True)
+        heat_ax.set_yticks(np.arange(-0.5, len(heat_variants), 1), minor=True)
+        heat_ax.grid(which="minor", color="white", linewidth=1.2)
+        heat_ax.tick_params(which="minor", bottom=False, left=False)
+        for row_index, variant in enumerate(heat_variants):
+            for column_index, pde in enumerate(PDES):
+                ratio = ratios[row_index, column_index]
+                delta = (
+                    float(lookup[(variant, pde)]["rmse_mean"])
+                    - float(lookup[("a0_full", pde)]["rmse_mean"])
+                )
+                text_color = "white" if log_ratios[row_index, column_index] > 0.34 else "#222222"
+                heat_ax.text(
+                    column_index,
+                    row_index,
+                    f"{ratio:.2f}×\n({delta:+.1e})",
+                    ha="center",
+                    va="center",
+                    fontsize=7.2,
+                    fontweight="bold" if ratio >= 2 else "normal",
+                    color=text_color,
+                )
+        colorbar = fig.colorbar(image, ax=heat_ax, fraction=0.025, pad=0.018, aspect=17)
+        colorbar.set_ticks((-span, 0.0, span))
+        colorbar.set_ticklabels(
+            (f"{10 ** (-span):.2f}×", "1×", f"{10 ** span:.0f}×")
+        )
+        colorbar.set_label("RMSE / Full TA", fontsize=7.0)
+        colorbar.ax.tick_params(labelsize=6.5, width=0.6)
+        heat_ax.text(
+            -0.085,
+            1.11,
+            "b",
+            transform=heat_ax.transAxes,
+            fontsize=11,
+            fontweight="bold",
+            va="top",
+        )
+        fig.suptitle(
+            "Tangent-Actor component ablation",
+            fontsize=11.5,
+            fontweight="bold",
+        )
+        fig.text(
+            0.5,
+            -0.012,
+            "Small points: training seeds (A0–A2); fixed-$A_0$ uses two inference replicates. "
+            "Heatmap annotations: RMSE ratio and absolute change.",
+            ha="center",
+            va="top",
+            fontsize=6.4,
+            color="#4a4a4a",
+        )
+        for suffix, dpi in (("pdf", None), ("png", 300)):
+            fig.savefig(
+                FIGURE_DIR / f"component_ablation.{suffix}",
+                dpi=dpi,
+                bbox_inches="tight",
+                facecolor="white",
+            )
+        plt.close(fig)
 
 
 def _iteration_figure(rows: list[dict[str, Any]]) -> None:
@@ -770,7 +1014,7 @@ def main() -> None:
     _, actual = _resource_accounting([value for value in args.job_ids.split(",") if value])
     _table(summary)
     _mcv_inference_table(mcv_inference)
-    _component_figure(summary)
+    _component_figure(summary, rows)
     _iteration_figure(iterations)
     _report(summary, paired, rows, mcv_inference, actual)
     _artifact_audit(_expected_count())
