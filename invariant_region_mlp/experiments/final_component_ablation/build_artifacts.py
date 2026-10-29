@@ -535,6 +535,21 @@ def _report(
     actual_gpu_hours: float,
 ) -> None:
     lookup = {(row["variant"], row["pde"]): row for row in summary}
+    primary_rows = [row for row in rows if row["primary_replicate"]]
+    mcv_inference_lookup = {row["pde"]: row for row in mcv_inference}
+
+    def actor_metric_mean(pde: str, variant: str, metric: str) -> float:
+        values = [
+            float(row[metric])
+            for row in primary_rows
+            if row["pde"] == pde
+            and row["variant"] == variant
+            and row.get(metric) is not None
+        ]
+        if not values:
+            return float("nan")
+        return _mean(values)
+
     reuse = json.loads((RESULTS_DIR / "REUSE_AUDIT.json").read_text(encoding="utf-8"))
     preflight = json.loads((RESULTS_DIR / "PREFLIGHT_AUDIT.json").read_text(encoding="utf-8"))
     lines = [
@@ -608,13 +623,50 @@ def _report(
         "",
         "Seed- and replicate-level paired values are in `MCV_INFERENCE_ONLY_SEED_METRICS.csv`; the separate summary is in `MCV_INFERENCE_ONLY_SUMMARY.csv`. This comparison isolates inference variance reduction without conflating it with Actor-learning changes.",
         "",
+        "### MCV training-label effect",
+        "",
+        "The table below separates Actor quality from final-estimator noise. Gradient RMSE is a post-selection diagnostic and never entered fitting or checkpoint selection. `Plain-value delta` is the primary w/o-MCV RMSE minus the same Full Actor's plain-FK RMSE, averaged at the PDE level.",
+        "",
+        "| PDE | Full Actor gradient RMSE | w/o-MCV Actor gradient RMSE | Plain-value delta |",
+        "|---|---:|---:|---:|",
+    ])
+    for pde in PDES:
+        full_gradient = actor_metric_mean(pde, "a0_full", "actor_gradient_vector_rmse")
+        no_mcv_gradient = actor_metric_mean(pde, "a1_no_mcv", "actor_gradient_vector_rmse")
+        plain_delta = (
+            float(lookup[("a1_no_mcv", pde)]["rmse_mean"])
+            - float(mcv_inference_lookup[pde]["full_without_mcv_inference_rmse_mean"])
+        )
+        lines.append(
+            f"| {PDE_NAMES[pde]} | {full_gradient:.3e} | {no_mcv_gradient:.3e} | {plain_delta:+.3e} |"
+        )
+    lines.extend([
+        "",
+        "MCV-trained Actors have lower gradient RMSE on every PDE (about 1% for Log HJB, 55% for both joint cubic--quadratic PDEs, and 28% for the oscillatory PDE). However, at 1,024 paths the plain-FK value RMSEs of the Full and w/o-MCV Actors differ by less than 1%; plain-estimator noise masks that Actor-quality improvement. Thus the decisive observed value-RMSE gain from MCV is inference variance reduction, while the Actor diagnostics provide separate evidence of cleaner supervision rather than a resolved plain-value improvement.",
+        "",
         "## Costs, failures, and numerical resolution",
         "",
         f"Actual Slurm allocated GPU-hours across the recorded jobs: {actual_gpu_hours:.3f}. The preregistered hard ceiling was 36. No variant-specific stabilization or post-test tuning was permitted.",
         "",
         f"Numerical failures recorded in the 16 summary cells: {sum(int(row['numerical_failures']) for row in summary)}. Minimum exponential-weight ESS fraction: {min(float(row['weight_ess_fraction_min']) for row in summary):.4f}.",
         "",
-        "Reference uncertainty must qualify differences near the independent reference floor. The exact reference metadata for every seed is retained in `ABLATION_SEED_METRICS.csv`; the preflight reference audits are in `PREFLIGHT_AUDIT.json`. Small apparent rank changes comparable to those uncertainties or the independent inference-replicate fluctuation are treated as unresolved.",
+        "| PDE | Reference uncertainty (value RMSE) | Terminal-anchoring mean delta |",
+        "|---|---:|---:|",
+    ])
+    for pde in PDES:
+        reference_row = next(row for row in primary_rows if row["pde"] == pde)
+        reference_uncertainty = float(reference_row["reference"]["reference_uncertainty_value_rmse"])
+        terminal_delta = float(lookup[("a2_no_terminal_anchor", pde)]["rmse_mean"]) - float(
+            lookup[("a0_full", pde)]["rmse_mean"]
+        )
+        lines.append(
+            f"| {PDE_NAMES[pde]} | {reference_uncertainty:.3e} | {terminal_delta:+.3e} |"
+        )
+    lines.extend([
+        "",
+        "The anchoring ablation is consistently worse in mean RMSE, but the concave and convex deltas are below their independent reference-resolution estimates and are therefore unresolved. The oscillatory delta exceeds its reference floor but is comparable to three-seed variability. Log HJB has negligible quadrature-reference uncertainty and shows the clearest anchoring effect, although it remains modest relative to the MCV and tangent-update effects. The MCV and fixed-A0 degradations are much larger than all listed reference floors.",
+        "",
+        "The exact reference metadata for every seed is retained in `ABLATION_SEED_METRICS.csv`; the preflight reference audits are in `PREFLIGHT_AUDIT.json`. Small apparent rank changes comparable to reference resolution or independent inference-replicate fluctuation are treated as unresolved.",
         "",
         "## Limitations",
         "",
@@ -632,6 +684,7 @@ def _report(
         "- `results/final_component_ablation/figures/actor_iteration_ablation.pdf`",
     ])
     docs = PROJECT_DIR / "docs" / "FINAL_COMPONENT_ABLATION_REPORT.md"
+    docs.parent.mkdir(parents=True, exist_ok=True)
     docs.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

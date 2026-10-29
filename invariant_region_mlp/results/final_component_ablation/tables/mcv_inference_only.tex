@@ -1,0 +1,15 @@
+\begin{table*}[t]
+\centering
+\caption{Inference-only martingale-control-variate diagnostic at $d=100$. Both rows use the same frozen Full Tangent-Actor and identical Brownian paths; only the final estimator changes. Entries are whole-function value RMSE (mean $\pm$ sample standard deviation across three training seeds).}
+\label{tab:mcv-inference-only}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+Method & Radial Log-Terminal HJB & Concave Cubic--Quadratic & Convex Cubic--Quadratic & Oscillatory Value--Gradient \\
+\midrule
+Tangent-Actor (Full; FK--MCV) & $8.68e-04 \pm 5.63e-05$ & $3.42e-04 \pm 9.78e-06$ & $2.23e-04 \pm 5.02e-06$ & $8.58e-04 \pm 4.67e-05$ \\
+Full TA w/o MCV Inference & $3.03e-03 \pm 4.75e-05$ & $1.85e-03 \pm 1.48e-05$ & $1.56e-03 \pm 7.53e-05$ & $1.91e-03 \pm 5.21e-05$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}

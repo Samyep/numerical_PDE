@@ -1,0 +1,17 @@
+\begin{table*}[t]
+\centering
+\caption{Final component ablation at $d=100$. Entries are whole-function value RMSE (mean $\pm$ sample standard deviation across three training seeds). For the deterministic fixed-$A_0$ row, the two values are independent inference replicates rather than training seeds.}
+\label{tab:final-component-ablation}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+Method & Radial Log-Terminal HJB & Concave Cubic--Quadratic & Convex Cubic--Quadratic & Oscillatory Value--Gradient \\
+\midrule
+Tangent-Actor (Full) & $\mathbf{8.68e-04 \pm 5.63e-05}$ & $\mathbf{3.42e-04 \pm 9.78e-06}$ & $\mathbf{2.23e-04 \pm 5.02e-06}$ & $\mathbf{8.58e-04 \pm 4.67e-05}$ \\
+w/o MCV & $3.04e-03 \pm 5.58e-05$ & $1.85e-03 \pm 1.51e-05$ & $1.56e-03 \pm 7.41e-05$ & $1.93e-03 \pm 4.86e-05$ \\
+w/o Terminal Anchoring & $1.01e-03 \pm 9.35e-05$ & $3.56e-04 \pm 1.10e-05$ & $2.34e-04 \pm 7.93e-06$ & $9.01e-04 \pm 7.22e-05$ \\
+w/o Tangent Updates & $2.75e-03 \pm 3.35e-05$ & $3.35e-03 \pm 2.38e-05$ & $5.14e-03 \pm 1.64e-05$ & $6.44e-03 \pm 1.56e-06$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
