@@ -1424,6 +1424,13 @@ def _component_vertical_matrix_figure(
             alpha=0.58,
             linewidth=0.42,
         )
+        ax.grid(
+            axis="y",
+            which="minor",
+            color="#c8c8c8",
+            alpha=0.28,
+            linewidth=0.28,
+        )
         for spine in ax.spines.values():
             spine.set_color("#5a5a5a")
             spine.set_linewidth(0.55)
