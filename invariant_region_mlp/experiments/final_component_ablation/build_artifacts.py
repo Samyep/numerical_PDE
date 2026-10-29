@@ -1424,16 +1424,22 @@ def _component_vertical_matrix_figure(
 
     with plt.rc_context(paper_style):
         fig = plt.figure(figsize=(7.15, 4.55), facecolor="white")
-        grid = fig.add_gridspec(
-            4,
-            4,
+        outer_grid = fig.add_gridspec(
+            1,
+            2,
             left=0.13,
             right=0.99,
             bottom=0.11,
             top=0.98,
+            wspace=0.20,
+            width_ratios=(1.22, 3.0),
+        )
+        absolute_grid = outer_grid[0, 0].subgridspec(4, 1, hspace=0.22)
+        diagnostic_grid = outer_grid[0, 1].subgridspec(
+            4,
+            3,
             hspace=0.22,
-            wspace=0.25,
-            width_ratios=(1.42, 1.0, 1.0, 1.0),
+            wspace=0.0,
         )
         axes = np.empty((4, 4), dtype=object)
 
@@ -1441,7 +1447,7 @@ def _component_vertical_matrix_figure(
             bottom_row = row_index == len(PDES) - 1
 
             # Column 1: vertical bars with seed-level uncertainty whiskers.
-            absolute_ax = fig.add_subplot(grid[row_index, 0])
+            absolute_ax = fig.add_subplot(absolute_grid[row_index, 0])
             axes[row_index, 0] = absolute_ax
             means = np.asarray(
                 [float(lookup[(variant, pde)]["rmse_mean"]) for variant in plot_order]
@@ -1489,7 +1495,7 @@ def _component_vertical_matrix_figure(
             }
 
             # Column 2: cross MCV removal in inference, training, or both.
-            mcv_ax = fig.add_subplot(grid[row_index, 1])
+            mcv_ax = fig.add_subplot(diagnostic_grid[row_index, 0])
             axes[row_index, 1] = mcv_ax
             mcv_x_limits = (-0.55, 2.55)
             ratio_background(mcv_ax, mcv_x_limits)
@@ -1577,7 +1583,7 @@ def _component_vertical_matrix_figure(
             )
 
             # Column 3: remove hard terminal anchoring.
-            anchor_ax = fig.add_subplot(grid[row_index, 2])
+            anchor_ax = fig.add_subplot(diagnostic_grid[row_index, 1])
             axes[row_index, 2] = anchor_ax
             anchor_x_limits = (-0.62, 0.62)
             ratio_background(anchor_ax, anchor_x_limits)
@@ -1646,7 +1652,7 @@ def _component_vertical_matrix_figure(
                 anchor_ax.set_xlabel("w/o anchor", fontsize=5.9, labelpad=2.0)
 
             # Column 4: formal paired Actor improvement curve, A0 through A4.
-            update_ax = fig.add_subplot(grid[row_index, 3])
+            update_ax = fig.add_subplot(diagnostic_grid[row_index, 2])
             axes[row_index, 3] = update_ax
             update_x_limits = (-0.45, 4.45)
             ratio_background(update_ax, update_x_limits)
@@ -1741,6 +1747,16 @@ def _component_vertical_matrix_figure(
                 x_labels=("$A_0$", "$A_1$", "$A_2$", "$A_3$", "$A_4$"),
                 x_limits=update_x_limits,
             )
+
+            # Treat the three ratio diagnostics as one visual block.  Their
+            # touching panels are separated only by two quiet hairlines.
+            mcv_ax.spines["right"].set_visible(False)
+            anchor_ax.spines["right"].set_visible(False)
+            for divided_ax in (anchor_ax, update_ax):
+                divided_ax.tick_params(axis="y", which="both", left=False)
+                divided_ax.spines["left"].set_color("#c8c8c8")
+                divided_ax.spines["left"].set_linewidth(0.42)
+                divided_ax.spines["left"].set_alpha(0.58)
 
         axes[0, 0].text(
             0.025,
