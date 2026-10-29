@@ -1714,22 +1714,21 @@ def _component_vertical_matrix_figure(
                 linewidth=0.45,
                 zorder=5,
             )
-            label_offsets = ((0, 6), (3, 10), (0, 22), (0, 10), (-2, 22))
-            label_alignments = ("center", "left", "center", "center", "right")
-            for x_value, ratio, spread, offset, alignment in zip(
+            for point_index, (x_value, ratio, spread) in enumerate(zip(
                 update_x,
                 update_ratios,
                 update_spreads,
-                label_offsets,
-                label_alignments,
                 strict=True,
-            ):
+            )):
+                # Keep labels close to their points.  Only the A1 labels in the
+                # lower three panels need a little extra clearance.
+                offset = (2, 9) if row_index > 0 and point_index == 1 else (0, 3)
                 update_ax.annotate(
                     f"{ratio:.2f}×",
                     xy=(x_value, ratio + spread),
                     xytext=offset,
                     textcoords="offset points",
-                    ha=alignment,
+                    ha="center",
                     va="bottom",
                     fontsize=4.7,
                     color="#252525",
