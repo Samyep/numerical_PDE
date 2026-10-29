@@ -289,10 +289,21 @@ def _mcv_inference_only(
 
 
 def _iteration_rows() -> list[dict[str, Any]]:
-    formal_paths = sorted(
+    cpu_paths = sorted(
+        (RESULTS_DIR / "raw").glob(
+            "iteration_cpu_diagnostic_*_d100_a0_full_s*_a*_rep0.json"
+        )
+    )
+    gpu_paths = sorted(
         (RESULTS_DIR / "raw").glob(
             "iteration_diagnostic_*_d100_a0_full_s*_a*_rep0.json"
         )
+    )
+    formal_paths = cpu_paths or gpu_paths
+    formal_role = (
+        "formal_paired_cpu_iteration_diagnostic"
+        if cpu_paths
+        else "formal_paired_gpu_iteration_diagnostic"
     )
     formal_rows: list[dict[str, Any]] = []
     for path in formal_paths:
@@ -310,7 +321,10 @@ def _iteration_rows() -> list[dict[str, Any]]:
             "selected_iteration": int(payload["selected_iteration"]),
             "is_selected_full_actor": bool(payload["is_selected_full_actor"]),
             "source_artifact": str(path),
-            "evidence_role": "formal_paired_iteration_diagnostic",
+            "evidence_role": formal_role,
+            "device": payload.get(
+                "device", "cuda"
+            ),
             "bank_limitation": "960-state frozen bank",
             "common_brownian_seed": int(payload["common_brownian_seed"]),
             "reused_formal_primary_evaluation": bool(
@@ -1644,6 +1658,17 @@ def _component_vertical_matrix_figure(
                     f"formal iteration curve requires 15 rows for {pde}; "
                     f"found {len(pde_iterations)}"
                 )
+            selected_iteration_by_seed = {
+                int(row["seed"]): float(row["value_rmse"])
+                for row in pde_iterations
+                if int(row["iteration"])
+                == int(row["selected_iteration"])
+            }
+            if len(selected_iteration_by_seed) != 3:
+                raise RuntimeError(
+                    f"formal iteration curve requires three paired selected "
+                    f"Actors for {pde}; found {len(selected_iteration_by_seed)}"
+                )
             update_ratios: list[float] = []
             update_spreads: list[float] = []
             for iteration in range(5):
@@ -1653,8 +1678,8 @@ def _component_vertical_matrix_figure(
                     if int(row["iteration"]) == iteration
                 }
                 observed = [
-                    by_seed[seed] / full_by_seed[seed]
-                    for seed in sorted(full_by_seed)
+                    by_seed[seed] / selected_iteration_by_seed[seed]
+                    for seed in sorted(selected_iteration_by_seed)
                 ]
                 update_ratios.append(float(np.mean(observed)))
                 update_spreads.append(float(np.std(observed, ddof=1)))
@@ -1923,7 +1948,9 @@ def _report(
         )
     lines.extend([
         "",
-        "The formal curve below evaluates every stored Full-TA Actor iterate with the same 960-state bank, 64 Euler steps, 1,024 paths, and paired Brownian seed. Each learned update receives the mature 5,000-step optimization budget, so A1 is the controlled one-update comparison rather than a prematurely stopped checkpoint.",
+        "The formal curve below evaluates every stored Full-TA Actor iterate with the same 960-state bank, 64 Euler steps, 1,024 paths, and paired Brownian seed. The iteration diagnostic was executed on "
+        + ", ".join(sorted({str(row.get("device", "unknown")) for row in iteration_rows}))
+        + "; all five iterates for a seed use the same device-specific random stream. Each learned update receives the mature 5,000-step optimization budget, so A1 is the controlled one-update comparison rather than a prematurely stopped checkpoint.",
         "",
         "| PDE | A0 | A1 | A2 | A3 | A4 | Selected Full vs A1 |",
         "|---|---:|---:|---:|---:|---:|---:|",
@@ -1942,7 +1969,18 @@ def _report(
                     f"formal report requires three seeds for {pde} A{iteration}"
                 )
             cells.append((_mean(values), _sample_std(values)))
-        selected_mean = float(lookup[("a0_full", pde)]["rmse_mean"])
+        selected_values = [
+            float(row["value_rmse"])
+            for row in iteration_rows
+            if row["pde"] == pde
+            and int(row["iteration"])
+            == int(row["selected_iteration"])
+        ]
+        if len(selected_values) != 3:
+            raise RuntimeError(
+                f"formal report requires three selected Actors for {pde}"
+            )
+        selected_mean = _mean(selected_values)
         improvement = (cells[1][0] - selected_mean) / cells[1][0]
         lines.append(
             f"| {PDE_NAMES[pde]} | "
@@ -2071,6 +2109,17 @@ def _artifact_audit(expected_evaluations: int) -> None:
         PROJECT_DIR / "docs" / "FINAL_COMPONENT_ABLATION_REPORT.md",
     ]
     rows = _evaluation_rows()
+    iteration_rows = _iteration_rows()
+    iteration_keys = {
+        (row["pde"], int(row["seed"]), int(row["iteration"]))
+        for row in iteration_rows
+    }
+    expected_iteration_keys = {
+        (pde, seed, iteration)
+        for pde in PDES
+        for seed in (0, 1, 2)
+        for iteration in range(5)
+    }
     audit = {
         "required_files": [
             {"path": str(path), "exists": path.exists(), "bytes": path.stat().st_size if path.exists() else None}
@@ -2086,6 +2135,24 @@ def _artifact_audit(expected_evaluations: int) -> None:
         "ground_truth_post_selection_only": all(
             bool(row["ground_truth_loaded_only_after_checkpoint_selection"]) for row in rows
         ),
+        "iteration_records": len(iteration_rows),
+        "expected_iteration_records": 60,
+        "iteration_key_coverage_complete": (
+            iteration_keys == expected_iteration_keys
+        ),
+        "iteration_protocol_uniform": all(
+            int(row["states"]) == 960
+            and int(row["steps"]) == 64
+            and int(row["paths"]) == 1024
+            for row in iteration_rows
+        ),
+        "iteration_values_finite": all(
+            np.isfinite(float(row["value_rmse"]))
+            for row in iteration_rows
+        ),
+        "iteration_devices": sorted({
+            str(row.get("device", "unknown")) for row in iteration_rows
+        }),
     }
     audit["passed"] = bool(
         all(item["exists"] and int(item["bytes"] or 0) > 0 for item in audit["required_files"])
@@ -2093,6 +2160,10 @@ def _artifact_audit(expected_evaluations: int) -> None:
         and audit["all_test_banks_960"]
         and audit["all_evaluations_finite"]
         and audit["ground_truth_post_selection_only"]
+        and audit["iteration_records"] == 60
+        and audit["iteration_key_coverage_complete"]
+        and audit["iteration_protocol_uniform"]
+        and audit["iteration_values_finite"]
     )
     _write_json(RESULTS_DIR / "ARTIFACT_AUDIT.json", audit)
     if not audit["passed"]:

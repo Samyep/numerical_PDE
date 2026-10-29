@@ -58,15 +58,25 @@ def _training_record(pde: str, seed: int) -> dict[str, Any]:
     return payload
 
 
-def _diagnostic_path(pde: str, seed: int, iteration: int) -> Path:
+def _diagnostic_path(
+    pde: str,
+    seed: int,
+    iteration: int,
+    output_prefix: str = "iteration_diagnostic",
+) -> Path:
     return RAW_DIR / (
-        f"iteration_diagnostic_{pde}_d100_a0_full_s{seed}_a{iteration}_rep0.json"
+        f"{output_prefix}_{pde}_d100_a0_full_s{seed}_a{iteration}_rep0.json"
     )
 
 
-def _prediction_path(pde: str, seed: int, iteration: int) -> Path:
+def _prediction_path(
+    pde: str,
+    seed: int,
+    iteration: int,
+    output_prefix: str = "iteration_diagnostic",
+) -> Path:
     return PREDICTION_DIR / (
-        f"iteration_diagnostic_{pde}_d100_a0_full_s{seed}_a{iteration}_rep0.npz"
+        f"{output_prefix}_{pde}_d100_a0_full_s{seed}_a{iteration}_rep0.npz"
     )
 
 
@@ -111,6 +121,7 @@ def _reuse_selected_result(
     seed: int,
     iteration: int,
     training: dict[str, Any],
+    output_prefix: str,
 ) -> dict[str, Any] | None:
     if iteration != int(training["selected_iteration"]):
         return None
@@ -149,7 +160,9 @@ def _reuse_selected_result(
         ),
         "status": "complete",
     }
-    _write_json(_diagnostic_path(pde, seed, iteration), result)
+    _write_json(
+        _diagnostic_path(pde, seed, iteration, output_prefix), result
+    )
     return result
 
 
@@ -160,9 +173,13 @@ def evaluate_iteration(
     device: torch.device,
     *,
     force: bool = False,
+    reuse_selected: bool = True,
+    output_prefix: str = "iteration_diagnostic",
 ) -> dict[str, Any]:
     ensure_dirs()
-    destination = _diagnostic_path(pde, seed, iteration)
+    destination = _diagnostic_path(
+        pde, seed, iteration, output_prefix
+    )
     if destination.exists() and not force:
         payload = json.loads(destination.read_text(encoding="utf-8"))
         if payload.get("status") == "complete":
@@ -170,7 +187,13 @@ def evaluate_iteration(
             return payload
 
     training = _training_record(pde, seed)
-    reused = _reuse_selected_result(pde, seed, iteration, training)
+    reused = (
+        _reuse_selected_result(
+            pde, seed, iteration, training, output_prefix
+        )
+        if reuse_selected
+        else None
+    )
     if reused is not None and not force:
         print(
             f"ITERATION_REUSE pde={pde} seed={seed} a{iteration} "
@@ -222,7 +245,9 @@ def evaluate_iteration(
         )
         prediction = problem.working_to_original(output["mcv"])
     error = prediction - truth
-    prediction_path = _prediction_path(pde, seed, iteration)
+    prediction_path = _prediction_path(
+        pde, seed, iteration, output_prefix
+    )
     np.savez_compressed(
         prediction_path,
         truth=truth,
@@ -236,6 +261,10 @@ def evaluate_iteration(
         "selected_iteration": int(training["selected_iteration"]),
         "is_selected_full_actor": iteration == int(training["selected_iteration"]),
         "estimator": "mcv",
+        "device": str(device),
+        "torch_num_threads": int(torch.get_num_threads()),
+        "torch_num_interop_threads": int(torch.get_num_interop_threads()),
+        "output_prefix": output_prefix,
         "states": len(t),
         "steps": EVALUATION_STEPS,
         "paths": EVALUATION_PATHS,
@@ -279,7 +308,12 @@ def evaluate_iteration(
     return result
 
 
-def audit(pdes: list[str], seeds: list[int], iterations: list[int]) -> None:
+def audit(
+    pdes: list[str],
+    seeds: list[int],
+    iterations: list[int],
+    output_prefix: str,
+) -> None:
     rows = []
     for pde in pdes:
         for seed in seeds:
@@ -295,7 +329,7 @@ def audit(pdes: list[str], seeds: list[int], iterations: list[int]) -> None:
                         "checkpoint": str(checkpoint) if checkpoint else None,
                         "checkpoint_exists": checkpoint is None or checkpoint.exists(),
                         "output_exists": _diagnostic_path(
-                            pde, seed, iteration
+                            pde, seed, iteration, output_prefix
                         ).exists(),
                     }
                 )
@@ -311,6 +345,12 @@ def main() -> None:
     parser.add_argument("--seed", type=int, choices=TRAINING_SEEDS, action="append")
     parser.add_argument("--iterations", default="0,1,2,3,4")
     parser.add_argument("--device", default="cuda")
+    parser.add_argument(
+        "--output-prefix",
+        choices=("iteration_diagnostic", "iteration_cpu_diagnostic"),
+        default="iteration_diagnostic",
+    )
+    parser.add_argument("--no-reuse-selected", action="store_true")
     parser.add_argument("--audit-only", action="store_true")
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
@@ -320,7 +360,7 @@ def main() -> None:
     if any(iteration < 0 or iteration > UPDATES for iteration in iterations):
         parser.error(f"iterations must lie in [0, {UPDATES}]")
     if args.audit_only:
-        audit(pdes, seeds, iterations)
+        audit(pdes, seeds, iterations, args.output_prefix)
         return
     device = torch.device(args.device)
     if device.type == "cuda" and not torch.cuda.is_available():
@@ -329,7 +369,13 @@ def main() -> None:
         for seed in seeds:
             for iteration in iterations:
                 evaluate_iteration(
-                    pde, seed, iteration, device, force=args.force
+                    pde,
+                    seed,
+                    iteration,
+                    device,
+                    force=args.force,
+                    reuse_selected=not args.no_reuse_selected,
+                    output_prefix=args.output_prefix,
                 )
 
 
