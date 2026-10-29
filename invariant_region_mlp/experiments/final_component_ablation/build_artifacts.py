@@ -679,12 +679,12 @@ def _component_forest_heatmap_figure(
         plt.close(fig)
 
 
-def _component_matrix_figure(
+def _component_matrix_horizontal_figure(
     summary: list[dict[str, Any]],
     rows: list[dict[str, Any]],
     mcv_inference: list[dict[str, Any]],
 ) -> None:
-    """Render the publication ablation as a diagnostic matrix."""
+    """Retain the horizontal diagnostic matrix as an alternate renderer."""
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     lookup = {(row["variant"], row["pde"]): row for row in summary}
     mcv_lookup = {row["pde"]: row for row in mcv_inference}
@@ -702,7 +702,7 @@ def _component_matrix_figure(
     }
     short_method_names = {
         "a0_full": "Full TA",
-        "a2_no_terminal_anchor": "w/o terminal",
+        "a2_no_terminal_anchor": "w/o anchor",
         "a1_no_mcv": "w/o MCV",
         "a3_no_updates": "w/o updates",
     }
@@ -813,15 +813,15 @@ def _component_matrix_figure(
         ax.grid(axis="x", which="major", color="white", alpha=0.70, linewidth=0.55)
 
     with plt.rc_context(paper_style):
-        fig = plt.figure(figsize=(7.25, 5.55), facecolor="white")
+        fig = plt.figure(figsize=(7.25, 5.28), facecolor="white")
         grid = fig.add_gridspec(
             4,
             4,
             left=0.155,
             right=0.985,
-            bottom=0.115,
-            top=0.735,
-            hspace=0.28,
+            bottom=0.12,
+            top=0.765,
+            hspace=0.27,
             wspace=0.23,
             width_ratios=(1.45, 1.0, 1.0, 1.0),
         )
@@ -1116,6 +1116,465 @@ def _component_matrix_figure(
             ha="center",
             va="bottom",
             fontsize=6.0,
+            color="#4a4a4a",
+        )
+        for suffix, dpi in (("pdf", None), ("png", 300)):
+            fig.savefig(
+                FIGURE_DIR / f"component_ablation.{suffix}",
+                dpi=dpi,
+                bbox_inches="tight",
+                facecolor="white",
+            )
+        plt.close(fig)
+
+
+def _component_vertical_matrix_figure(
+    summary: list[dict[str, Any]],
+    rows: list[dict[str, Any]],
+    mcv_inference: list[dict[str, Any]],
+) -> None:
+    """Render a vertically encoded diagnostic matrix with gradient fields."""
+    FIGURE_DIR.mkdir(parents=True, exist_ok=True)
+    lookup = {(row["variant"], row["pde"]): row for row in summary}
+    mcv_lookup = {row["pde"]: row for row in mcv_inference}
+    plot_order = (
+        "a0_full",
+        "a2_no_terminal_anchor",
+        "a1_no_mcv",
+        "a3_no_updates",
+    )
+    markers = {
+        "a0_full": "D",
+        "a2_no_terminal_anchor": "o",
+        "a1_no_mcv": "s",
+        "a3_no_updates": "X",
+    }
+    short_method_names = {
+        "a0_full": "Full TA",
+        "a2_no_terminal_anchor": "w/o anchor",
+        "a1_no_mcv": "w/o MCV",
+        "a3_no_updates": "w/o updates",
+    }
+    row_names = {
+        "hjb_log": "Log HJB",
+        "joint_concave": "Joint concave",
+        "joint_convex": "Joint convex",
+        "nonconvex_coupled": "Nonconvex",
+    }
+    diverging = LinearSegmentedColormap.from_list(
+        "tangent_actor_vertical_surface",
+        ("#2166ac", "#d1e5f0", "#f7f7f7", "#fddbc7", "#b2182b"),
+        N=256,
+    )
+    paper_style = {
+        "font.family": "serif",
+        "font.serif": ["DejaVu Serif"],
+        "mathtext.fontset": "dejavuserif",
+        "axes.linewidth": 0.55,
+        "xtick.major.width": 0.55,
+        "ytick.major.width": 0.55,
+    }
+
+    def local_rows(pde: str, variant: str) -> list[dict[str, Any]]:
+        selected = [
+            row
+            for row in rows
+            if row["pde"] == pde
+            and row["variant"] == variant
+            and (variant == "a3_no_updates" or row["primary_replicate"])
+        ]
+        return sorted(
+            selected,
+            key=lambda row: (int(row["seed"]), int(row["inference_replicate"])),
+        )
+
+    def absolute_background(ax: plt.Axes, upper: float) -> None:
+        edges = np.linspace(0.0, upper, 181)
+        ax.pcolormesh(
+            (-0.55, 3.55),
+            edges,
+            np.linspace(-1.0, 1.0, len(edges) - 1)[:, None],
+            cmap=diverging,
+            norm=Normalize(vmin=-1.0, vmax=1.0),
+            shading="flat",
+            alpha=0.16,
+            zorder=0,
+        )
+
+    ratio_lower, ratio_upper = 0.82, 30.0
+    ratio_norm = TwoSlopeNorm(
+        vmin=math.log10(ratio_lower),
+        vcenter=0.0,
+        vmax=math.log10(ratio_upper),
+    )
+
+    def ratio_background(ax: plt.Axes, x_limits: tuple[float, float]) -> None:
+        edges = np.geomspace(ratio_lower, ratio_upper, 181)
+        centers = np.sqrt(edges[:-1] * edges[1:])
+        ax.pcolormesh(
+            x_limits,
+            edges,
+            np.log10(centers)[:, None],
+            cmap=diverging,
+            norm=ratio_norm,
+            shading="flat",
+            alpha=0.24,
+            zorder=0,
+        )
+        ax.axhline(
+            1.0,
+            color=COLORS["a0_full"],
+            linewidth=0.75,
+            linestyle=(0, (2, 2)),
+            alpha=0.72,
+            zorder=2,
+        )
+
+    def style_absolute_axis(
+        ax: plt.Axes, upper: float, *, bottom: bool
+    ) -> None:
+        ax.set_xlim(-0.55, 3.55)
+        ax.set_ylim(0.0, upper)
+        ticks = (0.0, upper / 2.0, upper)
+        ax.set_yticks(ticks)
+        ax.set_yticklabels(
+            ("0", f"{ticks[1]:.1e}", f"{ticks[2]:.1e}"), fontsize=5.7
+        )
+        ax.set_xticks(range(4))
+        if bottom:
+            ax.set_xticklabels(("Full", "−Anchor", "−MCV", "Fixed $A_0$"), fontsize=5.4)
+            ax.set_xlabel("component configuration", fontsize=6.4, labelpad=2.2)
+        else:
+            ax.set_xticklabels([])
+        ax.tick_params(axis="x", length=0)
+        ax.tick_params(axis="y", length=2.2, pad=1.6)
+        ax.grid(axis="y", color="white", alpha=0.72, linewidth=0.55)
+        for spine in ax.spines.values():
+            spine.set_color("#5a5a5a")
+            spine.set_linewidth(0.55)
+
+    def style_ratio_axis(
+        ax: plt.Axes,
+        *,
+        bottom: bool,
+        show_y_labels: bool,
+        x_positions: tuple[float, ...],
+        x_labels: tuple[str, ...],
+        x_limits: tuple[float, float],
+    ) -> None:
+        ax.set_xlim(*x_limits)
+        ax.set_yscale("log")
+        ax.set_ylim(ratio_lower, ratio_upper)
+        ax.set_yticks((1.0, 3.0, 10.0, 30.0))
+        if show_y_labels:
+            ax.set_yticklabels(("1×", "3×", "10×", "30×"), fontsize=5.8)
+        else:
+            ax.set_yticklabels([])
+        ax.yaxis.set_minor_formatter(NullFormatter())
+        ax.tick_params(axis="y", which="major", length=2.2, pad=1.6)
+        ax.tick_params(axis="y", which="minor", length=1.1)
+        ax.set_xticks(x_positions)
+        if bottom:
+            ax.set_xticklabels(x_labels, fontsize=5.6)
+            ax.set_xlabel("ablation", fontsize=6.4, labelpad=2.2)
+        else:
+            ax.set_xticklabels([])
+        ax.tick_params(axis="x", length=0)
+        ax.grid(axis="y", which="major", color="white", alpha=0.72, linewidth=0.55)
+        for spine in ax.spines.values():
+            spine.set_color("#5a5a5a")
+            spine.set_linewidth(0.55)
+
+    with plt.rc_context(paper_style):
+        fig = plt.figure(figsize=(7.25, 5.28), facecolor="white")
+        grid = fig.add_gridspec(
+            4,
+            4,
+            left=0.155,
+            right=0.985,
+            bottom=0.12,
+            top=0.765,
+            hspace=0.27,
+            wspace=0.23,
+            width_ratios=(1.45, 1.0, 1.0, 1.0),
+        )
+        axes = np.empty((4, 4), dtype=object)
+        column_titles = (
+            "Whole-function RMSE\nfour configurations",
+            "MCV ablation\ninference-only vs. full removal",
+            "Terminal anchoring\nremoved",
+            "Tangent updates\nfixed at $A_0$",
+        )
+
+        for row_index, pde in enumerate(PDES):
+            bottom_row = row_index == len(PDES) - 1
+
+            # Column 1: vertical bars, seed points, and uncertainty whiskers.
+            absolute_ax = fig.add_subplot(grid[row_index, 0])
+            axes[row_index, 0] = absolute_ax
+            means = np.asarray(
+                [float(lookup[(variant, pde)]["rmse_mean"]) for variant in plot_order]
+            )
+            stds = np.asarray(
+                [float(lookup[(variant, pde)]["rmse_std"]) for variant in plot_order]
+            )
+            upper = float(np.max(means + stds) * 1.22)
+            absolute_background(absolute_ax, upper)
+            x_positions = np.arange(len(plot_order), dtype=float)
+            absolute_ax.bar(
+                x_positions,
+                means,
+                width=0.62,
+                color=[COLORS[variant] for variant in plot_order],
+                alpha=0.84,
+                edgecolor="white",
+                linewidth=0.55,
+                yerr=stds,
+                capsize=1.8,
+                error_kw={"ecolor": "#333333", "elinewidth": 0.75, "capthick": 0.75},
+                zorder=3,
+            )
+            for x_value, variant in zip(x_positions, plot_order, strict=True):
+                observations = local_rows(pde, variant)
+                jitter = np.linspace(-0.11, 0.11, len(observations))
+                absolute_ax.scatter(
+                    x_value + jitter,
+                    [float(row["value_rmse"]) for row in observations],
+                    s=11,
+                    marker=markers[variant],
+                    facecolor="white",
+                    edgecolor=COLORS[variant],
+                    linewidth=0.65,
+                    alpha=0.78,
+                    zorder=5,
+                )
+            style_absolute_axis(absolute_ax, upper, bottom=bottom_row)
+            absolute_ax.text(
+                -0.30,
+                0.5,
+                row_names[pde],
+                transform=absolute_ax.transAxes,
+                ha="right",
+                va="center",
+                fontsize=8.2,
+                fontweight="bold",
+            )
+
+            full_mean = float(lookup[("a0_full", pde)]["rmse_mean"])
+            full_by_seed = {
+                int(row["seed"]): float(row["value_rmse"])
+                for row in local_rows(pde, "a0_full")
+            }
+
+            # Column 2: two vertical bars separate inference and learning effects.
+            mcv_ax = fig.add_subplot(grid[row_index, 1])
+            axes[row_index, 1] = mcv_ax
+            mcv_x_limits = (-0.55, 1.55)
+            ratio_background(mcv_ax, mcv_x_limits)
+            inference_ratio = float(mcv_lookup[pde]["plain_over_mcv_rmse_ratio_mean"])
+            full_removal_ratio = float(lookup[("a1_no_mcv", pde)]["rmse_mean"]) / full_mean
+            mcv_x = np.asarray((0.0, 1.0))
+            mcv_ratios = np.asarray((inference_ratio, full_removal_ratio))
+            mcv_ax.bar(
+                mcv_x,
+                mcv_ratios - 1.0,
+                bottom=1.0,
+                width=0.48,
+                color=("#fddbc7", COLORS["a1_no_mcv"]),
+                alpha=0.78,
+                edgecolor=COLORS["a1_no_mcv"],
+                linewidth=0.75,
+                zorder=3,
+            )
+            mcv_ax.scatter(
+                [0.0, 1.0],
+                mcv_ratios,
+                s=24,
+                marker="o",
+                facecolor=("white", COLORS["a1_no_mcv"]),
+                edgecolor=COLORS["a1_no_mcv"],
+                linewidth=0.85,
+                zorder=5,
+            )
+            no_mcv_by_seed = {
+                int(row["seed"]): float(row["value_rmse"])
+                for row in local_rows(pde, "a1_no_mcv")
+            }
+            inference_seed_ratios = [
+                float(row["plain_rmse_same_paths"]) / float(row["mcv_rmse_same_paths"])
+                for row in local_rows(pde, "a0_full")
+            ]
+            removal_seed_ratios = [
+                no_mcv_by_seed[seed] / full_by_seed[seed] for seed in sorted(full_by_seed)
+            ]
+            for x_value, observed in (
+                (0.0, inference_seed_ratios),
+                (1.0, removal_seed_ratios),
+            ):
+                mcv_ax.scatter(
+                    x_value + np.linspace(-0.10, 0.10, len(observed)),
+                    observed,
+                    s=9,
+                    facecolor="white",
+                    edgecolor=COLORS["a1_no_mcv"],
+                    linewidth=0.55,
+                    alpha=0.62,
+                    zorder=5,
+                )
+            for x_value, ratio in zip(mcv_x, mcv_ratios, strict=True):
+                mcv_ax.annotate(
+                    f"{ratio:.2f}×",
+                    xy=(x_value, ratio),
+                    xytext=(0, 5),
+                    textcoords="offset points",
+                    ha="center",
+                    va="bottom",
+                    fontsize=5.9,
+                    fontweight="bold" if x_value == 1.0 else "normal",
+                )
+            style_ratio_axis(
+                mcv_ax,
+                bottom=bottom_row,
+                show_y_labels=True,
+                x_positions=(0.0, 1.0),
+                x_labels=("infer.", "all"),
+                x_limits=mcv_x_limits,
+            )
+
+            # Columns 3 and 4: vertical bars rise from the shared 1x baseline.
+            for column_index, variant, bottom_label in (
+                (2, "a2_no_terminal_anchor", "removed"),
+                (3, "a3_no_updates", "fixed $A_0$"),
+            ):
+                effect_ax = fig.add_subplot(grid[row_index, column_index])
+                axes[row_index, column_index] = effect_ax
+                effect_x_limits = (-0.62, 0.62)
+                ratio_background(effect_ax, effect_x_limits)
+                ratio = float(lookup[(variant, pde)]["rmse_mean"]) / full_mean
+                delta = float(lookup[(variant, pde)]["rmse_mean"]) - full_mean
+                effect_ax.bar(
+                    [0.0],
+                    [ratio - 1.0],
+                    bottom=1.0,
+                    width=0.42,
+                    color=COLORS[variant],
+                    alpha=0.76,
+                    edgecolor="white",
+                    linewidth=0.55,
+                    zorder=3,
+                )
+                effect_ax.scatter(
+                    [0.0],
+                    [ratio],
+                    s=26,
+                    marker=markers[variant],
+                    facecolor=COLORS[variant],
+                    edgecolor="white",
+                    linewidth=0.55,
+                    zorder=5,
+                )
+                if variant == "a2_no_terminal_anchor":
+                    ablated_by_seed = {
+                        int(row["seed"]): float(row["value_rmse"])
+                        for row in local_rows(pde, variant)
+                    }
+                    observed_ratios = [
+                        ablated_by_seed[seed] / full_by_seed[seed]
+                        for seed in sorted(full_by_seed)
+                    ]
+                else:
+                    observed_ratios = [
+                        float(row["value_rmse"]) / full_mean
+                        for row in local_rows(pde, variant)
+                    ]
+                effect_ax.scatter(
+                    np.linspace(-0.10, 0.10, len(observed_ratios)),
+                    observed_ratios,
+                    s=10,
+                    marker=markers[variant],
+                    facecolor="white",
+                    edgecolor=COLORS[variant],
+                    linewidth=0.55,
+                    alpha=0.64,
+                    zorder=5,
+                )
+                effect_ax.annotate(
+                    f"{ratio:.2f}×",
+                    xy=(0.0, ratio),
+                    xytext=(0, 5),
+                    textcoords="offset points",
+                    ha="center",
+                    va="bottom",
+                    fontsize=6.1,
+                    fontweight="bold",
+                )
+                effect_ax.text(
+                    0.94,
+                    0.13,
+                    f"Δ {delta:+.1e}",
+                    transform=effect_ax.transAxes,
+                    ha="right",
+                    va="center",
+                    fontsize=5.7,
+                    color="#3f3f3f",
+                )
+                style_ratio_axis(
+                    effect_ax,
+                    bottom=bottom_row,
+                    show_y_labels=False,
+                    x_positions=(0.0,),
+                    x_labels=(bottom_label,),
+                    x_limits=effect_x_limits,
+                )
+
+        for column_index, title in enumerate(column_titles):
+            axes[0, column_index].set_title(
+                title,
+                fontsize=7.15,
+                fontweight="bold",
+                pad=7.5,
+                linespacing=1.15,
+            )
+
+        legend_handles = [
+            Line2D(
+                [0],
+                [0],
+                marker=markers[variant],
+                linestyle="none",
+                markerfacecolor=COLORS[variant],
+                markeredgecolor="white",
+                markeredgewidth=0.45,
+                markersize=5.2,
+                label=short_method_names[variant],
+            )
+            for variant in plot_order
+        ]
+        fig.legend(
+            handles=legend_handles,
+            loc="upper center",
+            bbox_to_anchor=(0.57, 0.895),
+            ncol=4,
+            frameon=False,
+            fontsize=6.5,
+            columnspacing=1.35,
+            handletextpad=0.35,
+        )
+        fig.suptitle(
+            "Component ablation across four high-dimensional PDEs",
+            x=0.57,
+            y=0.968,
+            fontsize=10.8,
+            fontweight="bold",
+        )
+        fig.text(
+            0.57,
+            0.025,
+            "All quantities grow upward: bar height is value RMSE; diagnostic bars start at the "
+            "$1\\times$ Full-TA baseline. Faint markers show seeds (fixed $A_0$: inference replicates).",
+            ha="center",
+            va="bottom",
+            fontsize=5.95,
             color="#4a4a4a",
         )
         for suffix, dpi in (("pdf", None), ("png", 300)):
@@ -1464,7 +1923,7 @@ def main() -> None:
     _, actual = _resource_accounting([value for value in args.job_ids.split(",") if value])
     _table(summary)
     _mcv_inference_table(mcv_inference)
-    _component_matrix_figure(summary, rows, mcv_inference)
+    _component_vertical_matrix_figure(summary, rows, mcv_inference)
     _iteration_figure(iterations)
     _report(summary, paired, rows, mcv_inference, actual)
     _artifact_audit(_expected_count())
