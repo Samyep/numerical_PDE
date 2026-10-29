@@ -1538,11 +1538,11 @@ def _component_vertical_matrix_figure(
                 mcv_ax.scatter(
                     [x_value],
                     [ratio],
-                    s=24,
+                    s=18,
                     marker="o",
                     facecolor=facecolor,
                     edgecolor=COLORS["a1_no_mcv"],
-                    linewidth=0.85,
+                    linewidth=0.72,
                     zorder=5,
                 )
                 mcv_ax.errorbar(
@@ -1551,9 +1551,9 @@ def _component_vertical_matrix_figure(
                     yerr=[spread],
                     fmt="none",
                     ecolor="#292929",
-                    elinewidth=0.8,
-                    capsize=2.5,
-                    capthick=0.8,
+                    elinewidth=0.72,
+                    capsize=2.0,
+                    capthick=0.72,
                     linestyle="none",
                     zorder=8,
                 )
@@ -1609,19 +1609,19 @@ def _component_vertical_matrix_figure(
                 yerr=[anchor_spread],
                 fmt="none",
                 ecolor="#292929",
-                elinewidth=0.8,
-                capsize=2.5,
-                capthick=0.8,
+                elinewidth=0.72,
+                capsize=2.0,
+                capthick=0.72,
                 zorder=6,
             )
             anchor_ax.scatter(
                 [0.0],
                 [anchor_ratio],
-                s=27,
+                s=20,
                 marker=markers["a2_no_terminal_anchor"],
                 facecolor=COLORS["a2_no_terminal_anchor"],
                 edgecolor="white",
-                linewidth=0.6,
+                linewidth=0.55,
                 zorder=5,
             )
             anchor_ax.annotate(
@@ -1698,19 +1698,19 @@ def _component_vertical_matrix_figure(
                 yerr=update_spreads,
                 fmt="none",
                 ecolor="#292929",
-                elinewidth=0.75,
-                capsize=2.0,
-                capthick=0.75,
+                elinewidth=0.68,
+                capsize=1.7,
+                capthick=0.68,
                 zorder=6,
             )
             update_ax.scatter(
                 update_x,
                 update_ratios,
-                s=18,
+                s=14,
                 marker="o",
                 facecolor=COLORS["a3_no_updates"],
                 edgecolor="white",
-                linewidth=0.5,
+                linewidth=0.45,
                 zorder=5,
             )
             for x_value, ratio, spread in zip(
