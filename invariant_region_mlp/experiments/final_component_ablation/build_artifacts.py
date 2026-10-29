@@ -1507,6 +1507,27 @@ def _component_vertical_matrix_figure(
                         fontsize=5.9,
                         labelpad=2.0,
                     )
+
+        axes[0, 0].text(
+            0.025,
+            0.955,
+            "RMSE",
+            transform=axes[0, 0].transAxes,
+            ha="left",
+            va="top",
+            fontsize=5.5,
+            color="#555555",
+        )
+        axes[0, 1].text(
+            0.025,
+            0.955,
+            r"$\mathrm{RMSE}/\mathrm{RMSE}_{\mathrm{Full}}$",
+            transform=axes[0, 1].transAxes,
+            ha="left",
+            va="top",
+            fontsize=5.5,
+            color="#555555",
+        )
         for suffix, dpi in (("pdf", None), ("png", 300)):
             fig.savefig(
                 FIGURE_DIR / f"component_ablation.{suffix}",
