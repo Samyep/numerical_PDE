@@ -170,12 +170,25 @@ def _paired(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def _mcv_inference_only(
     rows: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Summarize plain versus MCV inference for the same frozen Full actors."""
+    """Cross training-label and inference MCV choices on paired actors/paths."""
     seed_rows: list[dict[str, Any]] = []
     full_rows = [row for row in rows if row["variant"] == "a0_full"]
+    no_mcv_lookup = {
+        (row["pde"], int(row["seed"]), int(row["inference_replicate"])): row
+        for row in rows
+        if row["variant"] == "a1_no_mcv"
+    }
     for row in full_rows:
+        key = (
+            row["pde"],
+            int(row["seed"]),
+            int(row["inference_replicate"]),
+        )
+        no_mcv = no_mcv_lookup[key]
         mcv = float(row["mcv_rmse_same_paths"])
         plain = float(row["plain_rmse_same_paths"])
+        without_train = float(no_mcv["mcv_rmse_same_paths"])
+        without_all = float(no_mcv["plain_rmse_same_paths"])
         seed_rows.append({
             "pde": row["pde"],
             "seed": int(row["seed"]),
@@ -183,11 +196,17 @@ def _mcv_inference_only(
             "primary_replicate": bool(row["primary_replicate"]),
             "full_mcv_rmse": mcv,
             "full_without_mcv_inference_rmse": plain,
+            "without_mcv_training_rmse": without_train,
+            "without_all_mcv_rmse": without_all,
             "plain_minus_mcv_rmse": plain - mcv,
             "plain_over_mcv_rmse_ratio": plain / mcv,
+            "without_training_over_full_ratio": without_train / mcv,
+            "without_all_over_full_ratio": without_all / mcv,
             "same_actor": True,
             "same_brownian_paths": True,
             "training_and_selection_used_mcv": True,
+            "without_training_actor_used_plain_labels_and_selector": True,
+            "without_training_inference_used_mcv": True,
             "variance_reduction": float(row["variance_reduction"]),
         })
     summary: list[dict[str, Any]] = []
@@ -217,11 +236,38 @@ def _mcv_inference_only(
             "full_without_mcv_inference_rmse_std": _sample_std(
                 row["full_without_mcv_inference_rmse"] for row in primary
             ),
+            "without_mcv_training_rmse_mean": _mean(
+                row["without_mcv_training_rmse"] for row in primary
+            ),
+            "without_mcv_training_rmse_std": _sample_std(
+                row["without_mcv_training_rmse"] for row in primary
+            ),
+            "without_all_mcv_rmse_mean": _mean(
+                row["without_all_mcv_rmse"] for row in primary
+            ),
+            "without_all_mcv_rmse_std": _sample_std(
+                row["without_all_mcv_rmse"] for row in primary
+            ),
             "paired_plain_minus_mcv_rmse_mean": _mean(
                 row["plain_minus_mcv_rmse"] for row in primary
             ),
             "plain_over_mcv_rmse_ratio_mean": _mean(
                 row["plain_over_mcv_rmse_ratio"] for row in primary
+            ),
+            "plain_over_mcv_rmse_ratio_std": _sample_std(
+                row["plain_over_mcv_rmse_ratio"] for row in primary
+            ),
+            "without_training_over_full_ratio_mean": _mean(
+                row["without_training_over_full_ratio"] for row in primary
+            ),
+            "without_training_over_full_ratio_std": _sample_std(
+                row["without_training_over_full_ratio"] for row in primary
+            ),
+            "without_all_over_full_ratio_mean": _mean(
+                row["without_all_over_full_ratio"] for row in primary
+            ),
+            "without_all_over_full_ratio_std": _sample_std(
+                row["without_all_over_full_ratio"] for row in primary
             ),
             "variance_reduction_mean": _mean(
                 row["variance_reduction"] for row in primary
@@ -232,11 +278,67 @@ def _mcv_inference_only(
             "independent_mcv_rmse_mean": _mean(
                 row["full_mcv_rmse"] for row in repeat
             ),
+            "independent_without_training_rmse_mean": _mean(
+                row["without_mcv_training_rmse"] for row in repeat
+            ),
+            "independent_without_all_rmse_mean": _mean(
+                row["without_all_mcv_rmse"] for row in repeat
+            ),
         })
     return seed_rows, summary
 
 
 def _iteration_rows() -> list[dict[str, Any]]:
+    formal_paths = sorted(
+        (RESULTS_DIR / "raw").glob(
+            "iteration_diagnostic_*_d100_a0_full_s*_a*_rep0.json"
+        )
+    )
+    formal_rows: list[dict[str, Any]] = []
+    for path in formal_paths:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if payload.get("status") != "complete":
+            continue
+        formal_rows.append({
+            "pde": payload["pde"],
+            "seed": int(payload["seed"]),
+            "iteration": int(payload["iteration"]),
+            "value_rmse": float(payload["value_rmse"]),
+            "steps": int(payload["steps"]),
+            "paths": int(payload["paths"]),
+            "states": int(payload["states"]),
+            "selected_iteration": int(payload["selected_iteration"]),
+            "is_selected_full_actor": bool(payload["is_selected_full_actor"]),
+            "source_artifact": str(path),
+            "evidence_role": "formal_paired_iteration_diagnostic",
+            "bank_limitation": "960-state frozen bank",
+            "common_brownian_seed": int(payload["common_brownian_seed"]),
+            "reused_formal_primary_evaluation": bool(
+                payload["reused_formal_primary_evaluation"]
+            ),
+        })
+    if formal_rows:
+        keys = {
+            (row["pde"], row["seed"], row["iteration"])
+            for row in formal_rows
+        }
+        expected = {
+            (pde, seed, iteration)
+            for pde in PDES
+            for seed in (0, 1, 2)
+            for iteration in range(5)
+        }
+        if keys != expected:
+            missing = sorted(expected - keys)
+            raise RuntimeError(
+                "incomplete formal iteration diagnostics: "
+                f"{len(keys)}/60 present; first missing={missing[:5]}"
+            )
+        return sorted(
+            formal_rows,
+            key=lambda row: (row["pde"], row["seed"], row["iteration"]),
+        )
+
     source = RESULTS_DIR.parent / "tangent_actor_icml_final_suite" / "ABLATION_RESULTS.csv"
     rows = _read_csv(source)
     output = []
@@ -372,8 +474,8 @@ def _mcv_inference_table(summary: list[dict[str, Any]]) -> None:
     lines = [
         r"\begin{table*}[t]",
         r"\centering",
-        r"\caption{Inference-only martingale-control-variate diagnostic at $d=100$. Both rows use the same frozen Full Tangent-Actor and identical Brownian paths; only the final estimator changes. Entries are whole-function value RMSE (mean $\pm$ sample standard deviation across three training seeds).}",
-        r"\label{tab:mcv-inference-only}",
+        r"\caption{Crossed martingale-control-variate diagnostic at $d=100$. Training MCV is crossed with inference MCV while keeping each frozen Actor and paired Brownian paths fixed within the relevant comparison. Entries are whole-function value RMSE (mean $\pm$ sample standard deviation across three training seeds).}",
+        r"\label{tab:mcv-crossed}",
         r"\resizebox{\textwidth}{!}{%",
         r"\begin{tabular}{lcccc}",
         r"\toprule",
@@ -386,6 +488,16 @@ def _mcv_inference_table(summary: list[dict[str, Any]]) -> None:
             "Full TA w/o MCV Inference",
             "full_without_mcv_inference_rmse_mean",
             "full_without_mcv_inference_rmse_std",
+        ),
+        (
+            "Full TA w/o MCV Training",
+            "without_mcv_training_rmse_mean",
+            "without_mcv_training_rmse_std",
+        ),
+        (
+            "Full TA w/o All MCV",
+            "without_all_mcv_rmse_mean",
+            "without_all_mcv_rmse_std",
         ),
     ):
         values = [
@@ -1132,6 +1244,7 @@ def _component_vertical_matrix_figure(
     summary: list[dict[str, Any]],
     rows: list[dict[str, Any]],
     mcv_inference: list[dict[str, Any]],
+    iteration_rows: list[dict[str, Any]],
 ) -> None:
     """Render a vertically encoded diagnostic matrix with gradient fields."""
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
@@ -1361,27 +1474,42 @@ def _component_vertical_matrix_figure(
                 for row in local_rows(pde, "a0_full")
             }
 
-            # Column 2: two vertical bars separate inference and learning effects.
+            # Column 2: cross MCV removal in inference, training, or both.
             mcv_ax = fig.add_subplot(grid[row_index, 1])
             axes[row_index, 1] = mcv_ax
-            mcv_x_limits = (-0.55, 1.55)
+            mcv_x_limits = (-0.55, 2.55)
             ratio_background(mcv_ax, mcv_x_limits)
             inference_ratio = float(mcv_lookup[pde]["plain_over_mcv_rmse_ratio_mean"])
-            full_removal_ratio = float(lookup[("a1_no_mcv", pde)]["rmse_mean"]) / full_mean
-            no_mcv_by_seed = {
-                int(row["seed"]): float(row["value_rmse"])
+            training_ratio = float(
+                mcv_lookup[pde]["without_training_over_full_ratio_mean"]
+            )
+            full_removal_ratio = float(
+                mcv_lookup[pde]["without_all_over_full_ratio_mean"]
+            )
+            no_mcv_mcv_by_seed = {
+                int(row["seed"]): float(row["mcv_rmse_same_paths"])
+                for row in local_rows(pde, "a1_no_mcv")
+            }
+            no_mcv_plain_by_seed = {
+                int(row["seed"]): float(row["plain_rmse_same_paths"])
                 for row in local_rows(pde, "a1_no_mcv")
             }
             inference_seed_ratios = [
                 float(row["plain_rmse_same_paths"]) / float(row["mcv_rmse_same_paths"])
                 for row in local_rows(pde, "a0_full")
             ]
+            training_seed_ratios = [
+                no_mcv_mcv_by_seed[seed] / full_by_seed[seed]
+                for seed in sorted(full_by_seed)
+            ]
             removal_seed_ratios = [
-                no_mcv_by_seed[seed] / full_by_seed[seed] for seed in sorted(full_by_seed)
+                no_mcv_plain_by_seed[seed] / full_by_seed[seed]
+                for seed in sorted(full_by_seed)
             ]
             for x_value, ratio, observed, facecolor in (
                 (0.0, inference_ratio, inference_seed_ratios, "white"),
-                (1.0, full_removal_ratio, removal_seed_ratios, COLORS["a1_no_mcv"]),
+                (1.0, training_ratio, training_seed_ratios, "#fddbc7"),
+                (2.0, full_removal_ratio, removal_seed_ratios, COLORS["a1_no_mcv"]),
             ):
                 spread = float(np.std(observed, ddof=1)) if len(observed) > 1 else 0.0
                 mcv_ax.vlines(
@@ -1429,94 +1557,158 @@ def _component_vertical_matrix_figure(
                 mcv_ax,
                 bottom=bottom_row,
                 show_y_labels=True,
-                x_positions=(0.0, 1.0),
-                x_labels=("w/o infer", "all MCV"),
+                x_positions=(0.0, 1.0, 2.0),
+                x_labels=("w/o infer", "w/o train", "all MCV"),
                 x_limits=mcv_x_limits,
             )
 
-            # Columns 3 and 4: point-ranges rise from the shared 1x baseline.
-            for column_index, variant, bottom_label in (
-                (2, "a2_no_terminal_anchor", ""),
-                (3, "a3_no_updates", ""),
+            # Column 3: remove hard terminal anchoring.
+            anchor_ax = fig.add_subplot(grid[row_index, 2])
+            axes[row_index, 2] = anchor_ax
+            anchor_x_limits = (-0.62, 0.62)
+            ratio_background(anchor_ax, anchor_x_limits)
+            anchor_ratio = (
+                float(lookup[("a2_no_terminal_anchor", pde)]["rmse_mean"])
+                / full_mean
+            )
+            anchor_by_seed = {
+                int(row["seed"]): float(row["value_rmse"])
+                for row in local_rows(pde, "a2_no_terminal_anchor")
+            }
+            anchor_observed = [
+                anchor_by_seed[seed] / full_by_seed[seed]
+                for seed in sorted(full_by_seed)
+            ]
+            anchor_spread = float(np.std(anchor_observed, ddof=1))
+            anchor_ax.vlines(
+                0.0,
+                1.0,
+                anchor_ratio,
+                color=COLORS["a2_no_terminal_anchor"],
+                linewidth=1.75,
+                alpha=0.84,
+                zorder=3,
+            )
+            anchor_ax.errorbar(
+                [0.0],
+                [anchor_ratio],
+                yerr=[anchor_spread],
+                fmt="none",
+                ecolor="#292929",
+                elinewidth=0.8,
+                capsize=2.5,
+                capthick=0.8,
+                zorder=6,
+            )
+            anchor_ax.scatter(
+                [0.0],
+                [anchor_ratio],
+                s=27,
+                marker=markers["a2_no_terminal_anchor"],
+                facecolor=COLORS["a2_no_terminal_anchor"],
+                edgecolor="white",
+                linewidth=0.6,
+                zorder=5,
+            )
+            anchor_ax.annotate(
+                f"{anchor_ratio:.2f}×",
+                xy=(0.0, anchor_ratio + anchor_spread),
+                xytext=(0, 4),
+                textcoords="offset points",
+                ha="center",
+                va="bottom",
+                fontsize=5.7,
+                color="#252525",
+            )
+            style_ratio_axis(
+                anchor_ax,
+                bottom=bottom_row,
+                show_y_labels=False,
+                x_positions=(0.0,),
+                x_labels=("",),
+                x_limits=anchor_x_limits,
+            )
+            if bottom_row:
+                anchor_ax.set_xlabel("w/o anchor", fontsize=5.9, labelpad=2.0)
+
+            # Column 4: formal paired Actor improvement curve, A0 through A4.
+            update_ax = fig.add_subplot(grid[row_index, 3])
+            axes[row_index, 3] = update_ax
+            update_x_limits = (-0.45, 4.45)
+            ratio_background(update_ax, update_x_limits)
+            pde_iterations = [
+                row for row in iteration_rows if row["pde"] == pde
+            ]
+            if len(pde_iterations) != 15:
+                raise RuntimeError(
+                    f"formal iteration curve requires 15 rows for {pde}; "
+                    f"found {len(pde_iterations)}"
+                )
+            update_ratios: list[float] = []
+            update_spreads: list[float] = []
+            for iteration in range(5):
+                by_seed = {
+                    int(row["seed"]): float(row["value_rmse"])
+                    for row in pde_iterations
+                    if int(row["iteration"]) == iteration
+                }
+                observed = [
+                    by_seed[seed] / full_by_seed[seed]
+                    for seed in sorted(full_by_seed)
+                ]
+                update_ratios.append(float(np.mean(observed)))
+                update_spreads.append(float(np.std(observed, ddof=1)))
+            update_x = np.arange(5, dtype=float)
+            update_ax.plot(
+                update_x,
+                update_ratios,
+                color=COLORS["a3_no_updates"],
+                linewidth=1.15,
+                alpha=0.82,
+                zorder=3,
+            )
+            update_ax.errorbar(
+                update_x,
+                update_ratios,
+                yerr=update_spreads,
+                fmt="none",
+                ecolor="#292929",
+                elinewidth=0.75,
+                capsize=2.0,
+                capthick=0.75,
+                zorder=6,
+            )
+            update_ax.scatter(
+                update_x,
+                update_ratios,
+                s=18,
+                marker="o",
+                facecolor=COLORS["a3_no_updates"],
+                edgecolor="white",
+                linewidth=0.5,
+                zorder=5,
+            )
+            for x_value, ratio, spread in zip(
+                update_x, update_ratios, update_spreads, strict=True
             ):
-                effect_ax = fig.add_subplot(grid[row_index, column_index])
-                axes[row_index, column_index] = effect_ax
-                effect_x_limits = (-0.62, 0.62)
-                ratio_background(effect_ax, effect_x_limits)
-                ratio = float(lookup[(variant, pde)]["rmse_mean"]) / full_mean
-                if variant == "a2_no_terminal_anchor":
-                    ablated_by_seed = {
-                        int(row["seed"]): float(row["value_rmse"])
-                        for row in local_rows(pde, variant)
-                    }
-                    observed_ratios = [
-                        ablated_by_seed[seed] / full_by_seed[seed]
-                        for seed in sorted(full_by_seed)
-                    ]
-                else:
-                    observed_ratios = [
-                        float(row["value_rmse"]) / full_mean
-                        for row in local_rows(pde, variant)
-                    ]
-                spread = (
-                    float(np.std(observed_ratios, ddof=1))
-                    if len(observed_ratios) > 1
-                    else 0.0
-                )
-                effect_ax.vlines(
-                    0.0,
-                    1.0,
-                    ratio,
-                    color=COLORS[variant],
-                    linewidth=1.75,
-                    alpha=0.84,
-                    zorder=3,
-                )
-                effect_ax.errorbar(
-                    [0.0],
-                    [ratio],
-                    yerr=[spread],
-                    fmt="none",
-                    ecolor="#292929",
-                    elinewidth=0.8,
-                    capsize=2.5,
-                    capthick=0.8,
-                    zorder=6,
-                )
-                effect_ax.scatter(
-                    [0.0],
-                    [ratio],
-                    s=27,
-                    marker=markers[variant],
-                    facecolor=COLORS[variant],
-                    edgecolor="white",
-                    linewidth=0.6,
-                    zorder=5,
-                )
-                effect_ax.annotate(
+                update_ax.annotate(
                     f"{ratio:.2f}×",
-                    xy=(0.0, ratio + spread),
-                    xytext=(0, 4),
+                    xy=(x_value, ratio + spread),
+                    xytext=(0, 3),
                     textcoords="offset points",
                     ha="center",
                     va="bottom",
-                    fontsize=5.7,
+                    fontsize=4.7,
                     color="#252525",
                 )
-                style_ratio_axis(
-                    effect_ax,
-                    bottom=bottom_row,
-                    show_y_labels=False,
-                    x_positions=(0.0,),
-                    x_labels=(bottom_label,),
-                    x_limits=effect_x_limits,
-                )
-                if bottom_row:
-                    effect_ax.set_xlabel(
-                        "w/o anchor" if variant == "a2_no_terminal_anchor" else "w/o updates",
-                        fontsize=5.9,
-                        labelpad=2.0,
-                    )
+            style_ratio_axis(
+                update_ax,
+                bottom=bottom_row,
+                show_y_labels=False,
+                x_positions=(0.0, 1.0, 2.0, 3.0, 4.0),
+                x_labels=("$A_0$", "$A_1$", "$A_2$", "$A_3$", "$A_4$"),
+                x_limits=update_x_limits,
+            )
 
         axes[0, 0].text(
             0.025,
@@ -1549,8 +1741,20 @@ def _component_vertical_matrix_figure(
 
 
 def _iteration_figure(rows: list[dict[str, Any]]) -> None:
-    fig, axes = plt.subplots(1, 3, figsize=(7.15, 2.7), constrained_layout=True, sharex=True)
-    for ax, pde in zip(axes, ("joint_concave", "joint_convex", "nonconvex_coupled"), strict=True):
+    fig, axes = plt.subplots(
+        1,
+        4,
+        figsize=(7.15, 2.4),
+        constrained_layout=True,
+        sharex=True,
+    )
+    titles = {
+        "hjb_log": "Log HJB",
+        "joint_concave": "Concave",
+        "joint_convex": "Convex",
+        "nonconvex_coupled": "Oscillatory",
+    }
+    for ax, pde in zip(axes, PDES, strict=True):
         local = [row for row in rows if row["pde"] == pde]
         seeds = sorted({int(row["seed"]) for row in local})
         for seed in seeds:
@@ -1567,18 +1771,16 @@ def _iteration_figure(rows: list[dict[str, Any]]) -> None:
                 alpha=0.9,
                 label=f"seed {seed}",
             )
-        ax.set_title({
-            "joint_concave": "Concave",
-            "joint_convex": "Convex",
-            "nonconvex_coupled": "Oscillatory",
-        }[pde])
+        ax.set_title(titles[pde], fontsize=8.0)
         ax.set_yscale("log")
         ax.set_xticks(range(5))
-        ax.set_xlabel("Actor update")
+        ax.set_xticklabels(("$A_0$", "$A_1$", "$A_2$", "$A_3$", "$A_4$"), fontsize=7)
+        ax.set_xlabel("Actor iterate", fontsize=7.2)
+        ax.tick_params(axis="y", labelsize=7)
         ax.grid(which="both", alpha=0.22, linewidth=0.6)
         if len(seeds) > 1:
-            ax.legend(fontsize=7, frameon=False)
-    axes[0].set_ylabel("Value RMSE")
+            ax.legend(fontsize=5.8, frameon=False, handlelength=1.4)
+    axes[0].set_ylabel("Value RMSE", fontsize=7.5)
     for suffix, dpi in (("pdf", None), ("png", 300)):
         fig.savefig(FIGURE_DIR / f"actor_iteration_ablation.{suffix}", dpi=dpi, bbox_inches="tight")
     plt.close(fig)
@@ -1646,6 +1848,7 @@ def _report(
     paired: list[dict[str, Any]],
     rows: list[dict[str, Any]],
     mcv_inference: list[dict[str, Any]],
+    iteration_rows: list[dict[str, Any]],
     actual_gpu_hours: float,
 ) -> None:
     lookup = {(row["variant"], row["pde"]): row for row in summary}
@@ -1720,43 +1923,70 @@ def _report(
         )
     lines.extend([
         "",
-        "## Inference-only MCV diagnostic",
+        "The formal curve below evaluates every stored Full-TA Actor iterate with the same 960-state bank, 64 Euler steps, 1,024 paths, and paired Brownian seed. Each learned update receives the mature 5,000-step optimization budget, so A1 is the controlled one-update comparison rather than a prematurely stopped checkpoint.",
         "",
-        "`Full TA w/o MCV Inference` is a supplemental diagnostic, not a fifth primary method. It freezes the Full TA Actor trained and selected with MCV, then replaces only the final FK–MCV estimator by plain FK on identical Brownian paths. In contrast, primary `w/o MCV` removes MCV from labels, reference-free selection, and inference.",
+        "| PDE | A0 | A1 | A2 | A3 | A4 | Best A2–A4 vs A1 |",
+        "|---|---:|---:|---:|---:|---:|---:|",
+    ])
+    for pde in PDES:
+        cells: list[tuple[float, float]] = []
+        for iteration in range(5):
+            values = [
+                float(row["value_rmse"])
+                for row in iteration_rows
+                if row["pde"] == pde and int(row["iteration"]) == iteration
+            ]
+            if len(values) != 3:
+                raise RuntimeError(
+                    f"formal report requires three seeds for {pde} A{iteration}"
+                )
+            cells.append((_mean(values), _sample_std(values)))
+        later_best = min(mean for mean, _ in cells[2:])
+        improvement = (cells[1][0] - later_best) / cells[1][0]
+        lines.append(
+            f"| {PDE_NAMES[pde]} | "
+            + " | ".join(f"{mean:.3e} ± {std:.1e}" for mean, std in cells)
+            + f" | {improvement:+.1%} |"
+        )
+    lines.extend([
         "",
-        "| PDE | Full FK–MCV RMSE | Full w/o MCV inference RMSE | Plain / MCV |",
-        "|---|---:|---:|---:|",
+        "## Crossed MCV diagnostic",
+        "",
+        "The existing `w/o MCV` Actors were trained and selected entirely with plain labels. Each frozen Actor was also evaluated with FK–MCV on exactly the same Brownian paths already stored by the formal evaluator. This yields the missing crossed cell—`w/o MCV training` with MCV inference—without retraining or test-based reselection. The comparison therefore separates MCV in Actor learning from MCV in final inference.",
+        "",
+        "| PDE | Full (train + infer MCV) | w/o infer | w/o train | w/o all MCV | Infer ratio | Train ratio |",
+        "|---|---:|---:|---:|---:|---:|---:|",
     ])
     for row in mcv_inference:
         lines.append(
             f"| {row['pde_name']} | {row['full_mcv_rmse_mean']:.3e} ± {row['full_mcv_rmse_std']:.3e} | "
             f"{row['full_without_mcv_inference_rmse_mean']:.3e} ± {row['full_without_mcv_inference_rmse_std']:.3e} | "
-            f"{row['plain_over_mcv_rmse_ratio_mean']:.2f}× |"
+            f"{row['without_mcv_training_rmse_mean']:.3e} ± {row['without_mcv_training_rmse_std']:.3e} | "
+            f"{row['without_all_mcv_rmse_mean']:.3e} ± {row['without_all_mcv_rmse_std']:.3e} | "
+            f"{row['plain_over_mcv_rmse_ratio_mean']:.2f}× | "
+            f"{row['without_training_over_full_ratio_mean']:.2f}× |"
         )
     lines.extend([
         "",
-        "Seed- and replicate-level paired values are in `MCV_INFERENCE_ONLY_SEED_METRICS.csv`; the separate summary is in `MCV_INFERENCE_ONLY_SUMMARY.csv`. This comparison isolates inference variance reduction without conflating it with Actor-learning changes.",
+        "Seed- and replicate-level paired values are in `MCV_INFERENCE_ONLY_SEED_METRICS.csv`; the separate summary is in `MCV_INFERENCE_ONLY_SUMMARY.csv`. The filenames are retained for artifact compatibility, but both files now contain the full 2×2 training/inference crossing.",
         "",
         "### MCV training-label effect",
         "",
-        "The table below separates Actor quality from final-estimator noise. Gradient RMSE is a post-selection diagnostic and never entered fitting or checkpoint selection. `Plain-value delta` is the primary w/o-MCV RMSE minus the same Full Actor's plain-FK RMSE, averaged at the PDE level.",
+        "The table below supplements the direct crossed value comparison with Actor diagnostics. Gradient RMSE is post-selection only and never entered fitting or checkpoint selection. `MCV-evaluated ratio` compares the no-MCV-trained Actor against Full TA while holding the final MCV estimator fixed.",
         "",
-        "| PDE | Full Actor gradient RMSE | w/o-MCV Actor gradient RMSE | Plain-value delta |",
+        "| PDE | Full Actor gradient RMSE | w/o-MCV Actor gradient RMSE | MCV-evaluated ratio |",
         "|---|---:|---:|---:|",
     ])
     for pde in PDES:
         full_gradient = actor_metric_mean(pde, "a0_full", "actor_gradient_vector_rmse")
         no_mcv_gradient = actor_metric_mean(pde, "a1_no_mcv", "actor_gradient_vector_rmse")
-        plain_delta = (
-            float(lookup[("a1_no_mcv", pde)]["rmse_mean"])
-            - float(mcv_inference_lookup[pde]["full_without_mcv_inference_rmse_mean"])
-        )
         lines.append(
-            f"| {PDE_NAMES[pde]} | {full_gradient:.3e} | {no_mcv_gradient:.3e} | {plain_delta:+.3e} |"
+            f"| {PDE_NAMES[pde]} | {full_gradient:.3e} | {no_mcv_gradient:.3e} | "
+            f"{mcv_inference_lookup[pde]['without_training_over_full_ratio_mean']:.2f}× |"
         )
     lines.extend([
         "",
-        "MCV-trained Actors have lower gradient RMSE on every PDE (about 1% for Log HJB, 55% for both joint cubic--quadratic PDEs, and 28% for the oscillatory PDE). However, at 1,024 paths the plain-FK value RMSEs of the Full and w/o-MCV Actors differ by less than 1%; plain-estimator noise masks that Actor-quality improvement. Thus the decisive observed value-RMSE gain from MCV is inference variance reduction, while the Actor diagnostics provide separate evidence of cleaner supervision rather than a resolved plain-value improvement.",
+        "MCV-trained Actors have lower gradient RMSE on every PDE (about 1% for Log HJB, 55% for both joint cubic--quadratic PDEs, and 28% for the oscillatory PDE). With the final estimator held to FK–MCV, removing training MCV raises mean value RMSE by only about 2%–5% across the four PDEs. This is directionally consistent but small relative to three-seed variability in some columns; it must not be described as a universally resolved gain. In contrast, removing inference MCV raises RMSE by about 2.2×–7.0× and is the dominant measured MCV contribution under this budget.",
         "",
         "## Costs, failures, and numerical resolution",
         "",
@@ -1784,7 +2014,7 @@ def _report(
         "",
         "## Limitations",
         "",
-        "Three training seeds are sufficient for an ablation signal but not a universal variance claim. The oscillatory a0–a4 supporting curve uses the audited historical 512-state bank, while its primary 4×4 cells use the newly frozen 960-state bank; no values are mixed within a curve. Joint iteration curves have only the audited seed-0 evidence where additional seeds were unavailable. These ablations neither establish universally lower variance than FH-MLP nor identify fixed A0 with FH-MLP.",
+        "Three training seeds are sufficient for an ablation signal but not a universal variance claim. The formal A0–A4 curves use the same frozen 960-state banks, 64 Euler steps, 1,024 paths, and paired evaluation seeds as the primary study for all four PDEs. They compare stored per-update Actors under a common inference protocol; they do not prove that an arbitrarily longer-trained single update could never match later updates. These ablations neither establish universally lower variance than FH-MLP nor identify fixed A0 with FH-MLP.",
         "",
         "## Artifacts",
         "",
@@ -1884,9 +2114,9 @@ def main() -> None:
     _, actual = _resource_accounting([value for value in args.job_ids.split(",") if value])
     _table(summary)
     _mcv_inference_table(mcv_inference)
-    _component_vertical_matrix_figure(summary, rows, mcv_inference)
+    _component_vertical_matrix_figure(summary, rows, mcv_inference, iterations)
     _iteration_figure(iterations)
-    _report(summary, paired, rows, mcv_inference, actual)
+    _report(summary, paired, rows, mcv_inference, iterations, actual)
     _artifact_audit(_expected_count())
     print(json.dumps({
         "evaluations": len(rows),
