@@ -1489,6 +1489,23 @@ def _component_vertical_matrix_figure(
                 },
                 zorder=3,
             )
+            for x_value, mean, spread in zip(
+                x_positions,
+                means,
+                stds,
+                strict=True,
+            ):
+                absolute_ax.annotate(
+                    f"{mean:.2e}",
+                    xy=(x_value, mean + spread),
+                    xytext=(0, 3),
+                    textcoords="offset points",
+                    ha="center",
+                    va="bottom",
+                    fontsize=4.25,
+                    color="#353535",
+                    zorder=8,
+                )
             style_absolute_axis(absolute_ax, upper, bottom=bottom_row)
             absolute_box = absolute_ax.get_position()
             fig.text(
