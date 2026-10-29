@@ -1417,7 +1417,13 @@ def _component_vertical_matrix_figure(
         else:
             ax.set_xticklabels([])
         ax.tick_params(axis="x", length=0)
-        ax.grid(axis="y", which="major", color="white", alpha=0.72, linewidth=0.55)
+        ax.grid(
+            axis="y",
+            which="major",
+            color="#c8c8c8",
+            alpha=0.58,
+            linewidth=0.42,
+        )
         for spine in ax.spines.values():
             spine.set_color("#5a5a5a")
             spine.set_linewidth(0.55)
@@ -1754,9 +1760,9 @@ def _component_vertical_matrix_figure(
             anchor_ax.spines["right"].set_visible(False)
             for divided_ax in (anchor_ax, update_ax):
                 divided_ax.tick_params(axis="y", which="both", left=False)
-                divided_ax.spines["left"].set_color("#c8c8c8")
-                divided_ax.spines["left"].set_linewidth(0.42)
-                divided_ax.spines["left"].set_alpha(0.58)
+                divided_ax.spines["left"].set_color("#bdbdbd")
+                divided_ax.spines["left"].set_linewidth(0.68)
+                divided_ax.spines["left"].set_alpha(0.72)
 
         axes[0, 0].text(
             0.025,
