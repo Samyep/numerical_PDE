@@ -1251,10 +1251,11 @@ def _component_vertical_matrix_figure(
         ax.grid(
             axis="y",
             which="major",
-            color="white",
-            alpha=0.94,
-            linewidth=0.68,
-            zorder=1.5,
+            color="#8997a3",
+            alpha=0.46,
+            linewidth=0.58,
+            linestyle="-",
+            zorder=2,
         )
         for spine in ax.spines.values():
             spine.set_color("#5a5a5a")
@@ -1300,7 +1301,7 @@ def _component_vertical_matrix_figure(
             left=0.155,
             right=0.985,
             bottom=0.12,
-            top=0.765,
+            top=0.80,
             hspace=0.27,
             wspace=0.23,
             width_ratios=(1.45, 1.0, 1.0, 1.0),
@@ -1337,11 +1338,11 @@ def _component_vertical_matrix_figure(
                 edgecolor="white",
                 linewidth=0.55,
                 yerr=stds,
-                capsize=3.1,
+                capsize=2.2,
                 error_kw={
                     "ecolor": "#292929",
-                    "elinewidth": 0.95,
-                    "capthick": 0.95,
+                    "elinewidth": 0.8,
+                    "capthick": 0.8,
                     "zorder": 6,
                 },
                 zorder=3,
@@ -1408,9 +1409,9 @@ def _component_vertical_matrix_figure(
                     markeredgecolor=COLORS["a1_no_mcv"],
                     markeredgewidth=0.85,
                     ecolor="#292929",
-                    elinewidth=1.05,
-                    capsize=3.7,
-                    capthick=1.05,
+                    elinewidth=0.8,
+                    capsize=2.5,
+                    capthick=0.8,
                     linestyle="none",
                     zorder=6,
                 )
@@ -1444,7 +1445,6 @@ def _component_vertical_matrix_figure(
                 effect_x_limits = (-0.62, 0.62)
                 ratio_background(effect_ax, effect_x_limits)
                 ratio = float(lookup[(variant, pde)]["rmse_mean"]) / full_mean
-                delta = float(lookup[(variant, pde)]["rmse_mean"]) - full_mean
                 if variant == "a2_no_terminal_anchor":
                     ablated_by_seed = {
                         int(row["seed"]): float(row["value_rmse"])
@@ -1479,9 +1479,9 @@ def _component_vertical_matrix_figure(
                     yerr=[spread],
                     fmt="none",
                     ecolor="#292929",
-                    elinewidth=1.05,
-                    capsize=3.7,
-                    capthick=1.05,
+                    elinewidth=0.8,
+                    capsize=2.5,
+                    capthick=0.8,
                     zorder=6,
                 )
                 effect_ax.scatter(
@@ -1503,16 +1503,6 @@ def _component_vertical_matrix_figure(
                     va="bottom",
                     fontsize=6.1,
                     fontweight="bold",
-                )
-                effect_ax.text(
-                    0.94,
-                    0.13,
-                    f"Δ {delta:+.1e}",
-                    transform=effect_ax.transAxes,
-                    ha="right",
-                    va="center",
-                    fontsize=5.7,
-                    color="#3f3f3f",
                 )
                 style_ratio_axis(
                     effect_ax,
@@ -1549,29 +1539,20 @@ def _component_vertical_matrix_figure(
         fig.legend(
             handles=legend_handles,
             loc="upper center",
-            bbox_to_anchor=(0.57, 0.895),
+            bbox_to_anchor=(0.57, 0.965),
             ncol=4,
             frameon=False,
             fontsize=6.5,
             columnspacing=1.35,
             handletextpad=0.35,
         )
-        fig.suptitle(
-            "Component ablation across four high-dimensional PDEs",
-            x=0.57,
-            y=0.968,
-            fontsize=10.8,
-            fontweight="bold",
-        )
         fig.text(
             0.57,
             0.025,
-            "All quantities grow upward: the first column shows RMSE bars; diagnostic stems start "
-            "at the $1\\times$ Full-TA baseline. I-bars show sample SD across seeds "
-            "(fixed $A_0$: inference replicates).",
+            "Component ablation across four high-dimensional PDEs",
             ha="center",
             va="bottom",
-            fontsize=5.95,
+            fontsize=6.1,
             color="#4a4a4a",
         )
         for suffix, dpi in (("pdf", None), ("png", 300)):
