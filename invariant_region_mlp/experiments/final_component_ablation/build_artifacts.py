@@ -1925,9 +1925,10 @@ def _report(
         "",
         "The formal curve below evaluates every stored Full-TA Actor iterate with the same 960-state bank, 64 Euler steps, 1,024 paths, and paired Brownian seed. Each learned update receives the mature 5,000-step optimization budget, so A1 is the controlled one-update comparison rather than a prematurely stopped checkpoint.",
         "",
-        "| PDE | A0 | A1 | A2 | A3 | A4 | Best A2–A4 vs A1 |",
+        "| PDE | A0 | A1 | A2 | A3 | A4 | Selected Full vs A1 |",
         "|---|---:|---:|---:|---:|---:|---:|",
     ])
+    iteration_interpretation: list[str] = []
     for pde in PDES:
         cells: list[tuple[float, float]] = []
         for iteration in range(5):
@@ -1941,13 +1942,29 @@ def _report(
                     f"formal report requires three seeds for {pde} A{iteration}"
                 )
             cells.append((_mean(values), _sample_std(values)))
-        later_best = min(mean for mean, _ in cells[2:])
-        improvement = (cells[1][0] - later_best) / cells[1][0]
+        selected_mean = float(lookup[("a0_full", pde)]["rmse_mean"])
+        improvement = (cells[1][0] - selected_mean) / cells[1][0]
         lines.append(
             f"| {PDE_NAMES[pde]} | "
             + " | ".join(f"{mean:.3e} ± {std:.1e}" for mean, std in cells)
             + f" | {improvement:+.1%} |"
         )
+        selected_iterations = sorted({
+            int(row["selected_iteration"])
+            for row in iteration_rows
+            if row["pde"] == pde
+        })
+        iteration_interpretation.append(
+            f"- {PDE_NAMES[pde]}: the reference-free selected multi-update Actor "
+            f"reduces mean RMSE by {improvement:.1%} relative to A1; selected "
+            f"iteration(s) across seeds: {', '.join(f'A{value}' for value in selected_iterations)}."
+        )
+    lines.extend([
+        "",
+        *iteration_interpretation,
+        "",
+        "These curves resolve whether the existing mature protocol benefits from later tangent updates. They do not establish that no alternative, longer single-update optimization schedule could attain the same accuracy; that stronger claim would require a separate compute-matched continuation control.",
+    ])
     lines.extend([
         "",
         "## Crossed MCV diagnostic",
