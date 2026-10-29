@@ -1292,14 +1292,13 @@ def _component_vertical_matrix_figure(
             4,
             left=0.13,
             right=0.99,
-            bottom=0.075,
-            top=0.925,
+            bottom=0.11,
+            top=0.98,
             hspace=0.22,
             wspace=0.25,
             width_ratios=(1.42, 1.0, 1.0, 1.0),
         )
         axes = np.empty((4, 4), dtype=object)
-        column_titles = ("RMSE", "MCV", "Anchor", "Updates")
 
         for row_index, pde in enumerate(PDES):
             bottom_row = row_index == len(PDES) - 1
@@ -1335,14 +1334,14 @@ def _component_vertical_matrix_figure(
                 zorder=3,
             )
             style_absolute_axis(absolute_ax, upper, bottom=bottom_row)
-            absolute_ax.text(
-                -0.30,
-                0.5,
+            absolute_box = absolute_ax.get_position()
+            fig.text(
+                0.035,
+                (absolute_box.y0 + absolute_box.y1) / 2.0,
                 row_names[pde],
-                transform=absolute_ax.transAxes,
-                ha="right",
+                ha="left",
                 va="center",
-                fontsize=7.6,
+                fontsize=7.4,
                 fontweight="bold",
             )
 
@@ -1384,21 +1383,37 @@ def _component_vertical_matrix_figure(
                     alpha=0.82,
                     zorder=3,
                 )
+                mcv_ax.scatter(
+                    [x_value],
+                    [ratio],
+                    s=24,
+                    marker="o",
+                    facecolor=facecolor,
+                    edgecolor=COLORS["a1_no_mcv"],
+                    linewidth=0.85,
+                    zorder=5,
+                )
                 mcv_ax.errorbar(
                     [x_value],
                     [ratio],
                     yerr=[spread],
-                    fmt="o",
-                    markersize=4.5,
-                    markerfacecolor=facecolor,
-                    markeredgecolor=COLORS["a1_no_mcv"],
-                    markeredgewidth=0.85,
+                    fmt="none",
                     ecolor="#292929",
                     elinewidth=0.8,
                     capsize=2.5,
                     capthick=0.8,
                     linestyle="none",
-                    zorder=6,
+                    zorder=8,
+                )
+                mcv_ax.annotate(
+                    f"{ratio:.2f}×",
+                    xy=(x_value, ratio + spread),
+                    xytext=(0, 4),
+                    textcoords="offset points",
+                    ha="center",
+                    va="bottom",
+                    fontsize=5.7,
+                    color="#252525",
                 )
             style_ratio_axis(
                 mcv_ax,
@@ -1408,6 +1423,8 @@ def _component_vertical_matrix_figure(
                 x_labels=("infer.", "all"),
                 x_limits=mcv_x_limits,
             )
+            if bottom_row:
+                mcv_ax.set_xlabel("w/o MCV", fontsize=5.9, labelpad=2.0)
 
             # Columns 3 and 4: point-ranges rise from the shared 1x baseline.
             for column_index, variant, bottom_label in (
@@ -1468,6 +1485,16 @@ def _component_vertical_matrix_figure(
                     linewidth=0.6,
                     zorder=5,
                 )
+                effect_ax.annotate(
+                    f"{ratio:.2f}×",
+                    xy=(0.0, ratio + spread),
+                    xytext=(0, 4),
+                    textcoords="offset points",
+                    ha="center",
+                    va="bottom",
+                    fontsize=5.7,
+                    color="#252525",
+                )
                 style_ratio_axis(
                     effect_ax,
                     bottom=bottom_row,
@@ -1476,14 +1503,12 @@ def _component_vertical_matrix_figure(
                     x_labels=(bottom_label,),
                     x_limits=effect_x_limits,
                 )
-
-        for column_index, title in enumerate(column_titles):
-            axes[0, column_index].set_title(
-                title,
-                fontsize=8.0,
-                fontweight="bold",
-                pad=6.0,
-            )
+                if bottom_row:
+                    effect_ax.set_xlabel(
+                        "w/o anchor" if variant == "a2_no_terminal_anchor" else "w/o updates",
+                        fontsize=5.9,
+                        labelpad=2.0,
+                    )
         for suffix, dpi in (("pdf", None), ("png", 300)):
             fig.savefig(
                 FIGURE_DIR / f"component_ablation.{suffix}",
