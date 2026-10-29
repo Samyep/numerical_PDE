@@ -1149,6 +1149,12 @@ def _component_vertical_matrix_figure(
         "a1_no_mcv": "s",
         "a3_no_updates": "X",
     }
+    absolute_bar_colors = {
+        "a0_full": "#8CB9D7",
+        "a2_no_terminal_anchor": "#B7D8E8",
+        "a1_no_mcv": "#F3B18F",
+        "a3_no_updates": "#D97B86",
+    }
     row_names = {
         "hjb_log": "Log HJB",
         "joint_concave": "Concave",
@@ -1236,7 +1242,11 @@ def _component_vertical_matrix_figure(
         )
         ax.set_xticks(range(4))
         if bottom:
-            ax.set_xticklabels(("Full", "−A", "−M", "$A_0$"), fontsize=5.5)
+            ax.set_xticklabels(
+                ("Full", "w/o\nanchor", "w/o\nMCV", "w/o\nupdates"),
+                fontsize=5.2,
+                linespacing=1.0,
+            )
         else:
             ax.set_xticklabels([])
         ax.tick_params(axis="x", length=0)
@@ -1319,8 +1329,8 @@ def _component_vertical_matrix_figure(
                 x_positions,
                 means,
                 width=0.62,
-                color=[COLORS[variant] for variant in plot_order],
-                alpha=0.84,
+                color=[absolute_bar_colors[variant] for variant in plot_order],
+                alpha=0.96,
                 edgecolor="white",
                 linewidth=0.55,
                 yerr=stds,
@@ -1420,7 +1430,7 @@ def _component_vertical_matrix_figure(
                 bottom=bottom_row,
                 show_y_labels=True,
                 x_positions=(0.0, 1.0),
-                x_labels=("w/o infer", "w/o all"),
+                x_labels=("w/o infer", "all MCV"),
                 x_limits=mcv_x_limits,
             )
 
