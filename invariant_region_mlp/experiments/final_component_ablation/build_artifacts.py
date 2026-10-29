@@ -1420,11 +1420,9 @@ def _component_vertical_matrix_figure(
                 bottom=bottom_row,
                 show_y_labels=True,
                 x_positions=(0.0, 1.0),
-                x_labels=("infer.", "all"),
+                x_labels=("w/o infer", "w/o all"),
                 x_limits=mcv_x_limits,
             )
-            if bottom_row:
-                mcv_ax.set_xlabel("w/o MCV", fontsize=5.9, labelpad=2.0)
 
             # Columns 3 and 4: point-ranges rise from the shared 1x baseline.
             for column_index, variant, bottom_label in (

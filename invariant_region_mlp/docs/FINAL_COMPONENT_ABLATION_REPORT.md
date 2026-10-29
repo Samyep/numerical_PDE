@@ -1,6 +1,6 @@
 # Final Component Ablation Study for Tangent-Actor
 
-Generated: 2026-10-29T05:37:26.460763+00:00
+Generated: 2026-10-29T05:45:30.278579+00:00
 
 ## Experimental definition and provenance
 
