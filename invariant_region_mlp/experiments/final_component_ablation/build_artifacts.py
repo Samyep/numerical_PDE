@@ -1381,9 +1381,9 @@ def _component_vertical_matrix_figure(
         ax.grid(
             axis="y",
             which="major",
-            color="#8997a3",
-            alpha=0.46,
-            linewidth=0.58,
+            color="white",
+            alpha=0.92,
+            linewidth=0.68,
             linestyle="-",
             zorder=2,
         )
@@ -1572,7 +1572,7 @@ def _component_vertical_matrix_figure(
                 bottom=bottom_row,
                 show_y_labels=True,
                 x_positions=(0.0, 1.0, 2.0),
-                x_labels=("w/o infer", "w/o train", "all MCV"),
+                x_labels=("w/o infer", "w/o train", "w/o all"),
                 x_limits=mcv_x_limits,
             )
 
