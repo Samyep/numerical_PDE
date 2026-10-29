@@ -17,8 +17,8 @@
 set -euo pipefail
 
 SOURCE_ROOT=/work/nvme/bgvf/ywang151/main_b1_sixmethods_20261012/source
-TASK_FILE="$SOURCE_ROOT/invariant_region_mlp/experiments/final_component_ablation/formal_queue.csv"
-TASK_HASH_FILE="$TASK_FILE.sha256"
+TASK_FILE=${TASK_FILE:-"$SOURCE_ROOT/invariant_region_mlp/experiments/final_component_ablation/formal_queue.csv"}
+TASK_HASH_FILE=${TASK_HASH_FILE:-"$TASK_FILE.sha256"}
 WORKER="$SOURCE_ROOT/invariant_region_mlp/experiments/final_component_ablation/slurm/run_queue_worker.sh"
 
 cd "$SOURCE_ROOT"
