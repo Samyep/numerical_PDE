@@ -60,3 +60,57 @@ Oscillatory Value--Gradient
 \end{tabular}%
 }
 \end{table*}
+
+\paragraph{Tangent-update trajectory.}
+Table~\ref{tab:tangent-update-raw} reports the absolute RMSE after each of the
+four learned tangent updates.  Here $A_0$ is the fixed terminal-based
+initialization and $A_j$ is the Actor after update $j$.  Within each seed, all
+five Actors are evaluated on the same frozen test bank and with common
+Brownian random numbers.  The $A_0$ Actor is identical across seeds, so its
+reported spread reflects inference-stream variability only; for
+$A_1,\ldots,A_4$, it also includes training-seed variability.  This paired
+iteration diagnostic uses its own evaluation streams, so its $A_0$ value can
+differ slightly from the independently replicated ``w/o tangent updates''
+entry in Table~\ref{tab:component-ablation-raw}.
+
+\begin{table*}[t]
+\centering
+\caption{Absolute whole-function value RMSE along the Tangent-Actor iteration
+trajectory at $d=100$.  Values are mean $\pm$ sample standard deviation over
+the three paired seed-indexed evaluations.}
+\label{tab:tangent-update-raw}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+& Initial tangent & \multicolumn{4}{c}{Learned tangent updates} \\
+\cmidrule(lr){3-6}
+PDE & $A_0$ & $A_1$ & $A_2$ & $A_3$ & $A_4$ \\
+\midrule
+Radial Log-Terminal HJB
+& $2.717\mathrm{e}{-3} \pm 1.543\mathrm{e}{-5}$
+& $1.539\mathrm{e}{-3} \pm 1.311\mathrm{e}{-4}$
+& $1.093\mathrm{e}{-3} \pm 4.434\mathrm{e}{-5}$
+& $9.822\mathrm{e}{-4} \pm 9.366\mathrm{e}{-5}$
+& $\mathbf{8.677\mathrm{e}{-4} \pm 5.630\mathrm{e}{-5}}$ \\
+Concave Cubic--Quadratic
+& $3.340\mathrm{e}{-3} \pm 2.268\mathrm{e}{-5}$
+& $3.633\mathrm{e}{-4} \pm 1.192\mathrm{e}{-5}$
+& $3.463\mathrm{e}{-4} \pm 1.037\mathrm{e}{-5}$
+& $3.423\mathrm{e}{-4} \pm 8.804\mathrm{e}{-6}$
+& $\mathbf{3.417\mathrm{e}{-4} \pm 9.862\mathrm{e}{-6}}$ \\
+Convex Cubic--Quadratic
+& $5.147\mathrm{e}{-3} \pm 1.521\mathrm{e}{-5}$
+& $2.387\mathrm{e}{-4} \pm 4.012\mathrm{e}{-6}$
+& $2.262\mathrm{e}{-4} \pm 3.208\mathrm{e}{-6}$
+& $2.240\mathrm{e}{-4} \pm 3.513\mathrm{e}{-6}$
+& $\mathbf{2.232\mathrm{e}{-4} \pm 5.019\mathrm{e}{-6}}$ \\
+Oscillatory Value--Gradient
+& $6.424\mathrm{e}{-3} \pm 3.150\mathrm{e}{-5}$
+& $1.642\mathrm{e}{-3} \pm 9.988\mathrm{e}{-5}$
+& $9.878\mathrm{e}{-4} \pm 1.614\mathrm{e}{-4}$
+& $8.848\mathrm{e}{-4} \pm 4.874\mathrm{e}{-5}$
+& $\mathbf{8.579\mathrm{e}{-4} \pm 4.671\mathrm{e}{-5}}$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
