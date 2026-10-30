@@ -114,6 +114,7 @@ Three training seeds are sufficient for an ablation signal but not a universal v
 - `results/final_component_ablation/MCV_INFERENCE_ONLY_SUMMARY.csv`
 - `results/final_component_ablation/ACTOR_ITERATION_SUMMARY.csv`
 - `results/final_component_ablation/tables/final_component_ablation.tex`
+- `results/final_component_ablation/tables/component_ablation_appendix.tex`
 - `results/final_component_ablation/tables/mcv_inference_only.tex`
 - `results/final_component_ablation/figures/component_ablation.pdf`
 - `results/final_component_ablation/figures/actor_iteration_ablation.pdf`

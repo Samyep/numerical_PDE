@@ -1,0 +1,48 @@
+\paragraph{Raw component-ablation results.}
+The normalized effects in the component-ablation figure are computed from the
+absolute whole-function value errors reported in
+Table~\ref{tab:component-ablation-raw}.  Every entry uses the same frozen
+960-state test bank, 64 Euler steps, and 1,024 Monte Carlo paths per state.
+For the three learned configurations, we report the mean and sample standard
+deviation of the primary RMSE over training seeds $0,1,2$.  The fixed-$A_0$
+configuration has no fitted Actor and hence no training-seed variability; its
+uncertainty instead summarizes two independent inference replicates.  These
+absolute values are provided to make the scale of each normalized degradation
+explicit.
+
+\begin{table*}[t]
+\centering
+\caption{Absolute whole-function value RMSE underlying the component-ablation
+figure at $d=100$.  Values are mean $\pm$ sample standard deviation.  The
+$\dagger$ entries summarize two independent inference replicates rather than
+training seeds.}
+\label{tab:component-ablation-raw}
+\small
+\setlength{\tabcolsep}{5.2pt}
+\begin{tabular}{lcccc}
+\toprule
+PDE & Full TA & w/o MCV & w/o terminal anchoring & w/o tangent updates$^{\dagger}$ \\
+\midrule
+Radial Log-Terminal HJB
+& $\mathbf{8.68\mathrm{e}{-4} \pm 5.63\mathrm{e}{-5}}$
+& $3.04\mathrm{e}{-3} \pm 5.58\mathrm{e}{-5}$
+& $1.01\mathrm{e}{-3} \pm 9.35\mathrm{e}{-5}$
+& $2.75\mathrm{e}{-3} \pm 3.35\mathrm{e}{-5}$ \\
+Concave Cubic--Quadratic
+& $\mathbf{3.42\mathrm{e}{-4} \pm 9.78\mathrm{e}{-6}}$
+& $1.85\mathrm{e}{-3} \pm 1.51\mathrm{e}{-5}$
+& $3.56\mathrm{e}{-4} \pm 1.10\mathrm{e}{-5}$
+& $3.35\mathrm{e}{-3} \pm 2.38\mathrm{e}{-5}$ \\
+Convex Cubic--Quadratic
+& $\mathbf{2.23\mathrm{e}{-4} \pm 5.02\mathrm{e}{-6}}$
+& $1.56\mathrm{e}{-3} \pm 7.41\mathrm{e}{-5}$
+& $2.34\mathrm{e}{-4} \pm 7.93\mathrm{e}{-6}$
+& $5.14\mathrm{e}{-3} \pm 1.64\mathrm{e}{-5}$ \\
+Oscillatory Value--Gradient
+& $\mathbf{8.58\mathrm{e}{-4} \pm 4.67\mathrm{e}{-5}}$
+& $1.93\mathrm{e}{-3} \pm 4.86\mathrm{e}{-5}$
+& $9.01\mathrm{e}{-4} \pm 7.22\mathrm{e}{-5}$
+& $6.44\mathrm{e}{-3} \pm 1.56\mathrm{e}{-6}$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
