@@ -1,0 +1,32 @@
+\begin{table}[!ht]
+\centering
+\caption{Joint Nonseparable frozen-bank value accuracy. The direct
+value head is the deterministic output of the formally selected seed-0
+checkpoint on the original 32-state bank; Full TA (FK--MCV) is retained
+only as an auxiliary reference. Entries are RMSE and best valid values
+are bolded. NF denotes numerical failure in the frozen Deep BSDE run.}
+\label{tab:joint_nonseparable_value_head}
+\vspace{2pt}
+{\fontsize{7.3}{8.6}\selectfont
+\setlength{\tabcolsep}{1.8pt}
+\renewcommand{\arraystretch}{1.10}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}l!{\color{CellDivider}\vrule width 0.35pt}c!{\color{CellDivider}\vrule width 0.35pt}c!{\color{CellDivider}\vrule width 0.35pt}c!{\color{CellDivider}\vrule width 0.35pt}c!{\color{CellDivider}\vrule width 0.35pt}c@{}}
+\toprule
+\textbf{Method} & \multicolumn{5}{c}{\textbf{Ambient dimension $d$}} \\
+\cmidrule(lr){2-6}
+ & $20$ & $50$ & $100$ & $200$ & $400$ \\
+\midrule
+\rowcolor{TAblue}
+Direct value head & 2.46e-3 & 2.97e-3 & 3.52e-3 & 6.69e-3 & 1.28e-2 \\
+\cmidrule(lr){1-6}
+Full TA (FK--MCV) & \textbf{1.18e-3} & \textbf{1.06e-3} & \textbf{1.04e-3} & \textbf{1.22e-3} & \textbf{1.24e-3} \\
+\cmidrule(lr){1-6}
+FH-MLP & 1.14e-2 & 2.56e-2 & 5.15e-2 & 1.02e-1 & 2.13e-1 \\
+\cmidrule(lr){1-6}
+Deep BSDE & 2.59e-3 & 3.76e-3 & 3.48e-2 & \textit{NF} & \textit{NF} \\
+\bottomrule
+\end{tabular}
+}%
+}
+\end{table}
