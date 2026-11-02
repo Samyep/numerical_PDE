@@ -1283,10 +1283,10 @@ def _component_vertical_matrix_figure(
         "a3_no_updates": "#D97B86",
     }
     row_names = {
-        "hjb_log": "Log HJB",
-        "joint_concave": "Concave",
-        "joint_convex": "Convex",
-        "nonconvex_coupled": "Nonconvex",
+        "hjb_log": "Radial Log-Terminal\nHJB",
+        "joint_concave": "Concave Cubic–\nQuadratic",
+        "joint_convex": "Convex Cubic–\nQuadratic",
+        "nonconvex_coupled": "Oscillatory Value–\nGradient",
     }
     diverging = LinearSegmentedColormap.from_list(
         "tangent_actor_vertical_surface",
@@ -1436,11 +1436,11 @@ def _component_vertical_matrix_figure(
             spine.set_linewidth(0.55)
 
     with plt.rc_context(paper_style):
-        fig = plt.figure(figsize=(7.15, 4.55), facecolor="white")
+        fig = plt.figure(figsize=(7.35, 4.55), facecolor="white")
         outer_grid = fig.add_gridspec(
             1,
             2,
-            left=0.13,
+            left=0.165,
             right=0.99,
             bottom=0.11,
             top=0.98,
@@ -1453,6 +1453,7 @@ def _component_vertical_matrix_figure(
             3,
             hspace=0.22,
             wspace=0.0,
+            width_ratios=(1.15, 0.55, 1.55),
         )
         axes = np.empty((4, 4), dtype=object)
 
@@ -1509,13 +1510,14 @@ def _component_vertical_matrix_figure(
             style_absolute_axis(absolute_ax, upper, bottom=bottom_row)
             absolute_box = absolute_ax.get_position()
             fig.text(
-                0.035,
+                0.012,
                 (absolute_box.y0 + absolute_box.y1) / 2.0,
                 row_names[pde],
                 ha="left",
                 va="center",
-                fontsize=7.4,
+                fontsize=6.5,
                 fontweight="bold",
+                linespacing=1.0,
             )
 
             full_mean = float(lookup[("a0_full", pde)]["rmse_mean"])

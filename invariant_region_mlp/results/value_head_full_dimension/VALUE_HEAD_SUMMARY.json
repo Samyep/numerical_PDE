@@ -1,0 +1,52 @@
+{
+  "pdes": 5,
+  "dimensions": [
+    20,
+    50,
+    100,
+    200,
+    400
+  ],
+  "cells": 25,
+  "pairwise_comparisons": 75,
+  "pairwise_wins": 47,
+  "pairwise_win_rate": 0.6266666666666667,
+  "beats_any_baseline_cells": 24,
+  "beats_any_baseline_cell_rate": 0.96,
+  "beats_majority_cells": 17,
+  "beats_majority_cell_rate": 0.68,
+  "best_among_four_cells": 6,
+  "beats_dpi": 8,
+  "beats_pinn_hte": 15,
+  "beats_sdgd_pinn": 24,
+  "beats_full_ta_fk_mcv": 0,
+  "per_pde": {
+    "allen_cahn": {
+      "label": "Allen\u2013Cahn",
+      "cells": 5,
+      "wins": 6
+    },
+    "joint_concave": {
+      "label": "Concave Cubic\u2013Quadratic",
+      "cells": 5,
+      "wins": 10
+    },
+    "joint_convex": {
+      "label": "Convex Cubic\u2013Quadratic",
+      "cells": 5,
+      "wins": 10
+    },
+    "nonconvex_coupled": {
+      "label": "Oscillatory Value\u2013Gradient",
+      "cells": 5,
+      "wins": 6
+    },
+    "dense_fourier": {
+      "label": "Fourier\u2013Tanh Coupled",
+      "cells": 5,
+      "wins": 15
+    }
+  },
+  "supported_claim": "The frozen direct value head is already a competitive solver: it beats at least one strong baseline in 24/25 cells and wins 47/75 pairwise comparisons.",
+  "unsupported_claim": "The data do not support saying that the direct value head outperforms almost all methods: it beats DPI in only 8/25 cells."
+}

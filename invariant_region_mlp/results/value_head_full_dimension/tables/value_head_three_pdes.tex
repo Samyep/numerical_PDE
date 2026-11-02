@@ -1,0 +1,66 @@
+\begin{table*}[!t]
+\centering
+\caption{Whole-function value RMSE of the frozen direct Tangent-Actor
+value head across three PDEs and five dimensions (60 method cells).
+Comparisons within each PDE--dimension cell use the same frozen state bank;
+best values are bolded and second-best values are underlined. The final
+FK--MCV estimator is intentionally excluded
+because this table isolates the accuracy of the learned value head itself.}
+\label{tab:direct_value_head_three_pdes}
+\vspace{2pt}
+{\fontsize{6.8}{8.0}\selectfont
+\setlength{\tabcolsep}{0.95pt}
+\renewcommand{\arraystretch}{1.10}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}l
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\hspace{5pt}\color{PDEdivider}\vrule width 0.75pt\hspace{5pt}}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\hspace{5pt}\color{PDEdivider}\vrule width 0.75pt\hspace{5pt}}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c@{}}
+\toprule
+\textbf{Method}
+& \multicolumn{5}{c!{\hspace{5pt}\color{PDEdivider}\vrule width 0.75pt\hspace{5pt}}}{\textbf{Concave Cubic--Quadratic PDE}}
+& \multicolumn{5}{c!{\hspace{5pt}\color{PDEdivider}\vrule width 0.75pt\hspace{5pt}}}{\textbf{Convex Cubic--Quadratic PDE}}
+& \multicolumn{5}{c}{\textbf{Fourier--Tanh Coupled PDE}} \\
+\cmidrule(lr){2-6}\cmidrule(lr){7-11}\cmidrule(lr){12-16}
+\textbf{Dimension}
+& $20$ & $50$ & $100$ & $200$ & $400$
+& $20$ & $50$ & $100$ & $200$ & $400$
+& $20$ & $50$ & $100$ & $200$ & $400$ \\
+\midrule
+\rowcolor{TAblue}
+Direct value head
+& \underline{9.86e-4} & \underline{1.18e-3} & \underline{2.36e-3} & \underline{3.11e-3} & \underline{5.29e-3}
+& \textbf{5.79e-4} & \underline{1.23e-3} & \underline{1.97e-3} & \underline{4.13e-3} & 7.59e-3
+& \textbf{7.12e-3} & \textbf{1.47e-2} & \textbf{1.18e-2} & \textbf{4.29e-2} & \textbf{5.98e-2} \\
+\cmidrule(lr){1-16}
+DPI
+& \textbf{8.81e-4} & \textbf{9.67e-4} & \textbf{2.14e-3} & \textbf{2.76e-3} & 6.82e-3
+& \underline{7.28e-4} & \textbf{9.71e-4} & \textbf{1.86e-3} & \textbf{2.93e-3} & \textbf{4.09e-3}
+& 2.06e-2 & 6.25e-2 & \underline{6.46e-2} & 2.46e-1 & 3.90e-1 \\
+\cmidrule(lr){1-16}
+PINN-HTE
+& 3.83e-3 & 2.80e-3 & 3.23e-3 & 3.43e-3 & \textbf{5.26e-3}
+& 1.62e-3 & 2.68e-3 & 3.27e-3 & 4.60e-3 & \underline{5.06e-3}
+& 4.90e-2 & 6.55e-2 & 7.71e-2 & 2.62e-1 & 4.01e-1 \\
+\cmidrule(lr){1-16}
+SDGD-PINN
+& 2.59e-2 & 1.80e-2 & 2.33e-2 & 2.79e-2 & 2.97e-2
+& 1.33e-2 & 1.50e-2 & 1.28e-2 & 1.68e-2 & 1.38e-2
+& \underline{1.35e-2} & \underline{5.13e-2} & 7.41e-2 & \underline{2.09e-1} & \underline{2.33e-1} \\
+\bottomrule
+\end{tabular}%
+}%
+}
+\end{table*}

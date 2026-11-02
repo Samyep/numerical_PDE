@@ -1,0 +1,24 @@
+\paragraph{Accuracy of the learned value head.}
+To separate the quality of the learned Actor from the improvement supplied by
+the final stochastic evaluator, Tables~\ref{tab:direct_value_head_three_pdes}
+and~\ref{tab:joint_nonseparable_value_head} evaluate the selected Actor's
+deterministic value head directly, without an FK rollout or martingale
+correction.  On the matched 960-state whole-function banks in
+Table~\ref{tab:direct_value_head_three_pdes}, the direct head ranks first in
+$6/15$ PDE--dimension cells and second in another $8/15$, placing in the top
+two in $14/15$ cells.  It wins $35/45$ matched pairwise comparisons against
+the independently trained baselines: $7/15$ against DPI, $13/15$ against
+PINN-HTE, and $15/15$ against SDGD-PINN.  Thus, the value head is already a
+competitive deterministic whole-function approximator, although it is not
+uniformly best.  The separate 32-state single-point diagnostic in
+Table~\ref{tab:joint_nonseparable_value_head} gives a complementary result:
+for the primary RMSE, the direct head outperforms FH-MLP in all five dimensions
+and every numerically valid Deep BSDE result ($3/3$), while the complete
+FK--MCV estimator remains more accurate in all five dimensions; Deep BSDE has
+numerical failures at $d=200$ and $d=400$.  RelMAE gives the same broad
+ordering, except that Deep BSDE is slightly better than the direct head at
+$d=20$.  Because the two tables use different state banks, baseline sets, and
+replication protocols, their absolute errors should not be compared directly.
+Together, they show that the learned Actor itself carries substantial solution
+accuracy, while the final FK--MCV evaluation provides a further, consistent
+accuracy gain.

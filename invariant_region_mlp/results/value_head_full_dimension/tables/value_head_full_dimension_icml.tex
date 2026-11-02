@@ -1,0 +1,58 @@
+\begin{table}[!ht]
+\centering
+\caption{Whole-function value RMSE of the frozen direct Tangent-Actor value head across five PDEs and five dimensions (100 method cells). Comparisons within each PDE--dimension cell use the same frozen test bank; best values are bolded.}
+\label{tab:direct_value_head_five_pdes}
+\vspace{2pt}
+{\fontsize{7.3}{8.6}\selectfont
+\setlength{\tabcolsep}{1.1pt}
+\renewcommand{\arraystretch}{1.10}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}l!{\color{CellDivider}\vrule width 0.35pt}c!{\color{CellDivider}\vrule width 0.35pt}c!{\color{CellDivider}\vrule width 0.35pt}c!{\color{CellDivider}\vrule width 0.35pt}c!{\color{CellDivider}\vrule width 0.35pt}c!{\hspace{5pt}\color{PDEdivider}\vrule width 0.75pt\hspace{5pt}}c!{\color{CellDivider}\vrule width 0.35pt}c!{\color{CellDivider}\vrule width 0.35pt}c!{\color{CellDivider}\vrule width 0.35pt}c!{\color{CellDivider}\vrule width 0.35pt}c@{}}
+\toprule
+\textbf{Method} & \multicolumn{5}{c!{\color{PDEdivider}\vrule width 0.75pt}}{\textbf{Allen--Cahn}} & \multicolumn{5}{c}{\textbf{Concave Cubic--Quadratic}} \\
+\cmidrule(lr){2-6}\cmidrule(lr){7-11}
+\textbf{Dimension} & $20$ & $50$ & $100$ & $200$ & $400$ & $20$ & $50$ & $100$ & $200$ & $400$ \\
+\midrule
+\rowcolor{TAblue}
+Direct value head & 2.55e-3 & 1.98e-3 & 1.37e-3 & 8.53e-4 & 5.86e-4 & 9.86e-4 & 1.18e-3 & 2.36e-3 & 3.11e-3 & 5.29e-3 \\
+\cmidrule(lr){1-11}
+DPI & \textbf{1.45e-3} & 1.44e-3 & 1.07e-3 & 9.04e-4 & 4.55e-4 & \textbf{8.81e-4} & \textbf{9.67e-4} & \textbf{2.14e-3} & \textbf{2.76e-3} & 6.82e-3 \\
+\cmidrule(lr){1-11}
+PINN-HTE & 1.72e-3 & \textbf{1.31e-3} & \textbf{9.48e-4} & \textbf{8.47e-4} & \textbf{4.26e-4} & 3.83e-3 & 2.80e-3 & 3.23e-3 & 3.43e-3 & \textbf{5.26e-3} \\
+\cmidrule(lr){1-11}
+SDGD-PINN & 1.19e-2 & 6.12e-3 & 2.69e-3 & 1.42e-3 & 6.16e-4 & 2.59e-2 & 1.80e-2 & 2.33e-2 & 2.79e-2 & 2.97e-2 \\
+\bottomrule
+\addlinespace[7pt]
+\toprule
+\textbf{Method} & \multicolumn{5}{c!{\color{PDEdivider}\vrule width 0.75pt}}{\textbf{Convex Cubic--Quadratic}} & \multicolumn{5}{c}{\textbf{Oscillatory Value--Gradient}} \\
+\cmidrule(lr){2-6}\cmidrule(lr){7-11}
+\textbf{Dimension} & $20$ & $50$ & $100$ & $200$ & $400$ & $20$ & $50$ & $100$ & $200$ & $400$ \\
+\midrule
+\rowcolor{TAblue}
+Direct value head & \textbf{5.79e-4} & 1.23e-3 & 1.97e-3 & 4.13e-3 & 7.59e-3 & 2.16e-3 & 3.42e-3 & 4.72e-3 & 9.23e-3 & 2.37e-2 \\
+\cmidrule(lr){1-11}
+DPI & 7.28e-4 & \textbf{9.71e-4} & \textbf{1.86e-3} & \textbf{2.93e-3} & \textbf{4.09e-3} & \textbf{1.08e-3} & \textbf{1.08e-3} & \textbf{1.70e-3} & 5.22e-3 & 6.15e-3 \\
+\cmidrule(lr){1-11}
+PINN-HTE & 1.62e-3 & 2.68e-3 & 3.27e-3 & 4.60e-3 & 5.06e-3 & 7.09e-3 & 4.27e-3 & 3.07e-3 & \textbf{3.67e-3} & \textbf{4.93e-3} \\
+\cmidrule(lr){1-11}
+SDGD-PINN & 1.33e-2 & 1.50e-2 & 1.28e-2 & 1.68e-2 & 1.38e-2 & 1.27e-2 & 1.37e-2 & 8.88e-3 & 1.04e-2 & 1.33e-2 \\
+\bottomrule
+\addlinespace[7pt]
+\toprule
+\textbf{Method} & \multicolumn{10}{c}{\textbf{Fourier--Tanh Coupled}} \\
+\cmidrule(lr){2-11}
+\textbf{Dimension} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{$20$} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{$50$} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{$100$} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{$200$} & \multicolumn{2}{c}{$400$} \\
+\midrule
+\rowcolor{TAblue}
+Direct value head & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{\textbf{7.12e-3}} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{\textbf{1.47e-2}} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{\textbf{1.18e-2}} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{\textbf{4.29e-2}} & \multicolumn{2}{c}{\textbf{5.98e-2}} \\
+\cmidrule(lr){1-11}
+DPI & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{2.06e-2} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{6.25e-2} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{6.46e-2} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{2.46e-1} & \multicolumn{2}{c}{3.90e-1} \\
+\cmidrule(lr){1-11}
+PINN-HTE & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{4.90e-2} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{6.55e-2} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{7.71e-2} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{2.62e-1} & \multicolumn{2}{c}{4.01e-1} \\
+\cmidrule(lr){1-11}
+SDGD-PINN & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{1.35e-2} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{5.13e-2} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{7.41e-2} & \multicolumn{2}{c!{\color{CellDivider}\vrule width 0.35pt}}{2.09e-1} & \multicolumn{2}{c}{2.33e-1} \\
+\bottomrule
+\end{tabular}
+}%
+}
+\end{table}

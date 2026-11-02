@@ -1,0 +1,68 @@
+\begin{table*}[!t]
+\centering
+\caption{Single-point accuracy across three PDEs (45 method cells). Each
+method has RMSE above RelMAE; best valid values are bolded. NF denotes
+numerical failure of Deep BSDE in the frozen configuration.}
+\label{tab:single_point_three_pdes}
+\vspace{2pt}
+{\fontsize{6.8}{8.0}\selectfont
+\setlength{\tabcolsep}{0.95pt}
+\renewcommand{\arraystretch}{1.10}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}l
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\hspace{5pt}\color{PDEdivider}\vrule width 0.75pt\hspace{5pt}}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\hspace{5pt}\color{PDEdivider}\vrule width 0.75pt\hspace{5pt}}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c
+!{\color{CellDivider}\vrule width 0.35pt}c@{}}
+\toprule
+\textbf{Method}
+& \multicolumn{5}{c!{\hspace{5pt}\color{PDEdivider}\vrule width 0.75pt\hspace{5pt}}}{\textbf{Full-Rank Log-Sum-Exp HJB}}
+& \multicolumn{5}{c!{\hspace{5pt}\color{PDEdivider}\vrule width 0.75pt\hspace{5pt}}}{\textbf{Fourier--Tanh Coupled PDE}}
+& \multicolumn{5}{c}{\textbf{Joint Nonseparable PDE}} \\
+\cmidrule(lr){2-6}\cmidrule(lr){7-11}\cmidrule(lr){12-16}
+\textbf{Dimension}
+& $20$ & $50$ & $100$ & $200$ & $400$
+& $20$ & $50$ & $100$ & $200$ & $400$
+& $20$ & $50$ & $100$ & $200$ & $400$ \\
+\midrule
+\rowcolor{TAblue}
+& \textbf{7.13e-4} & \textbf{1.42e-3} & \textbf{1.59e-3} & \textbf{4.17e-3} & \textbf{3.63e-3}
+& \textbf{4.25e-3} & \textbf{4.32e-3} & \textbf{3.72e-3} & \textbf{8.69e-3} & \textbf{1.40e-2}
+& \textbf{1.18e-3} & \textbf{1.06e-3} & \textbf{1.04e-3} & \textbf{1.22e-3} & \textbf{1.24e-3} \\
+\rowcolor{TAblue}
+\multirow{-2}{*}{Tangent-Actor}
+& \textbf{7.84e-4} & \textbf{8.76e-4} & \textbf{9.04e-4} & \textbf{1.33e-3} & \textbf{1.25e-3}
+& \textbf{6.06e-3} & \textbf{7.25e-3} & \textbf{2.33e-3} & \textbf{1.98e-2} & \textbf{3.15e-2}
+& \textbf{1.68e-3} & \textbf{1.54e-3} & \textbf{1.49e-3} & \textbf{1.70e-3} & \textbf{1.77e-3} \\
+\cmidrule(lr){1-16}
+\multirow{2}{*}{FH-MLP}
+& 8.56e-2 & 2.71e-1 & 5.89e-1 & 1.93e0 & 3.19e0
+& 3.60e-2 & 4.23e-2 & 1.33e-1 & 1.43e-1 & 2.93e-1
+& 1.14e-2 & 2.56e-2 & 5.15e-2 & 1.02e-1 & 2.13e-1 \\
+& 1.16e-1 & 2.03e-1 & 4.32e-1 & 7.49e-1 & 1.24e0
+& 4.98e-2 & 7.21e-2 & 1.07e-1 & 3.56e-1 & 6.37e-1
+& 1.46e-2 & 3.44e-2 & 7.39e-2 & 1.41e-1 & 3.00e-1 \\
+\cmidrule(lr){1-16}
+\multirow{2}{*}{Deep BSDE}
+& 1.13e-1 & 2.53e-1 & 2.82e-1 & 3.72e-1 & 3.24e-1
+& 4.38e-2 & 7.79e-2 & 1.13e-1 & 7.52e-2 & 7.91e-2
+& 2.59e-3 & 3.76e-3 & 3.48e-2 & \textit{NF} & \textit{NF} \\
+& 1.58e-1 & 1.94e-1 & 2.11e-1 & 1.49e-1 & 1.30e-1
+& 6.95e-2 & 1.45e-1 & 9.37e-2 & 1.94e-1 & 1.73e-1
+& 3.35e-3 & 4.46e-3 & 1.77e-2 & \textit{NF} & \textit{NF} \\
+\bottomrule
+\end{tabular}%
+}%
+}
+\end{table*}
